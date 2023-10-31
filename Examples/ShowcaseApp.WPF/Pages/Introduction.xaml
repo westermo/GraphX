@@ -9,8 +9,7 @@
     <Grid Style="{StaticResource ContentRoot}">
         <ScrollViewer>
             <StackPanel >
-                <Image Source="/Assets/SplashScreen.png" Width="250" Margin="0,0,0,10"></Image>
-                <mui:BBCodeBlock BBCode="[b]GraphX for .NET[/b] is an advanced open-source graph visualization library that uses different layout and edge routing algorithms, implements many graph-related features and supports highly customizable visual templates. It is able to render large amount of vertices and steadily moves to support the most popular .NET platforms.&#13;&#10;&#13;&#10;&#13;&#10;&#13;&#10;" Margin="0,0,0,32" />
+                <mui:BBCodeBlock BBCode="[b]Westermo GraphX for .NET[/b] is an advanced open-source graph visualization library that uses different layout and edge routing algorithms, implements many graph-related features and supports highly customizable visual templates. It is able to render large amount of vertices and steadily moves to support the most popular .NET platforms.&#13;&#10;&#13;&#10;This is derivative work of GraphX for .NET (see https://github.com/panthernet/graphx).&#13;&#10;&#13;&#10;" Margin="0,0,0,32" />
                 <TextBlock Text="GUIDE" Style="{StaticResource Heading2}" />
                 <mui:BBCodeBlock BBCode="Use menu items at the top of the window to select different graph examples with corresponding settings. Click on [url=/Pages/GeneralGraph.xaml]General graph[/url] to select first example." Margin="0,0,0,32"/>
             </StackPanel>

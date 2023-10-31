@@ -18,7 +18,7 @@ namespace ShowcaseApp.WPF
         public MainWindow()
         {
             InitializeComponent();
-            Title = "GraphX for WPF showcase application v" + FileVersionInfo.GetVersionInfo(Assembly.GetExecutingAssembly().Location).FileVersion;
+            Title = "Westermo GraphX for WPF showcase application v" + FileVersionInfo.GetVersionInfo(Assembly.GetExecutingAssembly().Location).FileVersion;
 #if DEBUG
             var lg = new LinkGroup {DisplayName = "Debug"};
             lg.Links.Add(new Link { DisplayName = "Debug", Source = new Uri("Pages/Debug/DebugGraph.xaml", UriKind.Relative) });          

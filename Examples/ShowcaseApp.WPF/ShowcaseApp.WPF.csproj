@@ -56,8 +56,6 @@
     <Resource Include="Assets\hand_comp3.png" />
     <None Remove="Assets\male.png" />
     <Resource Include="Assets\male.png" />
-    <None Remove="Assets\SplashScreen.png" />
-    <Resource Include="Assets\SplashScreen.png" />
     <None Remove="Assets\tr_grren.png" />
     <Resource Include="Assets\tr_grren.png" />
     <None Remove="Assets\tr_red.png" />
