@@ -25,22 +25,15 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Licenses", "Licenses", "{E3
 		Documents\Licenses\License.YAXLib.txt = Documents\Licenses\License.YAXLib.txt
 	EndProjectSection
 EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Externals", "Externals", "{C7DE85B0-A017-4DF7-AE7A-A1197B5D0D47}"
-EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GraphX.Controls", "GraphX.Controls\GraphX.Controls.csproj", "{D2E33FEE-6689-4BB4-A95C-1B5C327A1E8F}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Westermo.GraphX.Controls", "Westermo.GraphX.Controls\Westermo.GraphX.Controls.csproj", "{D2E33FEE-6689-4BB4-A95C-1B5C327A1E8F}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SimpleGraph", "Examples\SimpleGraph\SimpleGraph.csproj", "{E00C5274-AA34-4CC1-BB24-F59BCF130B85}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ShowcaseApp.WPF", "Examples\ShowcaseApp.WPF\ShowcaseApp.WPF.csproj", "{C054C423-7284-46A6-9738-B82E2237E9C7}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "GraphX.Standard.Common", "GraphX.Standard.Common\GraphX.Standard.Common.csproj", "{A03C3866-8F38-4F1D-8D08-6B187F418D51}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Westermo.GraphX.Common", "Westermo.GraphX.Common\Westermo.GraphX.Common.csproj", "{A03C3866-8F38-4F1D-8D08-6B187F418D51}"
 EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{528D0C46-D00D-41EE-8735-CE2537B2848C}"
-	ProjectSection(SolutionItems) = preProject
-		info.md = info.md
-	EndProjectSection
-EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "GraphX.Standard.Logic", "GraphX.Standard.Logic\GraphX.Standard.Logic.csproj", "{7E4599AB-9A9A-4185-B651-20331153CE7A}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Westermo.GraphX.Logic", "Westermo.GraphX.Logic\Westermo.GraphX.Logic.csproj", "{7E4599AB-9A9A-4185-B651-20331153CE7A}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

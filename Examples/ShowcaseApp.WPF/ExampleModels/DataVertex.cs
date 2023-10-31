@@ -1,4 +1,4 @@
-﻿using GraphX.Common.Models;
+﻿using Westermo.GraphX.Common.Models;
 
 namespace ShowcaseApp.WPF
 {

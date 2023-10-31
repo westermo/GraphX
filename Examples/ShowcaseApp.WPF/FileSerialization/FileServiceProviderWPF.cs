@@ -1,6 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.IO;
-using GraphX.Common.Models;
+using Westermo.GraphX.Common.Models;
 using YAXLib;
 
 namespace ShowcaseApp.WPF.FileSerialization

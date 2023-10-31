@@ -1,8 +1,8 @@
 ﻿using System.Collections.Generic;
 using System.Threading;
-using GraphX.Measure;
-using GraphX.Common.Interfaces;
-using GraphX.Logic.Algorithms.LayoutAlgorithms;
+using Westermo.GraphX.Measure;
+using Westermo.GraphX.Common.Interfaces;
+using Westermo.GraphX.Logic.Algorithms.LayoutAlgorithms;
 using QuikGraph;
 
 /*

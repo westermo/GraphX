@@ -1,5 +1,5 @@
 ﻿using System;
-using GraphX.Measure;
+using Westermo.GraphX.Measure;
 using YAXLib;
 using YAXLib.Customization;
 

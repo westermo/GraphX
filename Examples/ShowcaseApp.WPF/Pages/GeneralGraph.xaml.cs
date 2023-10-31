@@ -3,16 +3,16 @@ using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
-using GraphX.Common.Enums;
-using GraphX.Controls;
-using GraphX.Controls.Models;
-using GraphX.Logic.Algorithms.EdgeRouting;
-using GraphX.Logic.Algorithms.LayoutAlgorithms;
+using Westermo.GraphX.Common.Enums;
+using Westermo.GraphX.Controls;
+using Westermo.GraphX.Controls.Models;
+using Westermo.GraphX.Logic.Algorithms.EdgeRouting;
+using Westermo.GraphX.Logic.Algorithms.LayoutAlgorithms;
 using Microsoft.Win32;
 using QuikGraph;
 using ShowcaseApp.WPF.FileSerialization;
 using ShowcaseApp.WPF.Models;
-using Rect = GraphX.Measure.Rect;
+using Rect = Westermo.GraphX.Measure.Rect;
 
 namespace ShowcaseApp.WPF.Pages
 {

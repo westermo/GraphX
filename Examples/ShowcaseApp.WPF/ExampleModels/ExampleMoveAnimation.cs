@@ -1,5 +1,5 @@
 ﻿using System;
-using GraphX.Controls.Animations;
+using Westermo.GraphX.Controls.Animations;
 
 namespace ShowcaseApp.WPF
 {

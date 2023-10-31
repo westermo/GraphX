@@ -1,4 +1,4 @@
-using GraphX.Logic.Models;
+using Westermo.GraphX.Logic.Models;
 using QuikGraph;
 
 namespace SimpleGraph.Models

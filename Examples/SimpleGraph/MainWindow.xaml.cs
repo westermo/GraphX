@@ -1,9 +1,9 @@
 ﻿using System;
 using System.Linq;
 using System.Windows;
-using GraphX.Common.Enums;
-using GraphX.Logic.Algorithms.LayoutAlgorithms;
-using GraphX.Controls;
+using Westermo.GraphX.Common.Enums;
+using Westermo.GraphX.Logic.Algorithms.LayoutAlgorithms;
+using Westermo.GraphX.Controls;
 using SimpleGraph.Models;
 
 /* Some notes about the main objects and types in this example:

@@ -3,14 +3,14 @@ using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
-using GraphX;
-using GraphX.Common;
-using GraphX.Common.Enums;
-using GraphX.Logic.Algorithms.LayoutAlgorithms;
-using GraphX.Logic.Algorithms.LayoutAlgorithms.Grouped;
+using Westermo.GraphX;
+using Westermo.GraphX.Common;
+using Westermo.GraphX.Common.Enums;
+using Westermo.GraphX.Logic.Algorithms.LayoutAlgorithms;
+using Westermo.GraphX.Logic.Algorithms.LayoutAlgorithms.Grouped;
 using QuikGraph;
 using ShowcaseApp.WPF.Models;
-using Rect = GraphX.Measure.Rect;
+using Rect = Westermo.GraphX.Measure.Rect;
 
 namespace ShowcaseApp.WPF.Pages.Mini
 {

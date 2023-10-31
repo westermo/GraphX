@@ -1,5 +1,5 @@
-using GraphX;
-using GraphX.Controls;
+using Westermo.GraphX;
+using Westermo.GraphX.Controls;
 using QuikGraph;
 
 namespace ShowcaseApp.WPF

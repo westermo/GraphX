@@ -5,11 +5,11 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
-using GraphX;
-using GraphX.Common.Enums;
-using GraphX.Controls;
-using GraphX.Controls.Animations;
-using GraphX.Controls.Models;
+using Westermo.GraphX;
+using Westermo.GraphX.Common.Enums;
+using Westermo.GraphX.Controls;
+using Westermo.GraphX.Controls.Animations;
+using Westermo.GraphX.Controls.Models;
 using ShowcaseApp.WPF.Models;
 
 namespace ShowcaseApp.WPF.Pages

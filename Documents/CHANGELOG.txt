@@ -1,6 +1,9 @@
-﻿NOT YET RELEASED
+﻿RELEASE 1.0.0
 - Removed UAP support
 - Converted project to .NET 6
+- Changed identity to Westermo.GraphX
+
+------- Releases as GraphX ------- 
 
 RELEASE 3.0.0
 - Added .NET Core library version
@@ -217,7 +220,7 @@ HIGHLIGHTS:
 	   precious edge endpoint calculations so the edge will overlap with the edge pointer no more. Because of these changes the old logic that utilizes direct Path object in EdgeControl 
 	   template will be removed completely in favor of notable performance improvements.
 	* Now GraphX for WPF requires only .NET Framework 4.0 to build & run. Deprecated all code that required .NET 4.0.3.
-	* Now you can use "http://schemas.panthernet.ru/graphx/" XAML namespace in GraphX for WPF for all its visual content. Additionaly, output filenames for WPF/METRO dlls are both changed to 
+	* Now you can use "https://westermo.com/graphx/" XAML namespace in GraphX for WPF for all its visual content. Additionaly, output filenames for WPF/METRO dlls are both changed to 
 		GraphX.Controls.dll so Post-Build process copies output files to GraphX/Bin folder with distinct filenames reflecting the platform as before.
 	* Performance improvements are always welcome. In this release the whole layout calculation logic has been revisited in terms of both performance and code quality gains. We've also eliminated
 		some redundant layout updates, moved all math & algorithms handling from GraphArea directly to LogicCore under better async implementation, cleaned up ZoomControl logic,
