@@ -1,27 +1,14 @@
-﻿#if WPF
-using System;
+﻿using System;
 using System.ComponentModel;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
 using DefaultEventArgs = System.EventArgs;
-#elif METRO
-using Windows.ApplicationModel;
-using Windows.Foundation;
-using Windows.UI.Xaml;
-using Windows.UI.Xaml.Controls;
-using Windows.UI.Xaml.Data;
-using Windows.UI.Xaml.Media;
-using DefaultEventArgs = System.Object;
-#endif
 using System.Linq;
 using GraphX.Common.Exceptions;
 
 namespace GraphX.Controls
 {
-#if METRO
-    [Bindable]
-#endif
     public class VertexLabelControl : ContentControl, IVertexLabelControl
     {
         internal Rect LastKnownRectSize;
@@ -44,7 +31,7 @@ namespace GraphX.Controls
                 var rt = tg.Children.FirstOrDefault(a => a is RotateTransform);
                 if (rt == null)
                     tg.Children.Add(new RotateTransform {Angle = (double) e.NewValue, CenterX = .5, CenterY = .5});
-                else (rt as RotateTransform).Angle = (double) e.NewValue;
+                else (rt as RotateTransform)!.Angle = (double) e.NewValue;
             }
         }
 
@@ -100,19 +87,14 @@ namespace GraphX.Controls
 
         public VertexLabelControl()
         {
-#if WPF
             if (DesignerProperties.GetIsInDesignMode(this)) return;
-#elif METRO
-            DefaultStyleKey = typeof(VertexLabelControl);
-            if (DesignMode.DesignModeEnabled) return;
-#endif
 
             LayoutUpdated += VertexLabelControl_LayoutUpdated;
             HorizontalAlignment = HorizontalAlignment.Left;
             VerticalAlignment = VerticalAlignment.Top;
         }
 
-        protected virtual VertexControl GetVertexControl(DependencyObject parent)
+        protected virtual VertexControl? GetVertexControl(DependencyObject? parent)
         {
             while (parent != null)
             {
@@ -172,23 +154,15 @@ namespace GraphX.Controls
 
         public void Hide()
         {
-#if WPF
             SetCurrentValue(UIElement.VisibilityProperty, Visibility.Collapsed);
-#else
-            SetValue(UIElement.VisibilityProperty, Visibility.Collapsed);
-#endif
         }
 
         public void Show()
         {
-#if WPF
             SetCurrentValue(UIElement.VisibilityProperty, Visibility.Visible);
-#else
-            SetValue(UIElement.VisibilityProperty, Visibility.Visible);
-#endif
         }
 
-        void VertexLabelControl_LayoutUpdated(object sender, DefaultEventArgs e)
+        void VertexLabelControl_LayoutUpdated(object? sender, DefaultEventArgs e)
         {
             var vc = GetVertexControl(GetParent());
             if (vc == null || !vc.ShowLabel) return;
@@ -197,11 +171,7 @@ namespace GraphX.Controls
 
         protected virtual DependencyObject GetParent()
         {
-#if WPF
             return VisualParent;
-#elif METRO
-            return Parent;
-#endif
         }
     }
 

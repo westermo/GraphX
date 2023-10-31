@@ -2,7 +2,6 @@
 using System.Diagnostics;
 using System.Linq;
 using GraphX.Common.Interfaces;
-#if WPF
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
@@ -11,26 +10,9 @@ using SysRect = System.Windows.Rect;
 using SysSize = System.Windows.Size;
 using RoutedOrCommonArgs = System.EventArgs;
 using DefaultEventArgs = System.EventArgs;
-#elif METRO
-using Windows.ApplicationModel;
-using Windows.UI.Xaml;
-using Windows.UI.Xaml.Controls;
-using Windows.UI.Xaml.Data;
-using Windows.UI.Xaml.Media;
-using GraphX.Measure;
-using Point = Windows.Foundation.Point;
-using SysRect = Windows.Foundation.Rect;
-using SysSize = Windows.Foundation.Size;
-using RoutedOrCommonArgs = Windows.UI.Xaml.RoutedEventArgs;
-using DefaultEventArgs = System.Object;
-#endif
 
 namespace GraphX.Controls
 {
-#if METRO
-    //hack to fix weird METRO error when it can't find this class
-    [Bindable]
-#endif
     public abstract class EdgeLabelControl : ContentControl, IEdgeLabelControl
     {
         
@@ -77,7 +59,7 @@ namespace GraphX.Controls
 
         private static void showlabel_changed(DependencyObject d, DependencyPropertyChangedEventArgs e)
         {
-            (d as EdgeLabelControl)?.EdgeControl.UpdateEdge();
+            (d as EdgeLabelControl)?.EdgeControl?.UpdateEdge();
         }
 
         /// <summary>
@@ -138,7 +120,7 @@ namespace GraphX.Controls
                 ctrl.RenderTransform = new RotateTransform {Angle = (double) e.NewValue, CenterX = .5, CenterY = .5};
             else
             {
-                var rt = (RotateTransform)tg.Children.FirstOrDefault(a => a is RotateTransform);
+                var rt = (RotateTransform?)tg.Children.FirstOrDefault(a => a is RotateTransform);
                 if (rt == null)
                     tg.Children.Add(new RotateTransform {Angle = (double) e.NewValue, CenterX = .5, CenterY = .5});
                 else rt.Angle = (double) e.NewValue;
@@ -160,9 +142,9 @@ namespace GraphX.Controls
             }
         }
 
-        private EdgeControl _edgeControl;
+        private EdgeControl? _edgeControl;
 
-        protected virtual EdgeControl GetEdgeControl(DependencyObject parent)
+        protected virtual EdgeControl? GetEdgeControl(DependencyObject? parent)
         {
             while (parent != null)
             {
@@ -175,21 +157,13 @@ namespace GraphX.Controls
 
         public void Show()
         {
-            if (EdgeControl.IsSelfLooped && !DisplayForSelfLoopedEdges) return;
-#if WPF
+            if (EdgeControl != null && EdgeControl.IsSelfLooped && !DisplayForSelfLoopedEdges) return;
             SetCurrentValue(UIElement.VisibilityProperty, Visibility.Visible);
-#else
-            SetValue(UIElement.VisibilityProperty, Visibility.Visible);
-#endif
         }
 
         public void Hide()
         {
-#if WPF
             SetCurrentValue(UIElement.VisibilityProperty, Visibility.Collapsed);
-#else
-            SetValue(UIElement.VisibilityProperty, Visibility.Collapsed);
-#endif
         }
 
 
@@ -303,12 +277,7 @@ namespace GraphX.Controls
 
             UpdateFinalPosition(centerPoint, desiredSize);
 
-            #if METRO
-            GraphAreaBase.SetX(this, LastKnownRectSize.X, true);
-            GraphAreaBase.SetY(this, LastKnownRectSize.Y, true);
-            #else
             Arrange(LastKnownRectSize);
-            #endif
         }
 
         protected virtual double ApplyLabelHorizontalOffset(double edgeLength, double offset)
@@ -330,24 +299,16 @@ namespace GraphX.Controls
 
         internal SysRect LastKnownRectSize;
 
-        protected EdgeControl EdgeControl => _edgeControl ?? (_edgeControl = GetEdgeControl(GetParent()));
+        protected EdgeControl? EdgeControl => _edgeControl ??= GetEdgeControl(GetParent());
 
         private void SetSelfLoopedSize(Point pt, SysSize idesiredSize)
         {
-#if METRO
-            //assign pt back due to different offset logic
-            pt =
-#endif
-            pt.Offset(-idesiredSize.Width / 2, (EdgeControl.Source.DesiredSize.Height * .5) + 2 + (idesiredSize.Height * .5));
+            pt.Offset(-idesiredSize.Width / 2, (EdgeControl!.Source!.DesiredSize.Height * .5) + 2 + (idesiredSize.Height * .5));
             LastKnownRectSize = new SysRect(pt.X, pt.Y, idesiredSize.Width, idesiredSize.Height);
         }
 
         private void UpdateFinalPosition(Point centerPoint, SysSize desiredSize)
         {
-#if METRO
-            if (double.IsNaN(centerPoint.X)) centerPoint.X = 0;
-            if (double.IsNaN(centerPoint.Y)) centerPoint.Y = 0;
-#endif
             LastKnownRectSize = new SysRect(centerPoint.X - desiredSize.Width / 2, centerPoint.Y - desiredSize.Height / 2, desiredSize.Width, desiredSize.Height);
         }
 
@@ -365,19 +326,17 @@ namespace GraphX.Controls
         public void SetSize(SysRect size)
         {
             LastKnownRectSize = size;
-#if WPF
             //TODO check if we can remove this in WPF
             Arrange(LastKnownRectSize);
-#endif
         }
 
-        void EdgeLabelControl_Loaded(object sender, RoutedOrCommonArgs e)
+        void EdgeLabelControl_Loaded(object? sender, RoutedOrCommonArgs e)
         {
-            if (EdgeControl.IsSelfLooped && !DisplayForSelfLoopedEdges) Hide();
+            if (EdgeControl is {IsSelfLooped: true} && !DisplayForSelfLoopedEdges) Hide();
             else Show();
         }
 
-        void EdgeLabelControl_LayoutUpdated(object sender, DefaultEventArgs e)
+        void EdgeLabelControl_LayoutUpdated(object? sender, DefaultEventArgs e)
         {
             if (EdgeControl == null || !ShowLabel) return;
             if (LastKnownRectSize == SysRect.Empty || double.IsNaN(LastKnownRectSize.Width) || LastKnownRectSize.Width == 0)
@@ -390,14 +349,8 @@ namespace GraphX.Controls
 
         public EdgeLabelControl()
         {
-#if WPF
             if (DesignerProperties.GetIsInDesignMode(this)) return;
             Initialized += EdgeLabelControl_Loaded;
-#elif METRO
-            DefaultStyleKey = typeof(EdgeLabelControl);
-            if (DesignMode.DesignModeEnabled) return;
-            Loaded += EdgeLabelControl_Loaded;
-#endif
             RenderTransformOrigin = new Point(.5, .5);
             LayoutUpdated += EdgeLabelControl_LayoutUpdated;
             HorizontalAlignment = HorizontalAlignment.Left;
@@ -416,11 +369,7 @@ namespace GraphX.Controls
 
         DependencyObject GetParent()
         {
-#if WPF
             return VisualParent;
-#elif METRO
-            return Parent;
-#endif
         }
 
         public void Dispose()

@@ -7,11 +7,7 @@ using GraphX.Common.Exceptions;
 using GraphX.Common.Interfaces;
 using GraphX.Common.Models;
 using QuikGraph;
-#if WPF
 using System.Windows;
-#elif METRO
-using Windows.UI.Xaml;
-#endif
 
 namespace GraphX.Controls.Models
 {
@@ -151,7 +147,7 @@ namespace GraphX.Controls.Models
         /// Get all states from the storage
         /// </summary>
         /// <param name="id">Unique state id</param>
-        public virtual GraphState<TVertex, TEdge, TGraph> GetState(string id)
+        public virtual GraphState<TVertex, TEdge, TGraph>? GetState(string id)
         {
             return ContainsState(id) ? _states[id] : null;
         }
@@ -160,7 +156,7 @@ namespace GraphX.Controls.Models
         {
             _states.ForEach(a=> a.Value.Dispose());
             _states.Clear();
-            _area = null;
+            _area = null!;
         }
     }
 }

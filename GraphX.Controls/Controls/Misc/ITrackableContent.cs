@@ -1,8 +1,4 @@
-﻿#if WPF
-using System.Windows;
-#elif METRO
-using Windows.Foundation;
-#endif
+﻿using System.Windows;
 using GraphX.Controls.Models;
 
 namespace GraphX.Controls
@@ -15,7 +11,7 @@ namespace GraphX.Controls
         /// <summary>
         /// Rises when content size changed
         /// </summary>
-        event ContentSizeChangedEventHandler ContentSizeChanged;
+        event ContentSizeChangedEventHandler? ContentSizeChanged;
         /// <summary>
         /// Gets actual content rectangle size
         /// </summary>
