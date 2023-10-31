@@ -2,9 +2,9 @@
 using System.Linq;
 using System.Windows;
 using System.Windows.Input;
-using GraphX.Common.Enums;
-using GraphX.Controls;
-using GraphX.Controls.Models;
+using Westermo.GraphX.Common.Enums;
+using Westermo.GraphX.Controls;
+using Westermo.GraphX.Controls.Models;
 using ShowcaseApp.WPF.Models;
 
 namespace ShowcaseApp.WPF.Pages

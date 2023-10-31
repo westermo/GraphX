@@ -3,9 +3,9 @@ using System.ComponentModel;
 using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
-using GraphX.Controls;
-using GraphX.Controls.Models;
-using GraphX.Common.Enums;
+using Westermo.GraphX.Controls;
+using Westermo.GraphX.Controls.Models;
+using Westermo.GraphX.Common.Enums;
 using ShowcaseApp.WPF.Models;
 
 namespace ShowcaseApp.WPF.Pages.Mini

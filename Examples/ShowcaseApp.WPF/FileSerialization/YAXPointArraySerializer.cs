@@ -2,7 +2,7 @@
 using System.Linq;
 using System.Text;
 using System.Xml.Linq;
-using GraphX.Measure;
+using Westermo.GraphX.Measure;
 using YAXLib;
 using YAXLib.Customization;
 

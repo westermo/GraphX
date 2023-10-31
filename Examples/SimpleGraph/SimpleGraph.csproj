@@ -8,9 +8,9 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\..\GraphX.Controls\GraphX.Controls.csproj" />
-        <ProjectReference Include="..\..\GraphX.Standard.Common\GraphX.Standard.Common.csproj" />
-        <ProjectReference Include="..\..\GraphX.Standard.Logic\GraphX.Standard.Logic.csproj" />
+        <ProjectReference Include="..\..\Westermo.GraphX.Controls\Westermo.GraphX.Controls.csproj" />
+        <ProjectReference Include="..\..\Westermo.GraphX.Common\Westermo.GraphX.Common.csproj" />
+        <ProjectReference Include="..\..\Westermo.GraphX.Logic\Westermo.GraphX.Logic.csproj" />
     </ItemGroup>
 
     <ItemGroup>

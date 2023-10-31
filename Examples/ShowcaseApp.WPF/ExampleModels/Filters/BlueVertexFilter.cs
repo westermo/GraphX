@@ -1,4 +1,4 @@
-﻿using GraphX.Common.Interfaces;
+﻿using Westermo.GraphX.Common.Interfaces;
 using QuikGraph;
 
 namespace ShowcaseApp.WPF.Filters

@@ -1,0 +1,18 @@
+using System.Windows.Input;
+
+namespace Westermo.GraphX.Controls.Models
+{
+    public sealed class VertexSelectedEventArgs : System.EventArgs
+    {
+        public VertexControl VertexControl { get; private set; }
+        public MouseButtonEventArgs? MouseArgs { get; private set; }
+        public ModifierKeys Modifiers { get; private set; }
+
+        public VertexSelectedEventArgs(VertexControl vc, MouseEventArgs e, ModifierKeys keys)
+        {
+            VertexControl = vc;
+            MouseArgs = e as MouseButtonEventArgs;
+            Modifiers = keys;
+        }
+    }
+}

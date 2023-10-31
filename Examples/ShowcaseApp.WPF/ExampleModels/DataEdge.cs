@@ -1,8 +1,8 @@
 ﻿using System.ComponentModel;
-using GraphX;
+using Westermo.GraphX;
 using System;
-using GraphX.Measure;
-using GraphX.Common.Models;
+using Westermo.GraphX.Measure;
+using Westermo.GraphX.Common.Models;
 using ShowcaseApp.WPF.FileSerialization;
 using YAXLib.Attributes;
 

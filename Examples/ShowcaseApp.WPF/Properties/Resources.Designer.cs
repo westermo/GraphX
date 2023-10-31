@@ -63,7 +63,7 @@ namespace ShowcaseApp.WPF.Properties {
         /// <summary>
         ///   Looks up a localized string similar to &lt;ResourceDictionary xmlns=&quot;http://schemas.microsoft.com/winfx/2006/xaml/presentation&quot;
         ///                    xmlns:x=&quot;http://schemas.microsoft.com/winfx/2006/xaml&quot;
-        ///                    xmlns:controls=&quot;http://schemas.panthernet.ru/graphx/&quot;
+        ///                    xmlns:controls=&quot;https://westermo.com/graphx/&quot;
         ///                    &gt;
         ///    
         ///    &lt;Style TargetType=&quot;{x:Type controls:VertexControl}&quot;&gt;
@@ -94,7 +94,7 @@ namespace ShowcaseApp.WPF.Properties {
         ///             xmlns:mc=&quot;http://schemas.openxmlformats.org/markup-compatibility/2006&quot; 
         ///             xmlns:d=&quot;http://schemas.microsoft.com/expression/blend/2008&quot;
         ///             xmlns:wpf=&quot;clr-namespace:ShowcaseApp.WPF&quot;
-        ///             xmlns:controls=&quot;http://schemas.panthernet.ru/graphx/&quot;
+        ///             xmlns:controls=&quot;https://westermo.com/graphx/&quot;
         ///              [rest of string was truncated]&quot;;.
         /// </summary>
         internal static string EdgesParallel {
@@ -129,7 +129,7 @@ namespace ShowcaseApp.WPF.Properties {
         ///   Looks up a localized string similar to &lt;UserControl x:Class=&quot;ShowcaseApp.WPF.Pages.Mini.LayoutVCP&quot;
         ///             xmlns=&quot;http://schemas.microsoft.com/winfx/2006/xaml/presentation&quot;
         ///             xmlns:x=&quot;http://schemas.microsoft.com/winfx/2006/xaml&quot;
-        ///             xmlns:controls=&quot;http://schemas.panthernet.ru/graphx/&quot;
+        ///             xmlns:controls=&quot;https://westermo.com/graphx/&quot;
         ///             xmlns:d=&quot;http://schemas.microsoft.com/expression/blend/2008&quot;
         ///             xmlns:mc=&quot;http://schemas.openxmlformats.org/markup-compatibility/2006&quot;
         ///             xmlns:models=&quot;clr-namespace:ShowcaseApp.WPF.Models&quot;
@@ -144,7 +144,7 @@ namespace ShowcaseApp.WPF.Properties {
         /// <summary>
         ///   Looks up a localized string similar to &lt;ResourceDictionary xmlns=&quot;http://schemas.microsoft.com/winfx/2006/xaml/presentation&quot;
         ///                    xmlns:x=&quot;http://schemas.microsoft.com/winfx/2006/xaml&quot;
-        ///                    xmlns:controls=&quot;http://schemas.panthernet.ru/graphx/&quot;&gt;
+        ///                    xmlns:controls=&quot;https://westermo.com/graphx/&quot;&gt;
         ///
         ///    &lt;Style x:Shared=&quot;False&quot; TargetType=&quot;controls:StaticVertexConnectionPoint&quot;&gt;
         ///        &lt;Setter Property=&quot;Shape&quot; Value=&quot;Circle&quot; /&gt;

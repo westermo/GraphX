@@ -7,18 +7,18 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
 using System.Windows.Shapes;
-using GraphX;
-using GraphX.Controls;
-using GraphX.Controls.Animations;
-using GraphX.Controls.Models;
-using GraphX.Common;
-using GraphX.Common.Enums;
-using GraphX.Logic.Algorithms.LayoutAlgorithms;
-using GraphX.Logic.Algorithms.LayoutAlgorithms.Grouped;
-using GraphX.Logic.Algorithms.OverlapRemoval;
+using Westermo.GraphX;
+using Westermo.GraphX.Controls;
+using Westermo.GraphX.Controls.Animations;
+using Westermo.GraphX.Controls.Models;
+using Westermo.GraphX.Common;
+using Westermo.GraphX.Common.Enums;
+using Westermo.GraphX.Logic.Algorithms.LayoutAlgorithms;
+using Westermo.GraphX.Logic.Algorithms.LayoutAlgorithms.Grouped;
+using Westermo.GraphX.Logic.Algorithms.OverlapRemoval;
 using QuikGraph;
 using ShowcaseApp.WPF.Models;
-using Rect = GraphX.Measure.Rect;
+using Rect = Westermo.GraphX.Measure.Rect;
 
 namespace ShowcaseApp.WPF.Pages
 {

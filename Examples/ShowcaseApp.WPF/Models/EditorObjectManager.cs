@@ -2,9 +2,9 @@
 using System.Windows;
 using System.Windows.Media;
 using System.Windows.Shapes;
-using GraphX;
-using GraphX.Controls;
-using GraphX.Controls.Models;
+using Westermo.GraphX;
+using Westermo.GraphX.Controls;
+using Westermo.GraphX.Controls.Models;
 
 namespace ShowcaseApp.WPF.Models
 {
