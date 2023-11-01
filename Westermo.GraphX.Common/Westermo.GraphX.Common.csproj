@@ -10,5 +10,18 @@
   <ItemGroup>
     <PackageReference Include="QuikGraph" Version="2.2.0" />
   </ItemGroup>
+  
+  <!-- NuGet related -->
+  <PropertyGroup>
+    <AssemblyTitle>Westermo GraphX Controls Library (Support library)</AssemblyTitle>
+    <Description>Support library for Westermo.GraphX.Controls</Description>
+  </PropertyGroup>
+  
+  <ItemGroup>
+    <PackageReference Include="DotNet.ReproducibleBuilds" Version="1.1.1">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
+    </PackageReference>
+  </ItemGroup>
 
 </Project>

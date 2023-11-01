@@ -1,0 +1,24 @@
+﻿<Project>
+
+    <PropertyGroup>
+        <EnablePackageValidation>true</EnablePackageValidation>
+        <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
+        <PackageIconUrl>icon.png</PackageIconUrl>
+        <PackageReadmeFile>README.md</PackageReadmeFile>
+        <PackageProjectUrl>https://github.com/westermo/graphx</PackageProjectUrl>
+        <PackageTags>wpf, controls-library, graphing</PackageTags>
+    </PropertyGroup>
+    
+    <PropertyGroup>
+        <CurrentYear>$([System.DateTime]::Now.ToString(yyyy))</CurrentYear>
+        <Company>Westermo Network Technologies AB</Company>
+        <Copyright>Copyright © Westermo Network Technologies AB $(CurrentYear), and Alexander Smirnov (derivative work of https://github.com/panthernet/GraphX)</Copyright>
+    </PropertyGroup>
+    
+    <ItemGroup>
+        <None Include="$(ProjectDir)../README.md" Link="README.md" Pack="true" PackagePath="" Condition="Exists('$(ProjectDir)../README.md')"/>
+        <None Include="$(ProjectDir)../icon.png" Link="icon.png" Pack="true" PackagePath="" Condition="Exists('$(ProjectDir)../icon.png')"/>
+        <None Include="$(ProjectDir)../LICENSE" Link="LICENSE" Pack="true" PackagePath="" Condition="Exists('$(ProjectDir)../LICENSE')"/>
+    </ItemGroup>
+
+</Project>

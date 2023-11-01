@@ -7,10 +7,6 @@
         <Nullable>enable</Nullable>
         <RootNamespace>Westermo.GraphX.Controls</RootNamespace>
     </PropertyGroup>
-    
-    <PropertyGroup>
-        <AssemblyTitle>GraphX Controls Library</AssemblyTitle>
-    </PropertyGroup>
 
     <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
         <DefineConstants>$(DefineConstants);TRACE;WPF</DefineConstants>
@@ -26,5 +22,17 @@
 
     <ItemGroup>
       <Resource Include="Images\help_black.png" />
+    </ItemGroup>
+
+    <PropertyGroup>
+        <AssemblyTitle>Westermo GraphX Controls Library</AssemblyTitle>
+    </PropertyGroup>
+
+    <!-- NuGet related -->
+    <ItemGroup>
+        <PackageReference Include="DotNet.ReproducibleBuilds" Version="1.1.1">
+            <PrivateAssets>all</PrivateAssets>
+            <IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
+        </PackageReference>
     </ItemGroup>
 </Project>
