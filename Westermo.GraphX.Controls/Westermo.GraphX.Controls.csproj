@@ -26,13 +26,7 @@
 
     <PropertyGroup>
         <AssemblyTitle>Westermo GraphX Controls Library</AssemblyTitle>
+        <Description>WPF Controls Library</Description>
     </PropertyGroup>
 
-    <!-- NuGet related -->
-    <ItemGroup>
-        <PackageReference Include="DotNet.ReproducibleBuilds" Version="1.1.1">
-            <PrivateAssets>all</PrivateAssets>
-            <IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
-        </PackageReference>
-    </ItemGroup>
 </Project>
