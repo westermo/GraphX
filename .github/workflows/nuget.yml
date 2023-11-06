@@ -28,9 +28,9 @@ jobs:
   create_nuget:
     runs-on: windows-latest
     env:
-        COMMIT_SHA: ${{ env.GITHUB_SHA || github.event.pull_request.head.sha }}
-        FILE_VERSION: ${{ env.GITHUB_REF || '0.0.0.0' }}
-        INFORMAL_VERSION: ${{ env.GITHUB_REF || 'NOT SET' }}
+        COMMIT_SHA: ${{ github.sha || github.event.pull_request.head.sha }}
+        FILE_VERSION: ${{ github.ref || '0.0.0.0' }}
+        INFORMAL_VERSION: ${{ github.ref || 'NOT SET' }}
     steps:
       - uses: actions/checkout@v3
       - name: Setup .NET
