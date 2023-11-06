@@ -34,14 +34,14 @@ jobs:
       - name: Setup .NET
         uses: actions/setup-dotnet@v3
       - run: |
-          If (('${{ github.event_name }}' -ne 'release') -and ('1.0.0-alpha1' -match '^(?<version>\d+\.\d+\.\d+)')) { 
-            Add-Content -Path $Env:GITHUB_ENV -Value "VERSION=0.0.0"
-            Add-Content -Path $Env:GITHUB_ENV -Value "FILE_VERSION=0.0.0"
-            Add-Content -Path $Env:GITHUB_ENV -Value "INFORMAL_VERSION=UNRELEASED"
-          } else {
+          If (('${{ github.event_name }}' -ne 'release') -and ('1.0.0-alpha1' -match '^(?<version>\d+\.\d+\.\d+)')) {
             Add-Content -Path $Env:GITHUB_ENV -Value "VERSION=$($Matches.version)"
             Add-Content -Path $Env:GITHUB_ENV -Value "FILE_VERSION=$($Matches.version).0"
             Add-Content -Path $Env:GITHUB_ENV -Value "INFORMAL_VERSION=${{ github.ref_name }}"
+          } else {
+            Add-Content -Path $Env:GITHUB_ENV -Value "VERSION=0.0.0"
+            Add-Content -Path $Env:GITHUB_ENV -Value "FILE_VERSION=0.0.0.0"
+            Add-Content -Path $Env:GITHUB_ENV -Value "INFORMAL_VERSION=UNRELEASED"
           } 
         name: "Set package version meta data"
       - run: |
