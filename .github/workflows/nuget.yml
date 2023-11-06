@@ -34,7 +34,7 @@ jobs:
       - name: Setup .NET
         uses: actions/setup-dotnet@v3
       - run: |
-          If (('${{ github.event_name }}' -ne 'release') -and ('1.0.0-alpha1' -match '^(?<version>\d+\.\d+\.\d+)')) {
+          If (('${{ github.event_name }}' -eq 'release') -and ('${{ github.ref_name }}' -match '^(?<version>\d+\.\d+\.\d+)')) {
             Add-Content -Path $Env:GITHUB_ENV -Value "VERSION=$($Matches.version)"
             Add-Content -Path $Env:GITHUB_ENV -Value "FILE_VERSION=$($Matches.version).0"
             Add-Content -Path $Env:GITHUB_ENV -Value "INFORMAL_VERSION=${{ github.ref_name }}"
