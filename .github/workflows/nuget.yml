@@ -31,7 +31,7 @@ jobs:
       - uses: actions/checkout@v3
       - name: Setup .NET
         uses: actions/setup-dotnet@v3
-      - run: dotnet pack --configuration Release --output ${{ env.NuGetDirectory }} --property:RepositoryCommit=${{ env.GITHUB_SHA }} --property:InformationalVersion=${{ env.GITHUB_REF }} --property:AssemblyVersion=${{ env.GITHUB_REF }} --property:FileVersion=${{ env.GITHUB_REF }}
+      - run: dotnet pack --configuration Release --output ${{ env.NuGetDirectory }} --property:RepositoryCommit=${{ env.GITHUB_SHA || github.event.pull_request.head.sha }} --property:InformationalVersion=${{ env.GITHUB_REF }} --property:AssemblyVersion=${{ env.GITHUB_REF }} --property:FileVersion=${{ env.GITHUB_REF }}
       - uses: actions/upload-artifact@v3
         with:
           name: nuget
