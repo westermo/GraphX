@@ -37,10 +37,10 @@ jobs:
         uses: actions/setup-dotnet@v3
       - run: Add-Content -Path $Env:GITHUB_ENV -Value "FILE_VERSION=${{ github.ref_name }}"
         name: "Set file version meta data"
-        if: github.event_name != 'release'
+        if: github.event_name == 'release'
       - run: Add-Content -Path $Env:GITHUB_ENV -Value "INFORMAL_VERSION=${{ github.ref_name }}"
         name: "Set informal version meta data"
-        if: github.event_name != 'release'
+        if: github.event_name == 'release'
       - run: |
           dotnet pack --configuration Release --output ${{ env.NuGetDirectory }} --property:RepositoryCommit=${{ env.COMMIT_SHA }} --property:InformationalVersion=${{ env.INFORMAL_VERSION }} --property:AssemblyVersion=${{ env.FILE_VERSION }} --property:FileVersion=${{ env.FILE_VERSION }}
       - uses: actions/upload-artifact@v3
