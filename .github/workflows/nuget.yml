@@ -36,12 +36,7 @@ jobs:
       - name: Setup .NET
         uses: actions/setup-dotnet@v3
       - run: |
-          dotnet pack --configuration Release `
-            --output ${{ env.NuGetDirectory }} `
-            --property:RepositoryCommit=${{ env.COMMIT_SHA }} `
-            --property:InformationalVersion=${{ env.INFORMAL_VERSION }} `
-            --property:AssemblyVersion=${{ env.FILE_VERSION }} `
-            --property:FileVersion=${{ env.FILE_VERSION }}
+          dotnet pack --configuration Release --output ${{ env.NuGetDirectory }} --property:RepositoryCommit=${{ env.COMMIT_SHA }} --property:InformationalVersion=${{ env.INFORMAL_VERSION }} --property:AssemblyVersion=${{ env.FILE_VERSION }} --property:FileVersion=${{ env.FILE_VERSION }}
       - uses: actions/upload-artifact@v3
         with:
           name: nuget
