@@ -35,7 +35,7 @@ jobs:
       - uses: actions/checkout@v3
       - name: Setup .NET
         uses: actions/setup-dotnet@v3
-      - run: Add-Content -Path $Env:GITHUB_ENV "${{ github.ref_name }}"
+      - run: Add-Content -Path $Env:GITHUB_ENV -Value "${{ github.ref_name }}"
         name: "Set version meta data"
         if: github.event_name != 'release'
       - run: |
