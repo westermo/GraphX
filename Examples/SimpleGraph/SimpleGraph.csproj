@@ -5,6 +5,11 @@
         <TargetFramework>net6.0-windows</TargetFramework>
         <UseWPF>true</UseWPF>
         <RootNamespace>SimpleGraph</RootNamespace>
+        <IsPackable>false</IsPackable>
+    </PropertyGroup>
+
+    <PropertyGroup>
+        <AssemblyTitle>Westermo GraphX SimpleGraph</AssemblyTitle>
     </PropertyGroup>
 
     <ItemGroup>

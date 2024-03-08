@@ -11,4 +11,10 @@
     <ProjectReference Include="..\Westermo.GraphX.Common\Westermo.GraphX.Common.csproj" />
   </ItemGroup>
 
+  <!-- NuGet related -->
+  <PropertyGroup>
+    <AssemblyTitle>Westermo GraphX Controls Library (Support library)</AssemblyTitle>
+    <Description>Support library for Westermo.GraphX.Controls</Description>
+  </PropertyGroup>
+
 </Project>
