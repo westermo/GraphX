@@ -103,7 +103,7 @@ namespace Westermo.GraphX.Controls
                     return false;
 
                 /* select point with zero code */
-                sides code;
+                Sides code;
                 Point c; /* one of the points */
                 if (!codeA.IsInside())
                 {
@@ -177,7 +177,7 @@ namespace Westermo.GraphX.Controls
                     return -1;
                 }
 
-                sides code;
+                Sides code;
                 Point c; 
                 if (!codeA.IsInside())
                 {
@@ -226,7 +226,7 @@ namespace Westermo.GraphX.Controls
             return 0;
         }
 
-        public sealed class sides
+        public sealed class Sides
         {
             public bool Left;
             public bool Right;
@@ -238,16 +238,16 @@ namespace Westermo.GraphX.Controls
                 return Left == false && Right == false && Top == false && Bottom == false;
             }
 
-            public bool SameSide(sides o)
+            public bool SameSide(Sides o)
             {
                 return (Left && o.Left) || (Right && o.Right) || (Top && o.Top)
                     || (Bottom && o.Bottom);
             }
         }
 
-        public static sides GetIntersectionData(Rect r, Point p)
+        public static Sides GetIntersectionData(Rect r, Point p)
         {
-            return new sides() { Left = p.X < r.Left, Right = p.X > r.Right, Bottom = p.Y > r.Bottom, Top = p.Y < r.Top };
+            return new Sides() { Left = p.X < r.Left, Right = p.X > r.Right, Bottom = p.Y > r.Bottom, Top = p.Y < r.Top };
         }
 
         public static double GetDistance(Point a, Point b)
