@@ -194,11 +194,13 @@ namespace Westermo.GraphX.Logic.Algorithms.LayoutAlgorithms
 			return vertex;
 		}
 
+#pragma warning disable CS0414 // Field is assigned but its value is never used
 		private class ISOMData
 		{
 			public Vector Force = new Vector();
 			public bool Visited;
 			public double Distance;
 		}
+#pragma warning restore CS0414 // Field is assigned but its value is never used
 	}
 }
