@@ -6,7 +6,7 @@ namespace ShowcaseApp.WPF.Models
 {
     public static class ImageLoader
     {
-        private static readonly List<BitmapImage> Images = new List<BitmapImage>();
+        private static readonly List<BitmapImage> Images = [];
 
         static ImageLoader()
         {

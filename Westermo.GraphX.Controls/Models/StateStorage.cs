@@ -11,19 +11,13 @@ using System.Windows;
 
 namespace Westermo.GraphX.Controls.Models
 {
-    public class StateStorage<TVertex, TEdge, TGraph>: IDisposable
+    public class StateStorage<TVertex, TEdge, TGraph>(GraphArea<TVertex, TEdge, TGraph> area) : IDisposable
         where TEdge : class, IGraphXEdge<TVertex>
-        where TVertex: class, IGraphXVertex
-        where TGraph: class, IMutableBidirectionalGraph<TVertex, TEdge>
+        where TVertex : class, IGraphXVertex
+        where TGraph : class, IMutableBidirectionalGraph<TVertex, TEdge>
     {
-        private readonly Dictionary<string, GraphState<TVertex, TEdge, TGraph>> _states;
-        private GraphArea<TVertex, TEdge, TGraph> _area;
-
-        public StateStorage(GraphArea<TVertex, TEdge, TGraph> area)
-        {
-            _area = area;
-            _states = new Dictionary<string, GraphState<TVertex, TEdge, TGraph>>();
-        }
+        private readonly Dictionary<string, GraphState<TVertex, TEdge, TGraph>> _states = [];
+        private GraphArea<TVertex, TEdge, TGraph> _area = area;
 
         /// <summary>
         /// Returns true if state with supplied ID exists in the current states collection
@@ -75,7 +69,7 @@ namespace Westermo.GraphX.Controls.Models
         public virtual void ImportState(string key, GraphState<TVertex, TEdge, TGraph> state)
         {
             if (ContainsState(key))
-                throw new GX_ConsistencyException(string.Format("Graph state {0} already exist in state storage", key));
+                throw new GX_ConsistencyException($"Graph state {key} already exist in state storage");
 
             //if(!unsafeImport && (_area.LogicCore == null || _area.LogicCore.Graph == null || _area.LogicCore.Graph != state.Graph))
            //     throw new GX_ConsistencyException("Can't validate that imported graph state belong to the target area Graph! You can try to import the state with unsafeImport parameter set to True.");
@@ -91,27 +85,27 @@ namespace Westermo.GraphX.Controls.Models
             if (_area.LogicCore == null)
                 throw new GX_InvalidDataException("GraphArea.LogicCore -> Not initialized!");
 
-            if (!_states.ContainsKey(id))
+            if (!_states.TryGetValue(id, out GraphState<TVertex, TEdge, TGraph>? value))
             {
-                Debug.WriteLine(string.Format("LoadState() -> State id {0} not found! Skipping...", id));
+                Debug.WriteLine($"LoadState() -> State id {id} not found! Skipping...");
                 return;
             }
 
            // _area.RemoveAllVertices();
            // _area.RemoveAllEdges();
             //One action: clear all, preload vertices, assign Graph property
-            _area.PreloadVertexes(_states[id].Graph, true, true);
-            _area.LogicCore.Graph = _states[id].Graph;
-            _area.LogicCore.AlgorithmStorage = _states[id].AlgorithmStorage;
+            _area.PreloadVertexes(value.Graph, true, true);
+            _area.LogicCore.Graph = value.Graph;
+            _area.LogicCore.AlgorithmStorage = value.AlgorithmStorage;
 
             //setup vertex positions
-            foreach (var item in _states[id].VertexPositions)
+            foreach (var item in value.VertexPositions)
             {
                 _area.VertexList[item.Key].SetPosition(item.Value.X, item.Value.Y);
                 _area.VertexList[item.Key].SetCurrentValue(GraphAreaBase.PositioningCompleteProperty, true);
             }
             //setup visible edges
-            foreach (var item in _states[id].VisibleEdges)
+            foreach (var item in value.VisibleEdges)
             {
                var edgectrl =  _area.ControlFactory.CreateEdgeControl(_area.VertexList[item.Source], _area.VertexList[item.Target],
                                                        item);

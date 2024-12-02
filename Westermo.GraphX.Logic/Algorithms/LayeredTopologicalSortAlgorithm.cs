@@ -12,7 +12,7 @@ namespace Westermo.GraphX.Logic.Algorithms
 	{
 		#region Private values
 		private readonly IDictionary<TVertex, int> _layerIndices = new Dictionary<TVertex, int>(); //the index of the layer where the vertex belongs to
-		private readonly List<IList<TVertex>> _layers = new List<IList<TVertex>>(); //the list of the vertices in the layers
+		private readonly List<IList<TVertex>> _layers = []; //the list of the vertices in the layers
 		private int _layer; //gives the index of the actual layer
 		private readonly IMutableBidirectionalGraph<TVertex, TEdge> _tmpGraph;
 		#endregion
@@ -21,26 +21,18 @@ namespace Westermo.GraphX.Logic.Algorithms
 		/// <summary>
 		/// This dictionary contains the layer-index for every vertices.
 		/// </summary>
-		public IDictionary<TVertex, int> LayerIndices
-		{
-			get { return _layerIndices; }
-		}
+		public IDictionary<TVertex, int> LayerIndices => _layerIndices;
 
 		/// <summary>
 		/// The count of the layers in the graph.
 		/// </summary>
-		public int LayerCount
-		{
-			get { return _layer; }
-		}
+		public int LayerCount => _layer;
 
 		/// <summary>
 		/// The vertices grouped by their LayerIndex.
 		/// </summary>
-		public IList<IList<TVertex>> Layers
-		{
-			get { return _layers; }
-		}
+		public IList<IList<TVertex>> Layers => _layers;
+
 		#endregion
 
 		public delegate void LayerFinishedDelegate( object sender, LayeredTopologicalSortEventArgs e );
@@ -92,8 +84,8 @@ namespace Westermo.GraphX.Logic.Algorithms
 				                 	} );
 
 				//prepare for the next layer
-				sources = newSources.ToList();
-				newSources = new HashSet<TVertex>();
+				sources = [.. newSources];
+				newSources = [];
 			}
 
 
@@ -111,8 +103,7 @@ namespace Westermo.GraphX.Logic.Algorithms
 
 		protected void OnLayerFinished( LayeredTopologicalSortEventArgs args )
 		{
-			if ( LayerFinished != null )
-				LayerFinished( this, args );
+			LayerFinished?.Invoke(this, args);
 		}
 
 		public class LayeredTopologicalSortEventArgs : EventArgs

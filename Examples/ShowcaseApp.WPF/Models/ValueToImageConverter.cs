@@ -2,9 +2,8 @@
 using System.Globalization;
 using System.Windows.Data;
 using System.Windows.Media;
-using ShowcaseApp.WPF.Models;
 
-namespace ShowcaseApp.WPF
+namespace ShowcaseApp.WPF.Models
 {
     
     public sealed class ValueToImageConverter : IValueConverter

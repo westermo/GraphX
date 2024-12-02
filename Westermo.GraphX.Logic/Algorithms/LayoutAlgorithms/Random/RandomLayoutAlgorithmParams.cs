@@ -7,11 +7,6 @@ namespace Westermo.GraphX.Logic.Algorithms.LayoutAlgorithms
         /// <summary>
         /// Gets or sets layout bounds 
         /// </summary>
-        public Rect Bounds { get; set; }
-
-        public RandomLayoutAlgorithmParams()
-        {
-            Bounds = new Rect(0, 0, 2000, 2000);
-        }
+        public Rect Bounds { get; set; } = new(0, 0, 2000, 2000);
     }
 }

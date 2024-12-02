@@ -17,7 +17,7 @@ namespace ShowcaseApp.WPF.Pages.Mini
     /// <summary>
     /// Interaction logic for LayoutVCP.xaml
     /// </summary>
-    public partial class LayoutGrouped : UserControl
+    public partial class LayoutGrouped
     {
         public LayoutGrouped()
         {
@@ -27,7 +27,7 @@ namespace ShowcaseApp.WPF.Pages.Mini
             graphArea.SideExpansionSize = new Size(80, 80);
         }
 
-        void ControlLoaded(object sender, RoutedEventArgs e)
+        private void ControlLoaded(object sender, RoutedEventArgs e)
         {
             GenerateGraph();
         }
@@ -45,7 +45,7 @@ namespace ShowcaseApp.WPF.Pages.Mini
             //generate group params
             var prms = new List<AlgorithmGroupParameters<DataVertex, DataEdge>>
             {
-                new AlgorithmGroupParameters<DataVertex, DataEdge>
+                new()
                 {
                     GroupId = 1,
                     LayoutAlgorithm =
@@ -53,7 +53,7 @@ namespace ShowcaseApp.WPF.Pages.Mini
                             new RandomLayoutAlgorithmParams {Bounds = new Rect(10, 10, 490, 490)}),
                     
                 },
-                new AlgorithmGroupParameters<DataVertex, DataEdge>
+                new()
                 {
                     GroupId = 2,
                     LayoutAlgorithm =
@@ -87,8 +87,8 @@ namespace ShowcaseApp.WPF.Pages.Mini
             zoomControl.ZoomToFill();
         }
 
-        private double _headerHeight = 30;
-        private double _groupInnerPadding = 20;
+        private readonly double _headerHeight = 30;
+        private readonly double _groupInnerPadding = 20;
 
         private Border GenerateGroupBorder(AlgorithmGroupParameters<DataVertex, DataEdge> prms)
         {
@@ -109,7 +109,7 @@ namespace ShowcaseApp.WPF.Pages.Mini
                     Height = _headerHeight,
                     Child = new TextBlock
                     {
-                        Text = string.Format("Group {0}", prms.GroupId),
+                        Text = $"Group {prms.GroupId}",
                         VerticalAlignment = VerticalAlignment.Center,
                         HorizontalAlignment = HorizontalAlignment.Center,
                         Foreground = Brushes.White,

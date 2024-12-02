@@ -11,8 +11,8 @@ namespace Westermo.GraphX.Controls.Animations
             Duration = duration;
         }
 
-        int _maxCount;
-        int _counter;
+        private int _maxCount;
+        private int _counter;
 
         public override void Cleanup()
         {
@@ -35,7 +35,7 @@ namespace Westermo.GraphX.Controls.Animations
                     Duration,
                     FillBehavior.HoldEnd);
                 Timeline.SetDesiredFrameRate(animationX, 30);
-                animationX.Completed += (s, e) =>
+                animationX.Completed += (_, _) =>
                 {
                     control.BeginAnimation(GraphAreaBase.XProperty, null);
                     control.SetValue(GraphAreaBase.XProperty, item.Value.X);
@@ -46,7 +46,7 @@ namespace Westermo.GraphX.Controls.Animations
 
 
                 from = GraphAreaBase.GetY(control);
-                from = (double.IsNaN(from) ? 0.0 : from);
+                from = double.IsNaN(from) ? 0.0 : from;
 
                 //create an animation for the vertical position
                 var animationY = new DoubleAnimation(
@@ -54,7 +54,7 @@ namespace Westermo.GraphX.Controls.Animations
                     Duration,
                     FillBehavior.HoldEnd);
                 Timeline.SetDesiredFrameRate(animationY, 30);
-                animationY.Completed += (s, e) =>
+                animationY.Completed += (_, _) =>
                 {
                     control.BeginAnimation(GraphAreaBase.YProperty, null);
                     control.SetValue(GraphAreaBase.YProperty, item.Value.Y);

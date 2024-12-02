@@ -83,14 +83,8 @@ namespace Westermo.GraphX.Controls.Models
         [Bindable(true)]
         public object Value
         {
-            get
-            {
-                return GetValue(ValueProperty);
-            }
-            set
-            {
-                SetValue(ValueProperty, value);
-            }
+            get => GetValue(ValueProperty);
+            set => SetValue(ValueProperty, value);
         }
         #endregion //Value
 

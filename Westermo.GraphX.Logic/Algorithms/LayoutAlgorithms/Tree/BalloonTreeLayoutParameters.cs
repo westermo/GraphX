@@ -7,7 +7,7 @@
 
 		public int MinRadius
 		{
-			get { return minRadius; }
+			get => minRadius;
 			set
 			{
 			    if (value == minRadius) return;
@@ -19,7 +19,7 @@
 
 		public float Border
 		{
-			get { return border; }
+			get => border;
 			set
 			{
 			    if (value == border) return;

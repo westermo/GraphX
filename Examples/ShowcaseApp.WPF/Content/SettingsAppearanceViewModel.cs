@@ -19,7 +19,8 @@ namespace ShowcaseApp.WPF.Content
         private const string PaletteWP = "windows phone";
 
         // 9 accent colors from metro design principles
-        private Color[] metroAccentColors = new Color[]{
+        private readonly Color[] metroAccentColors =
+        [
             Color.FromRgb(0x33, 0x99, 0xff),   // blue
             Color.FromRgb(0x00, 0xab, 0xa9),   // teal
             Color.FromRgb(0x33, 0x99, 0x33),   // green
@@ -28,11 +29,12 @@ namespace ShowcaseApp.WPF.Content
             Color.FromRgb(0xff, 0x45, 0x00),   // orange red
             Color.FromRgb(0xe5, 0x14, 0x00),   // red
             Color.FromRgb(0xff, 0x00, 0x97),   // magenta
-            Color.FromRgb(0xa2, 0x00, 0xff),   // purple            
-        };
+            Color.FromRgb(0xa2, 0x00, 0xff) // purple            
+        ];
 
         // 20 accent colors from Windows Phone 8
-        private Color[] wpAccentColors = new Color[]{
+        private readonly Color[] wpAccentColors =
+        [
             Color.FromRgb(0xa4, 0xc4, 0x00),   // lime
             Color.FromRgb(0x60, 0xa9, 0x17),   // green
             Color.FromRgb(0x00, 0x8a, 0x00),   // emerald
@@ -52,26 +54,26 @@ namespace ShowcaseApp.WPF.Content
             Color.FromRgb(0x6d, 0x87, 0x64),   // olive
             Color.FromRgb(0x64, 0x76, 0x87),   // steel
             Color.FromRgb(0x76, 0x60, 0x8a),   // mauve
-            Color.FromRgb(0x87, 0x79, 0x4e),   // taupe
-        };
+            Color.FromRgb(0x87, 0x79, 0x4e) // taupe
+        ];
 
         private string selectedPalette = PaletteWP;
 
         private Color selectedAccentColor;
-        private LinkCollection themes = new LinkCollection();
+        private readonly LinkCollection themes = [];
         private Link selectedTheme;
         private string selectedFontSize;
 
         public SettingsAppearanceViewModel()
         {
             // add the default themes
-            this.themes.Add(new Link { DisplayName = "dark", Source = AppearanceManager.DarkThemeSource });
-            this.themes.Add(new Link { DisplayName = "light", Source = AppearanceManager.LightThemeSource });
+            themes.Add(new Link { DisplayName = "dark", Source = AppearanceManager.DarkThemeSource });
+            themes.Add(new Link { DisplayName = "light", Source = AppearanceManager.LightThemeSource });
 
             // add additional themes
-            this.themes.Add(new Link { DisplayName = "snowflakes", Source = new Uri("/ShowcaseApp.WPF;component/Assets/ModernUI.Snowflakes.xaml", UriKind.Relative) });
+            themes.Add(new Link { DisplayName = "snowflakes", Source = new Uri("/ShowcaseApp.WPF;component/Assets/ModernUI.Snowflakes.xaml", UriKind.Relative) });
 
-            this.SelectedFontSize = AppearanceManager.Current.FontSize == FontSize.Large ? FontLarge : FontSmall;
+            SelectedFontSize = AppearanceManager.Current.FontSize == FontSize.Large ? FontLarge : FontSmall;
             SyncThemeAndColor();
 
             AppearanceManager.Current.PropertyChanged += OnAppearanceManagerPropertyChanged;
@@ -80,10 +82,10 @@ namespace ShowcaseApp.WPF.Content
         private void SyncThemeAndColor()
         {
             // synchronizes the selected viewmodel theme with the actual theme used by the appearance manager.
-            this.SelectedTheme = this.themes.FirstOrDefault(l => l.Source.Equals(AppearanceManager.Current.ThemeSource));
+            SelectedTheme = themes.FirstOrDefault(l => l.Source.Equals(AppearanceManager.Current.ThemeSource));
 
             // and make sure accent color is up-to-date
-            this.SelectedAccentColor = AppearanceManager.Current.AccentColor;
+            SelectedAccentColor = AppearanceManager.Current.AccentColor;
         }
 
         private void OnAppearanceManagerPropertyChanged(object sender, PropertyChangedEventArgs e)
@@ -93,47 +95,35 @@ namespace ShowcaseApp.WPF.Content
             }
         }
 
-        public LinkCollection Themes
-        {
-            get { return this.themes; }
-        }
+        public LinkCollection Themes => themes;
 
-        public string[] FontSizes
-        {
-            get { return new string[] { FontSmall, FontLarge }; }
-        }
+        public string[] FontSizes => [FontSmall, FontLarge];
 
-        public string[] Palettes
-        {
-            get { return new string[] { PaletteMetro, PaletteWP }; }
-        }
+        public string[] Palettes => [PaletteMetro, PaletteWP];
 
-        public Color[] AccentColors
-        {
-            get { return this.selectedPalette == PaletteMetro ? this.metroAccentColors : this.wpAccentColors; }
-        }
+        public Color[] AccentColors => selectedPalette == PaletteMetro ? metroAccentColors : wpAccentColors;
 
         public string SelectedPalette
         {
-            get { return this.selectedPalette; }
+            get => selectedPalette;
             set
             {
-                if (this.selectedPalette != value) {
-                    this.selectedPalette = value;
+                if (selectedPalette != value) {
+                    selectedPalette = value;
                     OnPropertyChanged("AccentColors");
 
-                    this.SelectedAccentColor = this.AccentColors.FirstOrDefault();
+                    SelectedAccentColor = AccentColors.FirstOrDefault();
                 }
             }
         }
 
         public Link SelectedTheme
         {
-            get { return this.selectedTheme; }
+            get => selectedTheme;
             set
             {
-                if (this.selectedTheme != value) {
-                    this.selectedTheme = value;
+                if (selectedTheme != value) {
+                    selectedTheme = value;
                     OnPropertyChanged("SelectedTheme");
 
                     // and update the actual theme
@@ -144,11 +134,11 @@ namespace ShowcaseApp.WPF.Content
 
         public string SelectedFontSize
         {
-            get { return this.selectedFontSize; }
+            get => selectedFontSize;
             set
             {
-                if (this.selectedFontSize != value) {
-                    this.selectedFontSize = value;
+                if (selectedFontSize != value) {
+                    selectedFontSize = value;
                     OnPropertyChanged("SelectedFontSize");
 
                     AppearanceManager.Current.FontSize = value == FontLarge ? FontSize.Large : FontSize.Small;
@@ -158,11 +148,11 @@ namespace ShowcaseApp.WPF.Content
 
         public Color SelectedAccentColor
         {
-            get { return this.selectedAccentColor; }
+            get => selectedAccentColor;
             set
             {
-                if (this.selectedAccentColor != value) {
-                    this.selectedAccentColor = value;
+                if (selectedAccentColor != value) {
+                    selectedAccentColor = value;
                     OnPropertyChanged("SelectedAccentColor");
 
                     AppearanceManager.Current.AccentColor = value;

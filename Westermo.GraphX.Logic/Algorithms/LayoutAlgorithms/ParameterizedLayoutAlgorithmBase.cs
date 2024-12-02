@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Linq;
 using Westermo.GraphX.Measure;
 using Westermo.GraphX.Common.Interfaces;
@@ -52,7 +51,7 @@ namespace Westermo.GraphX.Logic.Algorithms.LayoutAlgorithms
         {
         }
 
-        protected override TParam DefaultParameters => new TParam();
+        protected override TParam DefaultParameters => new();
     }
 
 	/// <typeparam name="TVertex">Type of the vertices.</typeparam>
@@ -151,7 +150,7 @@ namespace Westermo.GraphX.Logic.Algorithms.LayoutAlgorithms
 		{
             var rnd = new Random(Parameters.Seed);
             //initialize with random position
-            foreach ( TVertex v in VisitedGraph.Vertices )
+            foreach ( var v in VisitedGraph.Vertices )
 			{
 				//for vertices without assigned position
 				if ( !VertexPositions.ContainsKey( v ) )

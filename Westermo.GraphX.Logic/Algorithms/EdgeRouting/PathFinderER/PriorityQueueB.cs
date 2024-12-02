@@ -29,7 +29,7 @@ namespace Westermo.GraphX.Logic.Algorithms.EdgeRouting
     public class PriorityQueueB<T> : IPriorityQueue<T>
     {
         #region Variables Declaration
-        protected List<T>       InnerList = new List<T>();
+        protected List<T>       InnerList = [];
 		protected IComparer<T>  mComparer;
         #endregion
 
@@ -54,7 +54,7 @@ namespace Westermo.GraphX.Logic.Algorithms.EdgeRouting
         #region Methods
         protected void SwitchElements(int i, int j)
 		{
-			T h = InnerList[i];
+			var h = InnerList[i];
 			InnerList[i] = InnerList[j];
 			InnerList[j] = h;
 		}
@@ -95,7 +95,7 @@ namespace Westermo.GraphX.Logic.Algorithms.EdgeRouting
 		/// <returns>The smallest object</returns>
 		public T Pop()
 		{
-			T result = InnerList[0];
+			var result = InnerList[0];
 			int p = 0,p1,p2,pn;
 			InnerList[0] = InnerList[InnerList.Count-1];
 			InnerList.RemoveAt(InnerList.Count-1);
@@ -176,15 +176,12 @@ namespace Westermo.GraphX.Logic.Algorithms.EdgeRouting
 			InnerList.Clear();
 		}
 
-		public int Count
-		{
-			get{ return InnerList.Count; }
-		}
+		public int Count => InnerList.Count;
 
-        public void RemoveLocation(T item)
+		public void RemoveLocation(T item)
         {
-            int index = -1;
-            for(int i=0; i<InnerList.Count; i++)
+            var index = -1;
+            for(var i=0; i<InnerList.Count; i++)
             {
                 
                 if (mComparer.Compare(InnerList[i], item) == 0)
@@ -197,7 +194,7 @@ namespace Westermo.GraphX.Logic.Algorithms.EdgeRouting
 
         public T this[int index]
         {
-            get { return InnerList[index]; }
+            get => InnerList[index];
             set 
             { 
                 InnerList[index] = value;

@@ -14,7 +14,7 @@ namespace Westermo.GraphX.Logic.Algorithms.LayoutAlgorithms
 	{
 		protected readonly TVertex Root;
 	    private readonly IDictionary<TVertex, BalloonData> _datas = new Dictionary<TVertex, BalloonData>();
-		private readonly HashSet<TVertex> _visitedVertices = new HashSet<TVertex>();
+		private readonly HashSet<TVertex> _visitedVertices = [];
 
 		private class BalloonData
 		{
@@ -74,7 +74,7 @@ namespace Westermo.GraphX.Logic.Algorithms.LayoutAlgorithms
 			    if (_visitedVertices.Contains(otherVertex)) continue;
 			    FirstWalk( otherVertex );
 			    data.D = Math.Max( data.D, otherData.R );
-			    otherData.A = (float)Math.Atan( ( (float)otherData.R ) / ( data.D + otherData.R ) );
+			    otherData.A = (float)Math.Atan( (float)otherData.R / ( data.D + otherData.R ) );
 			    s += otherData.A;
 			}
 
@@ -90,10 +90,10 @@ namespace Westermo.GraphX.Logic.Algorithms.LayoutAlgorithms
 			_visitedVertices.Add( v );
 			var data = _datas[v];
 
-			float dd = l * data.D;
-			float p = (float)( t + Math.PI );
-			int degree = VisitedGraph.OutDegree( v );
-			float fs = ( degree == 0 ? 0 : data.F / degree );
+			var dd = l * data.D;
+			var p = (float)( t + Math.PI );
+			var degree = VisitedGraph.OutDegree( v );
+			var fs = degree == 0 ? 0 : data.F / degree;
 			float pr = 0;
 
 			foreach ( var edge in VisitedGraph.OutEdges( v ) )
@@ -103,12 +103,12 @@ namespace Westermo.GraphX.Logic.Algorithms.LayoutAlgorithms
 					continue;
 
 				var otherData = _datas[otherVertex];
-				float aa = data.C * otherData.A;
-				float rr = (float)( data.D * Math.Tan( aa ) / ( 1 - Math.Tan( aa ) ) );
+				var aa = data.C * otherData.A;
+				var rr = (float)( data.D * Math.Tan( aa ) / ( 1 - Math.Tan( aa ) ) );
 				p += pr + aa + fs;
 
-				float xx = (float)( ( l * rr + dd ) * Math.Cos( p ) );
-				float yy = (float)( ( l * rr + dd ) * Math.Sign( p ) );
+				var xx = (float)( ( l * rr + dd ) * Math.Cos( p ) );
+				var yy = ( l * rr + dd ) * Math.Sign( p );
 				pr = aa; ;
 				SecondWalk( otherVertex, v, x + xx, y + yy, l * data.C, p );
 			}
@@ -116,7 +116,7 @@ namespace Westermo.GraphX.Logic.Algorithms.LayoutAlgorithms
 
 		private void SetRadius( TVertex v, BalloonData data )
 		{
-			data.R = (int)Math.Max( data.D / 2, Parameters.minRadius );
+			data.R = Math.Max( data.D / 2, Parameters.minRadius );
 		}
 
 		private void AdjustChildren( TVertex v, BalloonData data, float s )

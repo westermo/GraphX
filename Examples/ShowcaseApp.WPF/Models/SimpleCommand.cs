@@ -3,16 +3,10 @@ using System.Windows.Input;
 
 namespace ShowcaseApp.WPF.Models
 {
-    public class SimpleCommand : ICommand
-   {
-       public Predicate<object> CanExecuteDelegate { get; set; }
-       public Action<object> ExecuteDelegate { get; set; }
-
-       public SimpleCommand(Predicate<object> can, Action<object> ex)
-       {
-           CanExecuteDelegate = can;
-           ExecuteDelegate = ex;
-       }
+    public class SimpleCommand(Predicate<object> can, Action<object> ex) : ICommand
+    {
+       public Predicate<object> CanExecuteDelegate { get; set; } = can;
+       public Action<object> ExecuteDelegate { get; set; } = ex;
 
        #region ICommand Members
     
@@ -25,14 +19,13 @@ namespace ShowcaseApp.WPF.Models
     
        public event EventHandler CanExecuteChanged
        {
-           add { CommandManager.RequerySuggested += value; }
-           remove { CommandManager.RequerySuggested -= value; }
+           add => CommandManager.RequerySuggested += value;
+           remove => CommandManager.RequerySuggested -= value;
        }
     
        public void Execute(object parameter)
        {
-           if (ExecuteDelegate != null)
-               ExecuteDelegate(parameter);
+           ExecuteDelegate?.Invoke(parameter);
        }
     
        #endregion

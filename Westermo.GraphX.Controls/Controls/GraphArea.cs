@@ -37,6 +37,7 @@ namespace Westermo.GraphX.Controls
         /// Gets or sets vertex label control factory. Vertex labels will be generated at the end of the graph generation process.
         /// </summary>
         public ILabelFactory<UIElement>? VertexLabelFactory { get; set; }
+
         /// <summary>
         /// Gets or sets edge label control factory. Edge labels will be generated at the end of the graph generation process.
         /// </summary>
@@ -48,7 +49,8 @@ namespace Westermo.GraphX.Controls
         public ControlDrawOrder ControlsDrawOrder { get; set; }
 
         public static readonly DependencyProperty LogicCoreProperty =
-            DependencyProperty.Register(nameof(LogicCore), typeof(IGXLogicCore<TVertex, TEdge, TGraph>), typeof(GraphArea<TVertex, TEdge, TGraph>), new PropertyMetadata(null, logic_core_changed));
+            DependencyProperty.Register(nameof(LogicCore), typeof(IGXLogicCore<TVertex, TEdge, TGraph>),
+                typeof(GraphArea<TVertex, TEdge, TGraph>), new PropertyMetadata(null, logic_core_changed));
 
         private static void logic_core_changed(DependencyObject d, DependencyPropertyChangedEventArgs e)
         {
@@ -57,8 +59,6 @@ namespace Westermo.GraphX.Controls
             switch (graph.LogicCoreChangeAction)
             {
                 case LogicCoreChangedAction.GenerateGraph:
-                    graph.GenerateGraph();
-                    break;
                 case LogicCoreChangedAction.GenerateGraphWithEdges:
                     graph.GenerateGraph();
                     break;
@@ -68,6 +68,7 @@ namespace Westermo.GraphX.Controls
                 case LogicCoreChangedAction.RelayoutGraphWithEdges:
                     graph.RelayoutGraph(true);
                     break;
+                case LogicCoreChangedAction.None:
                 default:
                     break;
             }
@@ -78,8 +79,8 @@ namespace Westermo.GraphX.Controls
         /// </summary>
         public IGXLogicCore<TVertex, TEdge, TGraph>? LogicCore
         {
-            get { return (IGXLogicCore<TVertex, TEdge, TGraph>)GetValue(LogicCoreProperty); }
-            set { SetValue(LogicCoreProperty, value); }
+            get => (IGXLogicCore<TVertex, TEdge, TGraph>)GetValue(LogicCoreProperty);
+            set => SetValue(LogicCoreProperty, value);
         }
 
         /// <summary>
@@ -106,6 +107,7 @@ namespace Westermo.GraphX.Controls
         /// True by default.
         /// </summary>
         public bool EnableVisualPropsRecovery { get; set; }
+
         /// <summary>
         /// Gets or sets if visual properties such as edge dash style or vertex shape should be automaticaly applied to newly added visuals which are added using AddVertex() or AddEdge() or similar methods.
         /// True by default.
@@ -116,14 +118,17 @@ namespace Westermo.GraphX.Controls
         /// Link to LogicCore. Gets if edge routing is used.
         /// </summary>
         internal override bool IsEdgeRoutingEnabled => LogicCore != null && LogicCore.IsEdgeRoutingEnabled;
+
         /// <summary>
         /// Link to LogicCore. Gets if parallel edges are enabled.
         /// </summary>
         internal override bool EnableParallelEdges => LogicCore != null && LogicCore.EnableParallelEdges;
+
         /// <summary>
         /// Link to LogicCore. Gets if edge curving is used.
         /// </summary>
         internal override bool EdgeCurvingEnabled => LogicCore != null && LogicCore.EdgeCurvingEnabled;
+
         /// <summary>
         /// Link to LogicCore. Gets edge curving tolerance.
         /// </summary>
@@ -135,7 +140,7 @@ namespace Westermo.GraphX.Controls
         /// <param name="control"></param>
         public virtual void AddCustomChildControl(UIElement control)
         {
-            if(!Children.Contains(control))
+            if (!Children.Contains(control))
                 Children.Add(control);
             SetX(control, 0);
             SetY(control, 0);
@@ -174,6 +179,7 @@ namespace Westermo.GraphX.Controls
         #region StateStorage
 
         private StateStorage<TVertex, TEdge, TGraph>? _stateStorage;
+
         /// <summary>
         /// Provides methods for saving and loading graph layout states
         /// </summary>
@@ -185,13 +191,13 @@ namespace Westermo.GraphX.Controls
                     CreateNewStateStorage();
                 return _stateStorage!;
             }
-            private set { _stateStorage = value; }
+            private set => _stateStorage = value;
         }
 
         #endregion
 
-        readonly Dictionary<TEdge, EdgeControl> _edgeslist = new Dictionary<TEdge, EdgeControl>();
-        readonly Dictionary<TVertex, VertexControl> _vertexlist = new Dictionary<TVertex, VertexControl>();
+        private readonly Dictionary<TEdge, EdgeControl> _edgeslist = [];
+        private readonly Dictionary<TVertex, VertexControl> _vertexlist = [];
 
         /// <summary>
         /// Gets edge controls read only collection. To modify collection use AddEdge() RemoveEdge() methods.
@@ -254,6 +260,7 @@ namespace Westermo.GraphX.Controls
                     base.Children.Add(ctrl2);
                     base.Children.Add(ctrl3);*/
             }
+
             #endregion
         }
 
@@ -279,7 +286,10 @@ namespace Westermo.GraphX.Controls
         /// <summary>
         /// Returns all existing VertexControls added into the layout as new Array
         /// </summary>
-        public override VertexControl[] GetAllVertexControls() { return _vertexlist.Values.ToArray(); }
+        public override VertexControl[] GetAllVertexControls()
+        {
+            return [.. _vertexlist.Values];
+        }
 
         #region Remove controls
 
@@ -293,8 +303,11 @@ namespace Westermo.GraphX.Controls
             foreach (var item in _vertexlist)
             {
                 RemoveVertexInternal(item.Key, false, removeVerticesFromDataGraph);
-                if (hasStorage && (item.Key.SkipProcessing != ProcessingOptionEnum.Exclude || removeVerticesFromDataGraph)) LogicCore!.AlgorithmStorage.RemoveSingleVertex(item.Key);
+                if (hasStorage && (item.Key.SkipProcessing != ProcessingOptionEnum.Exclude ||
+                                   removeVerticesFromDataGraph))
+                    LogicCore!.AlgorithmStorage.RemoveSingleVertex(item.Key);
             }
+
             _vertexlist.Clear();
         }
 
@@ -307,9 +320,11 @@ namespace Westermo.GraphX.Controls
             var hasStorage = LogicCore?.AlgorithmStorage != null;
             foreach (var item in _edgeslist)
             {
-                if (hasStorage && (item.Key.SkipProcessing != ProcessingOptionEnum.Exclude || removeEdgesFromDataGraph)) LogicCore!.AlgorithmStorage.RemoveSingleEdge(item.Key);
+                if (hasStorage && (item.Key.SkipProcessing != ProcessingOptionEnum.Exclude || removeEdgesFromDataGraph))
+                    LogicCore!.AlgorithmStorage.RemoveSingleEdge(item.Key);
                 RemoveEdgeInternal(item.Key, false, removeEdgesFromDataGraph);
             }
+
             _edgeslist.Clear();
         }
 
@@ -321,7 +336,8 @@ namespace Westermo.GraphX.Controls
         public void RemoveVertex(TVertex vertexData, bool removeVertexFromDataGraph = false)
         {
             RemoveVertexInternal(vertexData, true, removeVertexFromDataGraph);
-            var hasStorage = LogicCore?.AlgorithmStorage != null && (vertexData.SkipProcessing != ProcessingOptionEnum.Exclude || removeVertexFromDataGraph);
+            var hasStorage = LogicCore?.AlgorithmStorage != null &&
+                             (vertexData.SkipProcessing != ProcessingOptionEnum.Exclude || removeVertexFromDataGraph);
             if (hasStorage) LogicCore!.AlgorithmStorage.RemoveSingleVertex(vertexData);
         }
 
@@ -332,23 +348,24 @@ namespace Westermo.GraphX.Controls
         /// <param name="eType">Edge types to remove</param>
         /// <param name="removeEdgesFromDataGraph">Also remove edges from data graph if possible. Default value is True.</param>
         /// <param name="removeVertexFromDataGraph">Also remove vertex from data graph if possible. Default value is True.</param>
-        public void RemoveVertexAndEdges(TVertex vertexData, EdgesType eType = EdgesType.All, bool removeEdgesFromDataGraph = true, bool removeVertexFromDataGraph = true)
+        public void RemoveVertexAndEdges(TVertex vertexData, EdgesType eType = EdgesType.All,
+            bool removeEdgesFromDataGraph = true, bool removeVertexFromDataGraph = true)
         {
-            if (VertexList.ContainsKey(vertexData))
+            if (VertexList.TryGetValue(vertexData, out VertexControl? value))
             {
-                GetRelatedControls(VertexList[vertexData], GraphControlType.Edge, eType).ToList().ForEach(a =>
+                GetRelatedControls(value, GraphControlType.Edge, eType).ToList().ForEach(a =>
                 {
                     RemoveEdge((TEdge)((EdgeControl)a).Edge!, removeEdgesFromDataGraph);
                 });
             }
+
             RemoveVertex(vertexData, removeVertexFromDataGraph);
         }
 
-        private void RemoveVertexInternal(TVertex? vertexData, bool removeFromList, bool removeVertexFromDataGraph = false)
+        private void RemoveVertexInternal(TVertex? vertexData, bool removeFromList,
+            bool removeVertexFromDataGraph = false)
         {
-            if (vertexData == null || !_vertexlist.ContainsKey(vertexData)) return;
-
-            var ctrl = _vertexlist[vertexData];
+            if (vertexData == null || !_vertexlist.TryGetValue(vertexData, out VertexControl? ctrl)) return;
             if (removeFromList)
                 _vertexlist.Remove(vertexData);
             if (DeleteAnimation != null)
@@ -363,9 +380,11 @@ namespace Westermo.GraphX.Controls
                 Children.Remove((UIElement)ctrl.VertexLabelControl);
                 ctrl.DetachLabel();
             }
+
             Children.Remove(ctrl);
-            if (removeVertexFromDataGraph && LogicCore?.Graph != null && LogicCore.Graph.ContainsVertex((TVertex) ctrl.Vertex!))
-                LogicCore.Graph.RemoveVertex((TVertex) ctrl.Vertex!);
+            if (removeVertexFromDataGraph && LogicCore?.Graph != null &&
+                LogicCore.Graph.ContainsVertex((TVertex)ctrl.Vertex!))
+                LogicCore.Graph.RemoveVertex((TVertex)ctrl.Vertex!);
             ctrl.Clean();
         }
 
@@ -377,15 +396,14 @@ namespace Westermo.GraphX.Controls
         public void RemoveEdge(TEdge edgeData, bool removeEdgeFromDataGraph = false)
         {
             RemoveEdgeInternal(edgeData, true, removeEdgeFromDataGraph);
-            var hasStorage = LogicCore?.AlgorithmStorage != null && (edgeData.SkipProcessing != ProcessingOptionEnum.Exclude || removeEdgeFromDataGraph);
+            var hasStorage = LogicCore?.AlgorithmStorage != null &&
+                             (edgeData.SkipProcessing != ProcessingOptionEnum.Exclude || removeEdgeFromDataGraph);
             if (hasStorage) LogicCore!.AlgorithmStorage.RemoveSingleEdge(edgeData);
         }
 
         private void RemoveEdgeInternal(TEdge? edgeData, bool removeFromList, bool removeEdgeFromDataGraph = false)
         {
-            if (edgeData == null || !_edgeslist.ContainsKey(edgeData)) return;
-
-            var ctrl = _edgeslist[edgeData];
+            if (edgeData == null || !_edgeslist.TryGetValue(edgeData, out EdgeControl? ctrl)) return;
             if (removeFromList)
                 _edgeslist.Remove(edgeData);
             if (DeleteAnimation != null)
@@ -398,7 +416,8 @@ namespace Westermo.GraphX.Controls
             ctrl.DetachLabels();
 
             Children.Remove(ctrl);
-            if (removeEdgeFromDataGraph && LogicCore?.Graph != null && ctrl.Edge is TEdge edge && LogicCore.Graph.ContainsEdge(edge))
+            if (removeEdgeFromDataGraph && LogicCore?.Graph != null && ctrl.Edge is TEdge edge &&
+                LogicCore.Graph.ContainsEdge(edge))
                 LogicCore.Graph.RemoveEdge(edge);
             ctrl.Clean();
         }
@@ -425,6 +444,7 @@ namespace Westermo.GraphX.Controls
         #endregion
 
         #region Add controls
+
         /// <summary>
         /// Add vertex to layout
         /// </summary>
@@ -440,11 +460,13 @@ namespace Westermo.GraphX.Controls
                 ReapplySingleVertexVisualProperties(vertexControl);
             if (generateLabel && VertexLabelFactory != null)
                 GenerateVertexLabel(vertexControl!);
-            var hasStorage = LogicCore?.AlgorithmStorage != null && vertexData.SkipProcessing != ProcessingOptionEnum.Exclude;
+            var hasStorage = LogicCore?.AlgorithmStorage != null &&
+                             vertexData.SkipProcessing != ProcessingOptionEnum.Exclude;
             if (hasStorage)
             {
                 var pos = vertexControl!.GetPositionGraphX(true);
-                LogicCore!.AlgorithmStorage.AddSingleVertex(vertexData, pos, new Rect(pos, new Size(vertexControl.ActualWidth, vertexControl.ActualHeight)));
+                LogicCore!.AlgorithmStorage.AddSingleVertex(vertexData, pos,
+                    new Rect(pos, new Size(vertexControl.ActualWidth, vertexControl.ActualHeight)));
             }
         }
 
@@ -459,7 +481,8 @@ namespace Westermo.GraphX.Controls
         public void AddVertexAndData(TVertex vertexData, VertexControl vertexControl, bool generateLabel = false)
         {
             if (LogicCore?.Graph == null)
-                throw new GX_InvalidDataException("LogicCore or its graph hasn't been assigned. Can't add data vertex!");
+                throw new GX_InvalidDataException(
+                    "LogicCore or its graph hasn't been assigned. Can't add data vertex!");
             LogicCore.Graph.AddVertex(vertexData);
             AddVertex(vertexData, vertexControl, generateLabel);
         }
@@ -468,7 +491,9 @@ namespace Westermo.GraphX.Controls
         {
             if (vertexControl == null || vertexData == null) return;
             vertexControl.RootArea = this;
-            if (_vertexlist.ContainsKey(vertexData)) throw new GX_InvalidDataException("AddVertex() -> Vertex with the same data has already been added to layout!");
+            if (_vertexlist.ContainsKey(vertexData))
+                throw new GX_InvalidDataException(
+                    "AddVertex() -> Vertex with the same data has already been added to layout!");
             _vertexlist.Add(vertexData, vertexControl);
             Children.Add(vertexControl);
         }
@@ -505,10 +530,12 @@ namespace Westermo.GraphX.Controls
             AddEdge(edgeData, edgeControl, generateLabel);
         }
 
-        protected void InternalAddEdge(TEdge edgeData, EdgeControl edgeControl)
+        protected void InternalAddEdge(TEdge? edgeData, EdgeControl? edgeControl)
         {
             if (edgeControl == null || edgeData == null) return;
-            if (_edgeslist.ContainsKey(edgeData)) throw new GX_InvalidDataException("AddEdge() -> An edge with the same data has already been added to layout!");
+            if (_edgeslist.ContainsKey(edgeData))
+                throw new GX_InvalidDataException(
+                    "AddEdge() -> An edge with the same data has already been added to layout!");
             edgeControl.RootArea = this;
             _edgeslist.Add(edgeData, edgeControl);
             Children.Add(edgeControl);
@@ -521,7 +548,7 @@ namespace Westermo.GraphX.Controls
         /// <param name="edgeControl">Edge visual control</param>
         /// <param name="num">Insert position</param>
         /// <param name="generateLabel">Generate edge label for this control using EdgeLabelFactory</param>
-        public void InsertEdge(TEdge edgeData, EdgeControl edgeControl, int num = 0, bool generateLabel = false)
+        public void InsertEdge(TEdge edgeData, EdgeControl? edgeControl, int num = 0, bool generateLabel = false)
         {
             if (AutoAssignMissingDataId && edgeData.ID == -1)
                 edgeData.ID = GetNextUniqueId(false);
@@ -552,7 +579,8 @@ namespace Westermo.GraphX.Controls
         protected void InternalInsertEdge(TEdge? edgeData, EdgeControl? edgeControl, int num = 0)
         {
             if (edgeControl == null || edgeData == null) return;
-            if (_edgeslist.ContainsKey(edgeData)) throw new GX_InvalidDataException("AddEdge() -> An edge with the same data has already been added!");
+            if (_edgeslist.ContainsKey(edgeData))
+                throw new GX_InvalidDataException("AddEdge() -> An edge with the same data has already been added!");
             edgeControl.RootArea = this;
             _edgeslist.Add(edgeData, edgeControl);
             try
@@ -572,6 +600,7 @@ namespace Westermo.GraphX.Controls
         #endregion
 
         #region Automatic data ID storage and resolving
+
         private int _dataIdCounter = 1;
         private int _edgeDataIdCounter = 1;
 
@@ -583,20 +612,22 @@ namespace Westermo.GraphX.Controls
                 {
                     _dataIdCounter++;
                 }
+
                 DataIdsCollection.Add(_dataIdCounter);
                 return _dataIdCounter;
             }
+
             while (EdgeDataIdsCollection.Contains(_edgeDataIdCounter))
             {
                 _edgeDataIdCounter++;
             }
+
             EdgeDataIdsCollection.Add(_edgeDataIdCounter);
             return _edgeDataIdCounter;
         }
 
-        protected readonly HashSet<long> DataIdsCollection = new HashSet<long>();
-        protected readonly HashSet<long> EdgeDataIdsCollection = new HashSet<long>();
-
+        protected readonly HashSet<long> DataIdsCollection = [];
+        protected readonly HashSet<long> EdgeDataIdsCollection = [];
 
         #endregion
 
@@ -608,19 +639,17 @@ namespace Westermo.GraphX.Controls
         {
             if (VertexLabelFactory == null) return;
             Children.OfType<IVertexLabelControl>().Cast<UIElement>().ToList().ForEach(a => Children.Remove(a));
-            VertexList.ForEach(a =>
-            {
-                GenerateVertexLabel(a.Value);
-            });
+            VertexList.ForEach(a => { GenerateVertexLabel(a.Value); });
         }
 
         protected virtual void GenerateVertexLabel(VertexControl vertexControl)
         {
             var labels = VertexLabelFactory!.CreateLabel(vertexControl);
-            if (labels == null) return;
-            if (labels.Any(l=> !(l is IVertexLabelControl)))
-                throw new GX_InvalidDataException("Generated vertex label should implement IVertexLabelControl interface");
-            labels.ForEach(l =>
+            var uiElements = labels as UIElement[] ?? labels.ToArray();
+            if (uiElements.Any(l => l is not IVertexLabelControl))
+                throw new GX_InvalidDataException(
+                    "Generated vertex label should implement IVertexLabelControl interface");
+            uiElements.ForEach(l =>
             {
                 if (_svVertexLabelShow == false || vertexControl.Visibility != Visibility.Visible)
                     l.Visibility = Visibility.Collapsed;
@@ -634,20 +663,17 @@ namespace Westermo.GraphX.Controls
         {
             if (EdgeLabelFactory == null) return;
             Children.OfType<IEdgeLabelControl>().Cast<UIElement>().ToList().ForEach(a => Children.Remove(a));
-            EdgesList.ForEach(a =>
-            {
-                GenerateEdgeLabel(a.Value);
-            });
+            EdgesList.ForEach(a => { GenerateEdgeLabel(a.Value); });
         }
 
         protected virtual void GenerateEdgeLabel(EdgeControl edgeControl)
         {
             var labels = EdgeLabelFactory!.CreateLabel(edgeControl);
-            if (labels == null) return;
-            if (labels.Any(a=> !(a is IEdgeLabelControl)))
+            var uiElements = labels as UIElement[] ?? labels.ToArray();
+            if (uiElements.Any(a => a is not IEdgeLabelControl))
                 throw new GX_InvalidDataException("Generated edge label should implement IEdgeLabelControl interface");
-            
-            labels.ForEach(l =>
+
+            uiElements.ForEach(l =>
             {
                 AddCustomChildControl(l);
                 l.Measure(new USize(double.MaxValue, double.MaxValue));
@@ -658,6 +684,7 @@ namespace Westermo.GraphX.Controls
         #endregion
 
         #region Sizes operations
+
         /// <summary>
         /// Get vertex control sizes
         /// </summary>
@@ -665,29 +692,36 @@ namespace Westermo.GraphX.Controls
         {
             //measure if needed and get all vertex sizes
             Measure(new USize(double.PositiveInfinity, double.PositiveInfinity));
-            var vertexSizes = new Dictionary<TVertex, Size>(_vertexlist.Count(a => ((IGraphXVertex)a.Value.Vertex!).SkipProcessing != ProcessingOptionEnum.Exclude));
+            var vertexSizes = new Dictionary<TVertex, Size>(_vertexlist.Count(a =>
+                ((IGraphXVertex)a.Value.Vertex!).SkipProcessing != ProcessingOptionEnum.Exclude));
             //go through the vertex presenters and get the actual layoutpositions
-            foreach (var vc in VertexList.Where(vc => ((IGraphXVertex)vc.Value.Vertex!).SkipProcessing != ProcessingOptionEnum.Exclude))
+            foreach (var vc in VertexList.Where(vc =>
+                         ((IGraphXVertex)vc.Value.Vertex!).SkipProcessing != ProcessingOptionEnum.Exclude))
             {
                 vertexSizes[vc.Key] = new Size(vc.Value.DesiredSize.Width, vc.Value.DesiredSize.Height);
             }
+
             return vertexSizes;
         }
 
 
-        public Dictionary<TVertex, Size> GetVertexSizesAndPositions(out IDictionary<TVertex, Measure.Point> vertexPositions)
+        public Dictionary<TVertex, Size> GetVertexSizesAndPositions(
+            out IDictionary<TVertex, Measure.Point> vertexPositions)
         {
             //measure if needed and get all vertex sizes
             Measure(new USize(double.PositiveInfinity, double.PositiveInfinity));
-            var count = _vertexlist.Count(a => ((IGraphXVertex)a.Value.Vertex!).SkipProcessing != ProcessingOptionEnum.Exclude);
+            var count = _vertexlist.Count(a =>
+                ((IGraphXVertex)a.Value.Vertex!).SkipProcessing != ProcessingOptionEnum.Exclude);
             var vertexSizes = new Dictionary<TVertex, Size>(count);
             vertexPositions = new Dictionary<TVertex, Measure.Point>(count);
             //go through the vertex presenters and get the actual layoutpositions
-            foreach (var vc in VertexList.Where(vc => ((IGraphXVertex)vc.Value.Vertex!).SkipProcessing != ProcessingOptionEnum.Exclude))
+            foreach (var vc in VertexList.Where(vc =>
+                         ((IGraphXVertex)vc.Value.Vertex!).SkipProcessing != ProcessingOptionEnum.Exclude))
             {
                 vertexSizes[vc.Key] = new Size(vc.Value.DesiredSize.Width, vc.Value.DesiredSize.Height);
                 vertexPositions[vc.Key] = vc.Value.GetPositionGraphX();
             }
+
             return vertexSizes;
         }
 
@@ -696,7 +730,9 @@ namespace Westermo.GraphX.Controls
         /// </summary>
         public Dictionary<TVertex, Measure.Point> GetVertexPositions()
         {
-            return VertexList.Where(a => ((IGraphXVertex)a.Value.Vertex!).SkipProcessing != ProcessingOptionEnum.Exclude).ToDictionary(vertex => vertex.Key, vertex => vertex.Value.GetPositionGraphX());
+            return VertexList
+                .Where(a => ((IGraphXVertex)a.Value.Vertex!).SkipProcessing != ProcessingOptionEnum.Exclude)
+                .ToDictionary(vertex => vertex.Key, vertex => vertex.Value.GetPositionGraphX());
         }
 
         #endregion
@@ -711,7 +747,8 @@ namespace Westermo.GraphX.Controls
         /// <param name="positions">Optional vertex positions</param>
         /// <param name="showObjectsIfPosSpecified">If True, all objects will be made visible when positions are specified</param>
         /// <param name="autoresolveIds">Automaticaly assign unique Ids to data objects. Can be vital for different GraphX logic parts such as parallel edges.</param>
-        public virtual void PreloadGraph(Dictionary<TVertex, Point>? positions = null, bool showObjectsIfPosSpecified = true, bool autoresolveIds = true)
+        public virtual void PreloadGraph(Dictionary<TVertex, Point>? positions = null,
+            bool showObjectsIfPosSpecified = true, bool autoresolveIds = true)
         {
             if (LogicCore == null)
                 throw new GX_InvalidDataException("LogicCore -> Not initialized!");
@@ -727,11 +764,12 @@ namespace Westermo.GraphX.Controls
             {
                 foreach (var item in positions)
                 {
-                    if (VertexList.ContainsKey(item.Key))
-                        VertexList[item.Key].SetPosition(item.Value);
+                    if (VertexList.TryGetValue(item.Key, out VertexControl? value))
+                        value.SetPosition(item.Value);
                     VertexList[item.Key].SetCurrentValue(PositioningCompleteProperty, true);
                 }
             }
+
             UpdateLayout();
             RestoreAlgorithmStorage();
             GenerateAllEdges(positions != null ? Visibility.Visible : Visibility.Collapsed, false);
@@ -744,13 +782,14 @@ namespace Westermo.GraphX.Controls
         /// <param name="graph">Data graph, by default is null and uses LogicCore.Graph as the source</param>
         /// <param name="dataContextToDataItem">Sets DataContext property to vertex data item of the control</param>
         /// <param name="forceVisPropRecovery"></param>
-        public virtual void PreloadVertexes(TGraph? graph = null, bool dataContextToDataItem = true, bool forceVisPropRecovery = false)
+        public virtual void PreloadVertexes(TGraph? graph = null, bool dataContextToDataItem = true,
+            bool forceVisPropRecovery = false)
         {
             if (LogicCore == null)
                 throw new GX_InvalidDataException("LogicCore -> Not initialized!");
             if (graph == null && LogicCore.Graph == null)
                 throw new GX_InvalidDataException("graph param empty and LogicCore.Graph -> Not initialized!");
-            graph = graph ?? LogicCore.Graph;
+            graph ??= LogicCore.Graph;
 
             //clear edge and vertex controls
             RemoveAllVertices();
@@ -761,7 +800,8 @@ namespace Westermo.GraphX.Controls
             {
                 var vc = ControlFactory.CreateVertexControl(it);
                 vc.DataContext = dataContextToDataItem ? it : null;
-                vc.SetCurrentValue(PositioningCompleteProperty, false); // Style can make them invisible until positioning is complete (after layout positions are calculated)
+                vc.SetCurrentValue(PositioningCompleteProperty,
+                    false); // Style can make them invisible until positioning is complete (after layout positions are calculated)
                 InternalAddVertex(it, vc);
             }
 
@@ -772,9 +812,11 @@ namespace Westermo.GraphX.Controls
             //assign graph
             LogicCore.Graph = graph;
         }
+
         #endregion
 
         #region RelayoutGraph()
+
         private Task? _layoutTask;
         private CancellationTokenSource? _layoutCancellationSource;
 
@@ -783,9 +825,9 @@ namespace Westermo.GraphX.Controls
         /// Remove all visuals with no keys in data graph and add all visuals that has keys in data graph.
         /// Default value is True.
         /// </summary>
-        public bool EnableVisualsRenewOnFiltering{ get; set; } = true;
+        public bool EnableVisualsRenewOnFiltering { get; set; } = true;
 
-        protected virtual void _relayoutGraph(CancellationToken cancellationToken)
+        protected virtual void RelayoutGraph(CancellationToken cancellationToken)
         {
             Dictionary<TVertex, Size>? vertexSizes = null;
             IDictionary<TVertex, Measure.Point>? vertexPositions = null;
@@ -813,18 +855,16 @@ namespace Westermo.GraphX.Controls
 
                     LogicCore.Graph.Vertices.ForEach(v =>
                     {
-                        if(!_vertexlist.ContainsKey(v))
+                        if (!_vertexlist.ContainsKey(v))
                             AddVertex(v, ControlFactory.CreateVertexControl(v));
                     });
 
                     LogicCore.Graph.Edges.ForEach(e =>
                     {
-                        if (!_edgeslist.ContainsKey(e))
-                        {
-                            var source = _vertexlist[e.Source];
-                            var target = _vertexlist[e.Target];
-                            AddEdge(e, ControlFactory.CreateEdgeControl(source, target, e));
-                        }
+                        if (_edgeslist.ContainsKey(e)) return;
+                        var source = _vertexlist[e.Source];
+                        var target = _vertexlist[e.Target];
+                        AddEdge(e, ControlFactory.CreateEdgeControl(source, target, e));
                     });
                 }
 
@@ -855,11 +895,11 @@ namespace Westermo.GraphX.Controls
                     MoveAnimation.CleanupBaseData();
                     MoveAnimation.Cleanup();
                 }
+
                 //setup vertex positions from result data
                 foreach (var item in resultCoords)
                 {
-                    if (!_vertexlist.ContainsKey(item.Key)) continue;
-                    var vc = _vertexlist[item.Key];
+                    if (!_vertexlist.TryGetValue(item.Key, out var vc)) continue;
 
                     SetFinalX(vc, item.Value.X);
                     SetFinalY(vc, item.Value.Y);
@@ -867,8 +907,10 @@ namespace Westermo.GraphX.Controls
                     if (MoveAnimation == null || double.IsNaN(GetX(vc)))
                         vc.SetPosition(item.Value.X, item.Value.Y, false);
                     else MoveAnimation.AddVertexData(vc, item.Value);
-                    vc.SetCurrentValue(PositioningCompleteProperty, true); // Style can show vertexes with layout positions assigned
+                    vc.SetCurrentValue(PositioningCompleteProperty,
+                        true); // Style can show vertexes with layout positions assigned
                 }
+
                 if (MoveAnimation != null)
                 {
                     if (MoveAnimation.VertexStorage.Count > 0)
@@ -883,7 +925,6 @@ namespace Westermo.GraphX.Controls
                 SetCurrentValue(LogicCoreProperty, localLogicCore);
                 UpdateLayout(); //update all changes
                 Debug.WriteLine("VIS: " + (t - DateTime.Now));
-
             });
         }
 
@@ -894,10 +935,10 @@ namespace Westermo.GraphX.Controls
         public override void RelayoutGraph(bool generateAllEdges = false)
         {
             LogicCore?.PushFilters();
-            _relayoutGraphMain(generateAllEdges);
+            RelayoutGraphMain(generateAllEdges);
         }
 
-        protected virtual void _relayoutGraphMain(bool generateAllEdges = false, bool standalone = true)
+        protected virtual void RelayoutGraphMain(bool generateAllEdges = false, bool standalone = true)
         {
             if (LogicCore == null)
                 throw new GX_InvalidDataException("LogicCore -> Not initialized!");
@@ -909,20 +950,21 @@ namespace Westermo.GraphX.Controls
                 _layoutCancellationSource = new CancellationTokenSource();
 
                 // Launch _relayoutGraph on a background thread using the task thread pool
-                _layoutTask = Task.Factory.StartNew(() => _relayoutGraph(_layoutCancellationSource.Token), _layoutCancellationSource.Token)
-                                  .ContinueWith(t => // When finished, finish up the relayout on the UI thread
-                                  {
-                                      RunOnDispatcherThread(() => _finishUpRelayoutGraph(generateAllEdges, standalone));
-                                  }, _layoutCancellationSource.Token);
+                _layoutTask = Task.Factory.StartNew(() => RelayoutGraph(_layoutCancellationSource.Token),
+                        _layoutCancellationSource.Token)
+                    .ContinueWith(_ => // When finished, finish up the relayout on the UI thread
+                    {
+                        RunOnDispatcherThread(() => FinishUpRelayoutGraph(generateAllEdges, standalone));
+                    }, _layoutCancellationSource.Token);
             }
             else
             {
-                _relayoutGraph(CancellationToken.None);
-                _finishUpRelayoutGraph(generateAllEdges, standalone);
+                RelayoutGraph(CancellationToken.None);
+                FinishUpRelayoutGraph(generateAllEdges, standalone);
             }
         }
 
-        protected virtual void _finishUpRelayoutGraph(bool generateAllEdges, bool standalone)
+        protected virtual void FinishUpRelayoutGraph(bool generateAllEdges, bool standalone)
         {
             if (generateAllEdges)
             {
@@ -933,6 +975,7 @@ namespace Westermo.GraphX.Controls
                 }
                 else UpdateAllEdges();
             }
+
             if (!standalone)
             {
                 if (EnableVisualPropsRecovery) ReapplyVertexVisualProperties();
@@ -945,6 +988,7 @@ namespace Westermo.GraphX.Controls
         }
 
         #region WPF/METRO threading stuff
+
         private void RunOnDispatcherThread(Action action)
         {
             var dispatcher = Application.Current?.Dispatcher ?? Dispatcher;
@@ -956,11 +1000,12 @@ namespace Westermo.GraphX.Controls
                 {
                     // Run through a task on the ui task scheduler. A dispatcher invoke will leave exceptions behind on the UI thread
                     // and it will kill the application.
-                    Task.Factory.StartNew(action, CancellationToken.None, TaskCreationOptions.None, _uiTaskScheduler).Wait();
+                    Task.Factory.StartNew(action, CancellationToken.None, TaskCreationOptions.None, _uiTaskScheduler)
+                        .Wait();
                 }
                 catch (AggregateException ex)
                 {
-                    UnwrapAndRethrow(ex);
+                    GraphArea<TVertex, TEdge, TGraph>.UnwrapAndRethrow(ex);
                 }
             }
         }
@@ -975,16 +1020,17 @@ namespace Westermo.GraphX.Controls
             {
                 // Run through a task on the ui task scheduler. A dispatcher invoke will leave exceptions behind on the UI thread
                 // and it will kill the application.
-                return Task.Factory.StartNew(expr, CancellationToken.None, TaskCreationOptions.None, _uiTaskScheduler).Result;
+                return Task.Factory.StartNew(expr, CancellationToken.None, TaskCreationOptions.None, _uiTaskScheduler)
+                    .Result;
             }
             catch (AggregateException ex)
             {
-                UnwrapAndRethrow(ex);
+                GraphArea<TVertex, TEdge, TGraph>.UnwrapAndRethrow(ex);
                 throw; // Just to make the compiler shut up about not returning a value.
             }
         }
 
-        private void UnwrapAndRethrow(AggregateException ex)
+        private static void UnwrapAndRethrow(AggregateException ex)
         {
             if (ex.InnerExceptions.Count == 1)
             {
@@ -999,7 +1045,7 @@ namespace Westermo.GraphX.Controls
         }
 
         // Faking "await" from C# 5 / .NET 4.5 - see here: http://blogs.msdn.com/b/pfxteam/archive/2010/05/04/10007499.aspx
-        private void Await(Task task)
+        private static void Await(Task task)
         {
             var nestedFrame = new DispatcherFrame();
             task.ContinueWith(_ => nestedFrame.Continue = false);
@@ -1011,9 +1057,10 @@ namespace Westermo.GraphX.Controls
             }
             catch (AggregateException ex)
             {
-                UnwrapAndRethrow(ex);
+                GraphArea<TVertex, TEdge, TGraph>.UnwrapAndRethrow(ex);
             }
         }
+
         #endregion
 
         #endregion
@@ -1041,7 +1088,6 @@ namespace Westermo.GraphX.Controls
             _layoutCancellationSource.Dispose();
             _layoutCancellationSource = null;
             _layoutTask = null;
-
         }
 
         /// <summary>
@@ -1055,13 +1101,14 @@ namespace Westermo.GraphX.Controls
             if (LogicCore == null)
                 throw new GX_InvalidDataException("LogicCore -> Not initialized! (Is NULL)");
             if (LogicCore.Graph == null)
-                throw new InvalidDataException("GraphArea.GenerateGraph() -> LogicCore.Graph property is null while trying to generate graph!");
+                throw new InvalidDataException(
+                    "GraphArea.GenerateGraph() -> LogicCore.Graph property is null while trying to generate graph!");
             LogicCore.PushFilters();
             if (AutoAssignMissingDataId)
                 AutoresolveIds(false, graph);
             if (!LogicCore.IsCustomLayout)
                 PreloadVertexes(graph, dataContextToDataItem);
-            _relayoutGraphMain(generateAllEdges, false);
+            RelayoutGraphMain(generateAllEdges, false);
         }
 
         /// <summary>
@@ -1083,7 +1130,7 @@ namespace Westermo.GraphX.Controls
         {
             if (LogicCore == null)
                 throw new GX_InvalidDataException("LogicCore -> Not initialized!");
-            if (graph == null) graph = LogicCore.Graph;
+            graph ??= LogicCore.Graph;
             if (graph == null) return;
 
             DataIdsCollection.Clear();
@@ -1092,7 +1139,7 @@ namespace Westermo.GraphX.Controls
             // First, rebuild data ID collection for all vertices and edges that already have assigned IDs.
             foreach (var item in graph.Vertices.Where(a => a.ID != -1))
             {
-                bool added = DataIdsCollection.Add(item.ID);
+                var added = DataIdsCollection.Add(item.ID);
                 Debug.Assert(added,
                     $"Duplicate ID '{item.ID}' found while adding a vertex ID during rebuild of data ID collection.");
             }
@@ -1108,17 +1155,18 @@ namespace Westermo.GraphX.Controls
         {
             if (LogicCore == null)
                 throw new GX_InvalidDataException("LogicCore -> Not initialized!");
-            if (graph == null) graph = LogicCore.Graph;
+            graph ??= LogicCore.Graph;
             if (graph == null) return;
 
             EdgeDataIdsCollection.Clear();
             _edgeDataIdCounter = 1;
             foreach (var item in graph.Edges.Where(a => a.ID != -1))
             {
-                bool added = EdgeDataIdsCollection.Add(item.ID);
+                var added = EdgeDataIdsCollection.Add(item.ID);
                 Debug.Assert(added,
                     $"Duplicate ID '{item.ID}' found while adding an edge ID during rebuild of data ID collection.");
             }
+
             foreach (var item in graph.Edges.Where(a => a.ID == -1))
                 item.ID = GetNextUniqueId(false);
         }
@@ -1137,16 +1185,20 @@ namespace Westermo.GraphX.Controls
         protected void ReapplySingleVertexVisualProperties(VertexControl item)
         {
             if (_svVerticesDragEnabled != null) DragBehaviour.SetIsDragEnabled(item, _svVerticesDragEnabled.Value);
-            if (_svVerticesDragUpdateEdges != null) DragBehaviour.SetUpdateEdgesOnMove(item, _svVerticesDragUpdateEdges.Value);
+            if (_svVerticesDragUpdateEdges != null)
+                DragBehaviour.SetUpdateEdgesOnMove(item, _svVerticesDragUpdateEdges.Value);
             if (_svVertexShape != null) item.VertexShape = _svVertexShape.Value;
             if (_svVertexLabelShow != null) item.ShowLabel = _svVertexLabelShow.Value;
             if (_svVertexHlEnabled != null) HighlightBehaviour.SetIsHighlightEnabled(item, _svVertexHlEnabled.Value);
-            if (_svVertexHlObjectType != null) HighlightBehaviour.SetHighlightControl(item, _svVertexHlObjectType.Value);
+            if (_svVertexHlObjectType != null)
+                HighlightBehaviour.SetHighlightControl(item, _svVertexHlObjectType.Value);
             if (_svVertexHlEdgesType != null) HighlightBehaviour.SetHighlightEdges(item, _svVertexHlEdgesType.Value);
             CustomReapplySingleVertexVisualProperties(item);
         }
 
-        protected virtual void CustomReapplySingleVertexVisualProperties(VertexControl item) { }
+        protected virtual void CustomReapplySingleVertexVisualProperties(VertexControl item)
+        {
+        }
 
         protected void ReapplyEdgeVisualProperties()
         {
@@ -1154,13 +1206,16 @@ namespace Westermo.GraphX.Controls
                 ReapplySingleEdgeVisualProperties(item);
         }
 
-        protected virtual void CustomReapplySingleEdgeVisualProperties(EdgeControl item) { }
+        protected virtual void CustomReapplySingleEdgeVisualProperties(EdgeControl item)
+        {
+        }
 
         protected void ReapplySingleEdgeVisualProperties(EdgeControl item)
         {
-            if (this._edgesDragEnabled != null) DragBehaviour.SetIsDragEnabled(item, this._edgesDragEnabled.Value);
+            if (_edgesDragEnabled != null) DragBehaviour.SetIsDragEnabled(item, _edgesDragEnabled.Value);
             if (_svEdgeDashStyle != null) item.DashStyle = _svEdgeDashStyle.Value;
-            if (_svShowEdgeArrows != null) item.SetCurrentValue(EdgeControlBase.ShowArrowsProperty, _svShowEdgeArrows.Value);
+            if (_svShowEdgeArrows != null)
+                item.SetCurrentValue(EdgeControlBase.ShowArrowsProperty, _svShowEdgeArrows.Value);
             //if (_svShowEdgeLabels != null) item.ShowLabel = _svShowEdgeLabels.Value;
             //if (_svAlignEdgeLabels != null) item.AlignLabelsToEdges = _svAlignEdgeLabels.Value;
             if (_svUpdateLabelPosition != null) item.UpdateLabelPosition = _svUpdateLabelPosition.Value;
@@ -1171,6 +1226,7 @@ namespace Westermo.GraphX.Controls
         }
 
         private bool? _svUpdateLabelPosition;
+
         public void UpdateEdgeLabelPosition(bool value)
         {
             _svUpdateLabelPosition = value;
@@ -1178,7 +1234,8 @@ namespace Westermo.GraphX.Controls
                 item.Value.UpdateLabelPosition = value;
         }
 
-        private EdgeDashStyle? _svEdgeDashStyle;// EdgeDashStyle.Solid;
+        private EdgeDashStyle? _svEdgeDashStyle; // EdgeDashStyle.Solid;
+
         /// <summary>
         /// Sets all edges dash style
         /// </summary>
@@ -1191,6 +1248,7 @@ namespace Westermo.GraphX.Controls
         }
 
         private bool? _svShowEdgeArrows;
+
         /// <summary>
         /// Show or hide all edges arrows. Default value is True.
         /// </summary>
@@ -1211,11 +1269,13 @@ namespace Westermo.GraphX.Controls
         {
             //_svShowEdgeLabels = isEnabled;
             foreach (var item in _edgeslist.Values)
-                item.EdgeLabelControls.Cast<FrameworkElement>().ForEach(l=> l.SetCurrentValue(EdgeLabelControl.ShowLabelProperty, isEnabled));
+                item.EdgeLabelControls.Cast<FrameworkElement>().ForEach(l =>
+                    l.SetCurrentValue(EdgeLabelControl.ShowLabelProperty, isEnabled));
             InvalidateVisual();
         }
 
         private bool? _svVertexLabelShow;
+
         /// <summary>
         /// Show or hide all vertex labels
         /// </summary>
@@ -1237,12 +1297,13 @@ namespace Westermo.GraphX.Controls
         {
             //_svAlignEdgeLabels = isEnabled;
             foreach (var item in _edgeslist.Values)
-                item.EdgeLabelControls.ForEach(l=> l.AlignToEdge = isEnabled);
+                item.EdgeLabelControls.ForEach(l => l.AlignToEdge = isEnabled);
             InvalidateVisual();
         }
 
         private bool? _svVerticesDragEnabled;
         private bool? _svVerticesDragUpdateEdges;
+
         /// <summary>
         /// Sets drag mode for all vertices
         /// </summary>
@@ -1261,6 +1322,7 @@ namespace Westermo.GraphX.Controls
         }
 
         private bool? _edgesDragEnabled;
+
         /// <summary>
         /// Sets drag mode for all edges
         /// </summary>
@@ -1275,7 +1337,8 @@ namespace Westermo.GraphX.Controls
             }
         }
 
-        private VertexShape? _svVertexShape;// = VertexShape.Rectangle;
+        private VertexShape? _svVertexShape; // = VertexShape.Rectangle;
+
         /// <summary>
         /// Sets math shape for all vertices
         /// </summary>
@@ -1288,15 +1351,17 @@ namespace Westermo.GraphX.Controls
         }
 
         private bool? _svVertexHlEnabled;
-        private GraphControlType? _svVertexHlObjectType;// = GraphControlType.VertexAndEdge;
-        private EdgesType? _svVertexHlEdgesType;// = EdgesType.All;
+        private GraphControlType? _svVertexHlObjectType; // = GraphControlType.VertexAndEdge;
+        private EdgesType? _svVertexHlEdgesType; // = EdgesType.All;
+
         /// <summary>
         /// Sets vertices highlight logic
         /// </summary>
         /// <param name="isEnabled">Is highlight enabled</param>
         /// <param name="hlObjectsOfType">Highlight connected objects if specified type</param>
         /// <param name="hlEdgesOfType">Highlight edges of specified type (according to previous property set)</param>
-        public void SetVerticesHighlight(bool isEnabled, GraphControlType hlObjectsOfType, EdgesType hlEdgesOfType = EdgesType.All)
+        public void SetVerticesHighlight(bool isEnabled, GraphControlType hlObjectsOfType,
+            EdgesType hlEdgesOfType = EdgesType.All)
         {
             _svVertexHlEnabled = isEnabled;
             _svVertexHlObjectType = hlObjectsOfType;
@@ -1311,7 +1376,8 @@ namespace Westermo.GraphX.Controls
         }
 
         private bool? _svEdgeHlEnabled;
-        private GraphControlType? _svEdgeHlObjectType;// = GraphControlType.VertexAndEdge;
+        private GraphControlType? _svEdgeHlObjectType; // = GraphControlType.VertexAndEdge;
+
         /// <summary>
         /// Sets edges highlight logic
         /// </summary>
@@ -1336,6 +1402,7 @@ namespace Westermo.GraphX.Controls
         #region Generate Edges (ForVertex, All ... and stuff)
 
         #region ComputeEdgeRoutesByVertex()
+
         /// <summary>
         /// Compute new edge routes for all edges of the vertex
         /// </summary>
@@ -1345,8 +1412,11 @@ namespace Westermo.GraphX.Controls
         {
             if (LogicCore == null)
                 throw new GX_InvalidDataException("LogicCore is not initialized!");
-            LogicCore.ComputeEdgeRoutesByVertex((TVertex)vc.Vertex!, vertexDataNeedUpdate ? (Measure.Point?)vc.GetPositionGraphX() : null, vertexDataNeedUpdate ? (Size?)new Size(vc.ActualWidth, vc.ActualHeight) : null);
+            LogicCore.ComputeEdgeRoutesByVertex((TVertex)vc.Vertex!,
+                vertexDataNeedUpdate ? vc.GetPositionGraphX() : null,
+                vertexDataNeedUpdate ? new Size(vc.ActualWidth, vc.ActualHeight) : null);
         }
+
         #endregion
 
         #region GenerateAllEdges()
@@ -1364,7 +1434,7 @@ namespace Westermo.GraphX.Controls
                 if (item.Source == null || item.Target == null) continue;
                 if (!_vertexlist.ContainsKey(item.Source) || !_vertexlist.ContainsKey(item.Target)) continue;
                 var edgectrl = ControlFactory.CreateEdgeControl(_vertexlist[item.Source], _vertexlist[item.Target],
-                                                                    item, _svShowEdgeArrows ?? true, defaultVisibility);
+                    item, _svShowEdgeArrows ?? true, defaultVisibility);
                 InternalInsertEdge(item, edgectrl);
                 //setup path
             }
@@ -1385,7 +1455,8 @@ namespace Westermo.GraphX.Controls
         /// </summary>
         /// <param name="defaultVisibility">Default edge visibility on layout</param>
         /// <param name="updateLayout">Ensures that layout is properly updated before edges calculation. If you are sure that it is already updated you can set this param to False to increase performance. </param>
-        public virtual void GenerateAllEdges(Visibility defaultVisibility = Visibility.Visible, bool updateLayout = true)
+        public virtual void GenerateAllEdges(Visibility defaultVisibility = Visibility.Visible,
+            bool updateLayout = true)
         {
             if (updateLayout) UpdateLayout();
             GenerateAllEdgesInternal(defaultVisibility);
@@ -1398,7 +1469,7 @@ namespace Westermo.GraphX.Controls
         /// <param name="edgeList">Optonal parameter. Specifies initial list of edges. If null then all edges are parsed. Default value is Null.</param>
         public virtual void UpdateParallelEdgesData(Dictionary<TEdge, EdgeControl>? edgeList = null)
         {
-            edgeList = edgeList ?? _edgeslist;
+            edgeList ??= _edgeslist;
 
             //clear IsParallel flag
             edgeList.Values.ForEach(a => a.IsParallel = false);
@@ -1408,9 +1479,14 @@ namespace Westermo.GraphX.Controls
             // and will be marked as parallel, but their offsets end up overridden during rendering.
             var edgeGroups =
                 (from edge in edgeList
-                 where edge.Value.CanBeParallel && !edge.Key.IsSelfLoop && (!edge.Key.SourceConnectionPointId.HasValue || !edge.Key.TargetConnectionPointId.HasValue)
-                 group edge by new Tuple<long, long>(Math.Min(edge.Key.Source.ID, edge.Key.Target.ID), Math.Max(edge.Key.Source.ID, edge.Key.Target.ID)) into edgeGroup
-                 select edgeGroup.OrderBy(e => e.Key.SourceConnectionPointId.HasValue || e.Key.TargetConnectionPointId.HasValue ? 1 : 0).ToList())
+                 where edge.Value.CanBeParallel && !edge.Key.IsSelfLoop &&
+                       (!edge.Key.SourceConnectionPointId.HasValue || !edge.Key.TargetConnectionPointId.HasValue)
+                 group edge by new Tuple<long, long>(Math.Min(edge.Key.Source.ID, edge.Key.Target.ID),
+                     Math.Max(edge.Key.Source.ID, edge.Key.Target.ID))
+                    into edgeGroup
+                 select edgeGroup.OrderBy(e =>
+                         e.Key.SourceConnectionPointId.HasValue || e.Key.TargetConnectionPointId.HasValue ? 1 : 0)
+                     .ToList())
                 .ToList();
 
             foreach (var list in edgeGroups)
@@ -1418,18 +1494,22 @@ namespace Westermo.GraphX.Controls
                 var first = list[0];
 
                 // Alternate sides with each step
-                int viceversa = 1;
+                var viceversa = 1;
                 // Check if total number of edges without connection points is even or not
-                bool even = (list.TakeWhile(e => !e.Key.SourceConnectionPointId.HasValue && !e.Key.TargetConnectionPointId.HasValue).Count() % 2) == 0;
+                var even = list.TakeWhile(e =>
+                                   !e.Key.SourceConnectionPointId.HasValue && !e.Key.TargetConnectionPointId.HasValue)
+                               .Count() % 2 ==
+                           0;
                 // For even numbers of edges, initial offset is a half step from the center
-                int initialOffset = even ? LogicCore!.ParallelEdgeDistance / 2 : 0;
+                var initialOffset = even ? LogicCore!.ParallelEdgeDistance / 2 : 0;
 
-                for (int i = 0; i < list.Count; i++)
+                for (var i = 0; i < list.Count; i++)
                 {
                     var kvp = list[i];
                     kvp.Value.IsParallel = true;
 
-                    var offset = viceversa * (initialOffset + LogicCore!.ParallelEdgeDistance * ((i + (even ? 0 : 1)) / 2));
+                    var offset = viceversa *
+                                 (initialOffset + LogicCore!.ParallelEdgeDistance * ((i + (even ? 0 : 1)) / 2));
                     //if source to target edge
                     if (kvp.Key.Source == first.Key.Source)
                     {
@@ -1439,6 +1519,7 @@ namespace Westermo.GraphX.Controls
                     {
                         kvp.Value.ParallelEdgeOffset = -offset;
                     }
+
                     //change trigger to opposite
                     viceversa = -viceversa;
                 }
@@ -1448,13 +1529,15 @@ namespace Westermo.GraphX.Controls
         #endregion
 
         #region GenerateEdgesForVertex()
+
         /// <summary>
         /// Generates and displays edges for specified vertex
         /// </summary>
         /// <param name="vc">Vertex control</param>
         /// <param name="edgeType">Type of edges to display</param>
         /// <param name="defaultVisibility">Default edge visibility on layout</param>
-        public override void GenerateEdgesForVertex(VertexControl vc, EdgesType edgeType, Visibility defaultVisibility = Visibility.Visible)
+        public override void GenerateEdgesForVertex(VertexControl vc, EdgesType edgeType,
+            Visibility defaultVisibility = Visibility.Visible)
         {
             if (LogicCore == null)
                 throw new GX_InvalidDataException("LogicCore -> Not initialized!");
@@ -1465,38 +1548,43 @@ namespace Westermo.GraphX.Controls
             switch (edgeType)
             {
                 case EdgesType.Out:
-                    outlist = LogicCore.Graph.OutEdges((TVertex) vc.Vertex!).ToArray();
+                    outlist = LogicCore.Graph.OutEdges((TVertex)vc.Vertex!).ToArray();
                     break;
                 case EdgesType.In:
-                    inlist = LogicCore.Graph.InEdges((TVertex) vc.Vertex!).ToArray();
+                    inlist = LogicCore.Graph.InEdges((TVertex)vc.Vertex!).ToArray();
                     break;
                 default:
-                    outlist = LogicCore.Graph.OutEdges((TVertex) vc.Vertex!).ToArray();
-                    inlist = LogicCore.Graph.InEdges((TVertex) vc.Vertex!).ToArray();
+                    outlist = LogicCore.Graph.OutEdges((TVertex)vc.Vertex!).ToArray();
+                    inlist = LogicCore.Graph.InEdges((TVertex)vc.Vertex!).ToArray();
                     break;
             }
-            bool gotSelfLoop = false;
+
+            var gotSelfLoop = false;
             if (inlist != null)
                 foreach (var item in inlist)
                 {
                     if (gotSelfLoop) continue;
-                    var ctrl = ControlFactory.CreateEdgeControl(_vertexlist[item.Source], vc, item, _svShowEdgeArrows ?? true,
-                                                                     defaultVisibility);
+                    var ctrl = ControlFactory.CreateEdgeControl(_vertexlist[item.Source], vc, item,
+                        _svShowEdgeArrows ?? true,
+                        defaultVisibility);
                     InsertEdge(item, ctrl);
                     ctrl.PrepareEdgePath();
                     if (item.Source == item.Target) gotSelfLoop = true;
                 }
+
             if (outlist != null)
                 foreach (var item in outlist)
                 {
                     if (gotSelfLoop) continue;
-                    var ctrl = ControlFactory.CreateEdgeControl(vc, _vertexlist[item.Target], item, _svShowEdgeArrows ?? true,
-                                                 defaultVisibility);
+                    var ctrl = ControlFactory.CreateEdgeControl(vc, _vertexlist[item.Target], item,
+                        _svShowEdgeArrows ?? true,
+                        defaultVisibility);
                     InsertEdge(item, ctrl);
                     ctrl.PrepareEdgePath();
                     if (item.Source == item.Target) gotSelfLoop = true;
                 }
         }
+
         #endregion
 
         /// <summary>
@@ -1518,13 +1606,12 @@ namespace Westermo.GraphX.Controls
             }
         }
 
-
-
         #endregion
 
         #region GetRelatedControls
 
-        public override List<IGraphControl> GetRelatedVertexControls(IGraphControl ctrl, EdgesType edgesType = EdgesType.All)
+        public override List<IGraphControl> GetRelatedVertexControls(IGraphControl ctrl,
+            EdgesType edgesType = EdgesType.All)
         {
             if (ctrl == null)
                 throw new GX_InvalidDataException("Supplied ctrl value is null!");
@@ -1532,45 +1619,49 @@ namespace Westermo.GraphX.Controls
                 throw new GX_InvalidDataException("LogicCore -> Not initialized!");
             if (LogicCore.Graph == null)
             {
-                throw new InvalidOperationException("LogicCore.Graph property not set while using GetRelatedVertexControls method!");
+                throw new InvalidOperationException(
+                    "LogicCore.Graph property not set while using GetRelatedVertexControls method!");
             }
 
             var list = new List<IGraphControl>();
             if (ctrl is VertexControl vc)
             {
-                var vData = (TVertex) vc.Vertex!;
+                var vData = (TVertex)vc.Vertex!;
                 var vList = new List<TVertex>();
                 switch (edgesType)
                 {
                     case EdgesType.All:
-                        vList = LogicCore.Graph.GetNeighbours(vData).ToList()!;
+                        vList = LogicCore.Graph.GetNeighbours(vData).ToList();
                         break;
                     case EdgesType.In:
-                        vList = LogicCore.Graph.GetInNeighbours(vData).ToList()!;
+                        vList = LogicCore.Graph.GetInNeighbours(vData).ToList();
                         break;
                     case EdgesType.Out:
-                        vList = LogicCore.Graph.GetOutNeighbours(vData).ToList()!;
+                        vList = LogicCore.Graph.GetOutNeighbours(vData).ToList();
                         break;
                 }
+
                 list.AddRange(VertexList.Where(a => vList.Contains(a.Key)).Select(a => a.Value));
             }
-            var ec = ctrl as EdgeControl;
-            if (ec == null) return list;
-            
+
+            if (ctrl is not EdgeControl ec) return list;
+
             var edge = (TEdge)ec.Edge!;
-            if (edge.Target != null && _vertexlist.ContainsKey(edge.Target))
+            if (edge.Target != null && _vertexlist.TryGetValue(edge.Target, out var value))
             {
-                list.Add(_vertexlist[edge.Target]);
+                list.Add(value);
             }
-            if (edge.Source != null && _vertexlist.ContainsKey(edge.Source))
+
+            if (edge.Source != null && _vertexlist.TryGetValue(edge.Source, out var val))
             {
-                list.Add(_vertexlist[edge.Source]);
+                list.Add(val);
             }
-            
+
             return list;
         }
 
-        public override List<IGraphControl> GetRelatedEdgeControls(IGraphControl ctrl, EdgesType edgesType = EdgesType.All)
+        public override List<IGraphControl> GetRelatedEdgeControls(IGraphControl ctrl,
+            EdgesType edgesType = EdgesType.All)
         {
             if (ctrl == null)
                 throw new GX_InvalidDataException("Supplied ctrl value is null!");
@@ -1578,14 +1669,15 @@ namespace Westermo.GraphX.Controls
                 throw new GX_InvalidDataException("LogicCore -> Not initialized!");
             if (LogicCore.Graph == null)
             {
-                throw new InvalidOperationException("LogicCore.Graph property not set while using GetRelatedEdgeControls method!");
+                throw new InvalidOperationException(
+                    "LogicCore.Graph property not set while using GetRelatedEdgeControls method!");
             }
 
             var list = new List<IGraphControl>();
             if (ctrl is EdgeControl) return list;
             if (ctrl is VertexControl vc)
             {
-                var vData = (TVertex) vc.Vertex!;
+                var vData = (TVertex)vc.Vertex!;
                 var eList = new List<TEdge>();
                 switch (edgesType)
                 {
@@ -1599,8 +1691,10 @@ namespace Westermo.GraphX.Controls
                         eList = LogicCore.Graph.GetOutEdges(vData).ToList();
                         break;
                 }
+
                 list.AddRange(EdgesList.Where(a => eList.Contains(a.Key)).Select(a => a.Value));
             }
+
             return list;
         }
 
@@ -1610,7 +1704,8 @@ namespace Westermo.GraphX.Controls
         /// <param name="ctrl">Original control</param>
         /// <param name="resultType">Type of resulting related controls</param>
         /// <param name="edgesType">Optional edge controls type</param>
-        public override List<IGraphControl> GetRelatedControls(IGraphControl ctrl, GraphControlType resultType = GraphControlType.VertexAndEdge, EdgesType edgesType = EdgesType.Out)
+        public override List<IGraphControl> GetRelatedControls(IGraphControl ctrl,
+            GraphControlType resultType = GraphControlType.VertexAndEdge, EdgesType edgesType = EdgesType.Out)
         {
             if (ctrl == null)
                 throw new GX_InvalidDataException("Supplied ctrl value is null!");
@@ -1618,7 +1713,8 @@ namespace Westermo.GraphX.Controls
                 throw new GX_InvalidDataException("LogicCore -> Not initialized!");
             if (LogicCore.Graph == null)
             {
-                throw new InvalidOperationException("LogicCore.Graph property not set while using GetRelatedControls method!");
+                throw new InvalidOperationException(
+                    "LogicCore.Graph property not set while using GetRelatedControls method!");
             }
 
             var list = new List<IGraphControl>();
@@ -1629,39 +1725,49 @@ namespace Westermo.GraphX.Controls
                 List<TEdge>? edgesOutList = null;
                 if (edgesType == EdgesType.In || edgesType == EdgesType.All)
                 {
-                    LogicCore.Graph.TryGetInEdges((TVertex) vc.Vertex!, out var inEdges);
+                    LogicCore.Graph.TryGetInEdges((TVertex)vc.Vertex!, out var inEdges);
                     edgesInList = inEdges?.ToList();
                 }
 
                 if (edgesType == EdgesType.Out || edgesType == EdgesType.All)
                 {
-                    LogicCore.Graph.TryGetOutEdges((TVertex) vc.Vertex!, out var outEdges);
+                    LogicCore.Graph.TryGetOutEdges((TVertex)vc.Vertex!, out var outEdges);
                     edgesOutList = outEdges?.ToList();
                 }
 
                 if (resultType == GraphControlType.Edge || resultType == GraphControlType.VertexAndEdge)
                 {
                     if (edgesInList != null)
-                        list.AddRange((from item in edgesInList where _edgeslist.ContainsKey(item) select _edgeslist[item]));
+                        list.AddRange(from item in edgesInList
+                                      where _edgeslist.ContainsKey(item)
+                                      select _edgeslist[item]);
                     if (edgesOutList != null)
-                        list.AddRange((from item in edgesOutList where _edgeslist.ContainsKey(item) select _edgeslist[item]));
+                        list.AddRange(from item in edgesOutList
+                                      where _edgeslist.ContainsKey(item)
+                                      select _edgeslist[item]);
                 }
+
                 if (resultType != GraphControlType.Vertex && resultType != GraphControlType.VertexAndEdge) return list;
 
                 if (edgesInList != null)
-                    list.AddRange((from item in edgesInList where _vertexlist.ContainsKey(item.Source) select _vertexlist[item.Source]));
+                    list.AddRange(from item in edgesInList
+                                  where _vertexlist.ContainsKey(item.Source)
+                                  select _vertexlist[item.Source]);
                 if (edgesOutList != null)
-                    list.AddRange((from item in edgesOutList where _vertexlist.ContainsKey(item.Target) select _vertexlist[item.Target]));
+                    list.AddRange(from item in edgesOutList
+                                  where _vertexlist.ContainsKey(item.Target)
+                                  select _vertexlist[item.Target]);
                 return list;
             }
-            var ec = ctrl as EdgeControl;
-            if (ec == null) return list;
+
+            if (ctrl is not EdgeControl ec) return list;
             var edge = (TEdge)ec.Edge!;
             if (resultType == GraphControlType.Edge) return list;
-            if (_vertexlist.ContainsKey(edge.Target)) list.Add(_vertexlist[edge.Target]);
-            if (_vertexlist.ContainsKey(edge.Source)) list.Add(_vertexlist[edge.Source]);
+            if (_vertexlist.TryGetValue(edge.Target, out VertexControl? value)) list.Add(value);
+            if (_vertexlist.TryGetValue(edge.Source, out VertexControl? value1)) list.Add(value1);
             return list;
         }
+
         #endregion
 
         #region Serialization support
@@ -1681,15 +1787,33 @@ namespace Westermo.GraphX.Controls
             var dlist = new List<GraphSerializationData>();
             foreach (var item in VertexList) //ALWAYS serialize vertices first
             {
-                dlist.Add(new GraphSerializationData { Position = item.Value.GetPositionGraphX(), Data = item.Key, IsVisible = item.Value.Visibility == Visibility.Visible, HasLabel = item.Value.VertexLabelControl != null});
-                if (item.Key.ID == -1) throw new GX_InvalidDataException("ExtractSerializationData() -> All vertex datas must have positive unique ID!");
+                dlist.Add(new GraphSerializationData
+                {
+                    Position = item.Value.GetPositionGraphX(),
+                    Data = item.Key,
+                    IsVisible = item.Value.Visibility == Visibility.Visible,
+                    HasLabel = item.Value.VertexLabelControl != null
+                });
+                if (item.Key.ID == -1)
+                    throw new GX_InvalidDataException(
+                        "ExtractSerializationData() -> All vertex datas must have positive unique ID!");
             }
+
             foreach (var item in EdgesList)
             {
                 // item.Key.RoutingPoints = new Point[] { new Point(0, 123), new Point(12, 12), new Point(10, 234.5) };
-                dlist.Add(new GraphSerializationData { Position = new Measure.Point(), Data = item.Key, IsVisible = item.Value.Visibility == Visibility.Visible, HasLabel = item.Value.EdgeLabelControls.Count > 0 });
-                if (item.Key.ID == -1) throw new GX_InvalidDataException("ExtractSerializationData() -> All edge datas must have positive unique ID!");
+                dlist.Add(new GraphSerializationData
+                {
+                    Position = new Measure.Point(),
+                    Data = item.Key,
+                    IsVisible = item.Value.Visibility == Visibility.Visible,
+                    HasLabel = item.Value.EdgeLabelControls.Count > 0
+                });
+                if (item.Key.ID == -1)
+                    throw new GX_InvalidDataException(
+                        "ExtractSerializationData() -> All edge datas must have positive unique ID!");
             }
+
             return dlist;
         }
 
@@ -1710,10 +1834,11 @@ namespace Westermo.GraphX.Controls
             if (LogicCore.Graph == null) LogicCore.Graph = Activator.CreateInstance<TGraph>();
             else LogicCore.Graph.Clear();
 
-            var vlist = data.Where(a => a.Data is TVertex);
+            var graphSerializationDatas = data as GraphSerializationData[] ?? data.ToArray();
+            var vlist = graphSerializationDatas.Where(a => a.Data is TVertex);
             foreach (var item in vlist)
             {
-                var vertexdata = (TVertex) item.Data;
+                var vertexdata = (TVertex)item.Data;
                 var ctrl = ControlFactory.CreateVertexControl(vertexdata);
                 ctrl.Visibility = item.IsVisible ? Visibility.Visible : Visibility.Collapsed;
                 ctrl.SetPosition(item.Position.X, item.Position.Y);
@@ -1723,13 +1848,15 @@ namespace Westermo.GraphX.Controls
                 if (item.HasLabel)
                     GenerateVertexLabel(ctrl);
             }
-            var elist = data.Where(a => a.Data is TEdge);
+
+            var elist = graphSerializationDatas.Where(a => a.Data is TEdge);
 
             foreach (var item in elist)
             {
-                var edgedata = (TEdge) item.Data;
+                var edgedata = (TEdge)item.Data;
                 if (edgedata == null) continue;
-                var sourceid = edgedata.Source.ID; var targetid = edgedata.Target.ID;
+                var sourceid = edgedata.Source.ID;
+                var targetid = edgedata.Target.ID;
                 var datasource = _vertexlist.Keys.FirstOrDefault(a => a.ID == sourceid);
                 var datatarget = _vertexlist.Keys.FirstOrDefault(a => a.ID == targetid);
 
@@ -1737,8 +1864,10 @@ namespace Westermo.GraphX.Controls
                 edgedata.Target = datatarget!;
 
                 if (datasource == null || datatarget == null)
-                    throw new GX_SerializationException("DeserializeFromFile() -> Serialization logic is broken! Vertex not found. All vertices must be processed before edges!");
-                var ecc = ControlFactory.CreateEdgeControl(_vertexlist[datasource], _vertexlist[datatarget], edgedata, true, item.IsVisible ? Visibility.Visible : Visibility.Collapsed);
+                    throw new GX_SerializationException(
+                        "DeserializeFromFile() -> Serialization logic is broken! Vertex not found. All vertices must be processed before edges!");
+                var ecc = ControlFactory.CreateEdgeControl(_vertexlist[datasource], _vertexlist[datatarget], edgedata,
+                    true, item.IsVisible ? Visibility.Visible : Visibility.Collapsed);
                 InsertEdge(edgedata, ecc);
                 LogicCore.Graph.AddEdge(edgedata);
                 if (item.HasLabel)
@@ -1759,8 +1888,7 @@ namespace Westermo.GraphX.Controls
 
         private void RestoreAlgorithmStorage()
         {
-            IDictionary<TVertex, Measure.Point> vPositions;
-            var vSizes = GetVertexSizesAndPositions(out vPositions);
+            var vSizes = GetVertexSizesAndPositions(out IDictionary<TVertex, Measure.Point> vPositions);
             LogicCore!.GenerateAlgorithmStorage(vSizes, vPositions);
         }
 
@@ -1792,27 +1920,24 @@ namespace Westermo.GraphX.Controls
         /// <param name="dpi">Optional image DPI parameter</param>
         /// <param name="useZoomControlSurface">Use zoom control parent surface to render bitmap (only visible zoom content will be exported)</param>
         /// <param name="quality">Optional image quality parameter (for JPEG)</param>
-        public virtual void ExportAsImageDialog(ImageType itype, bool useZoomControlSurface = false, double dpi = PrintHelper.DEFAULT_DPI, int quality = 100)
+        public virtual void ExportAsImageDialog(ImageType itype, bool useZoomControlSurface = false,
+            double dpi = PrintHelper.DEFAULT_DPI, int quality = 100)
         {
-            string fileExt;
-            string fileType = itype.ToString();
-            switch (itype)
+            var fileType = itype.ToString();
+            string fileExt = itype switch
             {
-                case ImageType.PNG: fileExt = "*.png";
-                    break;
-                case ImageType.JPEG: fileExt = "*.jpg";
-                    break;
-                case ImageType.BMP: fileExt = "*.bmp";
-                    break;
-                case ImageType.GIF: fileExt = "*.gif";
-                    break;
-                case ImageType.TIFF: fileExt = "*.tiff";
-                    break;
-                default: throw new GX_InvalidDataException("ExportAsImage() -> Unknown output image format specified!");
-            }
-
-            var dlg = new SaveFileDialog { Filter = String.Format("{0} Image File ({1})|{1}", fileType, fileExt), Title =
-                $"Exporting graph as {fileType} image..."
+                ImageType.PNG => "*.png",
+                ImageType.JPEG => "*.jpg",
+                ImageType.BMP => "*.bmp",
+                ImageType.GIF => "*.gif",
+                ImageType.TIFF => "*.tiff",
+                _ => throw new GX_InvalidDataException("ExportAsImage() -> Unknown output image format specified!"),
+            };
+            var dlg = new SaveFileDialog
+            {
+                Filter = String.Format("{0} Image File ({1})|{1}", fileType, fileExt),
+                Title =
+                    $"Exporting graph as {fileType} image..."
             };
             if (dlg.ShowDialog() == true)
             {
@@ -1820,9 +1945,11 @@ namespace Westermo.GraphX.Controls
             }
         }
 
-        public virtual void ExportAsImage(string filename, ImageType itype, bool useZoomControlSurface = false, double dpi = PrintHelper.DEFAULT_DPI, int quality = 100)
+        public virtual void ExportAsImage(string filename, ImageType itype, bool useZoomControlSurface = false,
+            double dpi = PrintHelper.DEFAULT_DPI, int quality = 100)
         {
-            PrintHelper.ExportToImage(this, new Uri(filename, UriKind.Absolute), itype, useZoomControlSurface, dpi, quality);
+            PrintHelper.ExportToImage(this, new Uri(filename, UriKind.Absolute), itype, useZoomControlSurface, dpi,
+                quality);
         }
 
         private USize _oldSizeExpansion;
@@ -1852,8 +1979,7 @@ namespace Westermo.GraphX.Controls
             if (IsInPrintMode)
             {
                 //set parent background
-                var parent = Parent as ZoomControl;
-                if (parent != null)
+                if (Parent is ZoomControl parent)
                     Background = parent.Background;
                 //set margin
                 _oldSizeExpansion = SideExpansionSize;
@@ -1871,7 +1997,8 @@ namespace Westermo.GraphX.Controls
             if (offsetControls)
             {
                 //var offset = ContentSize.TopLeft;
-                var offset = new Point(ContentSize.TopLeft.X - (margin == 0 ? 0 : margin * .5), ContentSize.TopLeft.Y - (margin == 0 ? 0 : margin * .5));
+                var offset = new Point(ContentSize.TopLeft.X - (margin == 0 ? 0 : margin * .5),
+                    ContentSize.TopLeft.Y - (margin == 0 ? 0 : margin * .5));
 
                 foreach (UIElement child in Children)
                 {
@@ -1886,9 +2013,10 @@ namespace Westermo.GraphX.Controls
                     SetY(child, pos.Y - (IsInPrintMode ? offset.Y : -offset.Y), true);
                 }
             }
+
             InvalidateMeasure();
             UpdateLayout();
-            EdgesList.Values.ForEach(a=> a.UpdateEdge());
+            EdgesList.Values.ForEach(a => a.UpdateEdge());
         }
 
         /// <summary>
@@ -1899,8 +2027,7 @@ namespace Westermo.GraphX.Controls
         {
             UIElement vis = this;
 
-            var zoomControl = Parent as IZoomControl;
-            if (zoomControl != null)
+            if (Parent is IZoomControl zoomControl)
                 vis = zoomControl.PresenterVisual;
             else
             {
@@ -1908,6 +2035,7 @@ namespace Westermo.GraphX.Controls
                 if (frameworkElement?.Parent is IZoomControl)
                     vis = ((IZoomControl)frameworkElement.Parent).PresenterVisual;
             }
+
             PrintHelper.PrintVisualDialog(vis, description);
         }
 
@@ -1929,21 +2057,26 @@ namespace Westermo.GraphX.Controls
                 _stateStorage.Dispose();
                 _stateStorage = null;
             }
+
             if (LogicCore != null)
             {
                 LogicCore.Dispose();
                 LogicCore = null;
             }
+
             MoveAnimation = null;
             DeleteAnimation = null;
             MouseOverAnimation = null;
             OnDispose();
+            GC.SuppressFinalize(this);
         }
 
         /// <summary>
         /// Runs when base dispose is done
         /// </summary>
-        protected virtual void OnDispose() { }
+        protected virtual void OnDispose()
+        {
+        }
 
         /// <summary>
         /// Clear graph visual layout (all edges, vertices and their states storage if any) and (optionally) LogicCore
@@ -1951,7 +2084,8 @@ namespace Westermo.GraphX.Controls
         /// <param name="removeCustomObjects">Also remove any possible custom objects</param>
         /// <param name="clearStates">Also clear states storage (if you select clearLogicCore it will be cleaned anyway)</param>
         /// <param name="clearLogicCore">Also clear LogiCore data</param>
-        public virtual void ClearLayout(bool removeCustomObjects = true, bool clearStates = false, bool clearLogicCore = false)
+        public virtual void ClearLayout(bool removeCustomObjects = true, bool clearStates = false,
+            bool clearLogicCore = false)
         {
             RemoveAllEdges();
             RemoveAllVertices();
@@ -1976,6 +2110,7 @@ namespace Westermo.GraphX.Controls
         #endregion
 
         #region MoveTo routines
+
         /// <summary>
         /// Move specified visual entity on top of the visual tree
         /// </summary>
@@ -2041,6 +2176,7 @@ namespace Westermo.GraphX.Controls
                 }
             }
         }
+
         #endregion
     }
 }

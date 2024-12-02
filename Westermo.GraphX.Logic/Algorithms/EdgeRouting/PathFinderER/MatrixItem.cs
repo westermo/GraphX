@@ -2,20 +2,14 @@
 
 namespace Westermo.GraphX.Logic.Algorithms.EdgeRouting
 {
-    public class MatrixItem
+    public class MatrixItem(Point pt, bool inter, int placeX, int placeY)
     {
-        public Point Point;
-        public bool IsIntersected;
+        public Point Point = pt;
+        public bool IsIntersected = inter;
 
-        public int PlaceX;
-        public int PlaceY;
+        public int PlaceX = placeX;
+        public int PlaceY = placeY;
 
-        public int Weight { get { return IsIntersected ? 0 : 1; } }
-
-        public MatrixItem(Point pt, bool inter, int placeX, int placeY)
-        {
-            Point = pt; IsIntersected = inter;
-            PlaceX = placeX; PlaceY = placeY;
-        }
+        public int Weight => IsIntersected ? 0 : 1;
     }
 }

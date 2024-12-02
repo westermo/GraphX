@@ -1,25 +1,23 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Threading;
-using Westermo.GraphX.Measure;
+using QuikGraph;
 using Westermo.GraphX.Common.Interfaces;
 using Westermo.GraphX.Logic.Algorithms.EdgeRouting;
-using QuikGraph;
+using Westermo.GraphX.Measure;
 
-namespace ShowcaseApp.WPF.ExampleModels
+namespace ShowcaseApp.WPF
 {
-    public class OrthEr<TVertex, TEdge, TGraph> : EdgeRoutingAlgorithmBase<TVertex, TEdge, TGraph>
+    public class OrthEr<TVertex, TEdge, TGraph>(
+        TGraph graph,
+        IDictionary<TVertex, Point> vertexPositions,
+        IDictionary<TVertex, Rect> vertexSizes,
+        IEdgeRoutingParameters parameters = null)
+        : EdgeRoutingAlgorithmBase<TVertex, TEdge, TGraph>(graph, vertexPositions, vertexSizes, parameters)
         where TGraph : class, IMutableBidirectionalGraph<TVertex, TEdge>
         where TEdge : class, IGraphXEdge<TVertex>
         where TVertex : class, IGraphXVertex
     {
-
-        public OrthEr(TGraph graph, IDictionary<TVertex, Point> vertexPositions, IDictionary<TVertex, Rect> vertexSizes, IEdgeRoutingParameters parameters = null) :
-            base(graph, vertexPositions, vertexSizes, parameters)
-        {
-
-        }
-
-
         public override void Compute(CancellationToken cancellationToken)
         {
             foreach (var edge in Graph.Edges)
@@ -29,18 +27,17 @@ namespace ShowcaseApp.WPF.ExampleModels
                 var sourceSize = VertexSizes[edge.Source];
                 var targetSize = VertexSizes[edge.Target];
 
-                if (sourcePosition.X != targetPosition.X )
+                if (Math.Abs(sourcePosition.X - targetPosition.X) > 1e-12)
                 {
                     EdgeRoutes.Add(
                         edge,
-                        new[]
-                        {
+                        [
                             new Point(0, 0),
-                            new Point(targetPosition.X + targetSize.Width / 2, sourcePosition.Y + sourceSize.Height / 2),
+                            new Point(targetPosition.X + targetSize.Width / 2,
+                                sourcePosition.Y + sourceSize.Height / 2),
                             new Point(0, 0)
-                        });
+                        ]);
                 }
-
             }
         }
 

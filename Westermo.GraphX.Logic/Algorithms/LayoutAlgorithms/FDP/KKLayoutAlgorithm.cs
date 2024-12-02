@@ -9,7 +9,12 @@ using QuikGraph;
 
 namespace Westermo.GraphX.Logic.Algorithms.LayoutAlgorithms
 {
-    public class KKLayoutAlgorithm<TVertex, TEdge, TGraph> : DefaultParameterizedLayoutAlgorithmBase<TVertex, TEdge, TGraph, KKLayoutParameters>
+    public class KKLayoutAlgorithm<TVertex, TEdge, TGraph>(
+        TGraph visitedGraph,
+        IDictionary<TVertex, Point> vertexPositions,
+        KKLayoutParameters oldParameters)
+        : DefaultParameterizedLayoutAlgorithmBase<TVertex, TEdge, TGraph, KKLayoutParameters>(visitedGraph,
+            vertexPositions, oldParameters)
         where TVertex : class
         where TEdge : IEdge<TVertex>
         where TGraph : IBidirectionalGraph<TVertex, TEdge>, IMutableVertexAndEdgeSet<TVertex, TEdge>
@@ -38,9 +43,6 @@ namespace Westermo.GraphX.Logic.Algorithms.LayoutAlgorithms
         public KKLayoutAlgorithm( TGraph visitedGraph, KKLayoutParameters oldParameters )
             : this( visitedGraph, null, oldParameters ) { }
 
-        public KKLayoutAlgorithm( TGraph visitedGraph, IDictionary<TVertex, Point> vertexPositions,
-                                  KKLayoutParameters oldParameters )
-            : base( visitedGraph, vertexPositions, oldParameters ) { }
         #endregion
 
         public override void Compute(CancellationToken cancellationToken)
@@ -62,7 +64,7 @@ namespace Westermo.GraphX.Logic.Algorithms.LayoutAlgorithms
             InitializeWithRandomPositions( Parameters.Width, Parameters.Height );
 
             //copy positions into array (speed-up)
-            int index = 0;
+            var index = 0;
             foreach ( var v in VisitedGraph.Vertices )
             {
                 _vertices[index] = v;
@@ -75,20 +77,20 @@ namespace Westermo.GraphX.Logic.Algorithms.LayoutAlgorithms
             _diameter = VisitedGraph.GetDiameter<TVertex, TEdge, TGraph>( out _distances );
 
             //L0 is the length of a side of the display area
-            double l0 = Math.Min( Parameters.Width, Parameters.Height );
+            var l0 = Math.Min( Parameters.Width, Parameters.Height );
 
             //ideal length = L0 / max d_i,j
-            _idealEdgeLength = ( l0 / _diameter ) * Parameters.LengthFactor;
+            _idealEdgeLength = l0 / _diameter * Parameters.LengthFactor;
 
             //calculating the ideal distance between the nodes
-            for ( int i = 0; i < VisitedGraph.VertexCount - 1; i++ )
+            for ( var i = 0; i < VisitedGraph.VertexCount - 1; i++ )
             {
                 cancellationToken.ThrowIfCancellationRequested();
-                for ( int j = i + 1; j < VisitedGraph.VertexCount; j++ )
+                for ( var j = i + 1; j < VisitedGraph.VertexCount; j++ )
                 {
                     cancellationToken.ThrowIfCancellationRequested();
                     //distance between non-adjacent vertices
-                    double dist = _diameter * Parameters.DisconnectedMultiplier;
+                    var dist = _diameter * Parameters.DisconnectedMultiplier;
 
                     //calculating the minimal distance between the vertices
                     if ( _distances[i, j] != double.MaxValue )
@@ -102,25 +104,25 @@ namespace Westermo.GraphX.Logic.Algorithms.LayoutAlgorithms
             }
             #endregion
 
-            int n = VisitedGraph.VertexCount;
+            var n = VisitedGraph.VertexCount;
             if ( n == 0 )
                 return;
 
             //TODO check this condition
-            for ( int currentIteration = 0; currentIteration < Parameters.MaxIterations; currentIteration++ )
+            for ( var currentIteration = 0; currentIteration < Parameters.MaxIterations; currentIteration++ )
             {
                 cancellationToken.ThrowIfCancellationRequested();
 
                 #region An iteration
-                double maxDeltaM = double.NegativeInfinity;
-                int pm = -1;
+                var maxDeltaM = double.NegativeInfinity;
+                var pm = -1;
 
                 //get the 'p' with the max delta_m
-                for ( int i = 0; i < n; i++ )
+                for ( var i = 0; i < n; i++ )
                 {
                     cancellationToken.ThrowIfCancellationRequested();
 
-                    double deltaM = CalculateEnergyGradient( i );
+                    var deltaM = CalculateEnergyGradient( i );
                     if ( maxDeltaM < deltaM )
                     {
                         maxDeltaM = deltaM;
@@ -133,11 +135,11 @@ namespace Westermo.GraphX.Logic.Algorithms.LayoutAlgorithms
 
                 //calculating the delta_x & delta_y with the Newton-Raphson method
                 //there is an upper-bound for the while (deltaM > epsilon) {...} cycle (100)
-                for ( int i = 0; i < 100; i++ )
+                for ( var i = 0; i < 100; i++ )
                 {
                     _positions[pm] += CalcDeltaXY( pm );
 
-                    double deltaM = CalculateEnergyGradient( pm );
+                    var deltaM = CalculateEnergyGradient( pm );
                     //real stop condition
                     if ( deltaM < double.Epsilon )
                         break;
@@ -146,19 +148,19 @@ namespace Westermo.GraphX.Logic.Algorithms.LayoutAlgorithms
                 //what if some of the vertices would be exchanged?
                 if ( Parameters.ExchangeVertices && maxDeltaM < double.Epsilon )
                 {
-                    double energy = CalcEnergy();
-                    for ( int i = 0; i < n - 1; i++ )
+                    var energy = CalcEnergy();
+                    for ( var i = 0; i < n - 1; i++ )
                     {
                         cancellationToken.ThrowIfCancellationRequested();
 
-                        for ( int j = i + 1; j < n; j++ )
+                        for ( var j = i + 1; j < n; j++ )
                         {
                             cancellationToken.ThrowIfCancellationRequested();
 
-                            double xenergy = CalcEnergyIfExchanged( i, j );
+                            var xenergy = CalcEnergyIfExchanged( i, j );
                             if ( energy > xenergy )
                             {
-                                Point p = _positions[i];
+                                var p = _positions[i];
                                 _positions[i] = _positions[j];
                                 _positions[j] = p;
                                 return;
@@ -187,7 +189,7 @@ namespace Westermo.GraphX.Logic.Algorithms.LayoutAlgorithms
         {
             #region Copy the calculated positions
             //poz�ci�k �tm�sol�sa a VertexPositions-ba
-            for ( int i = 0; i < _vertices.Length; i++ )
+            for ( var i = 0; i < _vertices.Length; i++ )
                 VertexPositions[_vertices[i]] = _positions[i];
             #endregion
 
@@ -201,17 +203,17 @@ namespace Westermo.GraphX.Logic.Algorithms.LayoutAlgorithms
         private double CalcEnergyIfExchanged( int p, int q )
         {
             double energy = 0;
-            for ( int i = 0; i < _vertices.Length - 1; i++ )
+            for ( var i = 0; i < _vertices.Length - 1; i++ )
             {
-                for ( int j = i + 1; j < _vertices.Length; j++ )
+                for ( var j = i + 1; j < _vertices.Length; j++ )
                 {
-                    int ii = ( i == p ) ? q : i;
-                    int jj = ( j == q ) ? p : j;
+                    var ii = i == p ? q : i;
+                    var jj = j == q ? p : j;
 
-                    double lIj = _edgeLengths[i, j];
-                    double kIj = _springConstants[i, j];
-                    double dx = _positions[ii].X - _positions[jj].X;
-                    double dy = _positions[ii].Y - _positions[jj].Y;
+                    var lIj = _edgeLengths[i, j];
+                    var kIj = _springConstants[i, j];
+                    var dx = _positions[ii].X - _positions[jj].X;
+                    var dy = _positions[ii].Y - _positions[jj].Y;
 
                     energy += kIj / 2 * ( dx * dx + dy * dy + lIj * lIj -
                                            2 * lIj * Math.Sqrt( dx * dx + dy * dy ) );
@@ -227,9 +229,9 @@ namespace Westermo.GraphX.Logic.Algorithms.LayoutAlgorithms
         private double CalcEnergy()
         {
             double energy = 0;
-            for ( int i = 0; i < _vertices.Length - 1; i++ )
+            for ( var i = 0; i < _vertices.Length - 1; i++ )
             {
-                for ( int j = i + 1; j < _vertices.Length; j++ )
+                for ( var j = i + 1; j < _vertices.Length; j++ )
                 {
                     var lIj = _edgeLengths[i, j];
                     var kIj = _springConstants[i, j];
@@ -252,7 +254,7 @@ namespace Westermo.GraphX.Logic.Algorithms.LayoutAlgorithms
         {
             double dxm = 0, dym = 0, d2Xm = 0, dxmdym = 0, dymdxm, d2Ym = 0;
 
-            for ( int i = 0; i < _vertices.Length; i++ )
+            for ( var i = 0; i < _vertices.Length; i++ )
             {
                 if ( i != m )
                 {
@@ -280,9 +282,9 @@ namespace Westermo.GraphX.Logic.Algorithms.LayoutAlgorithms
             // d2E_dymdxm equals to d2E_dxmdym
             dymdxm = dxmdym;
 
-            double denomi = d2Xm * d2Ym - dxmdym * dymdxm;
-            double deltaX = ( dxmdym * dym - d2Ym * dxm ) / denomi;
-            double deltaY = ( dymdxm * dxm - d2Xm * dym ) / denomi;
+            var denomi = d2Xm * d2Ym - dxmdym * dymdxm;
+            var deltaX = ( dxmdym * dym - d2Ym * dxm ) / denomi;
+            var deltaY = ( dymdxm * dxm - d2Xm * dym ) / denomi;
             return new Vector( deltaX, deltaY );
         }
 
@@ -297,14 +299,14 @@ namespace Westermo.GraphX.Logic.Algorithms.LayoutAlgorithms
             //        {  1, if m < i
             // sign = { 
             //        { -1, if m > i
-            for ( int i = 0; i < _vertices.Length; i++ )
+            for ( var i = 0; i < _vertices.Length; i++ )
             {
                 if ( i == m )
                     continue;
 
                 //differences of the positions
-                var dx = ( _positions[m].X - _positions[i].X );
-                var dy = ( _positions[m].Y - _positions[i].Y );
+                var dx = _positions[m].X - _positions[i].X;
+                var dy = _positions[m].Y - _positions[i].Y;
 
                 //distances of the two vertex (by positions)
                 var d = Math.Sqrt( dx * dx + dy * dy );

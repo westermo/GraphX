@@ -2,14 +2,9 @@
 
 namespace ShowcaseApp.WPF.Models
 {
-    public class ColorModel
+    public class ColorModel(string text, Color color)
     {
-        public Color Color {get;set;}
-        public string Text { get; set; }
-
-        public ColorModel(string text, Color color)
-        {
-            Text = text; Color = color;
-        }
+        public Color Color {get;set;} = color;
+        public string Text { get; set; } = text;
     }
 }

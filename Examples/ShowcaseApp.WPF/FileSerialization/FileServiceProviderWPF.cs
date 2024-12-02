@@ -17,7 +17,7 @@ namespace ShowcaseApp.WPF.FileSerialization
         /// <param name="modelsList">Data classes list</param>
         public static void SerializeDataToFile(string filename, List<GraphSerializationData> modelsList)
         {
-            using (FileStream stream = File.Open(filename, FileMode.Create, FileAccess.Write, FileShare.Read))
+            using (var stream = File.Open(filename, FileMode.Create, FileAccess.Write, FileShare.Read))
             {
                 SerializeDataToStream(stream, modelsList);
             }
@@ -29,7 +29,7 @@ namespace ShowcaseApp.WPF.FileSerialization
         /// <param name="filename">File name</param>
 		public static List<GraphSerializationData> DeserializeDataFromFile(string filename)
         {
-            using (FileStream stream = File.Open(filename, FileMode.Open, FileAccess.Read, FileShare.Read))
+            using (var stream = File.Open(filename, FileMode.Open, FileAccess.Read, FileShare.Read))
             {
                 return DeserializeDataFromStream(stream);
             }

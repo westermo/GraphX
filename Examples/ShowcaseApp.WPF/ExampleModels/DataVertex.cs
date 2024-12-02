@@ -2,9 +2,9 @@
 
 namespace ShowcaseApp.WPF
 {
-    public class DataVertex: VertexBase
+    public class DataVertex(string text = "") : VertexBase
     {
-        public string Text { get; set; }
+        public string Text { get; set; } = string.IsNullOrEmpty(text) ? "New Vertex" : text;
         public string Name { get; set; }
         public string Profession { get; set; }
         public string Gender { get; set; }
@@ -28,11 +28,6 @@ namespace ShowcaseApp.WPF
         /// </summary>
         public DataVertex():this(string.Empty)
         {
-        }
-
-        public DataVertex(string text = "")
-        {
-            Text = string.IsNullOrEmpty(text) ? "New Vertex" : text;
         }
     }
 }

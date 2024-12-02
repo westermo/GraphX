@@ -2,9 +2,9 @@
 using System.Runtime.InteropServices;
 using System.Windows;
 
-namespace WindowGlows
+namespace ShowcaseApp.WPF.External.WindowGlow
 {
-    enum HT
+    internal enum HT
     {
         BORDER = 18,
         BOTTOM = 15,
@@ -17,7 +17,7 @@ namespace WindowGlows
         TOPRIGHT = 14
     }
 
-    enum WM
+    internal enum WM
     {
         NCLBUTTONDOWN = 0x00A1,
         MOUSEACTIVATE = 0x0021,
@@ -25,17 +25,17 @@ namespace WindowGlows
         NCHITTEST = 0x0084
     }
 
-    enum GWL
+    internal enum GWL
     {
         EXSTYLE = -20
     }
 
-    enum WS_EX
+    internal enum WS_EX
     {
         TOOLWINDOW = 0x00000080
     }
 
-    class NativeMethods
+    internal class NativeMethods
     {
         public static Func<short, short, IntPtr> MAKELPARAM = ( wLow, wHigh ) =>
         {
@@ -63,7 +63,7 @@ namespace WindowGlows
     }
 
     [StructLayout(LayoutKind.Sequential)]
-    struct POINT
+    internal struct POINT
     {
         public int x;
         public int y;

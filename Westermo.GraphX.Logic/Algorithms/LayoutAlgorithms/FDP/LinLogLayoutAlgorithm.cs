@@ -31,7 +31,8 @@ namespace Westermo.GraphX.Logic.Algorithms.LayoutAlgorithms
         #endregion
 
         #region Member variables - privates
-        class LinLogVertex
+
+        private class LinLogVertex
 		{
 			public int Index;
 			public TVertex OriginalVertex;
@@ -40,7 +41,7 @@ namespace Westermo.GraphX.Logic.Algorithms.LayoutAlgorithms
 			public Point Position;
 		}
 
-		class LinLogEdge
+		private class LinLogEdge
 		{
 			public LinLogVertex Target;
 			public double AttractionWeight;
@@ -213,7 +214,7 @@ namespace Westermo.GraphX.Logic.Algorithms.LayoutAlgorithms
 		private double AddGravitationDirection( int index, ref Vector dir )
 		{
 			var v = _vertices[index];
-			var gravitationVector = ( _baryCenter - v.Position );
+			var gravitationVector = _baryCenter - v.Position;
 			var dist = gravitationVector.Length;
 			var tmp = Parameters.gravitationMultiplier * _repulsionMultiplier * Math.Max( v.RepulsionWeight, 1 ) * Math.Pow( dist, Parameters.attractionExponent - 2 );
 			dir += gravitationVector * tmp;
@@ -231,7 +232,7 @@ namespace Westermo.GraphX.Logic.Algorithms.LayoutAlgorithms
 				if ( e.Target == v )
 					continue;
 
-				var attractionVector = ( e.Target.Position - v.Position );
+				var attractionVector = e.Target.Position - v.Position;
 				var dist = attractionVector.Length;
 				if ( dist <= 0 )
 					continue;
@@ -259,7 +260,7 @@ namespace Westermo.GraphX.Logic.Algorithms.LayoutAlgorithms
 			if ( quadTree == null || quadTree.Index == index || v.RepulsionWeight <= 0 )
 				return 0.0;
 
-			var repulsionVector = ( quadTree.Position - v.Position );
+			var repulsionVector = quadTree.Position - v.Position;
 			var dist = repulsionVector.Length;
 			if ( quadTree.Index < 0 && dist < 2.0 * quadTree.Width )
 			{
@@ -328,7 +329,7 @@ namespace Westermo.GraphX.Logic.Algorithms.LayoutAlgorithms
 			var v = _vertices[index];
 
 			var dist = ( v.Position - tree.Position ).Length;
-			if ( tree.Index < 0 && dist < ( 2 * tree.Width ) )
+			if ( tree.Index < 0 && dist < 2 * tree.Width )
 			{
 				var energy = 0.0;
 				for ( var i = 0; i < tree.Children.Length; i++ )
@@ -373,7 +374,7 @@ namespace Westermo.GraphX.Logic.Algorithms.LayoutAlgorithms
 				var attrIndex = 0;
 				foreach ( var e in VisitedGraph.InEdges( v.OriginalVertex ) )
 				{
-					var weight = e is WeightedEdge<TVertex> ? ( ( e as WeightedEdge<TVertex> ).Weight ) : 1;
+					var weight = e is WeightedEdge<TVertex> ? ( e as WeightedEdge<TVertex> ).Weight : 1;
 					v.Attractions[attrIndex] = new LinLogEdge
 					                           	{
 					                           		Target = vertexMap[e.Source],
@@ -387,7 +388,7 @@ namespace Westermo.GraphX.Logic.Algorithms.LayoutAlgorithms
 
 				foreach ( var e in VisitedGraph.OutEdges( v.OriginalVertex ) )
 				{
-					var weight = e is WeightedEdge<TVertex> ? ( ( e as WeightedEdge<TVertex> ).Weight ) : 1;
+					var weight = e is WeightedEdge<TVertex> ? ( e as WeightedEdge<TVertex> ).Weight : 1;
 					v.Attractions[attrIndex] = new LinLogEdge
 					                           	{
 					                           		Target = vertexMap[e.Target],

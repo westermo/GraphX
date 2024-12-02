@@ -43,7 +43,7 @@ namespace Westermo.GraphX.Logic.Algorithms.LayoutAlgorithms
 			InitParameters( oldParameters );
 
 			_queue = new Queue<TVertex>();
-			_isomDataDict = new Dictionary<TVertex, ISOMData>();
+			_isomDataDict = [];
 			_adaptation = Parameters.InitialAdaption;
 		}
 		#endregion
@@ -107,11 +107,11 @@ namespace Westermo.GraphX.Logic.Algorithms.LayoutAlgorithms
 	    /// <summary>
 		/// R�ntsunk egyet az �sszes ponton.
 		/// </summary>
-		protected void Adjust(CancellationToken cancellationToken, System.Random rnd)
+		protected void Adjust(CancellationToken cancellationToken, Random rnd)
 		{
 		    _tempPos = new Point {
-                X = 0.1 * Parameters.Width + (rnd.NextDouble() * 0.8 * Parameters.Width), 
-                Y = 0.1 * Parameters.Height + (rnd.NextDouble() * 0.8 * Parameters.Height)
+                X = 0.1 * Parameters.Width + rnd.NextDouble() * 0.8 * Parameters.Width, 
+                Y = 0.1 * Parameters.Height + rnd.NextDouble() * 0.8 * Parameters.Height
             };
 
 		    //get a random point in the container
@@ -197,7 +197,7 @@ namespace Westermo.GraphX.Logic.Algorithms.LayoutAlgorithms
 #pragma warning disable CS0414 // Field is assigned but its value is never used
 		private class ISOMData
 		{
-			public Vector Force = new Vector();
+			public Vector Force = new();
 			public bool Visited;
 			public double Distance;
 		}

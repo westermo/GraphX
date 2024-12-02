@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Windows.Media.Animation;
 using System.ComponentModel;
 using System.Linq;
@@ -32,8 +31,8 @@ namespace Westermo.GraphX.Controls
 
         public static void Offset(this Point point, Point value)
         {
-            point.X = point.X + value.X;
-            point.Y = point.Y + value.Y;
+            point.X += value.X;
+            point.Y += value.Y;
         }
 
         /// <summary>
@@ -46,8 +45,7 @@ namespace Westermo.GraphX.Controls
             where T : DependencyObject
         {
             if (obj == null) yield break;
-            var child = obj as T;
-            if (child != null) yield return child;
+            if (obj is T child) yield return child;
 
             foreach (var c in LogicalTreeHelper.GetChildren(obj)
                                                .OfType<DependencyObject>()
@@ -78,7 +76,7 @@ namespace Westermo.GraphX.Controls
         {
             if (points == null) return null;
             var list = new Point[points.Length];
-            for (int i = 0; i < points.Length; i++)
+            for (var i = 0; i < points.Length; i++)
                 list[i] = points[i].ToWindows();
             return list;
         }
@@ -87,7 +85,7 @@ namespace Westermo.GraphX.Controls
         {
             if (points == null) return null;
             var list = new Measure.Point[points.Length];
-            for (int i = 0; i < points.Length; i++)
+            for (var i = 0; i < points.Length; i++)
                 list[i] = points[i].ToGraphX();
             return list;
         }

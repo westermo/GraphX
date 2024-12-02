@@ -50,7 +50,7 @@ namespace Westermo.GraphX.Controls
             if (!(value is Visibility))
                 throw new InvalidOperationException("SuppliedValueWasNotVisibility");
 
-            return (((Visibility) value) == Visibility.Visible) ^ Not;
+            return ((Visibility) value == Visibility.Visible) ^ Not;
         }
 
         private object BoolToVisibility(object value)
@@ -58,7 +58,7 @@ namespace Westermo.GraphX.Controls
             if (!(value is bool))
                 throw new InvalidOperationException("SuppliedValueWasNotBool");
 
-            return ((bool) value ^ Not) ? Visibility.Visible : Visibility.Collapsed;
+            return (bool) value ^ Not ? Visibility.Visible : Visibility.Collapsed;
         }
     }
 }

@@ -1,13 +1,11 @@
 ﻿using System.ComponentModel;
-using System.Windows.Controls;
-using ShowcaseApp.WPF.Controls;
 
-namespace ShowcaseApp.WPF.Pages
+namespace ShowcaseApp.WPF.Controls
 {
     /// <summary>
     /// Interaction logic for MiniContentPage.xaml
     /// </summary>
-    public partial class MiniContentPage : UserControl, ISpecialWindowContentIntro, INotifyPropertyChanged
+    public partial class MiniContentPage : ISpecialWindowContentIntro, INotifyPropertyChanged
     {
         public MiniContentPage()
         {
@@ -16,13 +14,23 @@ namespace ShowcaseApp.WPF.Pages
         }
 
         private string _text;
-        public string IntroText { get { return _text; } set { _text = value;  OnPropertyChanged("IntroText"); } }
+
+        public string IntroText
+        {
+            get => _text;
+            set
+            {
+                _text = value;
+                OnPropertyChanged(nameof(IntroText));
+            }
+        }
+
         public event PropertyChangedEventHandler PropertyChanged;
 
         protected virtual void OnPropertyChanged(string propertyName)
         {
             var handler = PropertyChanged;
-            if (handler != null) handler(this, new PropertyChangedEventArgs(propertyName));
+            handler?.Invoke(this, new PropertyChangedEventArgs(propertyName));
         }
     }
 }

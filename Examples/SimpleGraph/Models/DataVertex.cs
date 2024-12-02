@@ -10,13 +10,13 @@ namespace SimpleGraph.Models
      *  
      */
 
-    public class DataVertex: VertexBase
+    public class DataVertex(string text = "") : VertexBase
     {
         /// <summary>
         /// Some string property for example purposes
         /// </summary>
-        public string Text { get; set; }
- 
+        public string Text { get; set; } = text;
+
         #region Calculated or static props
 
         public override string ToString()
@@ -32,11 +32,6 @@ namespace SimpleGraph.Models
         /// </summary>
         public DataVertex():this(string.Empty)
         {
-        }
-
-        public DataVertex(string text = "")
-        {
-            Text = text;
         }
     }
 }

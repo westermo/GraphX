@@ -11,14 +11,8 @@ namespace Westermo.GraphX.Controls
 
         public bool Inverted
         {
-            get
-            {
-                return _inverted;
-            }
-            set
-            {
-                _inverted = value;
-            }
+            get => _inverted;
+            set => _inverted = value;
         }
 
         private bool _inverted; //false

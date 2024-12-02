@@ -24,7 +24,7 @@ namespace SimpleGraph
     /// <summary>
     /// Interaction logic for MainWindow.xaml
     /// </summary>
-    public partial class MainWindow : Window, IDisposable
+    public partial class MainWindow : IDisposable
     {
         public MainWindow()
         {
@@ -45,14 +45,14 @@ namespace SimpleGraph
             Loaded += MainWindow_Loaded;
         }
 
-        void MainWindow_Loaded(object sender, RoutedEventArgs e)
+        private void MainWindow_Loaded(object sender, RoutedEventArgs e)
         {
             //lets create graph
             //Note that you can't create it in class constructor as there will be problems with visuals
             gg_but_randomgraph_Click(null, null);
         }
 
-        void gg_but_relayout_Click(object sender, RoutedEventArgs e)
+        private void gg_but_relayout_Click(object sender, RoutedEventArgs e)
         {
             //This method initiates graph relayout process which involves consequnet call to all selected algorithms.
             //It behaves like GenerateGraph() method except that it doesn't create any visual object. Only update existing ones
@@ -61,7 +61,7 @@ namespace SimpleGraph
             zoomctrl.ZoomToFill();
         }
 
-        void gg_but_randomgraph_Click(object sender, RoutedEventArgs e)
+        private void gg_but_randomgraph_Click(object sender, RoutedEventArgs e)
         {
             //Lets generate configured graph using pre-created data graph assigned to LogicCore object.
             //Optionaly we set first method param to True (True by default) so this method will automatically generate edges
@@ -70,7 +70,7 @@ namespace SimpleGraph
             //Optionaly we set second param to True (True by default) so this method will automaticaly checks and assigns missing unique data ids
             //for edges and vertices in _dataGraph.
             //Note! Area.Graph property will be replaced by supplied _dataGraph object (if any).
-            Area.GenerateGraph(true, true);
+            Area.GenerateGraph();
 
             /* 
              * After graph generation is finished you can apply some additional settings for newly created visual vertex and edge controls
@@ -89,7 +89,7 @@ namespace SimpleGraph
 
             //This method sets edges labels visibility. It is also applied to all edges in Area.EdgesList. You can also set property for
             //each edge individually using property, for ex: Area.EdgesList[0].ShowLabel = true;
-            Area.ShowAllEdgesLabels(true);
+            Area.ShowAllEdgesLabels();
 
             zoomctrl.ZoomToFill(); 
         }
@@ -101,7 +101,7 @@ namespace SimpleGraph
             //Now we need to create edges and vertices to fill data graph
             //This edges and vertices will represent graph structure and connections
             //Lets make some vertices
-            for (int i = 1; i < 10; i++)
+            for (var i = 1; i < 10; i++)
             {
                 //Create new vertex with specified Text. Also we will assign custom unique ID.
                 //This ID is needed for several features such as serialization and edge routing algorithms.
@@ -116,9 +116,9 @@ namespace SimpleGraph
             //get the indexed list of graph vertices we have already added
             var vlist = dataGraph.Vertices.ToList();
             //Then create two edges optionaly defining Text property to show who are connected
-            var dataEdge = new DataEdge(vlist[0], vlist[1]) { Text = string.Format("{0} -> {1}", vlist[0], vlist[1]) };
+            var dataEdge = new DataEdge(vlist[0], vlist[1]) { Text = $"{vlist[0]} -> {vlist[1]}" };
             dataGraph.AddEdge(dataEdge);
-                dataEdge = new DataEdge(vlist[2], vlist[3]) { Text = string.Format("{0} -> {1}", vlist[2], vlist[3]) };
+                dataEdge = new DataEdge(vlist[2], vlist[3]) { Text = $"{vlist[2]} -> {vlist[3]}" };
             dataGraph.AddEdge(dataEdge);
 
             return dataGraph;

@@ -74,8 +74,8 @@ namespace Westermo.GraphX.Logic.Algorithms.LayoutAlgorithms
 
         private void RemoveTreeNodesFromRootGraph()
         {
-            bool removed = true;
-            for (int i = 0; removed; i++)
+            var removed = true;
+            for (var i = 0; removed; i++)
             {
                 removed = false;
                 foreach (var vertex in _levels[0])
@@ -83,7 +83,7 @@ namespace Westermo.GraphX.Logic.Algorithms.LayoutAlgorithms
                     if (_compoundGraph.Degree(vertex) != 1 || _compoundGraph.IsCompoundVertex(vertex))
                         continue;
 
-                    TEdge edge = default(TEdge);
+                    var edge = default(TEdge);
                     if (_compoundGraph.InDegree(vertex) > 0)
                         edge = _compoundGraph.InEdge(vertex, 0);
                     else
@@ -94,7 +94,7 @@ namespace Westermo.GraphX.Logic.Algorithms.LayoutAlgorithms
                     //the vertex is a leaf tree node
                     removed = true;
                     while (_removedRootTreeNodeLevels.Count <= i)
-                        _removedRootTreeNodeLevels.Push(new List<RemovedTreeNodeData>());
+                        _removedRootTreeNodeLevels.Push([]);
 
                     //add to the removed vertices
                     _removedRootTreeNodeLevels.Peek().Add(new RemovedTreeNodeData(vertex, edge));
@@ -123,14 +123,14 @@ namespace Westermo.GraphX.Logic.Algorithms.LayoutAlgorithms
                 var fixedLayoutedCompoundVertex = movableParentUpdateQueue.Dequeue();
 
                 //find the not fixed predecessor
-                TVertex movableVertex = fixedLayoutedCompoundVertex;
+                var movableVertex = fixedLayoutedCompoundVertex;
                 for (; ; )
                 {
                     //if the vertex hasn't parent
                     if (movableVertex == null)
                         break;
 
-                    TVertex parent = _compoundGraph.GetParent(movableVertex);
+                    var parent = _compoundGraph.GetParent(movableVertex);
                     if (parent == null)
                         break;
 
@@ -190,7 +190,7 @@ namespace Westermo.GraphX.Logic.Algorithms.LayoutAlgorithms
             IDictionary<TVertex, CompoundVertexInnerLayoutType> layoutTypes,
             Queue<TVertex> movableParentUpdateQueue)
         {
-            for (int i = _levels.Count - 1; i >= 0; i--)
+            for (var i = _levels.Count - 1; i >= 0; i--)
             {
                 foreach (var vertex in _levels[i])
                 {
@@ -242,11 +242,11 @@ namespace Westermo.GraphX.Logic.Algorithms.LayoutAlgorithms
             var verticesLeft = new HashSet<TVertex>(VisitedGraph.Vertices);
 
             //initial 0th level
-            _levels.Add(new HashSet<TVertex>(VisitedGraph.Vertices.Where(v => _compoundGraph.GetParent(v) == default(TVertex))));
+            _levels.Add([..VisitedGraph.Vertices.Where(v => _compoundGraph.GetParent(v) == default(TVertex))]);
             RemoveAll(verticesLeft, _levels[0]);
 
             //other layers
-            for (int i = 1; verticesLeft.Count > 0; i++)
+            for (var i = 1; verticesLeft.Count > 0; i++)
             {
                 var nextLevel = new HashSet<TVertex>();
                 foreach (var parent in _levels[i - 1])
@@ -265,7 +265,7 @@ namespace Westermo.GraphX.Logic.Algorithms.LayoutAlgorithms
         private void SetLevelIndices()
         {
             //set the level indexes in the vertex datas
-            for (int i = 0; i < _levels.Count; i++)
+            for (var i = 0; i < _levels.Count; i++)
             {
                 foreach (var v in _levels[i])
                     _vertexDatas[v].Level = i;

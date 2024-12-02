@@ -6,14 +6,14 @@ namespace ShowcaseApp.WPF.Models
 {
     public static class ThemedDataStorage
     {
-        public static readonly List<string> Gender = new List<string>()
-        {
+        public static readonly List<string> Gender =
+        [
             @"Female",
-            @"Male",
-        };
+            @"Male"
+        ];
 
-        public static readonly List<string> Professions = new List<string>()
-        {
+        public static readonly List<string> Professions =
+        [
             "Expeditor",
             "Support",
             "Analyst",
@@ -30,10 +30,10 @@ namespace ShowcaseApp.WPF.Models
             "Project Lead",
             "Finance Manager",
             "Executive Director"
-        };
+        ];
 
-        public static readonly List<string> Names = new List<string>()
-        {
+        public static readonly List<string> Names =
+        [
             "Madeline Haggerty",
             "Eldon Deaver",
             "Latoria Flynn",
@@ -133,11 +133,11 @@ namespace ShowcaseApp.WPF.Models
             "Deandrea Purinton",
             "Kacy Macek",
             "Lona Engler",
-            "Oren Kesten",
-        };
+            "Oren Kesten"
+        ];
 
-        public static readonly List<BitmapImage> Images = new List<BitmapImage>();
-        public static readonly List<BitmapImage> EditorImages = new List<BitmapImage>(); 
+        public static readonly List<BitmapImage> Images = [];
+        public static readonly List<BitmapImage> EditorImages = []; 
 
         static ThemedDataStorage()
         {

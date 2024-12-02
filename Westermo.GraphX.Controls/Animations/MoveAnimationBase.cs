@@ -16,18 +16,12 @@ namespace Westermo.GraphX.Controls.Animations
         /// <summary>
         /// Stores initial vertex data
         /// </summary>
-        public Dictionary<IGraphControl, Measure.Point> VertexStorage { get; private set; }
+        public Dictionary<IGraphControl, Measure.Point> VertexStorage { get; private set; } = [];
+
         /// <summary>
         /// Stores initial edges data
         /// </summary>
-        public List<IGraphControl> EdgeStorage { get; private set; }
-
-        public MoveAnimationBase()
-        {
-            VertexStorage = new Dictionary<IGraphControl, Measure.Point>();
-            EdgeStorage = new List<IGraphControl>();
-            Duration = TimeSpan.FromSeconds(2);
-        }
+        public List<IGraphControl> EdgeStorage { get; private set; } = [];
 
         /// <summary>
         /// Optional cleanup that needs to be performed before or after class usage
@@ -89,7 +83,8 @@ namespace Westermo.GraphX.Controls.Animations
         /// <summary>
         /// The duration of the animation. Default value is 2.
         /// </summary>
-        public TimeSpan Duration { get; set; }
+        public TimeSpan Duration { get; set; } = TimeSpan.FromSeconds(2);
+
         /// <summary>
         /// Event raised on animation completion
         /// </summary>

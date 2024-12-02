@@ -5,9 +5,15 @@ using QuikGraph;
 
 namespace Westermo.GraphX.Logic.Algorithms.LayoutAlgorithms
 {
-	public class LayoutIterationEventArgs<TVertex, TEdge, TVertexInfo, TEdgeInfo> 
-        : LayoutIterationEventArgs<TVertex, TEdge>,
-            ILayoutInfoIterationEventArgs<TVertex, TEdge, TVertexInfo, TEdgeInfo>
+	public class LayoutIterationEventArgs<TVertex, TEdge, TVertexInfo, TEdgeInfo>(
+		int iteration,
+		double statusInPercent,
+		string message,
+		IDictionary<TVertex, Point> vertexPositions,
+		IDictionary<TVertex, TVertexInfo> vertexInfos,
+		IDictionary<TEdge, TEdgeInfo> edgeInfos)
+		: LayoutIterationEventArgs<TVertex, TEdge>(iteration, statusInPercent, message, vertexPositions),
+			ILayoutInfoIterationEventArgs<TVertex, TEdge, TVertexInfo, TEdgeInfo>
 		where TVertex : class
 		where TEdge : IEdge<TVertex>
 	{
@@ -28,18 +34,8 @@ namespace Westermo.GraphX.Logic.Algorithms.LayoutAlgorithms
 			: this( iteration, statusInPercent, string.Empty, vertexPositions, null, null )
 		{ }
 
-		public LayoutIterationEventArgs( int iteration, double statusInPercent, string message,
-		                                 IDictionary<TVertex, Point> vertexPositions,
-		                                 IDictionary<TVertex, TVertexInfo> vertexInfos,
-		                                 IDictionary<TEdge, TEdgeInfo> edgeInfos)
-			: base( iteration, statusInPercent, message, vertexPositions )
-		{
-			this.VertexInfos = vertexInfos;
-			this.EdgeInfos = edgeInfos;
-		}
-
-		public IDictionary<TVertex, TVertexInfo> VertexInfos { get; private set; }
-		public IDictionary<TEdge, TEdgeInfo> EdgeInfos { get; private set; }
+		public IDictionary<TVertex, TVertexInfo> VertexInfos { get; private set; } = vertexInfos;
+		public IDictionary<TEdge, TEdgeInfo> EdgeInfos { get; private set; } = edgeInfos;
 
 		public sealed override object GetVertexInfo( TVertex vertex )
 		{
@@ -58,10 +54,14 @@ namespace Westermo.GraphX.Logic.Algorithms.LayoutAlgorithms
 		}
 	}
 
-	public class LayoutIterationEventArgs<TVertex, TEdge> 
-        : EventArgs, 
-            ILayoutIterationEventArgs<TVertex>, 
-            ILayoutInfoIterationEventArgs<TVertex, TEdge>
+	public class LayoutIterationEventArgs<TVertex, TEdge>(
+		int iteration,
+		double statusInPercent,
+		string message,
+		IDictionary<TVertex, Point> vertexPositions)
+		: EventArgs,
+			ILayoutIterationEventArgs<TVertex>,
+			ILayoutInfoIterationEventArgs<TVertex, TEdge>
 		where TVertex : class
 		where TEdge : IEdge<TVertex>
 	{
@@ -82,37 +82,27 @@ namespace Westermo.GraphX.Logic.Algorithms.LayoutAlgorithms
 			: this( iteration, statusInPercent, string.Empty, vertexPositions )
 		{ }
 
-		public LayoutIterationEventArgs( int iteration, double statusInPercent, string message,
-		                                 IDictionary<TVertex, Point> vertexPositions )
-		{
-			this.StatusInPercent = statusInPercent;
-			this.Iteration = iteration;
-			this.Abort = false;
-			this.Message = message;
-			this.VertexPositions = vertexPositions;
-		}
-
 		/// <summary>
 		/// Represent the status of the layout algorithm in percent.
 		/// </summary>
-		public double StatusInPercent { get; private set; }
+		public double StatusInPercent { get; private set; } = statusInPercent;
 
 		/// <summary>
 		/// If the user sets this value to <code>true</code>, the algorithm aborts ASAP.
 		/// </summary>
-		public bool Abort { get; set; }
+		public bool Abort { get; set; } = false;
 
 		/// <summary>
 		/// Number of the actual iteration.
 		/// </summary>
-		public int Iteration { get; private set; }
+		public int Iteration { get; private set; } = iteration;
 
 		/// <summary>
 		/// Message, textual representation of the status of the algorithm.
 		/// </summary>
-		public string Message { get; private set; }
+		public string Message { get; private set; } = message;
 
-		public IDictionary<TVertex, Point> VertexPositions { get; private set; }
+		public IDictionary<TVertex, Point> VertexPositions { get; private set; } = vertexPositions;
 
 		public virtual object GetVertexInfo( TVertex vertex )
 		{

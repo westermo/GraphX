@@ -1,9 +1,5 @@
-﻿
-
-using Westermo.GraphX.Controls.Models;
+﻿using Westermo.GraphX.Controls.Models;
 using System.Windows;
-using System.Windows.Controls;
-using DefaultEventArgs = System.EventArgs;
 using Westermo.GraphX.Common.Exceptions;
 
 namespace Westermo.GraphX.Controls
@@ -13,14 +9,20 @@ namespace Westermo.GraphX.Controls
         /// <summary>
         /// Gets label attach node
         /// </summary>
-        public EdgeControl? AttachNode { get { return (EdgeControl) GetValue(AttachNodeProperty); } private set {SetValue(AttachNodeProperty, value);} }
+        public EdgeControl? AttachNode
+        {
+            get => (EdgeControl)GetValue(AttachNodeProperty);
+            private set => SetValue(AttachNodeProperty, value);
+        }
 
-        public static readonly DependencyProperty AttachNodeProperty = DependencyProperty.Register(nameof(AttachNode), typeof(EdgeControl), typeof(AttachableEdgeLabelControl), 
+        public static readonly DependencyProperty AttachNodeProperty = DependencyProperty.Register(nameof(AttachNode),
+            typeof(EdgeControl), typeof(AttachableEdgeLabelControl),
             new PropertyMetadata(null));
 
         static AttachableEdgeLabelControl()
         {
-            DefaultStyleKeyProperty.OverrideMetadata(typeof(AttachableEdgeLabelControl), new FrameworkPropertyMetadata(typeof(AttachableEdgeLabelControl)));
+            DefaultStyleKeyProperty.OverrideMetadata(typeof(AttachableEdgeLabelControl),
+                new FrameworkPropertyMetadata(typeof(AttachableEdgeLabelControl)));
         }
 
         public AttachableEdgeLabelControl()
@@ -34,7 +36,7 @@ namespace Westermo.GraphX.Controls
         /// <param name="node">VertexControl node</param>
         public virtual void Attach(EdgeControl node)
         {
-            if(AttachNode != null)
+            if (AttachNode != null)
                 AttachNode.IsVisibleChanged -= AttachNode_IsVisibleChanged;
             AttachNode = node;
             AttachNode.IsVisibleChanged += AttachNode_IsVisibleChanged;
@@ -51,19 +53,19 @@ namespace Westermo.GraphX.Controls
             AttachNode = null;
         }
 
-        void AttachNode_IsVisibleChanged(object sender, DependencyPropertyChangedEventArgs e)
+        private void AttachNode_IsVisibleChanged(object sender, DependencyPropertyChangedEventArgs e)
         {
-            if(AttachNode!.IsVisible && ShowLabel)
-                base.Show();
+            if (AttachNode!.IsVisible && ShowLabel)
+                Show();
             else if (!AttachNode.IsVisible)
             {
-                base.Hide();
+                Hide();
             }
         }
 
         protected override EdgeControl GetEdgeControl(DependencyObject? parent)
         {
-            if(AttachNode == null)
+            if (AttachNode == null)
                 throw new GX_InvalidDataException("AttachableEdgeLabelControl node is not attached!");
             return AttachNode;
         }

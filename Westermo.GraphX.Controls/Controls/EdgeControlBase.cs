@@ -70,59 +70,63 @@ namespace Westermo.GraphX.Controls
         /// </summary>
         public GraphAreaBase RootArea
         {
-            get { return (GraphAreaBase)GetValue(RootCanvasProperty); }
-            set { SetValue(RootCanvasProperty, value); }
+            get => (GraphAreaBase)GetValue(RootCanvasProperty);
+            set => SetValue(RootCanvasProperty, value);
         }
 
         public static readonly DependencyProperty RootCanvasProperty =
-            DependencyProperty.Register(nameof(RootArea), typeof(GraphAreaBase), typeof(EdgeControlBase), new PropertyMetadata(null));
+            DependencyProperty.Register(nameof(RootArea), typeof(GraphAreaBase), typeof(EdgeControlBase),
+                new PropertyMetadata(null));
 
-        public static readonly DependencyProperty SelfLoopIndicatorRadiusProperty = DependencyProperty.Register(nameof(SelfLoopIndicatorRadius),
-                                                                                       typeof(double),
-                                                                                       typeof(EdgeControlBase),
-                                                                                       new PropertyMetadata(5d));
+        public static readonly DependencyProperty SelfLoopIndicatorRadiusProperty = DependencyProperty.Register(
+            nameof(SelfLoopIndicatorRadius),
+            typeof(double),
+            typeof(EdgeControlBase),
+            new PropertyMetadata(5d));
 
         /// <summary>
         /// Radius of the default self-loop indicator, which is drawn as a circle (when custom template isn't provided). Default is 20.
         /// </summary>
         public double SelfLoopIndicatorRadius
         {
-            get { return (double)GetValue(SelfLoopIndicatorRadiusProperty); }
-            set { SetValue(SelfLoopIndicatorRadiusProperty, value); }
+            get => (double)GetValue(SelfLoopIndicatorRadiusProperty);
+            set => SetValue(SelfLoopIndicatorRadiusProperty, value);
         }
 
-        public static readonly DependencyProperty SelfLoopIndicatorOffsetProperty = DependencyProperty.Register(nameof(SelfLoopIndicatorOffset),
-                                                                               typeof(Point),
-                                                                               typeof(EdgeControlBase),
-                                                                               new PropertyMetadata(new Point()));
+        public static readonly DependencyProperty SelfLoopIndicatorOffsetProperty = DependencyProperty.Register(
+            nameof(SelfLoopIndicatorOffset),
+            typeof(Point),
+            typeof(EdgeControlBase),
+            new PropertyMetadata(new Point()));
 
         /// <summary>
         /// Offset from the left-top corner of the vertex. Useful for custom vertex shapes. Default is 10,10.
         /// </summary>
         public Point SelfLoopIndicatorOffset
         {
-            get { return (Point)GetValue(SelfLoopIndicatorOffsetProperty); }
-            set { SetValue(SelfLoopIndicatorOffsetProperty, value); }
+            get => (Point)GetValue(SelfLoopIndicatorOffsetProperty);
+            set => SetValue(SelfLoopIndicatorOffsetProperty, value);
         }
 
-        public static readonly DependencyProperty ShowSelfLoopIndicatorProperty = DependencyProperty.Register(nameof(ShowSelfLoopIndicator),
-                                                                       typeof(bool),
-                                                                       typeof(EdgeControlBase),
-                                                                       new PropertyMetadata(true));
+        public static readonly DependencyProperty ShowSelfLoopIndicatorProperty = DependencyProperty.Register(
+            nameof(ShowSelfLoopIndicator),
+            typeof(bool),
+            typeof(EdgeControlBase),
+            new PropertyMetadata(true));
 
         /// <summary>
         /// Show self looped edge indicator on the vertex top-left corner. Default value is true.
         /// </summary>
         public bool ShowSelfLoopIndicator
         {
-            get { return (bool)GetValue(ShowSelfLoopIndicatorProperty); }
-            set { SetValue(ShowSelfLoopIndicatorProperty, value); }
+            get => (bool)GetValue(ShowSelfLoopIndicatorProperty);
+            set => SetValue(ShowSelfLoopIndicatorProperty, value);
         }
 
         public static readonly DependencyProperty SourceProperty = DependencyProperty.Register(nameof(Source),
-                                                                                               typeof(VertexControl),
-                                                                                               typeof(EdgeControlBase),
-                                                                                               new PropertyMetadata(null, OnSourceChangedInternal));
+            typeof(VertexControl),
+            typeof(EdgeControlBase),
+            new PropertyMetadata(null, OnSourceChangedInternal));
 
         private static void OnSourceChangedInternal(DependencyObject d, DependencyPropertyChangedEventArgs e)
         {
@@ -130,74 +134,57 @@ namespace Westermo.GraphX.Controls
         }
 
         public static readonly DependencyProperty TargetProperty = DependencyProperty.Register(nameof(Target),
-                                                                                               typeof(VertexControl),
-                                                                                               typeof(EdgeControlBase),
-                                                                                               new PropertyMetadata(null, OnTargetChangedInternal));
+            typeof(VertexControl),
+            typeof(EdgeControlBase),
+            new PropertyMetadata(null, OnTargetChangedInternal));
 
         private static void OnTargetChangedInternal(DependencyObject d, DependencyPropertyChangedEventArgs e)
         {
             (d as EdgeControlBase)?.OnTargetChanged(d, e);
         }
 
-        public static readonly DependencyProperty EdgeProperty = DependencyProperty.Register(nameof(Edge), typeof(object),
-                                                                                             typeof(EdgeControlBase),
-                                                                                             new PropertyMetadata(null));
+        public static readonly DependencyProperty EdgeProperty = DependencyProperty.Register(nameof(Edge),
+            typeof(object),
+            typeof(EdgeControlBase),
+            new PropertyMetadata(null));
 
-       /* private double _labelAngle;
+        /* private double _labelAngle;
 
-        /// <summary>
-        /// Gets or sets vertex label angle
-        /// </summary>
-        public double LabelAngle
-        {
-            get
-            {
-                return EdgeLabelControl?.Angle ?? _labelAngle;
-            }
-            set
-            {
-                _labelAngle = value;
-                if (EdgeLabelControl != null) EdgeLabelControl.Angle = _labelAngle;
-            }
-        }*/
+         /// <summary>
+         /// Gets or sets vertex label angle
+         /// </summary>
+         public double LabelAngle
+         {
+             get
+             {
+                 return EdgeLabelControl?.Angle ?? _labelAngle;
+             }
+             set
+             {
+                 _labelAngle = value;
+                 if (EdgeLabelControl != null) EdgeLabelControl.Angle = _labelAngle;
+             }
+         }*/
 
         #region DashStyle
 
         public static readonly DependencyProperty DashStyleProperty = DependencyProperty.Register(nameof(DashStyle),
-                                                                                       typeof(EdgeDashStyle),
-                                                                                       typeof(EdgeControlBase),
-                                                                                       new PropertyMetadata(EdgeDashStyle.Solid, dashstyle_changed));
+            typeof(EdgeDashStyle),
+            typeof(EdgeControlBase),
+            new PropertyMetadata(EdgeDashStyle.Solid, dashstyle_changed));
 
         private static void dashstyle_changed(DependencyObject d, DependencyPropertyChangedEventArgs e)
         {
-            var ec = d as EdgeControlBase;
-            if (ec == null) return;
-            switch ((EdgeDashStyle)e.NewValue)
+            if (d is not EdgeControlBase ec) return;
+            ec.StrokeDashArray = (EdgeDashStyle)e.NewValue switch
             {
-                case EdgeDashStyle.Solid:
-                    ec.StrokeDashArray = null;
-                    break;
-
-                case EdgeDashStyle.Dash:
-                    ec.StrokeDashArray = new DoubleCollection { 4.0, 2.0 };
-                    break;
-
-                case EdgeDashStyle.Dot:
-                    ec.StrokeDashArray = new DoubleCollection { 1.0, 2.0 };
-                    break;
-
-                case EdgeDashStyle.DashDot:
-                    ec.StrokeDashArray = new DoubleCollection { 4.0, 2.0, 1.0, 2.0 };
-                    break;
-
-                case EdgeDashStyle.DashDotDot:
-                    ec.StrokeDashArray = new DoubleCollection { 4.0, 2.0, 1.0, 2.0, 1.0, 2.0 };
-                    break;
-
-                default:
-                    ec.StrokeDashArray = null;
-                    break;
-            }
+                EdgeDashStyle.Solid => null,
+                EdgeDashStyle.Dash => [4.0, 2.0],
+                EdgeDashStyle.Dot => [1.0, 2.0],
+                EdgeDashStyle.DashDot => [4.0, 2.0, 1.0, 2.0],
+                EdgeDashStyle.DashDotDot => [4.0, 2.0, 1.0, 2.0, 1.0, 2.0],
+                _ => null,
+            };
             ec.UpdateEdge(false);
         }
 
@@ -206,8 +193,8 @@ namespace Westermo.GraphX.Controls
         /// </summary>
         public EdgeDashStyle DashStyle
         {
-            get { return (EdgeDashStyle)GetValue(DashStyleProperty); }
-            set { SetValue(DashStyleProperty, value); }
+            get => (EdgeDashStyle)GetValue(DashStyleProperty);
+            set => SetValue(DashStyleProperty, value);
         }
 
         #endregion DashStyle
@@ -221,23 +208,27 @@ namespace Westermo.GraphX.Controls
         protected EdgeControlBase()
         {
             _updateLabelPosition = true;
-			Loaded += EdgeControlBase_Loaded;
+            Loaded += EdgeControlBase_Loaded;
         }
 
-		private bool _isInDesignMode = false;
+        private bool _isInDesignMode;
 
-		private void EdgeControlBase_Loaded(object sender, RoutedEventArgs e)
-		{
-			Loaded -= EdgeControlBase_Loaded;
-			_isInDesignMode = CustomHelper.IsInDesignMode(this);
-		}
+        private void EdgeControlBase_Loaded(object sender, RoutedEventArgs e)
+        {
+            Loaded -= EdgeControlBase_Loaded;
+            _isInDesignMode = CustomHelper.IsInDesignMode(this);
+        }
 
-		private bool _updateLabelPosition;
+        private bool _updateLabelPosition;
 
         /// <summary>
         /// Gets or sets if label position should be updated on edge update
         /// </summary>
-        public bool UpdateLabelPosition { get { return _updateLabelPosition; } set { _updateLabelPosition = true; } }
+        public bool UpdateLabelPosition
+        {
+            get => _updateLabelPosition;
+            set => _updateLabelPosition = value;
+        }
 
 
         /// <summary>
@@ -245,12 +236,12 @@ namespace Westermo.GraphX.Controls
         /// </summary>
         public bool IsHiddenEdgesUpdated { get; set; }
 
-        public static readonly DependencyProperty ShowArrowsProperty = DependencyProperty.Register("ShowArrows", typeof(bool), typeof(EdgeControlBase), new PropertyMetadata(true, showarrows_changed));
+        public static readonly DependencyProperty ShowArrowsProperty = DependencyProperty.Register(nameof(ShowArrows),
+            typeof(bool), typeof(EdgeControlBase), new PropertyMetadata(true, showarrows_changed));
 
         private static void showarrows_changed(object sender, DependencyPropertyChangedEventArgs args)
         {
-            var ctrl = sender as EdgeControlBase;
-            if (ctrl == null)
+            if (sender is not EdgeControlBase ctrl)
                 return;
 
             /*if (ctrl.EdgePointerForSource != null && !ctrl.IsSelfLooped)
@@ -264,7 +255,11 @@ namespace Westermo.GraphX.Controls
         /// <summary>
         /// Show arrows on the edge ends. Default value is true.
         /// </summary>
-        public bool ShowArrows { get { return (bool)GetValue(ShowArrowsProperty); } set { SetValue(ShowArrowsProperty, value); } }
+        public bool ShowArrows
+        {
+            get => (bool)GetValue(ShowArrowsProperty);
+            set => SetValue(ShowArrowsProperty, value);
+        }
 
         /// <summary>
         ///  Gets or Sets that user controls the path geometry object or it is generated automatically
@@ -281,12 +276,20 @@ namespace Westermo.GraphX.Controls
         /// </summary>
         protected Path? LinePathObject;
 
-        private IList<IEdgeLabelControl> _edgeLabelControls = new List<IEdgeLabelControl>();
+        private IList<IEdgeLabelControl> _edgeLabelControls = [];
 
         /// <summary>
         /// Templated label control to display labels
         /// </summary>
-        protected internal IList<IEdgeLabelControl> EdgeLabelControls { get { return _edgeLabelControls; } set { _edgeLabelControls = value; OnEdgeLabelUpdated(); } }
+        protected internal IList<IEdgeLabelControl> EdgeLabelControls
+        {
+            get => _edgeLabelControls;
+            set
+            {
+                _edgeLabelControls = value;
+                OnEdgeLabelUpdated();
+            }
+        }
 
         protected IEdgePointer? EdgePointerForSource;
         protected IEdgePointer? EdgePointerForTarget;
@@ -294,12 +297,18 @@ namespace Westermo.GraphX.Controls
         /// <summary>
         /// Returns edge pointer for source if any
         /// </summary>
-        public IEdgePointer? GetEdgePointerForSource() { return EdgePointerForSource; }
+        public IEdgePointer? GetEdgePointerForSource()
+        {
+            return EdgePointerForSource;
+        }
 
         /// <summary>
         /// Returns edge pointer for target if any
         /// </summary>
-        public IEdgePointer? GetEdgePointerForTarget() { return EdgePointerForTarget; }
+        public IEdgePointer? GetEdgePointerForTarget()
+        {
+            return EdgePointerForTarget;
+        }
 
         public EdgeEventOptions? EventOptions { get; protected set; }
 
@@ -308,8 +317,8 @@ namespace Westermo.GraphX.Controls
         /// </summary>
         public VertexControl? Source
         {
-            get { return (VertexControl?)GetValue(SourceProperty); }
-            set { SetValue(SourceProperty, value); }
+            get => (VertexControl?)GetValue(SourceProperty);
+            set => SetValue(SourceProperty, value);
         }
 
         /// <summary>
@@ -317,8 +326,8 @@ namespace Westermo.GraphX.Controls
         /// </summary>
         public VertexControl? Target
         {
-            get { return (VertexControl?)GetValue(TargetProperty); }
-            set { SetValue(TargetProperty, value); }
+            get => (VertexControl?)GetValue(TargetProperty);
+            set => SetValue(TargetProperty, value);
         }
 
         /// <summary>
@@ -326,8 +335,8 @@ namespace Westermo.GraphX.Controls
         /// </summary>
         public object? Edge
         {
-            get { return GetValue(EdgeProperty); }
-            set { SetValue(EdgeProperty, value); }
+            get => GetValue(EdgeProperty);
+            set => SetValue(EdgeProperty, value);
         }
 
         /// <summary>
@@ -337,7 +346,7 @@ namespace Westermo.GraphX.Controls
         public void AttachLabel(IEdgeLabelControl ctrl)
         {
             EdgeLabelControls.Add(ctrl);
-            if(!RootArea.Children.Contains((UIElement)ctrl))
+            if (!RootArea.Children.Contains((UIElement)ctrl))
                 RootArea.Children.Add((UIElement)ctrl);
             ctrl.Show();
             var r = ctrl.GetSize();
@@ -352,12 +361,13 @@ namespace Westermo.GraphX.Controls
         /// Internal method. Detaches label from control.
         /// </summary>
         public void DetachLabels(IEdgeLabelControl? ctrl = null)
-        {            
-            EdgeLabelControls.Where(l => l is IAttachableControl<EdgeControl>).Cast<IAttachableControl<EdgeControl>>().ForEach(label =>
-            {
-                label.Detach();
-                RootArea.Children.Remove((UIElement)label);
-            });
+        {
+            EdgeLabelControls.Where(l => l is IAttachableControl<EdgeControl>).Cast<IAttachableControl<EdgeControl>>()
+                .ForEach(label =>
+                {
+                    label.Detach();
+                    RootArea.Children.Remove((UIElement)label);
+                });
             EdgeLabelControls.Clear();
         }
 
@@ -366,7 +376,7 @@ namespace Westermo.GraphX.Controls
         /// </summary>
         public void UpdateLabel()
         {
-            _edgeLabelControls.Where(l=> l.ShowLabel).ForEach(l =>
+            _edgeLabelControls.Where(l => l.ShowLabel).ForEach(l =>
             {
                 l.Show();
                 l.UpdateLayout();
@@ -402,7 +412,8 @@ namespace Westermo.GraphX.Controls
         /// <param name="round"></param>
         public Point GetPosition(bool final = false, bool round = false)
         {
-            return new Point(final ? GraphAreaBase.GetFinalX(this) : GraphAreaBase.GetX(this), final ? GraphAreaBase.GetFinalY(this) : GraphAreaBase.GetY(this));
+            return new Point(final ? GraphAreaBase.GetFinalX(this) : GraphAreaBase.GetX(this),
+                final ? GraphAreaBase.GetFinalY(this) : GraphAreaBase.GetY(this));
         }
 
         /// <summary>
@@ -412,7 +423,8 @@ namespace Westermo.GraphX.Controls
         /// <param name="round"></param>
         internal Measure.Point GetPositionGraphX(bool final = false, bool round = false)
         {
-            return new Measure.Point(final ? GraphAreaBase.GetFinalX(this) : GraphAreaBase.GetX(this), final ? GraphAreaBase.GetFinalY(this) : GraphAreaBase.GetY(this));
+            return new Measure.Point(final ? GraphAreaBase.GetFinalX(this) : GraphAreaBase.GetX(this),
+                final ? GraphAreaBase.GetFinalY(this) : GraphAreaBase.GetY(this));
         }
 
         #endregion Position methods
@@ -442,16 +454,16 @@ namespace Westermo.GraphX.Controls
 
         internal void SetVisibility(Visibility value)
         {
-            this.SetCurrentValue(VisibilityProperty, value);
+            SetCurrentValue(VisibilityProperty, value);
         }
 
         internal virtual void InvalidateChildren()
         {
-            EdgeLabelControls.ForEach(l=>l.UpdateLayout());
+            EdgeLabelControls.ForEach(l => l.UpdateLayout());
             if (LinePathObject != null)
             {
-                var pos = this.Source!.GetPosition();
-                this.Source.SetPosition(pos.X, pos.Y);
+                var pos = Source!.GetPosition();
+                Source.SetPosition(pos.X, pos.Y);
             }
         }
 
@@ -471,11 +483,13 @@ namespace Westermo.GraphX.Controls
             if (Template == null) return;
 
             LinePathObject = GetTemplatePart("PART_edgePath") as Path;
-            if (LinePathObject == null) throw new GX_ObjectNotFoundException("EdgeControlBase Template -> Edge template must contain 'PART_edgePath' Path object to draw route points!");
+            if (LinePathObject == null)
+                throw new GX_ObjectNotFoundException(
+                    "EdgeControlBase Template -> Edge template must contain 'PART_edgePath' Path object to draw route points!");
             LinePathObject.Data = Linegeometry;
 
             //EdgeLabelControl = EdgeLabelControl ?? GetTemplatePart("PART_edgeLabel") as IEdgeLabelControl;
-            if(GetTemplatePart("PART_edgeLabel") != null)
+            if (GetTemplatePart("PART_edgeLabel") != null)
                 throw new GX_ObsoleteException("PART_edgeLabel is obsolete. Please use attachable labels mechanics!");
 
             EdgePointerForSource = GetTemplatePart("PART_EdgePointerForSource") as IEdgePointer;
@@ -483,7 +497,7 @@ namespace Westermo.GraphX.Controls
 
             SelfLoopIndicator = GetTemplatePart("PART_SelfLoopedEdge") as FrameworkElement;
             if (SelfLoopIndicator != null)
-                SelfLoopIndicator.LayoutUpdated += (sender, args) =>
+                SelfLoopIndicator.LayoutUpdated += (_, _) =>
                 {
                     SelfLoopIndicator?.Arrange(_selfLoopedEdgeLastKnownRect);
                 };
@@ -543,12 +557,14 @@ namespace Westermo.GraphX.Controls
 
                 // Note: Do not override a possible WPF Binding or Converter for the Visibility property.
                 if (EdgePointerForTarget?.Visibility == Visibility.Visible)
-                    EdgePointerForTarget?.Show();            }
+                    EdgePointerForTarget?.Show();
+            }
             else
             {
                 EdgePointerForSource?.Hide();
                 EdgePointerForTarget?.Hide();
             }
+
             PrepareEdgePath(true, null, updateLabel);
             if (LinePathObject == null) return;
             LinePathObject.Data = Linegeometry;
@@ -556,28 +572,28 @@ namespace Westermo.GraphX.Controls
         }
 
         internal int ParallelEdgeOffset;
-		//internal int TargetOffset;
+        //internal int TargetOffset;
 
         /// <summary>
         /// Gets the offset point for edge parallelization
         /// </summary>
-        /// <param name="source">Source vertex</param>
-        /// <param name="target">Target vertex</param>
+        /// <param name="sourceCenter">Source vertex</param>
+        /// <param name="targetCenter">Target vertex</param>
         /// <param name="sideDistance">Distance between edges</param>
-        internal virtual Point GetParallelOffset(Point sourceCenter, Point targetCenter, int sideDistance)
+        protected virtual Point GetParallelOffset(Point sourceCenter, Point targetCenter, int sideDistance)
         {
             var mainVector = new Vector(targetCenter.X - sourceCenter.X, targetCenter.Y - sourceCenter.Y);
             //get new point coordinate
             var joint = new Point(
-                 sourceCenter.X + sideDistance * (mainVector.Y / mainVector.Length),
-                 sourceCenter.Y - sideDistance * (mainVector.X / mainVector.Length));
+                sourceCenter.X + sideDistance * (mainVector.Y / mainVector.Length),
+                sourceCenter.Y - sideDistance * (mainVector.X / mainVector.Length));
             return joint;
         }
 
         /// <summary>
         /// Internal value to store last calculated Source vertex connection point
-		    /// </summary>
-		    protected internal Point? SourceConnectionPoint;
+        /// </summary>
+        protected internal Point? SourceConnectionPoint;
 
         /// <summary>
         /// Internal value to store last calculated Target vertex connection point
@@ -631,8 +647,10 @@ namespace Westermo.GraphX.Controls
             var hasNoTemplate = !HasSelfLoopedEdgeTemplate;
             var pt =
                 new Point(
-                    sourcePos.X + SelfLoopIndicatorOffset.X - (hasNoTemplate ? SelfLoopIndicatorRadius : SelfLoopIndicator!.DesiredSize.Width),
-                    sourcePos.Y + SelfLoopIndicatorOffset.Y - (hasNoTemplate ? SelfLoopIndicatorRadius : SelfLoopIndicator!.DesiredSize.Height));
+                    sourcePos.X + SelfLoopIndicatorOffset.X -
+                    (hasNoTemplate ? SelfLoopIndicatorRadius : SelfLoopIndicator!.DesiredSize.Width),
+                    sourcePos.Y + SelfLoopIndicatorOffset.Y -
+                    (hasNoTemplate ? SelfLoopIndicatorRadius : SelfLoopIndicator!.DesiredSize.Height));
 
             //if we has no self looped edge template defined we'll use default built-in indicator
             if (hasNoTemplate)
@@ -649,20 +667,22 @@ namespace Westermo.GraphX.Controls
         public virtual void PrepareEdgePathFromMousePointer(bool useCurrentCoords = false)
         {
             //do not calculate invisible edges
-            if ((Visibility != Visibility.Visible && !IsHiddenEdgesUpdated) && ManualDrawing || !IsTemplateLoaded) return;
+            if (Visibility != Visibility.Visible && !IsHiddenEdgesUpdated && ManualDrawing || !IsTemplateLoaded) return;
 
             //get the size of the source
             var sourceSize = new Size
             {
-                Width = this.Source!.ActualWidth,
-                Height = this.Source.ActualHeight
+                Width = Source!.ActualWidth,
+                Height = Source.ActualHeight
             };
 
             //get the position center of the source
             var sourcePos = new Point
             {
-                X = (useCurrentCoords ? GraphAreaBase.GetX(this.Source) : GraphAreaBase.GetFinalX(this.Source)) + sourceSize.Width * 0.5,
-                Y = (useCurrentCoords ? GraphAreaBase.GetY(this.Source) : GraphAreaBase.GetFinalY(this.Source)) + sourceSize.Height * 0.5
+                X = (useCurrentCoords ? GraphAreaBase.GetX(Source) : GraphAreaBase.GetFinalX(Source)) +
+                    sourceSize.Width * 0.5,
+                Y = (useCurrentCoords ? GraphAreaBase.GetY(Source) : GraphAreaBase.GetFinalY(Source)) +
+                    sourceSize.Height * 0.5
             };
 
             //get the size of the target
@@ -675,13 +695,11 @@ namespace Westermo.GraphX.Controls
             //get the position center of the target
             var targetPos = new Point
             {
-                X = Mouse.GetPosition(this.RootArea).X,/* + targetSize.Width * 0.5,*/
-                Y = Mouse.GetPosition(this.RootArea).Y/* + targetSize.Height * 0.5*/
+                X = Mouse.GetPosition(RootArea).X, /* + targetSize.Width * 0.5,*/
+                Y = Mouse.GetPosition(RootArea).Y /* + targetSize.Height * 0.5*/
             };
 
-            var routedEdge = this.Edge as IRoutingInfo;
-
-            if (routedEdge == null)
+            if (Edge is not IRoutingInfo routedEdge)
                 throw new GX_InvalidDataException("Edge must implement IRoutingInfo interface");
 
             //get the route informations
@@ -690,15 +708,10 @@ namespace Westermo.GraphX.Controls
             // Get the TopLeft position of the Source Vertex.
             var sourcePos1 = new Point
             {
-                X = (useCurrentCoords ? GraphAreaBase.GetX(this.Source) : GraphAreaBase.GetFinalX(this.Source)),
-                Y = (useCurrentCoords ? GraphAreaBase.GetY(this.Source) : GraphAreaBase.GetFinalY(this.Source))
+                X = useCurrentCoords ? GraphAreaBase.GetX(Source) : GraphAreaBase.GetFinalX(Source),
+                Y = useCurrentCoords ? GraphAreaBase.GetY(Source) : GraphAreaBase.GetFinalY(Source)
             };
             // Get the TopLeft position of the Target Vertex.
-            var targetPos1 = new Point
-            {
-                X = Mouse.GetPosition(this.RootArea).X,
-                Y = Mouse.GetPosition(this.RootArea).Y
-            };
 
             var hasEpSource = EdgePointerForSource != null;
             var hasEpTarget = EdgePointerForTarget != null;
@@ -711,7 +724,7 @@ namespace Westermo.GraphX.Controls
             }
 
             //check if we have some edge route data
-            var hasRouteInfo = routeInformation != null && routeInformation.Length > 1;
+            var hasRouteInfo = routeInformation is { Length: > 1 };
 
             var gEdge = Edge as IGraphXCommonEdge;
             Point p1;
@@ -720,20 +733,25 @@ namespace Westermo.GraphX.Controls
             //calculate edge source (p1) and target (p2) endpoints based on different settings
             if (gEdge?.SourceConnectionPointId != null)
             {
-                var sourceCp = this.Source.GetConnectionPointById(gEdge.SourceConnectionPointId.Value, true);
+                var sourceCp = Source.GetConnectionPointById(gEdge.SourceConnectionPointId.Value, true);
                 if (sourceCp == null)
                 {
-                    throw new GX_ObjectNotFoundException(string.Format("Can't find source vertex VCP by edge source connection point Id({1}) : {0}", this.Source, gEdge.SourceConnectionPointId));
+                    throw new GX_ObjectNotFoundException(string.Format(
+                        "Can't find source vertex VCP by edge source connection point Id({1}) : {0}", Source,
+                        gEdge.SourceConnectionPointId));
                 }
+
                 if (sourceCp.Shape == VertexShape.None) p1 = sourceCp.RectangularSize.Center();
                 else
                 {
-                    var targetCpPos = hasRouteInfo ? routeInformation![1].ToWindows() : (targetPos);
-                    p1 = GeometryHelper.GetEdgeEndpoint(sourceCp.RectangularSize.Center(), sourceCp.RectangularSize, targetCpPos, sourceCp.Shape);
+                    var targetCpPos = hasRouteInfo ? routeInformation![1].ToWindows() : targetPos;
+                    p1 = GeometryHelper.GetEdgeEndpoint(sourceCp.RectangularSize.Center(), sourceCp.RectangularSize,
+                        targetCpPos, sourceCp.Shape);
                 }
             }
             else
-                p1 = GeometryHelper.GetEdgeEndpoint(sourcePos, new SysRect(sourcePos1, sourceSize), (hasRouteInfo ? routeInformation![1].ToWindows() : (targetPos)), this.Source.VertexShape);
+                p1 = GeometryHelper.GetEdgeEndpoint(sourcePos, new SysRect(sourcePos1, sourceSize),
+                    hasRouteInfo ? routeInformation![1].ToWindows() : targetPos, Source.VertexShape);
 
             //if (gEdge?.TargetConnectionPointId != null)
             //{
@@ -749,16 +767,18 @@ namespace Westermo.GraphX.Controls
             //}
             //else
             p2 = GeometryHelper.GetEdgeEndpoint(
-                targetPos, new SysRect(targetPos, targetSize), hasRouteInfo ? routeInformation![routeInformation.Length - 2].ToWindows() : (sourcePos), VertexShape.None);
+                targetPos, new SysRect(targetPos, targetSize),
+                hasRouteInfo ? routeInformation![routeInformation.Length - 2].ToWindows() : sourcePos,
+                VertexShape.None);
 
             SourceConnectionPoint = p1;
             TargetConnectionPoint = p2;
 
             Linegeometry = new PathGeometry();
-            PathFigure lineFigure = new PathFigure();
+            PathFigure lineFigure;
 
             //if we have route and route consist of 2 or more points
-            if (RootArea != null && hasRouteInfo)
+            if (hasRouteInfo)
             {
                 //replace start and end points with accurate ones
                 var routePoints = routeInformation.ToWindows()!.ToList();
@@ -771,29 +791,35 @@ namespace Westermo.GraphX.Controls
 
                 if (RootArea.EdgeCurvingEnabled)
                 {
-                    var oPolyLineSegment = GeometryHelper.GetCurveThroughPoints(routePoints.ToArray(), 0.5, RootArea.EdgeCurvingTolerance);
+                    var oPolyLineSegment =
+                        GeometryHelper.GetCurveThroughPoints([.. routePoints], 0.5, RootArea.EdgeCurvingTolerance);
 
                     if (hasEpTarget)
                     {
-                        UpdateTargetEpData(oPolyLineSegment.Points[oPolyLineSegment.Points.Count - 1], oPolyLineSegment.Points[oPolyLineSegment.Points.Count - 2]);
+                        UpdateTargetEpData(oPolyLineSegment.Points[^1],
+                            oPolyLineSegment.Points[^2]);
                         oPolyLineSegment.Points.RemoveAt(oPolyLineSegment.Points.Count - 1);
                     }
+
                     if (hasEpSource)
                     {
                         UpdateSourceEpData(oPolyLineSegment.Points.First(), oPolyLineSegment.Points[1]);
                         oPolyLineSegment.Points.RemoveAt(0);
                     }
 
-                    lineFigure = GeometryHelper.GetPathFigureFromPathSegments(routePoints[0], true, true, oPolyLineSegment);
+                    lineFigure =
+                        GeometryHelper.GetPathFigureFromPathSegments(routePoints[0], true, true, oPolyLineSegment);
                     //freeze and create resulting geometry
                     GeometryHelper.TryFreeze(oPolyLineSegment);
                 }
                 else
                 {
                     if (hasEpSource)
-                        routePoints[0] = routePoints[0].Subtract(UpdateSourceEpData(routePoints.First(), routePoints[1]));
+                        routePoints[0] =
+                            routePoints[0].Subtract(UpdateSourceEpData(routePoints.First(), routePoints[1]));
                     if (hasEpTarget)
-                        routePoints[routePoints.Count - 1] = routePoints[routePoints.Count - 1].Subtract(UpdateTargetEpData(p2, routePoints[routePoints.Count - 2]));
+                        routePoints[^1] = routePoints[^1]
+                            .Subtract(UpdateTargetEpData(p2, routePoints[^2]));
 
                     // Reverse the path if specified.
                     if (gEdge!.ReversePath)
@@ -802,12 +828,13 @@ namespace Westermo.GraphX.Controls
                     var pcol = new PointCollection();
                     routePoints.ForEach(a => pcol.Add(a));
 
-                    lineFigure = new PathFigure { StartPoint = p1, Segments = new PathSegmentCollection { new PolyLineSegment { Points = pcol } }, IsClosed = false };
+                    lineFigure = new PathFigure
+                        { StartPoint = p1, Segments = [new PolyLineSegment { Points = pcol }], IsClosed = false };
                 }
             }
             else // no route defined
             {
-                bool remainHidden = false;
+                var remainHidden = false;
                 //check for hide only if prop is not 0
                 if (HideEdgePointerByEdgeLength != 0d)
                 {
@@ -829,8 +856,14 @@ namespace Westermo.GraphX.Controls
                 if (hasEpTarget)
                     p2 = p2.Subtract(UpdateTargetEpData(p2, p1, remainHidden));
 
-                lineFigure = new PathFigure { StartPoint = gEdge!.ReversePath ? p2 : p1, Segments = new PathSegmentCollection { new LineSegment() { Point = gEdge.ReversePath ? p1 : p2 } }, IsClosed = false };
+                lineFigure = new PathFigure
+                {
+                    StartPoint = gEdge!.ReversePath ? p2 : p1, Segments =
+                        [new LineSegment() { Point = gEdge.ReversePath ? p1 : p2 }],
+                    IsClosed = false
+                };
             }
+
             ((PathGeometry)Linegeometry).Figures.Add(lineFigure);
             GeometryHelper.TryFreeze(lineFigure);
             GeometryHelper.TryFreeze(Linegeometry);
@@ -859,21 +892,24 @@ namespace Westermo.GraphX.Controls
         /// <param name="useCurrentCoords">Use current vertices coordinates or final coorfinates (for.ex if move animation is active final coords will be its destination)</param>
         /// <param name="externalRoutingPoints">Provided custom routing points will be used instead of stored ones.</param>
         /// <param name="updateLabel">Should edge label be updated in this pass</param>
-        public virtual void PrepareEdgePath(bool useCurrentCoords = false, Measure.Point[]? externalRoutingPoints = null, bool updateLabel = true)
+        public virtual void PrepareEdgePath(bool useCurrentCoords = false,
+            Measure.Point[]? externalRoutingPoints = null, bool updateLabel = true)
         {
             //do not calculate invisible edges
-            if ((Visibility != Visibility.Visible && !IsHiddenEdgesUpdated) && this.Source == null || this.Target == null || ManualDrawing || !IsTemplateLoaded) return;
+            if (Visibility != Visibility.Visible && !IsHiddenEdgesUpdated && Source == null || Target == null ||
+                ManualDrawing || !IsTemplateLoaded) return;
 
             #region Get the inputs
+
             // Get the TopLeft position of the Source Vertex.
             var sourceTopLeft = new Point(
-                (useCurrentCoords ? GraphAreaBase.GetX(Source!) : GraphAreaBase.GetFinalX(Source!)),
-                (useCurrentCoords ? GraphAreaBase.GetY(Source!) : GraphAreaBase.GetFinalY(Source!)));
+                useCurrentCoords ? GraphAreaBase.GetX(Source!) : GraphAreaBase.GetFinalX(Source!),
+                useCurrentCoords ? GraphAreaBase.GetY(Source!) : GraphAreaBase.GetFinalY(Source!));
 
             // Get the TopLeft position of the Target Vertex.
             var targetTopLeft = new Point(
-                (useCurrentCoords ? GraphAreaBase.GetX(Target) : GraphAreaBase.GetFinalX(Target)),
-                (useCurrentCoords ? GraphAreaBase.GetY(Target) : GraphAreaBase.GetFinalY(Target)));
+                useCurrentCoords ? GraphAreaBase.GetX(Target) : GraphAreaBase.GetFinalX(Target),
+                useCurrentCoords ? GraphAreaBase.GetY(Target) : GraphAreaBase.GetFinalY(Target));
 
             //get the size of the source
             Size sourceSize;
@@ -902,8 +938,7 @@ namespace Westermo.GraphX.Controls
                 targetTopLeft.Y + targetSize.Height * .5);
 
 
-            var routedEdge = Edge as IRoutingInfo;
-            if (routedEdge == null)
+            if (Edge is not IRoutingInfo routedEdge)
                 throw new GX_InvalidDataException("Edge must implement IRoutingInfo interface");
 
             //get the route informations
@@ -927,21 +962,28 @@ namespace Westermo.GraphX.Controls
             var gEdge = Edge as IGraphXCommonEdge;
 
             #region Helper lambda expressions
-            Func<IVertexConnectionPoint> getSourceCpOrThrow = () =>
+
+            IVertexConnectionPoint GetSourceCpOrThrow()
             {
-                var cp = Source!.GetConnectionPointById(gEdge!.SourceConnectionPointId!.Value, true);
+                var cp = Source!.GetConnectionPointById(gEdge.SourceConnectionPointId!.Value, true);
                 if (cp == null)
-                    throw new GX_ObjectNotFoundException(string.Format("Can't find source vertex VCP by edge source connection point Id({1}) : {0}", Source, gEdge.SourceConnectionPointId));
+                    throw new GX_ObjectNotFoundException(string.Format(
+                        "Can't find source vertex VCP by edge source connection point Id({1}) : {0}", Source,
+                        gEdge.SourceConnectionPointId));
                 return cp;
-            };
-            Func<IVertexConnectionPoint> getTargetCpOrThrow = () =>
+            }
+
+            IVertexConnectionPoint GetTargetCpOrThrow()
             {
-                var cp = Target.GetConnectionPointById(gEdge!.TargetConnectionPointId!.Value, true);
+                var cp = Target.GetConnectionPointById(gEdge.TargetConnectionPointId!.Value, true);
                 if (cp == null)
-                    throw new GX_ObjectNotFoundException(string.Format("Can't find target vertex VCP by edge target connection point Id({1}) : {0}", Target, gEdge.TargetConnectionPointId));
+                    throw new GX_ObjectNotFoundException(string.Format(
+                        "Can't find target vertex VCP by edge target connection point Id({1}) : {0}", Target,
+                        gEdge.TargetConnectionPointId));
                 return cp;
-            };
-            Func<IVertexConnectionPoint, Point, Point, Point> getCpEndPoint = (cp, cpCenter, distantEnd) =>
+            }
+
+            Point GetCpEndPoint(IVertexConnectionPoint cp, Point cpCenter, Point distantEnd)
             {
                 // If the connection point (cp) doesn't have any shape, the edge comes from its center, otherwise find the location
                 // on its perimeter that the edge should come from.
@@ -951,30 +993,32 @@ namespace Westermo.GraphX.Controls
                 else
                     calculatedCp = GeometryHelper.GetEdgeEndpoint(cpCenter, cp.RectangularSize, distantEnd, cp.Shape);
                 return calculatedCp;
-            };
-            Func<bool> needParallelCalc = () => RootArea != null && !hasRouteInfo && RootArea.EnableParallelEdges && IsParallel;
+            }
+
+            bool NeedParallelCalc() => !hasRouteInfo && RootArea.EnableParallelEdges && IsParallel;
+
             #endregion
 
             //calculate edge source (p1) and target (p2) endpoints based on different settings
-            if (gEdge?.SourceConnectionPointId != null && gEdge?.TargetConnectionPointId != null)
+            if (gEdge is { SourceConnectionPointId: not null, TargetConnectionPointId: not null })
             {
                 // Get the connection points and their centers
-                var sourceCp = getSourceCpOrThrow();
-                var targetCp = getTargetCpOrThrow();
+                var sourceCp = GetSourceCpOrThrow();
+                var targetCp = GetTargetCpOrThrow();
                 var sourceCpCenter = sourceCp.RectangularSize.Center();
                 var targetCpCenter = targetCp.RectangularSize.Center();
 
-                SourceConnectionPoint = getCpEndPoint(sourceCp, sourceCpCenter, targetCpCenter);
-                TargetConnectionPoint = getCpEndPoint(targetCp, targetCpCenter, sourceCpCenter);
+                SourceConnectionPoint = GetCpEndPoint(sourceCp, sourceCpCenter, targetCpCenter);
+                TargetConnectionPoint = GetCpEndPoint(targetCp, targetCpCenter, sourceCpCenter);
             }
             else if (gEdge?.SourceConnectionPointId != null)
             {
-                var sourceCp = getSourceCpOrThrow();
+                var sourceCp = GetSourceCpOrThrow();
                 var sourceCpCenter = sourceCp.RectangularSize.Center();
 
                 // In the case of parallel edges, the target direction needs to be found and the correct offset calculated. Otherwise, fall back
                 // to route information or simply the center of the target vertex.
-                if (needParallelCalc())
+                if (NeedParallelCalc())
                 {
                     var m = new Point(targetCenter.X - sourceCenter.X, targetCenter.Y - sourceCenter.Y);
                     targetCenter = new Point(sourceCpCenter.X + m.X, sourceCpCenter.Y + m.Y);
@@ -984,17 +1028,20 @@ namespace Westermo.GraphX.Controls
                     targetCenter = routeInformation![1].ToWindows();
                 }
 
-                SourceConnectionPoint = getCpEndPoint(sourceCp, sourceCpCenter, targetCenter);
-                TargetConnectionPoint = GeometryHelper.GetEdgeEndpoint(targetCenter, new SysRect(targetTopLeft, targetSize), hasRouteInfo ? routeInformation![routeInformation.Length - 2].ToWindows() : sourceCpCenter, Target.VertexShape);
+                SourceConnectionPoint = GetCpEndPoint(sourceCp, sourceCpCenter, targetCenter);
+                TargetConnectionPoint = GeometryHelper.GetEdgeEndpoint(targetCenter,
+                    new SysRect(targetTopLeft, targetSize),
+                    hasRouteInfo ? routeInformation![routeInformation.Length - 2].ToWindows() : sourceCpCenter,
+                    Target.VertexShape);
             }
             else if (gEdge?.TargetConnectionPointId != null)
             {
-                var targetCp = getTargetCpOrThrow();
+                var targetCp = GetTargetCpOrThrow();
                 var targetCpCenter = targetCp.RectangularSize.Center();
 
                 // In the case of parallel edges, the source direction needs to be found and the correct offset calculated. Otherwise, fall back
                 // to route information or simply the center of the source vertex.
-                if (needParallelCalc())
+                if (NeedParallelCalc())
                 {
                     var m = new Point(sourceCenter.X - targetCenter.X, sourceCenter.Y - targetCenter.Y);
                     sourceCenter = new Point(targetCpCenter.X + m.X, targetCpCenter.Y + m.Y);
@@ -1004,21 +1051,29 @@ namespace Westermo.GraphX.Controls
                     sourceCenter = routeInformation![routeInformation.Length - 2].ToWindows();
                 }
 
-                SourceConnectionPoint = GeometryHelper.GetEdgeEndpoint(sourceCenter, new SysRect(sourceTopLeft, sourceSize), (hasRouteInfo ? routeInformation![1].ToWindows() : targetCpCenter), Source!.VertexShape);
-                TargetConnectionPoint = getCpEndPoint(targetCp, targetCpCenter, sourceCenter);
+                SourceConnectionPoint = GeometryHelper.GetEdgeEndpoint(sourceCenter,
+                    new SysRect(sourceTopLeft, sourceSize),
+                    hasRouteInfo ? routeInformation![1].ToWindows() : targetCpCenter, Source!.VertexShape);
+                TargetConnectionPoint = GetCpEndPoint(targetCp, targetCpCenter, sourceCenter);
             }
             else
             {
                 //calculate source and target edge attach points
-                if (needParallelCalc())
+                if (NeedParallelCalc())
                 {
                     var origSC = sourceCenter;
                     var origTC = targetCenter;
                     sourceCenter = GetParallelOffset(origSC, origTC, ParallelEdgeOffset);
                     targetCenter = GetParallelOffset(origTC, origSC, -ParallelEdgeOffset);
                 }
-                SourceConnectionPoint = GeometryHelper.GetEdgeEndpoint(sourceCenter, new SysRect(sourceTopLeft, sourceSize), (hasRouteInfo ? routeInformation![1].ToWindows() : (targetCenter)), Source!.VertexShape);
-                TargetConnectionPoint = GeometryHelper.GetEdgeEndpoint(targetCenter, new SysRect(targetTopLeft, targetSize), hasRouteInfo ? routeInformation![routeInformation.Length - 2].ToWindows() : (sourceCenter), Target.VertexShape);
+
+                SourceConnectionPoint = GeometryHelper.GetEdgeEndpoint(sourceCenter,
+                    new SysRect(sourceTopLeft, sourceSize),
+                    hasRouteInfo ? routeInformation![1].ToWindows() : targetCenter, Source!.VertexShape);
+                TargetConnectionPoint = GeometryHelper.GetEdgeEndpoint(targetCenter,
+                    new SysRect(targetTopLeft, targetSize),
+                    hasRouteInfo ? routeInformation![routeInformation.Length - 2].ToWindows() : sourceCenter,
+                    Target.VertexShape);
             }
 
             // If the logic above is working correctly, both the source and target connection points will exist.
@@ -1046,29 +1101,35 @@ namespace Westermo.GraphX.Controls
 
                 if (RootArea.EdgeCurvingEnabled)
                 {
-                    var oPolyLineSegment = GeometryHelper.GetCurveThroughPoints(routePoints.ToArray(), 0.5, RootArea.EdgeCurvingTolerance);
+                    var oPolyLineSegment =
+                        GeometryHelper.GetCurveThroughPoints([.. routePoints], 0.5, RootArea.EdgeCurvingTolerance);
 
                     if (hasEpTarget)
                     {
-                        UpdateTargetEpData(oPolyLineSegment.Points[oPolyLineSegment.Points.Count - 1], oPolyLineSegment.Points[oPolyLineSegment.Points.Count - 2]);
+                        UpdateTargetEpData(oPolyLineSegment.Points[^1],
+                            oPolyLineSegment.Points[^2]);
                         oPolyLineSegment.Points.RemoveAt(oPolyLineSegment.Points.Count - 1);
                     }
+
                     if (hasEpSource)
                     {
                         UpdateSourceEpData(oPolyLineSegment.Points.First(), oPolyLineSegment.Points[1]);
                         oPolyLineSegment.Points.RemoveAt(0);
                     }
 
-                    lineFigure = GeometryHelper.GetPathFigureFromPathSegments(routePoints[0], true, true, oPolyLineSegment);
+                    lineFigure =
+                        GeometryHelper.GetPathFigureFromPathSegments(routePoints[0], true, true, oPolyLineSegment);
                     //freeze and create resulting geometry
                     GeometryHelper.TryFreeze(oPolyLineSegment);
                 }
                 else
                 {
                     if (hasEpSource)
-                        routePoints[0] = routePoints[0].Subtract(UpdateSourceEpData(routePoints.First(), routePoints[1]));
+                        routePoints[0] =
+                            routePoints[0].Subtract(UpdateSourceEpData(routePoints.First(), routePoints[1]));
                     if (hasEpTarget)
-                        routePoints[routePoints.Count - 1] = routePoints[routePoints.Count - 1].Subtract(UpdateTargetEpData(p2, routePoints[routePoints.Count - 2]));
+                        routePoints[^1] = routePoints[^1]
+                            .Subtract(UpdateTargetEpData(p2, routePoints[^2]));
 
                     // Reverse the path if specified.
                     if (gEdge!.ReversePath)
@@ -1077,12 +1138,13 @@ namespace Westermo.GraphX.Controls
                     var pcol = new PointCollection();
                     routePoints.ForEach(a => pcol.Add(a));
 
-                    lineFigure = new PathFigure { StartPoint = p1, Segments = new PathSegmentCollection { new PolyLineSegment { Points = pcol } }, IsClosed = false };
+                    lineFigure = new PathFigure
+                        { StartPoint = p1, Segments = [new PolyLineSegment { Points = pcol }], IsClosed = false };
                 }
             }
             else // no route defined
             {
-                bool allowUpdateEpDataToUnsuppress = true;
+                var allowUpdateEpDataToUnsuppress = true;
                 //check for hide only if prop is not 0
                 if (HideEdgePointerByEdgeLength != 0d)
                 {
@@ -1104,8 +1166,14 @@ namespace Westermo.GraphX.Controls
                 if (hasEpTarget)
                     p2 = p2.Subtract(UpdateTargetEpData(p2, p1, allowUpdateEpDataToUnsuppress));
 
-                lineFigure = new PathFigure { StartPoint = gEdge!.ReversePath ? p2 : p1, Segments = new PathSegmentCollection { new LineSegment() { Point = gEdge.ReversePath ? p1 : p2 } }, IsClosed = false };
+                lineFigure = new PathFigure
+                {
+                    StartPoint = gEdge!.ReversePath ? p2 : p1, Segments =
+                        [new LineSegment() { Point = gEdge.ReversePath ? p1 : p2 }],
+                    IsClosed = false
+                };
             }
+
             ((PathGeometry)Linegeometry).Figures.Add(lineFigure);
             GeometryHelper.TryFreeze(lineFigure);
             GeometryHelper.TryFreeze(Linegeometry);
@@ -1113,7 +1181,7 @@ namespace Westermo.GraphX.Controls
                 EdgeLabelControls.Where(l => l.ShowLabel).ForEach(l => l.UpdatePosition());
         }
 
-		private Point UpdateSourceEpData(Point from, Point to, bool allowUnsuppress = true)
+        private Point UpdateSourceEpData(Point from, Point to, bool allowUnsuppress = true)
         {
             var dir = MathHelper.GetDirection(from, to);
             if (from == to)
@@ -1122,7 +1190,9 @@ namespace Westermo.GraphX.Controls
                 else dir = new Vector(0, 0);
             }
             else if (allowUnsuppress) EdgePointerForSource!.UnSuppress();
-            var result = EdgePointerForSource!.Update(from, dir, EdgePointerForSource.NeedRotation ? -MathHelper.GetAngleBetweenPoints(from, to).ToDegrees() : 0);
+
+            var result = EdgePointerForSource!.Update(from, dir,
+                EdgePointerForSource.NeedRotation ? -MathHelper.GetAngleBetweenPoints(from, to).ToDegrees() : 0);
             return EdgePointerForSource.Visibility == Visibility.Visible ? result : new Point();
         }
 
@@ -1135,7 +1205,9 @@ namespace Westermo.GraphX.Controls
                 else dir = new Vector(0, 0);
             }
             else if (allowUnsuppress) EdgePointerForTarget!.UnSuppress();
-            var result = EdgePointerForTarget!.Update(from, dir, EdgePointerForTarget.NeedRotation ? (-MathHelper.GetAngleBetweenPoints(from, to).ToDegrees()) : 0);
+
+            var result = EdgePointerForTarget!.Update(from, dir,
+                EdgePointerForTarget.NeedRotation ? -MathHelper.GetAngleBetweenPoints(from, to).ToDegrees() : 0);
             return EdgePointerForTarget.Visibility == Visibility.Visible ? result : new Point();
         }
 
@@ -1146,27 +1218,27 @@ namespace Westermo.GraphX.Controls
         /// </summary>
         /// <param name="name">Template PART name</param>
         /// <returns></returns>
-        protected virtual object GetTemplatePart(string name)
+        protected virtual object? GetTemplatePart(string name)
         {
             return Template.FindName(name, this);
         }
 
         public virtual IList<SysRect> GetLabelSizes()
         {
-            return EdgeLabelControls.Select(l=> l.GetSize()).ToList();
+            return EdgeLabelControls.Select(l => l.GetSize()).ToList();
         }
 
-      /*  public void SetCustomLabelSize(SysRect rect)
-        {
-            EdgeLabelControl.SetSize(rect);
-        }*/
+        /*  public void SetCustomLabelSize(SysRect rect)
+          {
+              EdgeLabelControl.SetSize(rect);
+          }*/
 
         /// <summary>
         /// Returns all edge controls attached to this entity
         /// </summary>
         public IList<IEdgeLabelControl> GetLabelControls()
         {
-            return EdgeLabelControls.ToList();
+            return [.. EdgeLabelControls];
         }
     }
 }

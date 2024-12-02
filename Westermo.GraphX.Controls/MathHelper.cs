@@ -25,7 +25,7 @@ namespace Westermo.GraphX.Controls
 
     public static class MathHelper
     {
-        const double D30_DEGREES_IN_RADIANS = Math.PI / 6.0;
+        private const double D30_DEGREES_IN_RADIANS = Math.PI / 6.0;
 
         public static double Tangent30Degrees { get; private set; }
 
@@ -252,7 +252,7 @@ namespace Westermo.GraphX.Controls
 
         public static double GetDistance(Point a, Point b)
         {
-            return ((a.X - b.X) * (a.X - b.X) + (a.Y - b.Y) * (a.Y - b.Y));
+            return (a.X - b.X) * (a.X - b.X) + (a.Y - b.Y) * (a.Y - b.Y);
         }
 
         /// <summary>

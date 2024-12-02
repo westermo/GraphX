@@ -13,8 +13,9 @@ namespace Westermo.GraphX.Controls.Animations
         {
             Duration = duration;
         }
-        int _vMaxCount;
-        int _vCounter;
+
+        private int _vMaxCount;
+        private int _vCounter;
 
 
         private bool IsDefaultCoordinates()
@@ -39,7 +40,7 @@ namespace Westermo.GraphX.Controls.Animations
                 {
                     GraphAreaBase.SetX(control, GraphAreaBase.GetFinalX(control));
                     GraphAreaBase.SetY(control, GraphAreaBase.GetFinalY(control));
-                    CreateStory(control, 0, 1, (o2, e2) =>
+                    CreateStory(control, 0, 1, (_, _) =>
                     {
                         _vCounter++;
                         if (_vCounter == _vMaxCount)
@@ -48,14 +49,14 @@ namespace Westermo.GraphX.Controls.Animations
                 }
                 else
                 {
-                    CreateStory(control, 1, 0, (o, e) =>
+                    CreateStory(control, 1, 0, (_, _) =>
                     {
                         if (!VertexStorage.ContainsKey(item.Key))
                             return; //just in case of... who knows what?
                         GraphAreaBase.SetX(control, GraphAreaBase.GetFinalX(control));
                         GraphAreaBase.SetY(control, GraphAreaBase.GetFinalY(control));
 
-                        CreateStory(control, 0, 1, (o2, e2) =>
+                        CreateStory(control, 0, 1, (_, _) =>
                         {
                             _vCounter++;
                             if (_vCounter == _vMaxCount)
@@ -73,7 +74,7 @@ namespace Westermo.GraphX.Controls.Animations
             {
                 if (item is VertexControl) throw new GX_InvalidDataException("AnimateEdge() -> Got vertex control instead edge control!");
                 var control = (Control) item;
-                CreateStory(control, 1, 0, (o, e) => CreateStory(control, 0, 1).Begin()).Begin();
+                CreateStory(control, 1, 0, (_, _) => CreateStory(control, 0, 1).Begin()).Begin();
             }
         }
 

@@ -17,7 +17,7 @@ namespace Westermo.GraphX.Logic.Algorithms.LayoutAlgorithms
             public bool IsInsertedLayer;
             public double LayerWidth;
             public double LayerHeight;
-            public readonly Queue<WHOptimizationVertexInfo> Vertices = new Queue<WHOptimizationVertexInfo>();
+            public readonly Queue<WHOptimizationVertexInfo> Vertices = new();
         }
 
         private class WHOptimizationVertexInfo
@@ -44,13 +44,10 @@ namespace Westermo.GraphX.Logic.Algorithms.LayoutAlgorithms
         private double _actualWidth;
         private double _actualHeight;
 
-        private double _actualWidthPerHeight
-        {
-            get { return _actualWidth / _actualHeight; }
-        }
+        private double _actualWidthPerHeight => _actualWidth / _actualHeight;
 
         private readonly IList<WHOptimizationLayerInfo> _whOptLayerInfos =
-            new List<WHOptimizationLayerInfo>();
+            [];
 
         private readonly IDictionary<SugiVertex, WHOptimizationVertexInfo> _whOptVertexInfos =
             new Dictionary<SugiVertex, WHOptimizationVertexInfo>();
@@ -76,7 +73,7 @@ namespace Westermo.GraphX.Logic.Algorithms.LayoutAlgorithms
             if (_actualWidthPerHeight <= Parameters.WidthPerHeight)
                 return;
 
-            bool optimized = false;
+            var optimized = false;
             do
             {
                 optimized = DoWHOptimizationStep();
@@ -86,7 +83,7 @@ namespace Westermo.GraphX.Logic.Algorithms.LayoutAlgorithms
 
         private void RewriteLayerIndexes(CancellationToken cancellationToken)
         {
-            int i = 0;
+            var i = 0;
             foreach (var layer in _layers)
             {
                 foreach (var vertex in layer)
@@ -101,11 +98,11 @@ namespace Westermo.GraphX.Logic.Algorithms.LayoutAlgorithms
 
         private bool DoWHOptimizationStep()
         {
-            double desiredWidth = _actualHeight * Parameters.WidthPerHeight;
+            var desiredWidth = _actualHeight * Parameters.WidthPerHeight;
 
-            int maxWidthLayerIndex = 0;
+            var maxWidthLayerIndex = 0;
             var maxWidthLayer = _whOptLayerInfos[0];
-            for (int i = 0; i < _whOptLayerInfos.Count; i++)
+            for (var i = 0; i < _whOptLayerInfos.Count; i++)
             {
                 if (_whOptLayerInfos[i].LayerWidth > maxWidthLayer.LayerWidth
                     && _whOptLayerInfos[i].Vertices.Count > 0
@@ -120,12 +117,12 @@ namespace Westermo.GraphX.Logic.Algorithms.LayoutAlgorithms
                 return false;
 
             //get a layer nearby the maxWidthLayer
-            int insertedLayerIndex = -1;
+            var insertedLayerIndex = -1;
             WHOptimizationLayerInfo insertedLayerInfo = null;
             IList<SugiVertex> insertedLayer = null;
             if (maxWidthLayerIndex < _whOptLayerInfos.Count - 1
                 && _whOptLayerInfos[maxWidthLayerIndex + 1].IsInsertedLayer
-                && _whOptLayerInfos[maxWidthLayerIndex + 1].LayerWidth < (desiredWidth - maxWidthLayer.Vertices.Peek().Cost))
+                && _whOptLayerInfos[maxWidthLayerIndex + 1].LayerWidth < desiredWidth - maxWidthLayer.Vertices.Peek().Cost)
             {
                 insertedLayerIndex = maxWidthLayerIndex + 1;
                 insertedLayerInfo = _whOptLayerInfos[insertedLayerIndex];
@@ -156,19 +153,19 @@ namespace Westermo.GraphX.Logic.Algorithms.LayoutAlgorithms
                 if (c > 0)
                     width /= c;
 
-                if (width >= (desiredWidth - _whOptLayerInfos[insertedLayerIndex - 1].Vertices.Peek().Cost))
+                if (width >= desiredWidth - _whOptLayerInfos[insertedLayerIndex - 1].Vertices.Peek().Cost)
                     return false;
 
                 insertedLayerInfo = new WHOptimizationLayerInfo();
                 insertedLayerInfo.LayerWidth = width;
-                insertedLayer = new List<SugiVertex>();
+                insertedLayer = [];
                 _whOptLayerInfos.Insert(insertedLayerIndex, insertedLayerInfo);
                 _layers.Insert(insertedLayerIndex, insertedLayer);
 
-                double height = 0.0;
+                var height = 0.0;
                 while (insertedLayerInfo.LayerWidth < _whOptLayerInfos[insertedLayerIndex - 1].LayerWidth
                     && _whOptLayerInfos[insertedLayerIndex - 1].Vertices.Count > 0
-                    && insertedLayerInfo.LayerWidth <= (desiredWidth - _whOptLayerInfos[insertedLayerIndex - 1].Vertices.Peek().Cost))
+                    && insertedLayerInfo.LayerWidth <= desiredWidth - _whOptLayerInfos[insertedLayerIndex - 1].Vertices.Peek().Cost)
                 {
                     var repositionedVertex = _whOptLayerInfos[insertedLayerIndex - 1].Vertices.Dequeue();
                     insertedLayerInfo.LayerWidth += repositionedVertex.Cost;
@@ -271,10 +268,10 @@ namespace Westermo.GraphX.Logic.Algorithms.LayoutAlgorithms
             var lts = new LayeredTopologicalSortAlgorithm<SugiVertex, SugiEdge>(_graph);
             lts.Compute();
 
-            for (int i = 0; i < lts.LayerCount; i++)
+            for (var i = 0; i < lts.LayerCount; i++)
             {
                 //set the layer
-                _layers.Add(lts.Layers[i].ToList());
+                _layers.Add([.. lts.Layers[i]]);
 
                 //assign the layerindex
                 foreach (var v in _layers[i])
@@ -287,7 +284,7 @@ namespace Westermo.GraphX.Logic.Algorithms.LayoutAlgorithms
             //minimize edge length
             if (Parameters.MinimizeEdgeLength)
             {
-                for (int i = _layers.Count - 1; i >= 0; i--)
+                for (var i = _layers.Count - 1; i >= 0; i--)
                 {
                     var layer = _layers[i];
                     foreach (var v in layer.ToList())
@@ -297,7 +294,7 @@ namespace Westermo.GraphX.Logic.Algorithms.LayoutAlgorithms
                         if (_graph.OutDegree(v) == 0) continue;
 
                         //put the vertex above the descendant on the highest layer
-                        int newLayerIndex = _graph.OutEdges(v).Min(edge => edge.Target.LayerIndex - 1);
+                        var newLayerIndex = _graph.OutEdges(v).Min(edge => edge.Target.LayerIndex - 1);
 
                         if (newLayerIndex != v.LayerIndex)
                         {
@@ -319,9 +316,9 @@ namespace Westermo.GraphX.Logic.Algorithms.LayoutAlgorithms
         {
             foreach (var edge in _graph.Edges.ToList())
             {
-                int sourceLayerIndex = edge.Source.LayerIndex;
-                int targetLayerIndex = edge.Target.LayerIndex;
-                int span = targetLayerIndex - sourceLayerIndex;
+                var sourceLayerIndex = edge.Source.LayerIndex;
+                var targetLayerIndex = edge.Target.LayerIndex;
+                var span = targetLayerIndex - sourceLayerIndex;
                 if (span < 1)
                     throw new ArgumentException("span cannot be lower than 1");
 
@@ -329,7 +326,7 @@ namespace Westermo.GraphX.Logic.Algorithms.LayoutAlgorithms
                     continue;
 
                 _graph.RemoveEdge(edge);
-                bool notReversed = edge.Source.OriginalVertex == edge.OriginalEdge.Source && edge.Target.OriginalVertex == edge.OriginalEdge.Target;
+                var notReversed = edge.Source.OriginalVertex == edge.OriginalEdge.Source && edge.Target.OriginalVertex == edge.OriginalEdge.Target;
                 var dummyVertexList = new List<SugiVertex>();
                 _dummyVerticesOfEdges[edge.OriginalEdge] = dummyVertexList;
                 if (span == 2)

@@ -1,19 +1,11 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using System.Threading;
 
-namespace Westermo.GraphX
+namespace Westermo.GraphX.Common.Models.Semaphore
 {
-    public class BAutoResetEvent : BWaitHandle, IDisposable
+    public class BAutoResetEvent(bool initialState) : BWaitHandle, IDisposable
     {
-        AutoResetEvent _are;
-
-        public BAutoResetEvent(bool initialState)
-        {
-            _are = new AutoResetEvent(initialState);
-        }
+        private AutoResetEvent _are = new(initialState);
 
         // Summary:
         //     Sets the state of the event to non-signaled, which causes threads to block.
@@ -24,6 +16,7 @@ namespace Westermo.GraphX
         {
             return _are.Reset();
         }
+
         //
         // Summary:
         //     Sets the state of the event to signaled, which allows one or more waiting
@@ -56,18 +49,13 @@ namespace Westermo.GraphX
             throw new NotImplementedException();
         }
 
-        internal override WaitHandle WaitHandle
-        {
-            get { return _are; }
-        }
+        internal override WaitHandle WaitHandle => _are;
 
         public void Dispose()
         {
-            if (_are != null)
-            {
-                _are.Dispose();
-                _are = null;
-            }
+            if (_are == null) return;
+            _are.Dispose();
+            _are = null;
         }
     }
 }

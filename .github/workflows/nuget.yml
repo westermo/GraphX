@@ -28,11 +28,13 @@ jobs:
   create_nuget:
     runs-on: windows-latest
     env:
-        COMMIT_SHA: ${{ github.sha || github.event.pull_request.head.sha }}
+      COMMIT_SHA: ${{ github.sha || github.event.pull_request.head.sha }}
     steps:
       - uses: actions/checkout@v3
-      - name: Setup .NET
-        uses: actions/setup-dotnet@v3
+      - name: Setup dotnet ${{ matrix.dotnet-version }}
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "9.0.x"
       - run: |
           If (('${{ github.event_name }}' -eq 'release') -and ('${{ github.ref_name }}' -match '^(?<version>\d+\.\d+\.\d+)')) {
             Add-Content -Path $Env:GITHUB_ENV -Value "VERSION=$($Matches.version)"
@@ -57,8 +59,10 @@ jobs:
     runs-on: windows-latest
     needs: [ create_nuget ]
     steps:
-      - name: Setup .NET
-        uses: actions/setup-dotnet@v3
+      - name: Setup dotnet ${{ matrix.dotnet-version }}
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "9.0.x"
       - uses: actions/download-artifact@v3
         with:
           name: nuget

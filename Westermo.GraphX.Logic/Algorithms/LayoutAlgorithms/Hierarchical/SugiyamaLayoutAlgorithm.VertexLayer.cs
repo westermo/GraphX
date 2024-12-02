@@ -25,7 +25,7 @@ namespace Westermo.GraphX.Logic.Algorithms.LayoutAlgorithms
 			/// <summary>
 			/// Height of the layer. (Equals with the height of the heightest vertex.)
 			/// </summary>
-			public double Height { get { return ComputeHeight(); } }
+			public double Height => ComputeHeight();
 
 			/// <summary>
 			/// List of the hierarchical edges comes into this layer.
@@ -70,10 +70,10 @@ namespace Westermo.GraphX.Logic.Algorithms.LayoutAlgorithms
 
 			public int CalculateCrossCount( CrossCount crossCountDirection, bool sourcesByMeasure, bool targetsByMeasure )
 			{
-				int crossCount = 0;
+				var crossCount = 0;
 
-				bool calculateUpCrossings = ( crossCountDirection & CrossCount.Up ) == CrossCount.Up;
-				bool calculateDownCrossings = ( crossCountDirection & CrossCount.Down ) == CrossCount.Down;
+				var calculateUpCrossings = ( crossCountDirection & CrossCount.Up ) == CrossCount.Up;
+				var calculateDownCrossings = ( crossCountDirection & CrossCount.Down ) == CrossCount.Down;
 
 				if ( calculateUpCrossings )
 					crossCount += CalculateCrossings( UpEdges, sourcesByMeasure, targetsByMeasure );
@@ -87,17 +87,17 @@ namespace Westermo.GraphX.Logic.Algorithms.LayoutAlgorithms
 			private static int CalculateCrossings( IEnumerable<SugiEdge> edges, bool sourcesByMeasure, bool targetsByMeasure )
 			{
 				var edgeArray = edges.ToArray();
-				int count = edgeArray.Length;
-				int crossings = 0;
-			    for ( int i = 0; i < count; i++ )
+				var count = edgeArray.Length;
+				var crossings = 0;
+			    for ( var i = 0; i < count; i++ )
 			    {
 			        var edge1 = edgeArray[i];
-			        for ( int j = i + 1; j < count; j++ )
+			        for ( var j = i + 1; j < count; j++ )
 					{
 						var edge2 = edgeArray[j];
 						Debug.Assert(
-							( edge1.Source.LayerIndex == edge2.Source.LayerIndex &&
-							  edge1.Target.LayerIndex == edge2.Target.LayerIndex ),
+							edge1.Source.LayerIndex == edge2.Source.LayerIndex &&
+							edge1.Target.LayerIndex == edge2.Target.LayerIndex,
 							"Bad edge at crossing computing: " + edge1 + "\n" + edge2 );
 
 						//get the position of the sources
@@ -170,11 +170,11 @@ namespace Westermo.GraphX.Logic.Algorithms.LayoutAlgorithms
 			/// <param name="byRealPosition">If true, the barycenters will be computed based on the RealPosition.X value of the vertices. Otherwise the barycenter will be computed based on the value of the Position field (which is basically the index of the vertex inside the layer).</param>
 			public void Measure( BaryCenter baryCenters, bool byRealPosition )
 			{
-				bool computeUpBaryCenter = ( baryCenters & BaryCenter.Up ) == BaryCenter.Up;
-				bool computeDownBaryCenter = ( baryCenters & BaryCenter.Down ) == BaryCenter.Down;
-				bool computeSubBaryCenter = ( baryCenters & BaryCenter.Sub ) == BaryCenter.Sub;
+				var computeUpBaryCenter = ( baryCenters & BaryCenter.Up ) == BaryCenter.Up;
+				var computeDownBaryCenter = ( baryCenters & BaryCenter.Down ) == BaryCenter.Down;
+				var computeSubBaryCenter = ( baryCenters & BaryCenter.Sub ) == BaryCenter.Sub;
 
-				int divCount = 0;
+				var divCount = 0;
 				if ( computeUpBaryCenter )
 					divCount++;
 				if ( computeDownBaryCenter )
@@ -221,7 +221,7 @@ namespace Westermo.GraphX.Logic.Algorithms.LayoutAlgorithms
 			private static double ComputeBaryCenter( SugiVertex vertex, IEnumerable<SugiEdge> edges, bool byRealPosition )
 			{
 				double baryCenter = 0;
-				int number = 0;
+				var number = 0;
 
 				foreach ( var edge in edges )
 				{
@@ -235,7 +235,7 @@ namespace Westermo.GraphX.Logic.Algorithms.LayoutAlgorithms
 				if ( number != 0 )
 					return baryCenter / number;
 
-				return ( byRealPosition ? vertex.RealPosition.X : vertex.Position );
+				return byRealPosition ? vertex.RealPosition.X : vertex.Position;
 			}
 
 			/// <summary>
@@ -265,7 +265,7 @@ namespace Westermo.GraphX.Logic.Algorithms.LayoutAlgorithms
 				Measure( baryCenters, byRealPosition );
 
 				//check that the ordering is valid
-				for ( int i = 1; i < Count; i++ )
+				for ( var i = 1; i < Count; i++ )
 				{
 					if ( this[i].Measure < this[i - 1].Measure )
 						return false; //invalid ordering
@@ -308,7 +308,7 @@ namespace Westermo.GraphX.Logic.Algorithms.LayoutAlgorithms
 			protected bool Permutate( IList<SugiVertex> vertices )
 			{
 				//do the initial ordering
-				int n = vertices.Count;
+				var n = vertices.Count;
 				int i, j;
 
 				//find place to start
@@ -326,7 +326,7 @@ namespace Westermo.GraphX.Logic.Algorithms.LayoutAlgorithms
 					  j-- ) { }
 
 				//swap values i-1, j-1
-				int c = vertices[i - 1].PermutationIndex;
+				var c = vertices[i - 1].PermutationIndex;
 				vertices[i - 1].PermutationIndex = vertices[j - 1].PermutationIndex;
 				vertices[j - 1].PermutationIndex = c;
 
@@ -348,7 +348,7 @@ namespace Westermo.GraphX.Logic.Algorithms.LayoutAlgorithms
 			/// </summary>
 			public void FindBestPermutation( CrossCount crossCounting )
 			{
-				int bestKnownCrossCount = CalculateCrossCount( crossCounting );
+				var bestKnownCrossCount = CalculateCrossCount( crossCounting );
 
 				//get the vertices with the same index
 				var verticesWithSameMeasure = new List<SugiVertex>();
@@ -362,7 +362,7 @@ namespace Westermo.GraphX.Logic.Algorithms.LayoutAlgorithms
 
 					if ( endIndex > startIndex )
 					{
-						for ( int i = startIndex; i <= endIndex; i++ )
+						for ( var i = startIndex; i <= endIndex; i++ )
 							verticesWithSameMeasure.Add( this[i] );
 					}
 				}
@@ -375,7 +375,7 @@ namespace Westermo.GraphX.Logic.Algorithms.LayoutAlgorithms
 					v.PermutationIndex = 0;
 
 				//create initial permutation
-				for ( int i = 0; i < verticesWithSameMeasure.Count; i++ )
+				for ( var i = 0; i < verticesWithSameMeasure.Count; i++ )
 					verticesWithSameMeasure[i].PermutationIndex = 0;
 
 				while ( Permutate( verticesWithSameMeasure ) )
@@ -384,7 +384,7 @@ namespace Westermo.GraphX.Logic.Algorithms.LayoutAlgorithms
 					Sort( MeasureAndPermutationIndexComparer.Instance );
 					ReassignPositions();
 
-					int newCrossCount = CalculateCrossCount( crossCounting );
+					var newCrossCount = CalculateCrossCount( crossCounting );
 					if ( newCrossCount < bestKnownCrossCount )
 					{
 						SavePositionsToTemp();
@@ -404,19 +404,16 @@ namespace Westermo.GraphX.Logic.Algorithms.LayoutAlgorithms
 			/// </summary>
 			public void ReassignPositions()
 			{
-				int index = 0;
-				foreach ( SugiVertex v in this )
+				var index = 0;
+				foreach ( var v in this )
 					v.Position = index++;
 			}
 			#endregion
 
-			class MeasureComparer : IComparer<SugiVertex>
+			private class MeasureComparer : IComparer<SugiVertex>
 			{
 				private static MeasureComparer _instance;
-				public static MeasureComparer Instance
-				{
-					get { return _instance ?? (_instance = new MeasureComparer()); }
-				}
+				public static MeasureComparer Instance => _instance ??= new MeasureComparer();
 
 				private MeasureComparer() { }
 
@@ -426,13 +423,10 @@ namespace Westermo.GraphX.Logic.Algorithms.LayoutAlgorithms
 				}
 			}
 
-			class PositionComparer : IComparer<SugiVertex>
+			private class PositionComparer : IComparer<SugiVertex>
 			{
 				private static PositionComparer _instance;
-				public static PositionComparer Instance
-				{
-					get { return _instance ?? (_instance = new PositionComparer()); }
-				}
+				public static PositionComparer Instance => _instance ??= new PositionComparer();
 
 				private PositionComparer() { }
 
@@ -442,19 +436,16 @@ namespace Westermo.GraphX.Logic.Algorithms.LayoutAlgorithms
 				}
 			}
 
-			class MeasureAndPermutationIndexComparer : IComparer<SugiVertex>
+			private class MeasureAndPermutationIndexComparer : IComparer<SugiVertex>
 			{
 				private static MeasureAndPermutationIndexComparer _instance;
-				public static MeasureAndPermutationIndexComparer Instance
-				{
-					get { return _instance ?? (_instance = new MeasureAndPermutationIndexComparer()); }
-				}
+				public static MeasureAndPermutationIndexComparer Instance => _instance ??= new MeasureAndPermutationIndexComparer();
 
 				private MeasureAndPermutationIndexComparer() { }
 
 				public int Compare( SugiVertex x, SugiVertex y )
 				{
-					int sign = Math.Sign( (sbyte)( x.Measure - y.Measure ) );
+					var sign = Math.Sign( (sbyte)( x.Measure - y.Measure ) );
 					if ( sign == 0 )
 						return Math.Sign( (sbyte)( x.PermutationIndex - y.PermutationIndex ) );
 
@@ -470,10 +461,10 @@ namespace Westermo.GraphX.Logic.Algorithms.LayoutAlgorithms
 										select v ).ToArray();
 
 				//calculate subpriorities
-				int startIndex = 0;
+				var startIndex = 0;
 				while ( startIndex < orderedVertices.Length )
 				{
-					int endIndex = startIndex + 1;
+					var endIndex = startIndex + 1;
 
 					//get the vertices with the same priorities and measure
 					while ( endIndex < orderedVertices.Length
@@ -483,10 +474,10 @@ namespace Westermo.GraphX.Logic.Algorithms.LayoutAlgorithms
 					endIndex--;
 
 					//set the subpriorities
-					int count = endIndex - startIndex + 1;
+					var count = endIndex - startIndex + 1;
 					var border = (int)Math.Ceiling( count / (float)2.0 );
-					int subPriority = count - border;
-					for ( int i = 0; i < count; i++ )
+					var subPriority = count - border;
+					for ( var i = 0; i < count; i++ )
 					{
 						orderedVertices[startIndex + i].SubPriority = count - Math.Abs( subPriority );
 						subPriority--;

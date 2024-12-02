@@ -34,7 +34,7 @@ namespace Westermo.GraphX.Logic.Models
         public bool AreOverlapNeeded()
         {
             return (ExternalOverlapRemovalAlgorithm == null && AlgorithmFactory.NeedOverlapRemoval(DefaultLayoutAlgorithm) && DefaultOverlapRemovalAlgorithm != OverlapRemovalAlgorithmTypeEnum.None) ||
-                    (ExternalOverlapRemovalAlgorithm != null);
+                    ExternalOverlapRemovalAlgorithm != null;
         }
 
         /// <summary>
@@ -176,7 +176,7 @@ namespace Westermo.GraphX.Logic.Models
             double maxX=0;
             double maxY=0;
 
-            actualPositions = actualPositions ?? _vertexPosSource;
+            actualPositions ??= _vertexPosSource;
 
             foreach (var pos in actualPositions.Values)
             {

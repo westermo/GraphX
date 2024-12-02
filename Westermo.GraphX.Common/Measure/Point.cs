@@ -1,54 +1,33 @@
 ﻿using System;
+
 // These types are aliased to match the unmanaged names used in interop
-using BOOL = System.UInt32;
-using WORD = System.UInt16;
-using Float = System.Single;
 
 namespace Westermo.GraphX.Measure
 {
     /// <summary>
     /// Custom PCL implementation of Point class
     /// </summary>
-    public struct Point
+    public struct Point(double x, double y)
     {
-        private static readonly Point ZeroPoint = new Point();
-        public static Point Zero
-        {
-            get { return ZeroPoint; }
-        }
+        public static Point Zero { get; } = new();
 
-        internal double _x;
-        internal double _y;
+        internal double _x = x;
+        internal double _y = y;
+
         public double X
         {
-            get
-            {
-                return _x;
-            }
-            set
-            {
-                _x = value;
-            }
-        }
-        public double Y
-        {
-            get
-            {
-                return _y;
-            }
-            set
-            {
-                _y = value;
-            }
+            get => _x;
+            set => _x = value;
         }
 
-        public Point(double x, double y)
+        public double Y
         {
-            _x = x;
-            _y = y;
+            get => _y;
+            set => _y = value;
         }
 
         #region Custom operator overloads
+
         /// <summary>
         /// Compares two Point instances for exact equality.
         /// Note that double values can acquire error when operated upon, such that
@@ -62,8 +41,8 @@ namespace Westermo.GraphX.Measure
         /// <param name='point2'>The second Point to compare</param>
         public static bool operator ==(Point point1, Point point2)
         {
-            return point1.X == point2.X &&
-                   point1.Y == point2.Y;
+            return Math.Abs(point1.X - point2.X) < 1e-12 &&
+                   Math.Abs(point1.Y - point2.Y) < 1e-12;
         }
 
         /// <summary>
@@ -113,13 +92,13 @@ namespace Westermo.GraphX.Measure
         /// <param name='o'>The object to compare to "this"</param>
         public override bool Equals(object o)
         {
-            if ((null == o) || !(o is Point))
+            if (null == o || !(o is Point))
             {
                 return false;
             }
 
             var value = (Point)o;
-            return Point.Equals(this, value);
+            return Equals(this, value);
         }
 
         /// <summary>
@@ -135,8 +114,9 @@ namespace Westermo.GraphX.Measure
         /// <param name='value'>The Point to compare to "this"</param>
         public bool Equals(Point value)
         {
-            return Point.Equals(this, value);
+            return Equals(this, value);
         }
+
         /// <summary>
         /// Returns the HashCode for this Point
         /// </summary>
@@ -184,7 +164,6 @@ namespace Westermo.GraphX.Measure
         }
 
         /// ARITHMETIC
-
         public static Vector operator -(Point value1, Point value2)
         {
             return new Vector(value1._x - value2._x, value1._y - value2._y);
@@ -212,15 +191,15 @@ namespace Westermo.GraphX.Measure
 
         public void Offset(double offsetX, double offsetY)
         {
-            this._x += offsetX;
-            this._y += offsetY;
+            _x += offsetX;
+            _y += offsetY;
         }
 
         #endregion
 
         public override string ToString()
         {
-            return string.Format("{0}:{1}", _x, _y);
+            return $"{_x}:{_y}";
         }
     }
 }

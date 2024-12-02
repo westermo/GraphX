@@ -28,11 +28,11 @@ namespace Westermo.GraphX.Controls
             if (element == null)
                 return null;
 
-            if (specificTypeOnly ? (element.GetType() == type)
-                : (element.GetType() == type) || (element.GetType().IsSubclassOf(type)))
+            if (specificTypeOnly ? element.GetType() == type
+                : element.GetType() == type || element.GetType().IsSubclassOf(type))
                 return element;
 
-            return VisualTreeHelperEx.FindAncestorByType(VisualTreeHelper.GetParent(element), type, specificTypeOnly);
+            return FindAncestorByType(VisualTreeHelper.GetParent(element), type, specificTypeOnly);
         }
 
         public static T? FindAncestorByType<T>(DependencyObject? depObj) where T : DependencyObject
@@ -46,9 +46,9 @@ namespace Westermo.GraphX.Controls
                 return (T) depObj;
             }
 
-            T? parent = default(T);
+            var parent = default(T);
 
-            parent = VisualTreeHelperEx.FindAncestorByType<T>(VisualTreeHelper.GetParent(depObj));
+            parent = FindAncestorByType<T>(VisualTreeHelper.GetParent(depObj));
 
             return parent;
         }
@@ -62,10 +62,10 @@ namespace Westermo.GraphX.Controls
             if (element is FrameworkElement frameworkElementWithTemplate)
                 frameworkElementWithTemplate.ApplyTemplate();
 
-            for (int i = 0; i < VisualTreeHelper.GetChildrenCount(element); i++)
+            for (var i = 0; i < VisualTreeHelper.GetChildrenCount(element); i++)
             {
-                Visual? visual = VisualTreeHelper.GetChild(element, i) as Visual;
-                foundElement = VisualTreeHelperEx.FindDescendantByName(visual, name);
+                var visual = VisualTreeHelper.GetChild(element, i) as Visual;
+                foundElement = FindDescendantByName(visual, name);
                 if (foundElement != null)
                     break;
             }
@@ -75,7 +75,7 @@ namespace Westermo.GraphX.Controls
 
         public static Visual? FindDescendantByType(Visual element, Type type)
         {
-            return VisualTreeHelperEx.FindDescendantByType(element, type, true);
+            return FindDescendantByType(element, type, true);
         }
 
         public static Visual? FindDescendantByType(Visual? element, Type type, bool specificTypeOnly)
@@ -83,18 +83,18 @@ namespace Westermo.GraphX.Controls
             if (element == null)
                 return null;
 
-            if (specificTypeOnly ? (element.GetType() == type)
-                : (element.GetType() == type) || (element.GetType().IsSubclassOf(type)))
+            if (specificTypeOnly ? element.GetType() == type
+                : element.GetType() == type || element.GetType().IsSubclassOf(type))
                 return element;
 
             Visual? foundElement = null;
             if (element is FrameworkElement frameworkElement)
                 frameworkElement.ApplyTemplate();
 
-            for (int i = 0; i < VisualTreeHelper.GetChildrenCount(element); i++)
+            for (var i = 0; i < VisualTreeHelper.GetChildrenCount(element); i++)
             {
-                Visual? visual = VisualTreeHelper.GetChild(element, i) as Visual;
-                foundElement = VisualTreeHelperEx.FindDescendantByType(visual, type, specificTypeOnly);
+                var visual = VisualTreeHelper.GetChild(element, i) as Visual;
+                foundElement = FindDescendantByType(visual, type, specificTypeOnly);
                 if (foundElement != null)
                     break;
             }
@@ -110,11 +110,10 @@ namespace Westermo.GraphX.Controls
             if (element is T)
                 yield return (T)(object)element;
 
-            var frameworkElement = element as FrameworkElement;
-            if (frameworkElement != null)
+            if (element is FrameworkElement frameworkElement)
                 frameworkElement.ApplyTemplate();
 
-            for (int i = 0; i < VisualTreeHelper.GetChildrenCount(element); i++)
+            for (var i = 0; i < VisualTreeHelper.GetChildrenCount(element); i++)
             {
                 var visual = VisualTreeHelper.GetChild(element, i) as Visual;
                 if(visual == null) continue;
@@ -127,7 +126,7 @@ namespace Westermo.GraphX.Controls
 
         public static T? FindDescendantByType<T>(Visual element) where T : Visual
         {
-            Visual? temp = VisualTreeHelperEx.FindDescendantByType(element, typeof (T));
+            var temp = FindDescendantByType(element, typeof (T));
 
             return (T?) temp;
         }
@@ -144,10 +143,10 @@ namespace Westermo.GraphX.Controls
             if (element is FrameworkElement frameworkElement)
                 frameworkElement.ApplyTemplate();
 
-            for (int i = 0; i < VisualTreeHelper.GetChildrenCount(element); i++)
+            for (var i = 0; i < VisualTreeHelper.GetChildrenCount(element); i++)
             {
-                Visual? visual = VisualTreeHelper.GetChild(element, i) as Visual;
-                foundElement = VisualTreeHelperEx.FindDescendantWithPropertyValue(visual, dp, value);
+                var visual = VisualTreeHelper.GetChild(element, i) as Visual;
+                foundElement = FindDescendantWithPropertyValue(visual, dp, value);
                 if (foundElement != null)
                     break;
             }

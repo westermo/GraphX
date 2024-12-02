@@ -5,14 +5,10 @@ using Westermo.GraphX.Measure;
 
 namespace Westermo.GraphX.Logic.Algorithms.OverlapRemoval
 {
-    public class OneWayFSAAlgorithm<TObject> : FSAAlgorithm<TObject, OneWayFSAParameters>
+    public class OneWayFSAAlgorithm<TObject>(IDictionary<TObject, Rect> rectangles, OneWayFSAParameters parameters)
+        : FSAAlgorithm<TObject, OneWayFSAParameters>(rectangles, parameters)
         where TObject : class
     {
-        public OneWayFSAAlgorithm( IDictionary<TObject, Rect> rectangles, OneWayFSAParameters parameters )
-            : base( rectangles, parameters )
-        {
-        }
-
         protected override void RemoveOverlap(CancellationToken cancellationToken)
         {
             switch ( Parameters.Way )
@@ -41,8 +37,8 @@ namespace Westermo.GraphX.Logic.Algorithms.OverlapRemoval
                 var u = WrappedRectangles[i];
 
                 //i-vel azonos középponttal rendelkező téglalapok meghatározása
-                int k = i;
-                for ( int j = i + 1; j < n; j++ )
+                var k = i;
+                for ( var j = i + 1; j < n; j++ )
                 {
                     cancellationToken.ThrowIfCancellationRequested();
 
@@ -60,7 +56,7 @@ namespace Westermo.GraphX.Logic.Algorithms.OverlapRemoval
                 double g = 0;
 
                 //ne legyenek ugyanabban a pontban
-                for ( int z = i + 1; z <= k; z++ )
+                for ( var z = i + 1; z <= k; z++ )
                 {
                     cancellationToken.ThrowIfCancellationRequested();
 
@@ -71,10 +67,10 @@ namespace Westermo.GraphX.Logic.Algorithms.OverlapRemoval
                 //i-k intervallumban lévő téglalapokra erőszámítás a tőlük balra lévőkkel
                 if ( u.CenterX > x0 )
                 {
-                    for ( int m = i; m <= k; m++ )
+                    for ( var m = i; m <= k; m++ )
                     {
                         double ggg = 0;
-                        for ( int j = 0; j < i; j++ )
+                        for ( var j = 0; j < i; j++ )
                         {
                             cancellationToken.ThrowIfCancellationRequested();
 
@@ -82,13 +78,13 @@ namespace Westermo.GraphX.Logic.Algorithms.OverlapRemoval
                             ggg = Math.Max( f.X + gamma[j], ggg );
                         }
                         var v = WrappedRectangles[m];
-                        double gg = v.Rectangle.Left + ggg < lmin.Rectangle.Left ? sigma : ggg;
+                        var gg = v.Rectangle.Left + ggg < lmin.Rectangle.Left ? sigma : ggg;
                         g = Math.Max( g, gg );
                     }
                 }
                 //megjegyezzük az elemek eltolásást x tömbbe
                 //bal szélő elemet újra meghatározzuk
-                for ( int m = i; m <= k; m++ )
+                for ( var m = i; m <= k; m++ )
                 {
                     cancellationToken.ThrowIfCancellationRequested();
 
@@ -104,9 +100,9 @@ namespace Westermo.GraphX.Logic.Algorithms.OverlapRemoval
                 //az i-k intervallum négyzeteitől jobbra lévőkkel erőszámítás, legnagyobb erő tárolása
                 // delta = max(0, max{f.x(m,j)|i<=m<=k<j<n})
                 double delta = 0;
-                for ( int m = i; m <= k; m++ )
+                for ( var m = i; m <= k; m++ )
                 {
-                    for ( int j = k + 1; j < n; j++ )
+                    for ( var j = k + 1; j < n; j++ )
                     {
                         cancellationToken.ThrowIfCancellationRequested();
 
@@ -124,12 +120,12 @@ namespace Westermo.GraphX.Logic.Algorithms.OverlapRemoval
             for ( i = 0; i < n; i++ )
             {
                 var r = WrappedRectangles[i];
-                double oldPos = r.Rectangle.Left;
-                double newPos = x[i];
+                var oldPos = r.Rectangle.Left;
+                var newPos = x[i];
 
                 r.Rectangle.X = newPos;
 
-                double diff = oldPos - newPos;
+                var diff = oldPos - newPos;
                 cost += diff * diff;
             }
             return cost;

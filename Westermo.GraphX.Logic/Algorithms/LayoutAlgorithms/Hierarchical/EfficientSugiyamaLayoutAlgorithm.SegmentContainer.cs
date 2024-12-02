@@ -82,7 +82,7 @@ namespace Westermo.GraphX.Logic.Algorithms.LayoutAlgorithms
                 //Contract.Ensures(sc1 != null);
                 //Contract.Ensures(sc2 != null);
 
-                int index = IndexOf(s);
+                var index = IndexOf(s);
                 Split(index, out sc1, out sc2, false);
             }
 
@@ -101,16 +101,16 @@ namespace Westermo.GraphX.Logic.Algorithms.LayoutAlgorithms
                 //Contract.Ensures(sc1 != null);
                 //Contract.Ensures(sc2 != null);
 
-                int sc1Count = k + (keep ? 1 : 0);
-                int sc2Count = Count - k - 1;
+                var sc1Count = k + (keep ? 1 : 0);
+                var sc2Count = Count - k - 1;
 
                 sc1 = new SegmentContainer(sc1Count);
                 sc2 = new SegmentContainer(sc2Count);
 
-                for (int i = 0; i < sc1Count; i++)
+                for (var i = 0; i < sc1Count; i++)
                     sc1.Append(this[i]);
 
-                for (int i = k + 1; i < Count; i++)
+                for (var i = k + 1; i < Count; i++)
                     sc2.Append(this[i]);
             }
             #endregion
@@ -126,7 +126,7 @@ namespace Westermo.GraphX.Logic.Algorithms.LayoutAlgorithms
 
             public object Clone()
             {
-                return this.MemberwiseClone();
+                return MemberwiseClone();
             }
 
             #endregion

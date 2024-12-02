@@ -11,7 +11,7 @@ namespace ShowcaseApp.WPF.Pages.Mini
     /// <summary>
     /// Interaction logic for LayoutVCP.xaml
     /// </summary>
-    public partial class LayoutVCP : UserControl
+    public partial class LayoutVCP
     {
         public LayoutVCP()
         {
@@ -29,15 +29,14 @@ namespace ShowcaseApp.WPF.Pages.Mini
             var vc = graphArea.VertexList.Values.ToList()[rdNum];
             //create new VCP with container
             var newId = vc.VertexConnectionPointsList.Last().Id + 1;
-            var vcp = new StaticVertexConnectionPoint {Id = newId};
-            var ctrl = new Border { Margin = new Thickness(2,2,0,2), Padding = new Thickness(0), Child = vcp };
+            var vcp = new StaticVertexConnectionPoint { Id = newId };
+            var ctrl = new Border { Margin = new Thickness(2, 2, 0, 2), Padding = new Thickness(0), Child = vcp };
             //add vcp to the root container
             //in order to  be able to use VCPRoot property we must specify container in the XAML template through PART_vcproot name
             vc.VCPRoot.Children.Add(ctrl);
             vc.VertexConnectionPointsList.Add(vcp);
             //update edge to use new connection point
-            var ec = graphArea.GetRelatedEdgeControls(vc, EdgesType.Out).First() as EdgeControl;
-            if (ec == null)
+            if (graphArea.GetRelatedEdgeControls(vc, EdgesType.Out).First() is not EdgeControl ec)
             {
                 ec = graphArea.GetRelatedEdgeControls(vc, EdgesType.In).First() as EdgeControl;
                 (ec.Edge as DataEdge).TargetConnectionPointId = newId;
@@ -46,19 +45,20 @@ namespace ShowcaseApp.WPF.Pages.Mini
             {
                 (ec.Edge as DataEdge).SourceConnectionPointId = newId;
             }
+
             graphArea.EdgesList[ec.Edge as DataEdge].UpdateEdge();
             //graphArea.UpdateAllEdges(true);
-
         }
 
         private void CbMathShapeOnChecked(object sender, RoutedEventArgs routedEventArgs)
         {
-            foreach(var item in graphArea.VertexList.Values)
-                item.VertexConnectionPointsList.ForEach(a => a.Shape = cbMathShape.IsChecked == true ? VertexShape.Circle : VertexShape.None);
+            foreach (var item in graphArea.VertexList.Values)
+                item.VertexConnectionPointsList.ForEach(a =>
+                    a.Shape = cbMathShape.IsChecked == true ? VertexShape.Circle : VertexShape.None);
             graphArea.UpdateAllEdges(true);
         }
 
-        void ControlLoaded(object sender, RoutedEventArgs e)
+        private void ControlLoaded(object sender, RoutedEventArgs e)
         {
             GenerateGraph();
         }
@@ -88,12 +88,12 @@ namespace ShowcaseApp.WPF.Pages.Mini
             //set positions
             var posList = new Dictionary<DataVertex, Point>()
             {
-                {vList[0], new Point(0, 0)},
-                {vList[1], new Point(200, -200)},
-                {vList[2], new Point(200, 200)},
-                {vList[3], new Point(600, -300)},
-                {vList[4], new Point(600, 300)},
-                {vList[5], new Point(400, 0)},
+                { vList[0], new Point(0, 0) },
+                { vList[1], new Point(200, -200) },
+                { vList[2], new Point(200, 200) },
+                { vList[3], new Point(600, -300) },
+                { vList[4], new Point(600, 300) },
+                { vList[5], new Point(400, 0) },
             };
             graphArea.PreloadGraph(posList);
 

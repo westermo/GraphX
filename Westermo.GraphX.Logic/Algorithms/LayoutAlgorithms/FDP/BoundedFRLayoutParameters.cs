@@ -19,7 +19,7 @@ namespace Westermo.GraphX.Logic.Algorithms.LayoutAlgorithms
         /// </summary>
         public double Width
         {
-            get { return _width; }
+            get => _width;
             set
             {
                 _width = value;
@@ -33,7 +33,7 @@ namespace Westermo.GraphX.Logic.Algorithms.LayoutAlgorithms
         /// </summary>
         public double Height
         {
-            get { return _height; }
+            get => _height;
             set
             {
                 _height = value;
@@ -45,18 +45,12 @@ namespace Westermo.GraphX.Logic.Algorithms.LayoutAlgorithms
         /// <summary>
         /// Constant. <code>IdealEdgeLength = sqrt(height * width / vertexCount)</code>
         /// </summary>
-        public override double K
-        {
-            get { return _k; }
-        }
+        public override double K => _k;
 
         /// <summary>
         /// Gets the initial temperature of the mass.
         /// </summary>
-        public override double InitialTemperature
-        {
-            get { return Math.Min(Width, Height) / 10; }
-        }
+        public override double InitialTemperature => Math.Min(Width, Height) / 10;
 
         protected override void UpdateParameters()
         {

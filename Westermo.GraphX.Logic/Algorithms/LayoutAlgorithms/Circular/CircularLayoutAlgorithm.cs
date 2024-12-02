@@ -9,23 +9,21 @@ using QuikGraph;
 
 namespace Westermo.GraphX.Logic.Algorithms.LayoutAlgorithms
 {
-    public class CircularLayoutAlgorithm<TVertex, TEdge, TGraph> : DefaultParameterizedLayoutAlgorithmBase<TVertex, TEdge, TGraph, CircularLayoutParameters>
+    public class CircularLayoutAlgorithm<TVertex, TEdge, TGraph>(
+        TGraph visitedGraph,
+        IDictionary<TVertex, Point> vertexPositions,
+        IDictionary<TVertex, Size> vertexSizes,
+        CircularLayoutParameters parameters)
+        : DefaultParameterizedLayoutAlgorithmBase<TVertex, TEdge, TGraph, CircularLayoutParameters>(visitedGraph,
+            vertexPositions, parameters)
         where TVertex : class, IIdentifiableGraphDataObject
         where TEdge : IEdge<TVertex>
         where TGraph : IBidirectionalGraph<TVertex, TEdge>
     {
-        readonly IDictionary<TVertex, Size> _sizes;
-
-        public CircularLayoutAlgorithm( TGraph visitedGraph, IDictionary<TVertex, Point> vertexPositions, IDictionary<TVertex, Size> vertexSizes, CircularLayoutParameters parameters )
-            : base( visitedGraph, vertexPositions, parameters )
-        {
-            _sizes = vertexSizes;
-        }
-
         /// <summary>
         /// Gets if current algorithm supports vertex freeze feature (part of VAESPS)
         /// </summary>
-        public override bool SupportsObjectFreeze { get { return false; } }
+        public override bool SupportsObjectFreeze => false;
 
         public override void ResetGraph(IEnumerable<TVertex> vertices, IEnumerable<TEdge> edges)
         {
@@ -41,19 +39,19 @@ namespace Westermo.GraphX.Logic.Algorithms.LayoutAlgorithms
             if(VertexPositions.Count == 0)
                 foreach(var item in VisitedGraph.Vertices.Where(v => v.SkipProcessing == ProcessingOptionEnum.Freeze))
                     VertexPositions.Add(item, new Point());
-            double[] halfSize = new double[usableVertices.Count];
-            int i = 0;
+            var halfSize = new double[usableVertices.Count];
+            var i = 0;
             foreach ( var v in usableVertices)
             {
                 cancellationToken.ThrowIfCancellationRequested();
 
-                Size s = _sizes[v];
+                var s = vertexSizes[v];
                 halfSize[i] = Math.Sqrt( s.Width * s.Width + s.Height * s.Height ) * 0.5;
                 perimeter += halfSize[i] * 2;
                 i++;
             }
 
-            double radius = perimeter / ( 2 * Math.PI );
+            var radius = perimeter / ( 2 * Math.PI );
 
             //
             //precalculation

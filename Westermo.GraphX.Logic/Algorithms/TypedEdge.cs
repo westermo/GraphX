@@ -13,23 +13,14 @@ namespace Westermo.GraphX.Logic.Algorithms
 		EdgeTypes Type { get; }
 	}
 
-	public class TypedEdge<TVertex> : Edge<TVertex>, ITypedEdge
+	public class TypedEdge<TVertex>(TVertex source, TVertex target, EdgeTypes type)
+		: Edge<TVertex>(source, target), ITypedEdge
 	{
-		private readonly EdgeTypes _type;
-		public EdgeTypes Type
-		{
-			get { return _type; }
-		}
-
-		public TypedEdge(TVertex source, TVertex target, EdgeTypes type)
-			: base(source, target)
-		{
-			_type = type;
-		}
+		public EdgeTypes Type => type;
 
 		public override string ToString()
 		{
-			return string.Format("{0}: {1}-->{2}", _type, Source, Target);
+			return $"{type}: {Source}-->{Target}";
 		}
 	}
 }

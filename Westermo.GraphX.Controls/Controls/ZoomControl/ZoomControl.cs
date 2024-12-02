@@ -22,7 +22,7 @@ namespace Westermo.GraphX.Controls
 
         #region Center Command
 
-        public static RoutedUICommand Center = new RoutedUICommand("Center Content", "Center", typeof(ZoomControl));
+        public static RoutedUICommand Center = new("Center Content", "Center", typeof(ZoomControl));
 
         private void CenterContent(object sender, ExecutedRoutedEventArgs e)
         {
@@ -33,7 +33,7 @@ namespace Westermo.GraphX.Controls
 
         #region Fill Command
 
-        public static RoutedUICommand Fill = new RoutedUICommand("Fill Bounds with Content", "FillToBounds", typeof(ZoomControl));
+        public static RoutedUICommand Fill = new("Fill Bounds with Content", "FillToBounds", typeof(ZoomControl));
 
         private void FillToBounds(object sender, ExecutedRoutedEventArgs e)
         {
@@ -44,7 +44,7 @@ namespace Westermo.GraphX.Controls
 
         #region ResetZoom Command
 
-        public static RoutedUICommand ResetZoom = new RoutedUICommand("Reset zoom", "ResetZoom", typeof(ZoomControl));
+        public static RoutedUICommand ResetZoom = new("Reset zoom", "ResetZoom", typeof(ZoomControl));
         /// <summary>
         /// Executes when ResetZoom command is fired and resets the Zoom value to default one. Override to reset to custom zoom value.
         /// Default Zoom value is 1.
@@ -58,7 +58,7 @@ namespace Westermo.GraphX.Controls
 
         #region Refocus Command
 
-        public static RoutedUICommand Refocus = new RoutedUICommand("Refocus View", "Refocus", typeof(ZoomControl));
+        public static RoutedUICommand Refocus = new("Refocus View", "Refocus", typeof(ZoomControl));
 
         private void CanRefocusView(object sender, CanExecuteRoutedEventArgs e)
         {
@@ -154,7 +154,7 @@ namespace Westermo.GraphX.Controls
 
         public static Visibility GetViewFinderVisibility(DependencyObject d)
         {
-            return (Visibility)(d.GetValue(ViewFinderVisibilityProperty));
+            return (Visibility)d.GetValue(ViewFinderVisibilityProperty);
         }
 
         public static void SetViewFinderVisibility(DependencyObject d, Visibility value)
@@ -205,7 +205,7 @@ namespace Westermo.GraphX.Controls
             }
         }
 
-        void _viewFinderDisplay_IsVisibleChanged(object sender, DependencyPropertyChangedEventArgs e)
+        private void _viewFinderDisplay_IsVisibleChanged(object sender, DependencyPropertyChangedEventArgs e)
         {
             //needed to overcome the case when viewbox was hidden by default so no size were calculated
             if (_viewFinderDisplay!.Visibility != Visibility.Collapsed && (bool)e.NewValue)
@@ -233,14 +233,8 @@ namespace Westermo.GraphX.Controls
         #region IsResizingViewport Private Property
         private bool IsResizingViewport
         {
-            get
-            {
-                return _cacheBits[(int)CacheBits.IsResizingViewport];
-            }
-            set
-            {
-                _cacheBits[(int)CacheBits.IsResizingViewport] = value;
-            }
+            get => _cacheBits[(int)CacheBits.IsResizingViewport];
+            set => _cacheBits[(int)CacheBits.IsResizingViewport] = value;
         }
 
         #endregion
@@ -249,24 +243,18 @@ namespace Westermo.GraphX.Controls
 
         private bool IsDraggingViewport
         {
-            get
-            {
-                return _cacheBits[(int)CacheBits.IsDraggingViewport];
-            }
-            set
-            {
-                _cacheBits[(int)CacheBits.IsDraggingViewport] = value;
-            }
+            get => _cacheBits[(int)CacheBits.IsDraggingViewport];
+            set => _cacheBits[(int)CacheBits.IsDraggingViewport] = value;
         }
 
         #endregion
 
         // state variables used during drag and select operations
         private Rect _resizeViewportBounds = Rect.Empty;
-        private Point _resizeAnchorPoint = new Point(0, 0);
-        private Point _resizeDraggingPoint = new Point(0, 0);
-        private Point _originPoint = new Point(0, 0);
-        private BitVector32 _cacheBits = new BitVector32(0);
+        private Point _resizeAnchorPoint = new(0, 0);
+        private Point _resizeDraggingPoint = new(0, 0);
+        private Point _originPoint = new(0, 0);
+        private BitVector32 _cacheBits = new(0);
 
         private void ViewFinderDisplayBeginCapture(object sender, MouseButtonEventArgs e)
         {
@@ -312,29 +300,29 @@ namespace Westermo.GraphX.Controls
                             break;
                         case ResizeEdge.Left:
                             _resizeDraggingPoint = new Point(_viewFinderDisplay.ViewportRect.Left,
-                                _viewFinderDisplay.ViewportRect.Top + (_viewFinderDisplay.ViewportRect.Height / 2));
+                                _viewFinderDisplay.ViewportRect.Top + _viewFinderDisplay.ViewportRect.Height / 2);
                             _resizeAnchorPoint = new Point(_viewFinderDisplay.ViewportRect.Right,
-                                _viewFinderDisplay.ViewportRect.Top + (_viewFinderDisplay.ViewportRect.Height / 2));
+                                _viewFinderDisplay.ViewportRect.Top + _viewFinderDisplay.ViewportRect.Height / 2);
                             direction = new Vector(-1, 0);
                             break;
                         case ResizeEdge.Top:
-                            _resizeDraggingPoint = new Point(_viewFinderDisplay.ViewportRect.Left + (_viewFinderDisplay.ViewportRect.Width / 2),
+                            _resizeDraggingPoint = new Point(_viewFinderDisplay.ViewportRect.Left + _viewFinderDisplay.ViewportRect.Width / 2,
                                 _viewFinderDisplay.ViewportRect.Top);
-                            _resizeAnchorPoint = new Point(_viewFinderDisplay.ViewportRect.Left + (_viewFinderDisplay.ViewportRect.Width / 2),
+                            _resizeAnchorPoint = new Point(_viewFinderDisplay.ViewportRect.Left + _viewFinderDisplay.ViewportRect.Width / 2,
                                 _viewFinderDisplay.ViewportRect.Bottom);
                             direction = new Vector(0, -1);
                             break;
                         case ResizeEdge.Right:
                             _resizeDraggingPoint = new Point(_viewFinderDisplay.ViewportRect.Right,
-                                _viewFinderDisplay.ViewportRect.Top + (_viewFinderDisplay.ViewportRect.Height / 2));
+                                _viewFinderDisplay.ViewportRect.Top + _viewFinderDisplay.ViewportRect.Height / 2);
                             _resizeAnchorPoint = new Point(_viewFinderDisplay.ViewportRect.Left,
-                                _viewFinderDisplay.ViewportRect.Top + (_viewFinderDisplay.ViewportRect.Height / 2));
+                                _viewFinderDisplay.ViewportRect.Top + _viewFinderDisplay.ViewportRect.Height / 2);
                             direction = new Vector(1, 0);
                             break;
                         case ResizeEdge.Bottom:
-                            _resizeDraggingPoint = new Point(_viewFinderDisplay.ViewportRect.Left + (_viewFinderDisplay.ViewportRect.Width / 2),
+                            _resizeDraggingPoint = new Point(_viewFinderDisplay.ViewportRect.Left + _viewFinderDisplay.ViewportRect.Width / 2,
                                 _viewFinderDisplay.ViewportRect.Bottom);
-                            _resizeAnchorPoint = new Point(_viewFinderDisplay.ViewportRect.Left + (_viewFinderDisplay.ViewportRect.Width / 2),
+                            _resizeAnchorPoint = new Point(_viewFinderDisplay.ViewportRect.Left + _viewFinderDisplay.ViewportRect.Width / 2,
                                 _viewFinderDisplay.ViewportRect.Top);
                             direction = new Vector(0, 1);
                             break;
@@ -501,7 +489,7 @@ namespace Westermo.GraphX.Controls
             OnDrag(new DragDeltaEventArgs(-dx / scale / _viewboxFactor, -dy / scale / _viewboxFactor));
 
             // for a drag operation, update the origin with each delta
-            _originPoint = _originPoint + new Vector(dx, dy);
+            _originPoint += new Vector(dx, dy);
         }
 
         private void ResizeDisplayViewport(DragDeltaEventArgs e, ResizeEdge relativeTo)
@@ -861,38 +849,38 @@ namespace Westermo.GraphX.Controls
 
         public Brush ZoomBoxBackground
         {
-            get { return (Brush)GetValue(ZoomBoxBackgroundProperty); }
-            set { SetValue(ZoomBoxBackgroundProperty, value); }
+            get => (Brush)GetValue(ZoomBoxBackgroundProperty);
+            set => SetValue(ZoomBoxBackgroundProperty, value);
         }
 
         public Brush ZoomBoxBorderBrush
         {
-            get { return (Brush)GetValue(ZoomBoxBorderBrushProperty); }
-            set { SetValue(ZoomBoxBorderBrushProperty, value); }
+            get => (Brush)GetValue(ZoomBoxBorderBrushProperty);
+            set => SetValue(ZoomBoxBorderBrushProperty, value);
         }
 
         public Thickness ZoomBoxBorderThickness
         {
-            get { return (Thickness)GetValue(ZoomBoxBorderThicknessProperty); }
-            set { SetValue(ZoomBoxBorderThicknessProperty, value); }
+            get => (Thickness)GetValue(ZoomBoxBorderThicknessProperty);
+            set => SetValue(ZoomBoxBorderThicknessProperty, value);
         }
 
         public double ZoomBoxOpacity
         {
-            get { return (double)GetValue(ZoomBoxOpacityProperty); }
-            set { SetValue(ZoomBoxOpacityProperty, value); }
+            get => (double)GetValue(ZoomBoxOpacityProperty);
+            set => SetValue(ZoomBoxOpacityProperty, value);
         }
 
         public Rect ZoomBox
         {
-            get { return (Rect)GetValue(ZoomBoxProperty); }
-            set { SetValue(ZoomBoxProperty, value); }
+            get => (Rect)GetValue(ZoomBoxProperty);
+            set => SetValue(ZoomBoxProperty, value);
         }
 
         /// <summary>
         /// Gets origo (area center) position
         /// </summary>
-        public Point OrigoPosition => new Point(ActualWidth / 2, ActualHeight / 2);
+        public Point OrigoPosition => new(ActualWidth / 2, ActualHeight / 2);
 
         /// <summary>
         /// Gets or sets translation value for X property
@@ -932,8 +920,8 @@ namespace Westermo.GraphX.Controls
         /// </summary>
         public TimeSpan AnimationLength
         {
-            get { return (TimeSpan)GetValue(AnimationLengthProperty); }
-            set { SetValue(AnimationLengthProperty, value); }
+            get => (TimeSpan)GetValue(AnimationLengthProperty);
+            set => SetValue(AnimationLengthProperty, value);
         }
 
         /// <summary>
@@ -941,8 +929,8 @@ namespace Westermo.GraphX.Controls
         /// </summary>
         public bool IsDragSelectByDefault
         {
-            get { return (bool)GetValue(IsDragSelectByDefaultProperty); }
-            set { SetValue(IsDragSelectByDefaultProperty, value); }
+            get => (bool)GetValue(IsDragSelectByDefaultProperty);
+            set => SetValue(IsDragSelectByDefaultProperty, value);
         }
 
         /// <summary>
@@ -950,8 +938,8 @@ namespace Westermo.GraphX.Controls
         /// </summary>
         public double MinZoom
         {
-            get { return (double)GetValue(MinZoomProperty); }
-            set { SetValue(MinZoomProperty, value); }
+            get => (double)GetValue(MinZoomProperty);
+            set => SetValue(MinZoomProperty, value);
         }
 
         /// <summary>
@@ -959,8 +947,8 @@ namespace Westermo.GraphX.Controls
         /// </summary>
         public double MaxZoom
         {
-            get { return (double)GetValue(MaxZoomProperty); }
-            set { SetValue(MaxZoomProperty, value); }
+            get => (double)GetValue(MaxZoomProperty);
+            set => SetValue(MaxZoomProperty, value);
         }
 
         /// <summary>
@@ -968,8 +956,8 @@ namespace Westermo.GraphX.Controls
         /// </summary>
         public virtual double ZoomStep
         {
-            get { return (double)GetValue(ZoomStepProperty); }
-            set { SetValue(ZoomStepProperty, value); }
+            get => (double)GetValue(ZoomStepProperty);
+            set => SetValue(ZoomStepProperty, value);
         }
 
         /// <summary>
@@ -977,8 +965,8 @@ namespace Westermo.GraphX.Controls
         /// </summary>
         public virtual double ZoomSensitivity
         {
-            get { return (double)GetValue(ZoomSensitivityProperty); }
-            set { SetValue(ZoomSensitivityProperty, value); }
+            get => (double)GetValue(ZoomSensitivityProperty);
+            set => SetValue(ZoomSensitivityProperty, value);
         }
 
         /// <summary>
@@ -986,7 +974,7 @@ namespace Westermo.GraphX.Controls
         /// </summary>
         public double Zoom
         {
-            get { return (double)GetValue(ZoomProperty); }
+            get => (double)GetValue(ZoomProperty);
             set
             {
                 if (value == (double)GetValue(ZoomProperty))
@@ -1006,7 +994,7 @@ namespace Westermo.GraphX.Controls
         /// </summary>
         public ITrackableContent? TrackableContent => Content as ITrackableContent;
 
-        bool _isga;
+        private bool _isga;
         /// <summary>
         /// Is loaded content represents ITrackableContent object
         /// </summary>
@@ -1015,7 +1003,7 @@ namespace Westermo.GraphX.Controls
 
         public ZoomContentPresenter? Presenter
         {
-            get { return _presenter; }
+            get => _presenter;
             set
             {
                 _presenter = value;
@@ -1040,8 +1028,8 @@ namespace Westermo.GraphX.Controls
         /// </summary>
         public ZoomViewModifierMode ModifierMode
         {
-            get { return (ZoomViewModifierMode)GetValue(ModifierModeProperty); }
-            set { SetValue(ModifierModeProperty, value); }
+            get => (ZoomViewModifierMode)GetValue(ModifierModeProperty);
+            set => SetValue(ModifierModeProperty, value);
         }
 
         /// <summary>
@@ -1049,16 +1037,16 @@ namespace Westermo.GraphX.Controls
         /// </summary>
         public ZoomControlModes Mode
         {
-            get { return (ZoomControlModes)GetValue(ModeProperty); }
-            set { SetValue(ModeProperty, value); }
+            get => (ZoomControlModes)GetValue(ModeProperty);
+            set => SetValue(ModeProperty, value);
         }
 
-        public RoutedUICommand CommandZoomIn = new RoutedUICommand("Zoom In", "ZoomIn", typeof(ZoomControl));
-        public RoutedUICommand CommandZoomOut = new RoutedUICommand("Zoom Out", "ZoomOut", typeof(ZoomControl));
-        public RoutedUICommand CommandPanLeft = new RoutedUICommand("Pan Left", "PanLeft", typeof(ZoomControl));
-        public RoutedUICommand CommandPanRight = new RoutedUICommand("Pan Right", "PanRight", typeof(ZoomControl));
-        public RoutedUICommand CommandPanTop = new RoutedUICommand("Pan Top", "PanTop", typeof(ZoomControl));
-        public RoutedUICommand CommandPanBottom = new RoutedUICommand("Pan Bottom", "PanBottom", typeof(ZoomControl));
+        public RoutedUICommand CommandZoomIn = new("Zoom In", "ZoomIn", typeof(ZoomControl));
+        public RoutedUICommand CommandZoomOut = new("Zoom Out", "ZoomOut", typeof(ZoomControl));
+        public RoutedUICommand CommandPanLeft = new("Pan Left", "PanLeft", typeof(ZoomControl));
+        public RoutedUICommand CommandPanRight = new("Pan Right", "PanRight", typeof(ZoomControl));
+        public RoutedUICommand CommandPanTop = new("Pan Top", "PanTop", typeof(ZoomControl));
+        public RoutedUICommand CommandPanBottom = new("Pan Bottom", "PanBottom", typeof(ZoomControl));
 
         #endregion
 
@@ -1095,12 +1083,12 @@ namespace Westermo.GraphX.Controls
                 BindCommand(Center, CenterContent);
                 BindCommand(Fill, FillToBounds);
                 BindCommand(ResetZoom, ExecuteResetZoom);
-                BindCommand(CommandZoomIn, (sender, args) => MouseWheelAction(ZoomSensitivity, OrigoPosition));
-                BindCommand(CommandZoomOut, (sender, args) => MouseWheelAction(-ZoomSensitivity, OrigoPosition));
-                BindCommand(CommandPanLeft, (sender, args) => PanAction(new Vector(TranslateX, TranslateY), new Vector(ManualPanSensivity, 0)));
-                BindCommand(CommandPanRight, (sender, args) => PanAction(new Vector(TranslateX, TranslateY), new Vector(-ManualPanSensivity, 0)));
-                BindCommand(CommandPanTop, (sender, args) => PanAction(new Vector(TranslateX, TranslateY), new Vector(0, ManualPanSensivity)));
-                BindCommand(CommandPanBottom, (sender, args) => PanAction(new Vector(TranslateX, TranslateY), new Vector(0, -ManualPanSensivity)));
+                BindCommand(CommandZoomIn, (_, _) => MouseWheelAction(ZoomSensitivity, OrigoPosition));
+                BindCommand(CommandZoomOut, (_, _) => MouseWheelAction(-ZoomSensitivity, OrigoPosition));
+                BindCommand(CommandPanLeft, (_, _) => PanAction(new Vector(TranslateX, TranslateY), new Vector(ManualPanSensivity, 0)));
+                BindCommand(CommandPanRight, (_, _) => PanAction(new Vector(TranslateX, TranslateY), new Vector(-ManualPanSensivity, 0)));
+                BindCommand(CommandPanTop, (_, _) => PanAction(new Vector(TranslateX, TranslateY), new Vector(0, ManualPanSensivity)));
+                BindCommand(CommandPanBottom, (_, _) => PanAction(new Vector(TranslateX, TranslateY), new Vector(0, -ManualPanSensivity)));
                 BindKey(CommandPanLeft, Key.Left, ModifierKeys.None);
                 BindKey(CommandPanRight, Key.Right, ModifierKeys.None);
                 BindKey(CommandPanTop, Key.Up, ModifierKeys.None);
@@ -1140,12 +1128,10 @@ namespace Westermo.GraphX.Controls
         {
             if (DesignerProperties.GetIsInDesignMode(this)) return;
 
-            var old = oldContent as ITrackableContent;
-            if (old != null) old.ContentSizeChanged -= Content_ContentSizeChanged;
+            if (oldContent is ITrackableContent old) old.ContentSizeChanged -= Content_ContentSizeChanged;
             if (newContent != null)
             {
-                var newc = newContent as ITrackableContent;
-                if (newc != null)
+                if (newContent is ITrackableContent newc)
                 {
                     _isga = true;
                     newc.ContentSizeChanged += Content_ContentSizeChanged;
@@ -1160,7 +1146,7 @@ namespace Westermo.GraphX.Controls
             base.OnContentChanged(oldContent, newContent);
         }
 
-        void Content_ContentSizeChanged(object sender, ContentSizeChangedEventArgs e)
+        private void Content_ContentSizeChanged(object sender, ContentSizeChangedEventArgs e)
         {
             UpdateViewFinderDisplayContentBounds();
             UpdateViewport();
@@ -1207,7 +1193,7 @@ namespace Westermo.GraphX.Controls
         {
             var origoPosition = OrigoPosition;
             DoZoom(
-                Math.Max(1 / ZoomStep, Math.Min(ZoomStep, (Math.Abs(delta) / 10000.0 * ZoomSensitivity + 1))),
+                Math.Max(1 / ZoomStep, Math.Min(ZoomStep, Math.Abs(delta) / 10000.0 * ZoomSensitivity + 1)),
                 delta < 0 ? -1 : 1,
                 origoPosition,
                 MouseWheelZoomingMode == MouseWheelZoomingMode.Absolute ? origoPosition : mousePosition,
@@ -1360,9 +1346,9 @@ namespace Westermo.GraphX.Controls
 		public static readonly RoutedEvent ClickEvent = EventManager.RegisterRoutedEvent(nameof(Click), RoutingStrategy.Bubble, typeof(RoutedEventHandler), typeof(ZoomControl));
 		public event RoutedEventHandler Click
 		{
-			add { AddHandler(ClickEvent, value); }
-			remove { RemoveHandler(ClickEvent, value); }
-		}
+			add => AddHandler(ClickEvent, value);
+            remove => RemoveHandler(ClickEvent, value);
+        }
 
 		#endregion
 
@@ -1422,7 +1408,7 @@ namespace Westermo.GraphX.Controls
 
         private int _zoomAnimCount;
 
-        void ZoomCompleted(object? sender, EventArgs e)
+        private void ZoomCompleted(object? sender, EventArgs e)
         {
             _zoomAnimCount--;
             if (_zoomAnimCount > 0)
@@ -1549,7 +1535,7 @@ namespace Westermo.GraphX.Controls
             var c = IsContentTrackable ? TrackableContent!.ContentSize.Size : ContentVisual!.DesiredSize;
             if (c.Width == 0 || double.IsNaN(c.Width) || double.IsInfinity(c.Width)) return;
 
-            var deltaZoom = Math.Min(MaxZoom,Math.Min( ActualWidth / (c.Width), ActualHeight / (c.Height)));
+            var deltaZoom = Math.Min(MaxZoom,Math.Min( ActualWidth / c.Width, ActualHeight / c.Height));
             var initialTranslate = IsContentTrackable ? GetTrackableTranslate() : GetInitialTranslate(c.Width, c.Height);
             DoZoomAnimation(deltaZoom, initialTranslate.X * deltaZoom, initialTranslate.Y * deltaZoom);
         }
@@ -1557,13 +1543,13 @@ namespace Westermo.GraphX.Controls
         private void DoZoom(double deltaZoom, int mod, Point origoPosition, Point startHandlePosition, Point targetHandlePosition, bool setDelta = false)
         {
             var startZoom = Zoom;
-            var currentZoom = setDelta ? deltaZoom : (mod == -1 ? (startZoom / deltaZoom) : (startZoom * deltaZoom));
+            var currentZoom = setDelta ? deltaZoom : mod == -1 ? startZoom / deltaZoom : startZoom * deltaZoom;
             currentZoom = Math.Max(MinZoom, Math.Min(MaxZoom, currentZoom));
 
             var startTranslate = new Vector(TranslateX, TranslateY);
 
-            var v = (startHandlePosition - origoPosition);
-            var vTarget = (targetHandlePosition - origoPosition);
+            var v = startHandlePosition - origoPosition;
+            var vTarget = targetHandlePosition - origoPosition;
 
             var targetPoint = (v - startTranslate) / startZoom;
             var zoomedTargetPointPos = targetPoint * currentZoom + startTranslate;

@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Drawing;
 using System.IO;
 using System.Windows;
 using System.Windows.Controls;
@@ -7,7 +6,6 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using Westermo.GraphX.Common.Enums;
 using Westermo.GraphX.Common.Exceptions;
-using Brushes = System.Windows.Media.Brushes;
 using Size = System.Windows.Size;
 
 namespace Westermo.GraphX.Controls
@@ -33,8 +31,8 @@ namespace Westermo.GraphX.Controls
         /// <param name="estPixelCount">Pixel quantity threshold</param>
         public static double CalculateEstimatedDPI(IGraphAreaBase vis, double imgdpi, double dpiStep, ulong estPixelCount)
         {
-            bool result = false;
-            double currentDPI = imgdpi;
+            var result = false;
+            var currentDPI = imgdpi;
             while (!result)
             {
                 if (CalulateSize(vis.ContentSize.Size, currentDPI) <= estPixelCount)
@@ -48,8 +46,8 @@ namespace Westermo.GraphX.Controls
 
         private static ulong CalulateSize(Size desiredSize, double dpi)
         {
-            return (ulong) (desiredSize.Width*(dpi/DEFAULT_DPI) + 100) *
-                   (ulong) (desiredSize.Height*(dpi/DEFAULT_DPI) + 100);
+            return (ulong)(desiredSize.Width * (dpi / DEFAULT_DPI) + 100) *
+                   (ulong)(desiredSize.Height * (dpi / DEFAULT_DPI) + 100);
         }
 
         /// <summary>
@@ -66,17 +64,17 @@ namespace Westermo.GraphX.Controls
             if (!useZoomControlSurface)
                 surface.SetPrintMode(true, true, 100);
             //Create a render bitmap and push the surface to it
-            var vis = (UIElement) surface;
+            var vis = (UIElement)surface;
             if (useZoomControlSurface)
             {
-                var canvas = (Canvas) surface;
+                var canvas = (Canvas)surface;
                 if (canvas.Parent is IZoomControl zoomControl)
                     vis = zoomControl.PresenterVisual;
                 else
                 {
                     var frameworkElement = canvas.Parent as FrameworkElement;
                     if (frameworkElement?.Parent is IZoomControl)
-                        vis = ((IZoomControl) frameworkElement.Parent).PresenterVisual;
+                        vis = ((IZoomControl)frameworkElement.Parent).PresenterVisual;
                 }
             }
 
@@ -90,28 +88,22 @@ namespace Westermo.GraphX.Controls
 
             //Render the graphlayout onto the bitmap.
             renderBitmap.Render(vis);
-                
-           
+
+
             //Create a file stream for saving image
-            using (FileStream outStream = new FileStream(path.LocalPath, FileMode.Create))
+            using (var outStream = new FileStream(path.LocalPath, FileMode.Create))
             {
                 //Use png encoder for our data
-                BitmapEncoder encoder;
-                switch (itype)
+                BitmapEncoder encoder = itype switch
                 {
-                    case ImageType.PNG: encoder = new PngBitmapEncoder();
-                        break;
-                    case ImageType.JPEG: encoder = new JpegBitmapEncoder() { QualityLevel = imgQuality };
-                        break;
-                    case ImageType.BMP: encoder = new BmpBitmapEncoder();
-                        break;
-                    case ImageType.GIF: encoder = new GifBitmapEncoder();
-                        break;
-                    case ImageType.TIFF: encoder = new TiffBitmapEncoder();
-                        break;
-                    default: throw new GX_InvalidDataException("ExportToImage() -> Unknown output image format specified!");
-                }
-                
+                    ImageType.PNG => new PngBitmapEncoder(),
+                    ImageType.JPEG => new JpegBitmapEncoder() { QualityLevel = imgQuality },
+                    ImageType.BMP => new BmpBitmapEncoder(),
+                    ImageType.GIF => new GifBitmapEncoder(),
+                    ImageType.TIFF => new TiffBitmapEncoder(),
+                    _ => throw new GX_InvalidDataException("ExportToImage() -> Unknown output image format specified!"),
+                };
+
                 //Push the rendered bitmap to it
                 encoder.Frames.Add(BitmapFrame.Create(renderBitmap));
                 //Save the data to the stream
@@ -136,12 +128,12 @@ namespace Westermo.GraphX.Controls
             {
                 //apply layout rounding
                 var isCtrl = surface is Control;
-                bool oldLR = false;
+                var oldLR = false;
                 double oldWidth = 0;
                 double oldHeight = 0;
                 if (isCtrl && compat)
                 {
-                    var ctrl = (Control) surface;
+                    var ctrl = (Control)surface;
                     oldLR = ctrl.UseLayoutRounding;
                     if (oldLR != true) ctrl.UseLayoutRounding = true;
 
@@ -162,7 +154,7 @@ namespace Westermo.GraphX.Controls
                     ctrl.UseLayoutRounding = oldLR;
                     ctrl.Width = oldWidth;
                     ctrl.Height = oldHeight;
-                }            
+                }
             }
             catch (Exception)
             {
@@ -173,7 +165,7 @@ namespace Westermo.GraphX.Controls
 
         public static void PrintToFit(IGraphAreaBase ga, string description, int margin = 0)
         {
-            var visual = (Canvas) ga;
+            var visual = (Canvas)ga;
             var pd = new PrintDialog();
             if (pd.ShowDialog() == true)
             {
@@ -206,7 +198,7 @@ namespace Westermo.GraphX.Controls
 
         public static void PrintWithDPI(IGraphAreaBase ga, string description, double dpi, int margin = 0)
         {
-            var visual = (Canvas) ga;
+            var visual = (Canvas)ga;
             var pd = new PrintDialog();
             if (pd.ShowDialog() == true)
             {
@@ -214,7 +206,7 @@ namespace Westermo.GraphX.Controls
                 //store original scale
                 var originalScale = visual.LayoutTransform;
                 //get scale from DPI
-                var scale = dpi/DEFAULT_DPI;
+                var scale = dpi / DEFAULT_DPI;
                 //Transform the Visual to scale
                 var group = new TransformGroup();
                 group.Children.Add(new ScaleTransform(scale, scale));

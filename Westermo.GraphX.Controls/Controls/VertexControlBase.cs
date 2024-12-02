@@ -6,7 +6,6 @@ using System.Windows.Controls;
 using USize = System.Windows.Size;
 using Point = System.Windows.Point;
 using Westermo.GraphX.Controls.Models;
-using Westermo.GraphX.Common;
 using Westermo.GraphX.Common.Enums;
 using Rect = Westermo.GraphX.Measure.Rect;
 
@@ -47,17 +46,12 @@ namespace Westermo.GraphX.Controls
             PositionChanged?.Invoke(this, new VertexPositionEventArgs(offset, pos, this));
         }
 
-        protected VertexControlBase()
-        {
-            VertexConnectionPointsList = new List<IVertexConnectionPoint>();
-        }
-
         /// <summary>
         /// Hides this control with all related edges
         /// </summary>
         public void HideWithEdges()
         {
-            this.SetCurrentValue(VisibilityProperty, Visibility.Collapsed);
+            SetCurrentValue(VisibilityProperty, Visibility.Collapsed);
             SetConnectionPointsVisibility(false);
             RootArea.GetRelatedControls(this, GraphControlType.Edge, EdgesType.All).ForEach(a =>
             {
@@ -73,7 +67,7 @@ namespace Westermo.GraphX.Controls
         /// </summary>
         public void ShowWithEdges()
         {
-            this.SetCurrentValue(VisibilityProperty, Visibility.Visible);
+            SetCurrentValue(VisibilityProperty, Visibility.Visible);
             SetConnectionPointsVisibility(true);
             RootArea.GetRelatedControls(this, GraphControlType.Edge, EdgesType.All).ForEach(a =>
             {
@@ -88,7 +82,7 @@ namespace Westermo.GraphX.Controls
         /// <summary>
         /// List of found vertex connection points
         /// </summary>
-        public List<IVertexConnectionPoint> VertexConnectionPointsList { get; protected set; }
+        public List<IVertexConnectionPoint> VertexConnectionPointsList { get; protected set; } = [];
 
         /// <summary>
         /// Provides settings for event calls within single vertex control
@@ -101,10 +95,7 @@ namespace Westermo.GraphX.Controls
         /// </summary>
         public double LabelAngle
         {
-            get
-            {
-                return VertexLabelControl?.Angle ?? _labelAngle;
-            }
+            get => VertexLabelControl?.Angle ?? _labelAngle;
             set
             {
                 _labelAngle = value;
@@ -121,8 +112,8 @@ namespace Westermo.GraphX.Controls
         /// </summary>
         public VertexShape VertexShape
         {
-            get { return (VertexShape)GetValue(VertexShapeProperty); }
-            set { SetValue(VertexShapeProperty, value); }
+            get => (VertexShape)GetValue(VertexShapeProperty);
+            set => SetValue(VertexShapeProperty, value);
         }
 
         /// <summary>
@@ -130,8 +121,8 @@ namespace Westermo.GraphX.Controls
         /// </summary>
         public object? Vertex
         {
-            get { return GetValue(VertexProperty); }
-            set { SetValue(VertexProperty, value); }
+            get => GetValue(VertexProperty);
+            set => SetValue(VertexProperty, value);
         }
 
         public static readonly DependencyProperty VertexProperty =
@@ -142,8 +133,8 @@ namespace Westermo.GraphX.Controls
         /// </summary>
         public GraphAreaBase RootArea
         {
-            get { return (GraphAreaBase)GetValue(RootCanvasProperty); }
-            set { SetValue(RootCanvasProperty, value); }
+            get => (GraphAreaBase)GetValue(RootCanvasProperty);
+            set => SetValue(RootCanvasProperty, value);
         }
 
         public static readonly DependencyProperty RootCanvasProperty =
@@ -161,8 +152,8 @@ namespace Westermo.GraphX.Controls
 
         public bool ShowLabel
         {
-            get { return (bool)GetValue(ShowLabelProperty); }
-            set { SetValue(ShowLabelProperty, value); }
+            get => (bool)GetValue(ShowLabelProperty);
+            set => SetValue(ShowLabelProperty, value);
         }
 #endregion
 

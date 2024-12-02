@@ -13,7 +13,7 @@ namespace Westermo.GraphX.Controls
 
         public Size ContentSize
         {
-            get { return _contentSize; }
+            get => _contentSize;
             private set {
                 if (value == _contentSize)
                     return;

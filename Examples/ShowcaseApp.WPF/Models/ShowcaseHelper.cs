@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using QuikGraph;
 
 namespace ShowcaseApp.WPF.Models
@@ -12,14 +11,14 @@ namespace ShowcaseApp.WPF.Models
         {
             GenerateData(DATASOURCE_SIZE);
         }
-    
+
         /// <summary>
         /// General data source
         /// </summary>
         public static List<DataItem> DataSource { get; set; }
 
         public const int DATASOURCE_SIZE = 5000;
-        public static readonly Random Rand = new Random(Guid.NewGuid().GetHashCode());
+        public static readonly Random Rand = new(Guid.NewGuid().GetHashCode());
 
         private static void GenerateData(int count)
         {
@@ -28,10 +27,12 @@ namespace ShowcaseApp.WPF.Models
             {
                 list.Add(new DataItem { ID = i, Text = "Vertex " + i });
             }
+
             DataSource = list;
         }
 
-        public static void AddEdge(BidirectionalGraph<DataVertex, DataEdge> graph, DataVertex source, DataVertex target, int? sourcePoint = null, int? targetPoint = null, int weight = 0)
+        public static void AddEdge(BidirectionalGraph<DataVertex, DataEdge> graph, DataVertex source, DataVertex target,
+            int? sourcePoint = null, int? targetPoint = null, int weight = 0)
         {
             var edge = new DataEdge(source, target, weight)
             {
@@ -39,18 +40,10 @@ namespace ShowcaseApp.WPF.Models
                 Text = string.Empty,
                 SourceConnectionPointId = sourcePoint,
                 TargetConnectionPointId = targetPoint,
-                ToolTipText = "Label "+ source.ID
+                ToolTipText = "Label " + source.ID
             };
 
             graph.AddEdge(edge);
-        }
-
-        public static DataEdge GenerateEdge(DataVertex source, DataVertex target, int weight = 0)
-        {
-            return new DataEdge(source, target, weight) 
-            {
-                Text = string.Empty
-            };
         }
 
         #region GenerateDataGraph
@@ -60,12 +53,13 @@ namespace ShowcaseApp.WPF.Models
         /// </summary>
         /// <param name="count">Items count</param>
         /// <param name="addEdges"></param>
+        /// <param name="edgeCountMult"></param>
         public static GraphExample GenerateDataGraph(int count, bool addEdges = true, int edgeCountMult = 25)
         {
             var graph = new GraphExample();
 
             foreach (var item in DataSource.Take(count))
-                graph.AddVertex(new DataVertex(item.Text) { ID = item.ID, ImageId = Rand.Next(0,3)});
+                graph.AddVertex(new DataVertex(item.Text) { ID = item.ID, ImageId = Rand.Next(0, 3) });
 
             var vlist = graph.Vertices.ToList();
             var edgeId = count + 1;
@@ -76,12 +70,15 @@ namespace ShowcaseApp.WPF.Models
             {
                 if (Rand.Next(0, 50) > edgeCountMult) continue;
                 var vertex2 = vlist[Rand.Next(0, graph.VertexCount - 1)];
-                var txt = string.Format("{0} -> {1}", item.Text, vertex2.Text);
-                graph.AddEdge(new DataEdge(item, vertex2, Rand.Next(1, 50)) { ID = edgeId, Text = txt, ToolTipText = txt });
+                var txt = $"{item.Text} -> {vertex2.Text}";
+                graph.AddEdge(new DataEdge(item, vertex2, Rand.Next(1, 50))
+                    { ID = edgeId, Text = txt, ToolTipText = txt });
                 edgeId++;
             }
+
             return graph;
         }
+
         #endregion
 
         public static GraphExample GenerateSugiDataGraph()
@@ -115,9 +112,8 @@ namespace ShowcaseApp.WPF.Models
 
         private static void AddNewEdge(this GraphExample graph, DataVertex source, DataVertex target, long id)
         {
-            var text = string.Format("{0} -> {1}", source.Text, target.Text);
+            var text = $"{source.Text} -> {target.Text}";
             graph.AddEdge(new DataEdge(source, target, Rand.Next(1, 50)) { ID = id, Text = text, ToolTipText = text });
-            
         }
     }
 }

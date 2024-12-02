@@ -14,7 +14,6 @@ namespace Westermo.GraphX.Common
         /// </summary>
         /// <typeparam name="TVertex">Vertex data type</typeparam>
         /// <typeparam name="TEdge">Edge data type</typeparam>
-        /// <typeparam name="TGraph"></typeparam>
         /// <param name="graph">Graph</param>
         /// <param name="vertex">Vertex</param>
         public static IEnumerable<TEdge> GetAllEdges<TVertex, TEdge>(this IBidirectionalGraph<TVertex, TEdge> graph,
@@ -145,8 +144,7 @@ namespace Westermo.GraphX.Common
             where TEdge : IEdge<TVertex>
             where TGraph : IBidirectionalGraph<TVertex, TEdge>
         {
-            double[,] distances;
-            return g.GetDiameter<TVertex, TEdge, TGraph>(out distances);
+            return g.GetDiameter<TVertex, TEdge, TGraph>(out _);
         }
 
         /// <summary>
@@ -168,7 +166,7 @@ namespace Westermo.GraphX.Common
             {
                 for (var j = i + 1; j < n; j++)
                 {
-                    if (double.MaxValue == distances[i, j])
+                    if (Math.Abs(double.MaxValue - distances[i, j]) < 1e-12)
                         continue;
 
                     distance = Math.Max(distance, distances[i, j]);

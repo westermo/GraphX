@@ -1,14 +1,12 @@
 ﻿using System.ComponentModel;
-using System.Windows.Controls;
 using ICSharpCode.AvalonEdit.Folding;
-using ShowcaseApp.WPF.Controls;
 
-namespace ShowcaseApp.WPF.Pages
+namespace ShowcaseApp.WPF.Controls
 {
     /// <summary>
     /// Interaction logic for MiniContentPage.xaml
     /// </summary>
-    public partial class MiniXamlTemplatePage : UserControl, ISpecialWindowContentXamlTemplate, INotifyPropertyChanged
+    public partial class MiniXamlTemplatePage : ISpecialWindowContentXamlTemplate, INotifyPropertyChanged
     {
         public MiniXamlTemplatePage()
         {
@@ -22,9 +20,10 @@ namespace ShowcaseApp.WPF.Pages
         }
 
         private string _text;
+
         public string XamlText
         {
-            get { return _text; }
+            get => _text;
             set
             {
                 _text = value;
@@ -32,12 +31,13 @@ namespace ShowcaseApp.WPF.Pages
                 OnPropertyChanged("XamlText");
             }
         }
+
         public event PropertyChangedEventHandler PropertyChanged;
 
         protected virtual void OnPropertyChanged(string propertyName)
         {
             var handler = PropertyChanged;
-            if (handler != null) handler(this, new PropertyChangedEventArgs(propertyName));
+            handler?.Invoke(this, new PropertyChangedEventArgs(propertyName));
         }
     }
 }

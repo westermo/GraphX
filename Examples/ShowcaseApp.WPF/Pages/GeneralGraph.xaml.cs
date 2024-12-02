@@ -19,7 +19,7 @@ namespace ShowcaseApp.WPF.Pages
     /// <summary>
     /// Interaction logic for GeneralGraph.xaml
     /// </summary>
-    public partial class GeneralGraph : UserControl
+    public partial class GeneralGraph
     {
         public GeneralGraph()
         {
@@ -34,13 +34,15 @@ namespace ShowcaseApp.WPF.Pages
             gg_oralgo.SelectionChanged += gg_oralgo_SelectionChanged;
             gg_eralgo.SelectionChanged += gg_eralgo_SelectionChanged;
 
-            gg_layalgo.ItemsSource = Enum.GetValues(typeof(LayoutAlgorithmTypeEnum)).Cast<LayoutAlgorithmTypeEnum>();
+            gg_layalgo.ItemsSource = Enum.GetValues<LayoutAlgorithmTypeEnum>().Cast<LayoutAlgorithmTypeEnum>();
             gg_layalgo.SelectedItem = LayoutAlgorithmTypeEnum.KK;
 
-            gg_oralgo.ItemsSource = Enum.GetValues(typeof(OverlapRemovalAlgorithmTypeEnum)).Cast<OverlapRemovalAlgorithmTypeEnum>();
+            gg_oralgo.ItemsSource = Enum.GetValues<OverlapRemovalAlgorithmTypeEnum>()
+                .Cast<OverlapRemovalAlgorithmTypeEnum>();
             gg_oralgo.SelectedIndex = 0;
 
-            gg_eralgo.ItemsSource = Enum.GetValues(typeof(EdgeRoutingAlgorithmTypeEnum)).Cast<EdgeRoutingAlgorithmTypeEnum>();
+            gg_eralgo.ItemsSource = Enum.GetValues<EdgeRoutingAlgorithmTypeEnum>()
+                .Cast<EdgeRoutingAlgorithmTypeEnum>();
             gg_eralgo.SelectedItem = EdgeRoutingAlgorithmTypeEnum.SimpleER;
 
             gg_but_randomgraph.Click += gg_but_randomgraph_Click;
@@ -52,7 +54,7 @@ namespace ShowcaseApp.WPF.Pages
             gg_Area.SetEdgesDrag(true);
 
             ggLogic.DefaultEdgeRoutingAlgorithm = EdgeRoutingAlgorithmTypeEnum.SimpleER;
-            ggLogic.EdgeCurvingEnabled = true;                  
+            ggLogic.EdgeCurvingEnabled = true;
             gg_Area.ShowAllEdgesArrows();
 
             ZoomControl.SetViewFinderVisibility(gg_zoomctrl, Visibility.Visible);
@@ -63,7 +65,7 @@ namespace ShowcaseApp.WPF.Pages
             Loaded += GG_Loaded;
         }
 
-        void GG_Loaded(object sender, RoutedEventArgs e)
+        private void GG_Loaded(object sender, RoutedEventArgs e)
         {
             GG_RegisterCommands();
         }
@@ -79,17 +81,20 @@ namespace ShowcaseApp.WPF.Pages
 
         private void GgRelayoutCommandExecute(object sender)
         {
-            if (gg_Area.LogicCore.AsyncAlgorithmCompute)
+            if (gg_Area.LogicCore!.AsyncAlgorithmCompute)
                 gg_loader.Visibility = Visibility.Visible;
             gg_Area.RelayoutGraph(true);
         }
+
         #endregion
 
         #region SaveStateCommand
-        private static readonly RoutedCommand SaveStateCommand = new RoutedCommand();
+
+        private static readonly RoutedCommand SaveStateCommand = new();
+
         private void SaveStateCommandCanExecute(object sender, CanExecuteRoutedEventArgs e)
         {
-            e.CanExecute = gg_Area.LogicCore.Graph != null && gg_Area.VertexList.Count > 0;
+            e.CanExecute = gg_Area.LogicCore!.Graph != null && gg_Area.VertexList.Count > 0;
         }
 
         private void SaveStateCommandExecute(object sender, ExecutedRoutedEventArgs e)
@@ -98,10 +103,13 @@ namespace ShowcaseApp.WPF.Pages
                 gg_Area.StateStorage.RemoveState("exampleState");
             gg_Area.StateStorage.SaveState("exampleState", "My example state");
         }
+
         #endregion
 
         #region LoadStateCommand
-        private static readonly RoutedCommand LoadStateCommand = new RoutedCommand();
+
+        private static readonly RoutedCommand LoadStateCommand = new();
+
         private void LoadStateCommandCanExecute(object sender, CanExecuteRoutedEventArgs e)
         {
             e.CanExecute = gg_Area.StateStorage.ContainsState("exampleState");
@@ -112,10 +120,13 @@ namespace ShowcaseApp.WPF.Pages
             if (gg_Area.StateStorage.ContainsState("exampleState"))
                 gg_Area.StateStorage.LoadState("exampleState");
         }
+
         #endregion
 
         #region SaveLayoutCommand
-        private static readonly RoutedCommand SaveLayoutCommand = new RoutedCommand();
+
+        private static readonly RoutedCommand SaveLayoutCommand = new();
+
         private void SaveLayoutCommandCanExecute(object sender, CanExecuteRoutedEventArgs e)
         {
             e.CanExecute = gg_Area.LogicCore.Graph != null && gg_Area.VertexList.Count > 0;
@@ -123,17 +134,20 @@ namespace ShowcaseApp.WPF.Pages
 
         private void SaveLayoutCommandExecute(object sender, ExecutedRoutedEventArgs e)
         {
-            var dlg = new SaveFileDialog { Filter = "All files|*.*", Title = "Select layout file name", FileName = "laytest.xml" };
+            var dlg = new SaveFileDialog
+                { Filter = "All files|*.*", Title = "Select layout file name", FileName = "laytest.xml" };
             if (dlg.ShowDialog() == true)
             {
-				FileServiceProviderWpf.SerializeDataToFile(dlg.FileName, gg_Area.ExtractSerializationData());
+                FileServiceProviderWpf.SerializeDataToFile(dlg.FileName, gg_Area.ExtractSerializationData());
             }
         }
+
         #endregion
 
         #region LoadLayoutCommand
 
-        private static readonly RoutedCommand LoadLayoutCommand = new RoutedCommand();
+        private static readonly RoutedCommand LoadLayoutCommand = new();
+
         private static void LoadLayoutCommandCanExecute(object sender, CanExecuteRoutedEventArgs e)
         {
             e.CanExecute = true;
@@ -141,32 +155,38 @@ namespace ShowcaseApp.WPF.Pages
 
         private void LoadLayoutCommandExecute(object sender, ExecutedRoutedEventArgs e)
         {
-            var dlg = new OpenFileDialog { Filter = "All files|*.*", Title = "Select layout file", FileName = "laytest.xml" };
+            var dlg = new OpenFileDialog
+                { Filter = "All files|*.*", Title = "Select layout file", FileName = "laytest.xml" };
             if (dlg.ShowDialog() != true) return;
             try
             {
-				gg_Area.RebuildFromSerializationData(FileServiceProviderWpf.DeserializeDataFromFile(dlg.FileName));
+                gg_Area.RebuildFromSerializationData(FileServiceProviderWpf.DeserializeDataFromFile(dlg.FileName));
                 gg_Area.SetVerticesDrag(true, true);
                 gg_Area.UpdateAllEdges();
                 gg_zoomctrl.ZoomToFill();
             }
             catch (Exception ex)
             {
-                MessageBox.Show(string.Format("Failed to load layout file:\n {0}", ex));
+                MessageBox.Show($"Failed to load layout file:\n {ex}");
             }
         }
+
         #endregion
 
-        void GG_RegisterCommands()
+        private void GG_RegisterCommands()
         {
-            CommandBindings.Add(new CommandBinding(SaveStateCommand, SaveStateCommandExecute, SaveStateCommandCanExecute));
+            CommandBindings.Add(new CommandBinding(SaveStateCommand, SaveStateCommandExecute,
+                SaveStateCommandCanExecute));
             gg_saveState.Command = SaveStateCommand;
-            CommandBindings.Add(new CommandBinding(LoadStateCommand, LoadStateCommandExecute, LoadStateCommandCanExecute));
+            CommandBindings.Add(new CommandBinding(LoadStateCommand, LoadStateCommandExecute,
+                LoadStateCommandCanExecute));
             gg_loadState.Command = LoadStateCommand;
 
-            CommandBindings.Add(new CommandBinding(SaveLayoutCommand, SaveLayoutCommandExecute, SaveLayoutCommandCanExecute));
+            CommandBindings.Add(new CommandBinding(SaveLayoutCommand, SaveLayoutCommandExecute,
+                SaveLayoutCommandCanExecute));
             gg_saveLayout.Command = SaveLayoutCommand;
-            CommandBindings.Add(new CommandBinding(LoadLayoutCommand, LoadLayoutCommandExecute, LoadLayoutCommandCanExecute));
+            CommandBindings.Add(new CommandBinding(LoadLayoutCommand, LoadLayoutCommandExecute,
+                LoadLayoutCommandCanExecute));
             gg_loadLayout.Command = LoadLayoutCommand;
 
             gg_but_relayout.Command = new SimpleCommand(GGRelayoutCommandCanExecute, GgRelayoutCommandExecute);
@@ -174,14 +194,14 @@ namespace ShowcaseApp.WPF.Pages
 
         #endregion
 
-        void gg_async_Checked(object sender, RoutedEventArgs e)
+        private void gg_async_Checked(object sender, RoutedEventArgs e)
         {
             gg_Area.LogicCore.AsyncAlgorithmCompute = gg_async.IsChecked != null;
         }
 
         private void gg_saveAsPngImage_Click(object sender, RoutedEventArgs e)
         {
-            gg_Area.ExportAsImageDialog(ImageType.PNG, true, 96D, 100);
+            gg_Area.ExportAsImageDialog(ImageType.PNG, true);
         }
 
         private void gg_printlay_Click(object sender, RoutedEventArgs e)
@@ -191,7 +211,8 @@ namespace ShowcaseApp.WPF.Pages
 
         private void gg_vertexCount_PreviewTextInput(object sender, TextCompositionEventArgs e)
         {
-            e.Handled = CustomHelper.IsIntegerInput(e.Text) && Convert.ToInt32(e.Text) <= ShowcaseHelper.DATASOURCE_SIZE;
+            e.Handled = CustomHelper.IsIntegerInput(e.Text) &&
+                        Convert.ToInt32(e.Text) <= ShowcaseHelper.DATASOURCE_SIZE;
         }
 
         private void gg_layalgo_SelectionChanged(object sender, SelectionChangedEventArgs e)
@@ -200,7 +221,9 @@ namespace ShowcaseApp.WPF.Pages
             gg_Area.LogicCore.DefaultLayoutAlgorithm = late;
             if (late == LayoutAlgorithmTypeEnum.EfficientSugiyama)
             {
-                var prms = gg_Area.LogicCore.AlgorithmFactory.CreateLayoutParameters(LayoutAlgorithmTypeEnum.EfficientSugiyama) as EfficientSugiyamaLayoutParameters;
+                var prms =
+                    gg_Area.LogicCore.AlgorithmFactory.CreateLayoutParameters(LayoutAlgorithmTypeEnum.EfficientSugiyama)
+                        as EfficientSugiyamaLayoutParameters;
                 prms.EdgeRouting = SugiyamaEdgeRoutings.Orthogonal;
                 prms.LayerDistance = prms.VertexDistance = 100;
                 gg_Area.LogicCore.EdgeCurvingEnabled = false;
@@ -211,6 +234,7 @@ namespace ShowcaseApp.WPF.Pages
             {
                 gg_Area.LogicCore.EdgeCurvingEnabled = true;
             }
+
             if (late == LayoutAlgorithmTypeEnum.BoundedFR)
                 gg_Area.LogicCore.DefaultLayoutAlgorithmParams
                     = gg_Area.LogicCore.AlgorithmFactory.CreateLayoutParameters(LayoutAlgorithmTypeEnum.BoundedFR);
@@ -223,7 +247,8 @@ namespace ShowcaseApp.WPF.Pages
         {
             if (gg_useExternalLayAlgo.IsChecked == true)
             {
-                var graph = gg_Area.LogicCore.Graph ?? ShowcaseHelper.GenerateDataGraph(Convert.ToInt32(gg_vertexCount.Text));
+                var graph = gg_Area.LogicCore.Graph ??
+                            ShowcaseHelper.GenerateDataGraph(Convert.ToInt32(gg_vertexCount.Text));
                 gg_Area.LogicCore.Graph = graph;
                 AssignExternalLayoutAlgorithm(graph);
             }
@@ -232,14 +257,16 @@ namespace ShowcaseApp.WPF.Pages
 
         private void AssignExternalLayoutAlgorithm(BidirectionalGraph<DataVertex, DataEdge> graph)
         {
-            gg_Area.LogicCore.ExternalLayoutAlgorithm = gg_Area.LogicCore.AlgorithmFactory.CreateLayoutAlgorithm(LayoutAlgorithmTypeEnum.ISOM, graph);
+            gg_Area.LogicCore.ExternalLayoutAlgorithm =
+                gg_Area.LogicCore.AlgorithmFactory.CreateLayoutAlgorithm(LayoutAlgorithmTypeEnum.ISOM, graph);
         }
 
         private void gg_oralgo_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
             var core = gg_Area.LogicCore;
             core.DefaultOverlapRemovalAlgorithm = (OverlapRemovalAlgorithmTypeEnum)gg_oralgo.SelectedItem;
-            if (core.DefaultOverlapRemovalAlgorithm == OverlapRemovalAlgorithmTypeEnum.FSA || core.DefaultOverlapRemovalAlgorithm == OverlapRemovalAlgorithmTypeEnum.OneWayFSA)
+            if (core.DefaultOverlapRemovalAlgorithm == OverlapRemovalAlgorithmTypeEnum.FSA ||
+                core.DefaultOverlapRemovalAlgorithm == OverlapRemovalAlgorithmTypeEnum.OneWayFSA)
             {
                 core.DefaultOverlapRemovalAlgorithmParams.HorizontalGap = 30;
                 core.DefaultOverlapRemovalAlgorithmParams.VerticalGap = 30;
@@ -248,21 +275,25 @@ namespace ShowcaseApp.WPF.Pages
 
         private void gg_useExternalORAlgo_Checked(object sender, RoutedEventArgs e)
         {
-            gg_Area.LogicCore.ExternalOverlapRemovalAlgorithm = gg_useExternalORAlgo.IsChecked == true ? gg_Area.LogicCore.AlgorithmFactory.CreateOverlapRemovalAlgorithm(OverlapRemovalAlgorithmTypeEnum.FSA, null) : null;
+            gg_Area.LogicCore.ExternalOverlapRemovalAlgorithm = gg_useExternalORAlgo.IsChecked == true
+                ? gg_Area.LogicCore.AlgorithmFactory.CreateOverlapRemovalAlgorithm(OverlapRemovalAlgorithmTypeEnum.FSA,
+                    null)
+                : null;
         }
 
         private void gg_eralgo_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
             gg_Area.LogicCore.DefaultEdgeRoutingAlgorithm = (EdgeRoutingAlgorithmTypeEnum)gg_eralgo.SelectedItem;
-            if ((EdgeRoutingAlgorithmTypeEnum) gg_eralgo.SelectedItem == EdgeRoutingAlgorithmTypeEnum.Bundling)
+            if ((EdgeRoutingAlgorithmTypeEnum)gg_eralgo.SelectedItem == EdgeRoutingAlgorithmTypeEnum.Bundling)
             {
-                BundleEdgeRoutingParameters prm = new BundleEdgeRoutingParameters();
+                var prm = new BundleEdgeRoutingParameters();
                 gg_Area.LogicCore.DefaultEdgeRoutingAlgorithmParams = prm;
                 prm.Iterations = 200;
                 prm.SpringConstant = 5;
                 prm.Threshold = .1f;
                 gg_Area.LogicCore.EdgeCurvingEnabled = true;
-            }else 
+            }
+            else
                 gg_Area.LogicCore.EdgeCurvingEnabled = false;
         }
 
@@ -270,14 +301,17 @@ namespace ShowcaseApp.WPF.Pages
         {
             if (gg_useExternalERAlgo.IsChecked == true)
             {
-                var graph = gg_Area.LogicCore.Graph ?? ShowcaseHelper.GenerateDataGraph(Convert.ToInt32(gg_vertexCount.Text));
+                var graph = gg_Area.LogicCore.Graph ??
+                            ShowcaseHelper.GenerateDataGraph(Convert.ToInt32(gg_vertexCount.Text));
                 gg_Area.LogicCore.Graph = graph;
-                gg_Area.GetLogicCore<LogicCoreExample>().ExternalEdgeRoutingAlgorithm = gg_Area.LogicCore.AlgorithmFactory.CreateEdgeRoutingAlgorithm(EdgeRoutingAlgorithmTypeEnum.SimpleER, new Rect(gg_Area.DesiredSize.ToGraphX()), graph, null, null);
+                gg_Area.GetLogicCore<LogicCoreExample>().ExternalEdgeRoutingAlgorithm =
+                    gg_Area.LogicCore.AlgorithmFactory.CreateEdgeRoutingAlgorithm(EdgeRoutingAlgorithmTypeEnum.SimpleER,
+                        new Rect(gg_Area.DesiredSize.ToGraphX()), graph, null, null);
             }
             else gg_Area.GetLogicCore<LogicCoreExample>().ExternalEdgeRoutingAlgorithm = null;
         }
 
-        void gg_Area_RelayoutFinished(object sender, EventArgs e)
+        private void gg_Area_RelayoutFinished(object sender, EventArgs e)
         {
             if (gg_Area.LogicCore.AsyncAlgorithmCompute)
                 gg_loader.Visibility = Visibility.Collapsed;
@@ -288,9 +322,9 @@ namespace ShowcaseApp.WPF.Pages
         /// <summary>
         /// Use this event in case we have chosen async computation
         /// </summary>
-        void gg_Area_GenerateGraphFinished(object sender, EventArgs e)
+        private void gg_Area_GenerateGraphFinished(object sender, EventArgs e)
         {
-            if(!gg_Area.EdgesList.Any())
+            if (!gg_Area.EdgesList.Any())
                 gg_Area.GenerateAllEdges();
             if (gg_Area.LogicCore.AsyncAlgorithmCompute)
                 gg_loader.Visibility = Visibility.Collapsed;
@@ -319,6 +353,7 @@ namespace ShowcaseApp.WPF.Pages
                     graph = ShowcaseHelper.GenerateDataGraph(Convert.ToInt32(gg_vertexCount.Text), true, mult);
                     break;
             }
+
             //add self loop
             graph.AddEdge(new DataEdge(graph.Vertices.First(), graph.Vertices.First()));
 

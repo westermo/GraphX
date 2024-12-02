@@ -15,15 +15,13 @@ namespace Westermo.GraphX.Logic.Algorithms.EdgeRouting
         where TEdge : class, IGraphXEdge<TVertex>
         where TVertex : class, IGraphXVertex
     {
-        public SimpleEdgeRouting(TGraph graph, IDictionary<TVertex, Point> vertexPositions, IDictionary<TVertex, Rect> vertexSizes, IEdgeRoutingParameters parameters = null)
+        public SimpleEdgeRouting(TGraph graph, IDictionary<TVertex, Point> vertexPositions,
+            IDictionary<TVertex, Rect> vertexSizes, IEdgeRoutingParameters parameters = null)
             : base(graph, vertexPositions, vertexSizes, parameters)
         {
-            var erParameters = parameters as SimpleERParameters;
-            if (erParameters != null)
-            {
-                drawback_distance = erParameters.BackStep;
-                side_distance = erParameters.SideStep;
-            }
+            if (parameters is not SimpleERParameters erParameters) return;
+            drawback_distance = erParameters.BackStep;
+            side_distance = erParameters.SideStep;
         }
 
         public override void UpdateVertexData(TVertex vertex, Point position, Rect size)
@@ -35,7 +33,7 @@ namespace Westermo.GraphX.Logic.Algorithms.EdgeRouting
         public override Point[] ComputeSingle(TEdge edge)
         {
             EdgeRoutingTest(edge, CancellationToken.None);
-            return EdgeRoutes.ContainsKey(edge) ? EdgeRoutes[edge] : null;
+            return EdgeRoutes.TryGetValue(edge, value: out var route) ? route : null;
         }
 
         public override void Compute(CancellationToken cancellationToken)
@@ -45,14 +43,16 @@ namespace Westermo.GraphX.Logic.Algorithms.EdgeRouting
                 EdgeRoutingTest(item, cancellationToken);
         }
 
-        double drawback_distance = 10;
-        double side_distance = 5;
-        double vertex_margin_distance = 35;
+        private readonly double drawback_distance = 10;
+        private readonly double side_distance = 5;
+        private readonly double vertex_margin_distance = 35;
 
         private IDictionary<TVertex, KeyValuePair<TVertex, Rect>> getSizesCollection(TEdge ctrl, Point end_point)
         {
-            var list = VertexSizes.Where(a => a.Key.ID != ctrl.Source.ID && a.Key.ID != ctrl.Target.ID).OrderByDescending(a => GetDistance(VertexPositions[a.Key], end_point)).ToDictionary(a => a.Key); // new Dictionary<TVertex, Rect>();
-            foreach ( var item in list.Values)
+            var list = VertexSizes.Where(a => a.Key.ID != ctrl.Source.ID && a.Key.ID != ctrl.Target.ID)
+                .OrderByDescending(a => GetDistance(VertexPositions[a.Key], end_point))
+                .ToDictionary(a => a.Key); // new Dictionary<TVertex, Rect>();
+            foreach (var item in list.Values)
                 item.Value.Inflate(vertex_margin_distance * 2, vertex_margin_distance * 2);
             return list;
         }
@@ -61,25 +61,24 @@ namespace Westermo.GraphX.Logic.Algorithms.EdgeRouting
         {
             //bad edge data check
             if (ctrl.Source.ID == -1 || ctrl.Target.ID == -1)
-                throw new GX_InvalidDataException("SimpleEdgeRouting() -> You must assign unique ID for each vertex to use SimpleER algo!");
-            if (ctrl.Source.ID == ctrl.Target.ID || !VertexSizes.ContainsKey(ctrl.Source) || !VertexSizes.ContainsKey(ctrl.Target)) return;
-
-			var ss = VertexSizes[ctrl.Source];
-			var es = VertexSizes[ctrl.Target];
+                throw new GX_InvalidDataException(
+                    "SimpleEdgeRouting() -> You must assign unique ID for each vertex to use SimpleER algo!");
+            if (ctrl.Source.ID == ctrl.Target.ID ||
+                !VertexSizes.TryGetValue(ctrl.Source, out var ss) ||
+                !VertexSizes.TryGetValue(ctrl.Target, out var es)) return;
             var startPoint = new Point(ss.X + ss.Width * 0.5, ss.Y + ss.Height * 0.5);
             var endPoint = new Point(es.X + es.Width * 0.5, es.Y + es.Height * 0.5);
 
-			if (startPoint == endPoint) return;
+            if (startPoint == endPoint) return;
 
             var originalSizes = getSizesCollection(ctrl, endPoint);
             var checklist = new Dictionary<TVertex, KeyValuePair<TVertex, Rect>>(originalSizes);
             var leftSizes = new Dictionary<TVertex, KeyValuePair<TVertex, Rect>>(originalSizes);
 
 
-            var tempList = new List<Point>();
-            tempList.Add(startPoint);
+            var tempList = new List<Point> { startPoint };
 
-            bool haveIntersections = true;
+            var haveIntersections = true;
 
             //while we have some intersections - proceed
             while (haveIntersections)
@@ -98,101 +97,107 @@ namespace Westermo.GraphX.Logic.Algorithms.EdgeRouting
                         haveIntersections = false;
                         break;
                     }
-                    else
+
+                    var r = originalSizes[item].Value;
+                    Point checkpoint;
+                    //check for intersection point. if none found - remove vertex from checklist
+                    if (GetIntersectionPoint(r, startPoint, endPoint, out checkpoint) == -1)
                     {
-                        var r = originalSizes[item].Value;
-                        Point checkpoint;
-                        //check for intersection point. if none found - remove vertex from checklist
-                        if (GetIntersectionPoint(r, startPoint, endPoint, out checkpoint) == -1)
+                        checklist.Remove(item);
+                        continue;
+                    }
+
+                    var mainVector = new Vector(endPoint.X - startPoint.X, endPoint.Y - startPoint.Y);
+                    double X;
+                    //calculate drawback X coordinate
+                    if (Math.Abs(startPoint.X - checkpoint.X) < curDrawback)
+                        X = startPoint.X;
+                    else if (startPoint.X < checkpoint.X) X = checkpoint.X - curDrawback;
+                    else X = checkpoint.X + curDrawback;
+                    //calculate drawback Y coordinate
+                    double Y;
+                    if (Math.Abs(startPoint.Y - checkpoint.Y) < curDrawback)
+                        Y = startPoint.Y;
+                    else if (startPoint.Y < checkpoint.Y) Y = checkpoint.Y - curDrawback;
+                    else Y = checkpoint.Y + curDrawback;
+                    //set drawback checkpoint
+                    checkpoint = new Point(X, Y);
+                    var isStartPoint = checkpoint == startPoint;
+
+                    var routeFound = false;
+                    var viceVersa = false;
+                    var counter = 1;
+                    var joint = new Point();
+                    bool? blocked_direction = null;
+                    while (!routeFound)
+                    {
+                        cancellationToken.ThrowIfCancellationRequested();
+
+                        //choose opposite vector side each cycle
+                        var signedDistance = viceVersa ? side_distance : -side_distance;
+                        //get new point coordinate
+                        joint = new Point(
+                            checkpoint.X + signedDistance * counter * (mainVector.Y / mainVector.Length),
+                            checkpoint.Y - signedDistance * counter * (mainVector.X / mainVector.Length));
+
+                        //now check if new point is in some other vertex
+                        var iresult = false;
+                        var forcedBreak = false;
+                        if (originalSizes.Any(sz => sz.Value.Value.Contains(joint)))
                         {
-                            checklist.Remove(item); continue;
-                        }
-                        var mainVector = new Vector(endPoint.X - startPoint.X, endPoint.Y - startPoint.Y);
-                        double X = 0; double Y = 0;
-                        //calculate drawback X coordinate
-                        if (startPoint.X == checkpoint.X || Math.Abs(startPoint.X - checkpoint.X) < curDrawback) X = startPoint.X;
-                        else if (startPoint.X < checkpoint.X) X = checkpoint.X - curDrawback;
-                        else X = checkpoint.X + curDrawback;
-                        //calculate drawback Y coordinate
-                        if (startPoint.Y == checkpoint.Y || Math.Abs(startPoint.Y - checkpoint.Y) < curDrawback) Y = startPoint.Y;
-                        else if (startPoint.Y < checkpoint.Y) Y = checkpoint.Y - curDrawback;
-                        else Y = checkpoint.Y + curDrawback;
-                        //set drawback checkpoint
-                        checkpoint = new Point(X, Y);
-                        bool isStartPoint = checkpoint == startPoint;
-
-                        bool routeFound = false;
-                        bool viceversa = false;
-                        int counter = 1;
-                        var joint = new Point();
-                        bool? blocked_direction = null;
-                        while (!routeFound)
-                        {
-                            cancellationToken.ThrowIfCancellationRequested();
-
-                            //choose opposite vector side each cycle
-                            var signedDistance = viceversa ? side_distance : -side_distance;
-                            //get new point coordinate
-                            joint = new Point(
-                                 checkpoint.X + signedDistance * counter * (mainVector.Y / mainVector.Length),
-                                 checkpoint.Y - signedDistance * counter * (mainVector.X / mainVector.Length));
-
-                            //now check if new point is in some other vertex
-                            var iresult = false;
-                            var forcedBreak = false;
-                            if (originalSizes.Any(sz => sz.Value.Value.Contains(joint))) 
-                            {
-                                iresult = true;
-                                //block this side direction
-                                if (blocked_direction == null)
-                                    blocked_direction = viceversa;
-                                else
-                                {
-                                    //both sides blocked - need to drawback
-                                    forcedBreak = true;
-                                }
-                            }
-                            if (forcedBreak) break;
-
-                            //get vector intersection if its ok
-                            if(!iresult) iresult = IsIntersected(r, joint, endPoint);
-                            
-                            //if no vector intersection - we've found it!
-                            if (!iresult)
-                            {
-                                routeFound = true;
-                                blocked_direction = null;
-                            }
+                            iresult = true;
+                            //block this side direction
+                            if (blocked_direction == null)
+                                blocked_direction = viceVersa;
                             else
                             {
-                                //still have an intersection with current vertex
-                                haveIntersections = true;
-                                //skip point search if too many attempts was made (bad logic hack)
-                                if (counter > 300) break;
-                                counter++;
-                                //switch vector search side
-                                if (blocked_direction == null || (blocked_direction == viceversa))
-                                    viceversa = !viceversa;
+                                //both sides blocked - need to drawback
+                                forcedBreak = true;
                             }
                         }
 
-                        //if blocked and this is not start point (nowhere to drawback) - then increase drawback distance
-                        if (blocked_direction != null && !isStartPoint)
+                        if (forcedBreak) break;
+
+                        //get vector intersection if its ok
+                        if (!iresult) iresult = IsIntersected(r, joint, endPoint);
+
+                        //if no vector intersection - we've found it!
+                        if (!iresult)
                         {
-                            //search has been blocked - need to drawback
-                            curDrawback += drawback_distance;
+                            routeFound = true;
+                            blocked_direction = null;
                         }
                         else
                         {
-                            //add new route point if we found it
-                            // if(routeFound) 
-                            tempList.Add(joint);
-                            leftSizes.Remove(item);
+                            //still have an intersection with current vertex
+                            haveIntersections = true;
+                            //skip point search if too many attempts was made (bad logic hack)
+                            if (counter > 300) break;
+                            counter++;
+                            //switch vector search side
+                            if (blocked_direction == null || blocked_direction == viceVersa)
+                                viceVersa = !viceVersa;
                         }
                     }
+
+                    //if blocked and this is not start point (nowhere to drawback) - then increase drawback distance
+                    if (blocked_direction != null && !isStartPoint)
+                    {
+                        //search has been blocked - need to drawback
+                        curDrawback += drawback_distance;
+                    }
+                    else
+                    {
+                        //add new route point if we found it
+                        // if(routeFound) 
+                        tempList.Add(joint);
+                        leftSizes.Remove(item);
+                    }
+
                     //remove currently evaded obstacle vertex from the checklist
                     checklist.Remove(item);
                 }
+
                 //assign possible left vertices as a new checklist if any intersections was found
                 if (haveIntersections)
                     checklist = new Dictionary<TVertex, KeyValuePair<TVertex, Rect>>(leftSizes);
@@ -202,13 +207,11 @@ namespace Westermo.GraphX.Logic.Algorithms.EdgeRouting
             tempList.Add(endPoint);
 
 
-            if (EdgeRoutes.ContainsKey(ctrl))
-                EdgeRoutes[ctrl] = tempList.Count > 2 ? tempList.ToArray() : null;
-            else EdgeRoutes.Add(ctrl, tempList.Count > 2 ? tempList.ToArray() : null);
-
+            EdgeRoutes[ctrl] = tempList.Count > 2 ? [.. tempList] : null;
         }
 
         #region Math helper implementation
+
         public static Point GetCloserPoint(Point start, Point a, Point b)
         {
             var r1 = GetDistance(start, a);
@@ -218,12 +221,13 @@ namespace Westermo.GraphX.Logic.Algorithms.EdgeRouting
 
         public static double GetDistance(Point a, Point b)
         {
-            return ((a.X - b.X) * (a.X - b.X) + (a.Y - b.Y) * (a.Y - b.Y));
+            return (a.X - b.X) * (a.X - b.X) + (a.Y - b.Y) * (a.Y - b.Y);
         }
 
-        public static sides GetIntersectionData(Rect r, Point p)
+        public static Sides GetIntersectionData(Rect r, Point p)
         {
-            return new sides() { Left = p.X < r.Left, Right = p.X > r.Right, Bottom = p.Y > r.Bottom, Top = p.Y < r.Top };
+            return new Sides()
+                { Left = p.X < r.Left, Right = p.X > r.Right, Bottom = p.Y > r.Bottom, Top = p.Y < r.Top };
         }
 
         public static bool IsIntersected(Rect r, Point a, Point b)
@@ -244,7 +248,7 @@ namespace Westermo.GraphX.Logic.Algorithms.EdgeRouting
                     return false;
 
                 /* выбираем точку c с ненулевым кодом */
-                sides code;
+                Sides code;
                 Point c; /* одна из точек */
                 if (!codeA.IsInside())
                 {
@@ -268,7 +272,7 @@ namespace Westermo.GraphX.Logic.Algorithms.EdgeRouting
                 {
                     c.Y += (a.Y - b.Y) * (r.Right - c.X) / (a.X - b.X);
                     c.X = r.Right;
-                }/* если c ниже r, то передвигаем c на прямую y = r->y_min
+                } /* если c ниже r, то передвигаем c на прямую y = r->y_min
                     если c выше r, то передвигаем c на прямую y = r->y_max */
                 else if (code.Bottom)
                 {
@@ -293,12 +297,13 @@ namespace Westermo.GraphX.Logic.Algorithms.EdgeRouting
                     codeB = GetIntersectionData(r, b);
                 }
             }
+
             return true;
         }
 
         public static int GetIntersectionPoint(Rect r, Point a, Point b, out Point pt)
         {
-            sides code;
+            Sides code;
             Point c; /* одна из точек */
             var start = new Point(a.X, a.Y);
             /* код конечных точек отрезка */
@@ -338,7 +343,7 @@ namespace Westermo.GraphX.Logic.Algorithms.EdgeRouting
                 {
                     c.Y += (a.Y - b.Y) * (r.Right - c.X) / (a.X - b.X);
                     c.X = r.Right;
-                }/* если c ниже r, то передвигаем c на прямую y = r->y_min
+                } /* если c ниже r, то передвигаем c на прямую y = r->y_min
                     если c выше r, то передвигаем c на прямую y = r->y_max */
                 else if (code.Bottom)
                 {
@@ -363,11 +368,12 @@ namespace Westermo.GraphX.Logic.Algorithms.EdgeRouting
                     code_b = GetIntersectionData(r, b);
                 }
             }
+
             pt = GetCloserPoint(start, a, b);
             return 0;
         }
 
-        public sealed class sides
+        public sealed class Sides
         {
             public bool Left;
             public bool Right;
@@ -379,14 +385,13 @@ namespace Westermo.GraphX.Logic.Algorithms.EdgeRouting
                 return Left == false && Right == false && Top == false && Bottom == false;
             }
 
-            public bool SameSide(sides o)
+            public bool SameSide(Sides o)
             {
-                return (Left == true && o.Left == true) || (Right == true && o.Right == true) || (Top == true && o.Top == true)
-                    || (Bottom == true && o.Bottom == true);
+                return (Left && o.Left) || (Right && o.Right) || (Top && o.Top)
+                       || (Bottom && o.Bottom);
             }
         }
+
         #endregion
-
     }
-
 }

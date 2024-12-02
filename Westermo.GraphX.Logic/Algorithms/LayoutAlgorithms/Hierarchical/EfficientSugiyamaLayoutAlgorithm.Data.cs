@@ -9,23 +9,21 @@ namespace Westermo.GraphX.Logic.Algorithms.LayoutAlgorithms
         where TEdge : IEdge<TVertex>
         where TGraph : IVertexAndEdgeListGraph<TVertex, TEdge>, IMutableVertexAndEdgeSet<TVertex, TEdge>
     {
-        protected class SugiEdge : TaggedEdge<SugiVertex, TEdge>
+        protected class SugiEdge(TEdge originalEdge, SugiVertex source, SugiVertex target)
+            : TaggedEdge<SugiVertex, TEdge>(source, target, originalEdge)
         {
-            public SugiEdge(TEdge originalEdge, SugiVertex source, SugiVertex target)
-                : base(source, target, originalEdge) { }
-
             /// <summary>
             /// Gets the original edge of this SugiEdge.
             /// </summary>
-            public TEdge OriginalEdge { get { return this.Tag; } }
+            public TEdge OriginalEdge => Tag;
 
             /// <summary>
             /// Gets or sets that the edge is included in a 
             /// type 1 conflict as a non-inner segment (true) or not (false).
             /// </summary>
-            public bool Marked = false;
+            public bool Marked;
 
-            public bool TempMark = false;
+            public bool TempMark;
 
             public void SaveMarkedToTemp()
             {
@@ -65,7 +63,8 @@ namespace Westermo.GraphX.Logic.Algorithms.LayoutAlgorithms
 
             /* Used by horizontal assignment */
             public readonly Data[] Sinks = new Data[4];
-            public readonly double[] Shifts = new double[4] { double.PositiveInfinity, double.PositiveInfinity, double.PositiveInfinity, double.PositiveInfinity };
+            public readonly double[] Shifts = [double.PositiveInfinity, double.PositiveInfinity, double.PositiveInfinity, double.PositiveInfinity
+            ];
         }
 
         protected abstract class SugiVertex<TIVertex> : Data
@@ -89,12 +88,12 @@ namespace Westermo.GraphX.Logic.Algorithms.LayoutAlgorithms
         [DebuggerDisplay("{Type}: {OriginalVertex} - {Position} ; {MeasuredPosition} on layer {LayerIndex}")]
         protected class SugiVertex : SugiVertex<TVertex>
         {
-            public readonly double[] HorizontalPositions = new double[4] { double.NaN, double.NaN, double.NaN, double.NaN };
+            public readonly double[] HorizontalPositions = [double.NaN, double.NaN, double.NaN, double.NaN];
             public double HorizontalPosition = double.NaN;
             public double VerticalPosition = double.NaN;
             public readonly SugiVertex[] Roots = new SugiVertex[4];
             public readonly SugiVertex[] Aligns = new SugiVertex[4];
-            public readonly double[] BlockWidths = new double[4] { double.NaN, double.NaN, double.NaN, double.NaN };
+            public readonly double[] BlockWidths = [double.NaN, double.NaN, double.NaN, double.NaN];
             public int IndexInsideLayer;
             public int PermutationIndex;
             public int TempPosition;

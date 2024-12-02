@@ -2,8 +2,8 @@
 	xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" 
 	xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:po="http://schemas.microsoft.com/winfx/2006/xaml/presentation/options"
-    xmlns:local="clr-namespace:ShowcaseApp.WPF"
-    xmlns:controls="https://westermo.com/graphx/">
+    xmlns:controls="https://westermo.com/graphx/"
+    xmlns:models="clr-namespace:ShowcaseApp.WPF.Models">
 
     <LinearGradientBrush x:Key="NormalBrush" EndPoint="0.5,1" StartPoint="0.5,0" po:Freeze="true">
         <GradientStop Color="#FFFFFFFF" Offset="0"/>
@@ -25,7 +25,7 @@
 
     <SolidColorBrush x:Key="EdgeArrowBrush" Color="Black" po:Freeze="true" />
 
-    <local:ValueToEditorImageConverter x:Key="ImageConverter"/>
+    <models:ValueToEditorImageConverter x:Key="ImageConverter"/>
     
     <!-- VERTEX CONTROL -->
     <Style TargetType="{x:Type controls:VertexControl}">

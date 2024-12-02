@@ -21,10 +21,7 @@ namespace Westermo.GraphX.Logic.Algorithms.LayoutAlgorithms
         private double _maxWidth = double.PositiveInfinity;
         private double _maxHeight = double.PositiveInfinity;
 
-        protected override FRLayoutParametersBase DefaultParameters
-        {
-            get { return new FreeFRLayoutParameters(); }
-        }
+        protected override FRLayoutParametersBase DefaultParameters => new FreeFRLayoutParameters();
 
         #region Constructors
         public FRLayoutAlgorithm(TGraph visitedGraph)
@@ -62,7 +59,7 @@ namespace Westermo.GraphX.Logic.Algorithms.LayoutAlgorithms
             // Actual temperature of the 'mass'. Used for cooling.
             var minimalTemperature = Parameters.InitialTemperature*0.01;
             _temperature = Parameters.InitialTemperature;
-            for (int i = 0;
+            for (var i = 0;
                   i < Parameters._iterationLimit
                   && _temperature > minimalTemperature;
                   i++)
@@ -73,7 +70,7 @@ namespace Westermo.GraphX.Logic.Algorithms.LayoutAlgorithms
                 switch (Parameters._coolingFunction)
                 {
                     case FRCoolingFunction.Linear:
-                        _temperature *= (1.0 - i / (double)Parameters._iterationLimit);
+                        _temperature *= 1.0 - i / (double)Parameters._iterationLimit;
                         break;
                     case FRCoolingFunction.Exponential:
                         _temperature *= Parameters._lambda;
@@ -106,11 +103,11 @@ namespace Westermo.GraphX.Logic.Algorithms.LayoutAlgorithms
 
             #region Repulsive forces
             var force = new Vector(0, 0);
-            foreach (TVertex v in VisitedGraph.Vertices)
+            foreach (var v in VisitedGraph.Vertices)
             {
                 force.X = 0; force.Y = 0;
-                Point posV = VertexPositions[v];
-                foreach (TVertex u in VisitedGraph.Vertices)
+                var posV = VertexPositions[v];
+                foreach (var u in VisitedGraph.Vertices)
                 {
                     cancellationToken.ThrowIfCancellationRequested();
 
@@ -119,8 +116,8 @@ namespace Westermo.GraphX.Logic.Algorithms.LayoutAlgorithms
                         continue;
 
                     //calculating repulsive force
-                    Vector delta = posV - VertexPositions[u];
-                    double length = Math.Max(delta.Length, double.Epsilon);
+                    var delta = posV - VertexPositions[u];
+                    var length = Math.Max(delta.Length, double.Epsilon);
                     delta = delta / length * Parameters.ConstantOfRepulsion / length;
 
 					// Check for NaN
@@ -134,14 +131,14 @@ namespace Westermo.GraphX.Logic.Algorithms.LayoutAlgorithms
             #endregion
 
             #region Attractive forces
-            foreach (TEdge e in VisitedGraph.Edges)
+            foreach (var e in VisitedGraph.Edges)
             {
-                TVertex source = e.Source;
-                TVertex target = e.Target;
+                var source = e.Source;
+                var target = e.Target;
 
                 //vonzóerõ számítása a két pont közt
-                Vector delta = VertexPositions[source] - VertexPositions[target];
-                double length = Math.Max(delta.Length, double.Epsilon);
+                var delta = VertexPositions[source] - VertexPositions[target];
+                var length = Math.Max(delta.Length, double.Epsilon);
                 delta = delta / length * Math.Pow(length, 2) / Parameters.ConstantOfAttraction;
 
 				// Check for NaN
@@ -154,13 +151,13 @@ namespace Westermo.GraphX.Logic.Algorithms.LayoutAlgorithms
             #endregion
 
             #region Limit displacement
-            foreach (TVertex v in VisitedGraph.Vertices)
+            foreach (var v in VisitedGraph.Vertices)
             {
-                Point pos = VertexPositions[v];
+                var pos = VertexPositions[v];
 
                 //erõ limitálása a temperature-el
-                Vector delta = forces[v];
-                double length = Math.Max(delta.Length, double.Epsilon);
+                var delta = forces[v];
+                var length = Math.Max(delta.Length, double.Epsilon);
                 delta = delta / length * Math.Min(delta.Length, _temperature);
 
 				// Check for NaN

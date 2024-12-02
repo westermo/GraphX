@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using Westermo.GraphX.Common.Enums;
-using System.Windows.Data;
 using System.Windows;
 using System.Windows.Media;
 /* Code here is partially used from NodeXL (https://nodexl.codeplex.com/)
@@ -189,11 +188,11 @@ namespace Westermo.GraphX.Controls
             TryFreeze(oPathFigure);
             var oPathGeometry = new PathGeometry();
             oPathGeometry.Figures.Add(oPathFigure);
-           // FreezeIfFreezable(oPathGeometry);
+            // FreezeIfFreezable(oPathGeometry);
 
-            return (oPathGeometry);
+            return oPathGeometry;
         }
-        
+
         /// <summary>
         /// Try to freeze object 
         /// </summary>
@@ -221,19 +220,14 @@ namespace Westermo.GraphX.Controls
         /// <param name="angle">Vertex rotaion angle</param>
         public static Point GetEdgeEndpoint(Point source, Rect sourceSize, Point target, VertexShape shape, double angle = 0)
         {
-            switch (shape)
+            return shape switch
             {
-                case VertexShape.Circle:
-                    return GetEdgeEndpointOnCircle(source, Math.Max(sourceSize.Height, sourceSize.Width) * .5, target, angle);
-                case VertexShape.Ellipse:
-                    return GetEdgeEndpointOnEllipse(source, sourceSize.Width*.5, sourceSize.Height*.5, target, angle);
-                case VertexShape.Diamond:
-                    return GetEdgeEndpointOnDiamond(source, sourceSize.Width * .5, target);
-                case VertexShape.Triangle:
-                    return GetEdgeEndpointOnTriangle(source, sourceSize.Width * .5, target);
-                default:
-                    return GetEdgeEndpointOnRectangle(source, sourceSize, target, angle);
-            }
+                VertexShape.Circle => GetEdgeEndpointOnCircle(source, Math.Max(sourceSize.Height, sourceSize.Width) * .5, target, angle),
+                VertexShape.Ellipse => GetEdgeEndpointOnEllipse(source, sourceSize.Width * .5, sourceSize.Height * .5, target, angle),
+                VertexShape.Diamond => GetEdgeEndpointOnDiamond(source, sourceSize.Width * .5, target),
+                VertexShape.Triangle => GetEdgeEndpointOnTriangle(source, sourceSize.Width * .5, target),
+                _ => GetEdgeEndpointOnRectangle(source, sourceSize, target, angle),
+            };
         }
 
 
@@ -242,9 +236,9 @@ namespace Westermo.GraphX.Controls
             Debug.Assert(dVertexARadius >= 0);
 
             var dEdgeAngle = MathHelper.GetAngleBetweenPoints(oVertexALocation, oVertexBLocation);
-            var pt =  new Point(
-                oVertexALocation.X + (dVertexARadius * Math.Cos(dEdgeAngle)),
-                oVertexALocation.Y - (dVertexARadius * Math.Sin(dEdgeAngle))
+            var pt = new Point(
+                oVertexALocation.X + dVertexARadius * Math.Cos(dEdgeAngle),
+                oVertexALocation.Y - dVertexARadius * Math.Sin(dEdgeAngle)
                 );
             return pt;
         }
@@ -261,9 +255,9 @@ namespace Westermo.GraphX.Controls
             if (angle != 0)
                 dEdgeAngle = (dEdgeAngle.ToDegrees() + angle).ToRadians();
 
-            var pt =  new Point(
-                sourcePoint.X + (dVertexARadiusWidth * Math.Cos(dEdgeAngle)),
-                sourcePoint.Y - (dVertexARadiusHeight * Math.Sin(dEdgeAngle))
+            var pt = new Point(
+                sourcePoint.X + dVertexARadiusWidth * Math.Cos(dEdgeAngle),
+                sourcePoint.Y - dVertexARadiusHeight * Math.Sin(dEdgeAngle)
                 );
             if (angle != 0)
                 pt = MathHelper.RotatePoint(pt, oVertexALocation, angle);
@@ -362,13 +356,13 @@ namespace Westermo.GraphX.Controls
 
         public static Point GetEdgeEndpointOnRectangle(Point sourcePos, Rect sourceBounds, Point targetPos, double angle = 0)
         {
-            Func<Point, double, Point> rotate = (p, a) => angle == 0.0 ? p : MathHelper.RotatePoint(p, sourceBounds.Center(), a);
+            Point rotate(Point p, double a) => angle == 0.0 ? p : MathHelper.RotatePoint(p, sourceBounds.Center(), a);
 
-            var tgt_pt = rotate(targetPos, -angle);
+            var targetPoint = rotate(targetPos, -angle);
 
-            if (tgt_pt.X <= sourcePos.X)
+            if (targetPoint.X <= sourcePos.X)
             {
-                var leftSide = Intersects(sourcePos.ToVector(), tgt_pt.ToVector(), sourceBounds.TopLeft().ToVector(), sourceBounds.BottomLeft().ToVector());
+                var leftSide = Intersects(sourcePos.ToVector(), targetPoint.ToVector(), sourceBounds.TopLeft().ToVector(), sourceBounds.BottomLeft().ToVector());
                 if (leftSide.HasValue)
                 {
                     return rotate(new Point(leftSide.Value.X, leftSide.Value.Y), angle);
@@ -376,16 +370,16 @@ namespace Westermo.GraphX.Controls
             }
             else
             {
-                var rightSide = Intersects(sourcePos.ToVector(), tgt_pt.ToVector(), sourceBounds.TopRight().ToVector(), sourceBounds.BottomRight().ToVector());
+                var rightSide = Intersects(sourcePos.ToVector(), targetPoint.ToVector(), sourceBounds.TopRight().ToVector(), sourceBounds.BottomRight().ToVector());
                 if (rightSide.HasValue)
                 {
                     return rotate(new Point(rightSide.Value.X, rightSide.Value.Y), angle);
                 }
             }
 
-            if (tgt_pt.Y <= sourcePos.Y)
+            if (targetPoint.Y <= sourcePos.Y)
             {
-                var topSide = Intersects(sourcePos.ToVector(), tgt_pt.ToVector(), sourceBounds.TopLeft().ToVector(), sourceBounds.TopRight().ToVector());
+                var topSide = Intersects(sourcePos.ToVector(), targetPoint.ToVector(), sourceBounds.TopLeft().ToVector(), sourceBounds.TopRight().ToVector());
                 if (topSide.HasValue)
                 {
                     return rotate(new Point(topSide.Value.X, topSide.Value.Y), angle);
@@ -393,7 +387,7 @@ namespace Westermo.GraphX.Controls
             }
             else
             {
-                var bottomSide = Intersects(sourcePos.ToVector(), tgt_pt.ToVector(), sourceBounds.BottomLeft().ToVector(), sourceBounds.BottomRight().ToVector());
+                var bottomSide = Intersects(sourcePos.ToVector(), targetPoint.ToVector(), sourceBounds.BottomLeft().ToVector(), sourceBounds.BottomRight().ToVector());
                 if (bottomSide.HasValue)
                 {
                     return rotate(new Point(bottomSide.Value.X, bottomSide.Value.Y), angle);
@@ -412,11 +406,12 @@ namespace Westermo.GraphX.Controls
             var ov2 = p2 + v + n;
             var fig = new PathFigure
             {
-                StartPoint = ip2, Segments = new PathSegmentCollection
-                {
-                    new LineSegment {Point = new Point(ov1.X, ov1.Y)},
-                    new LineSegment {Point = new Point(ov2.X, ov2.Y)}
-                },
+                StartPoint = ip2,
+                Segments =
+                [
+                    new LineSegment { Point = new Point(ov1.X, ov1.Y) },
+                    new LineSegment { Point = new Point(ov2.X, ov2.Y) }
+                ],
                 IsClosed = true
             };
             TryFreeze(fig);
@@ -486,7 +481,7 @@ namespace Westermo.GraphX.Controls
             oMatrix.RotateAt(angleToRotateDegrees,
                 centerOfRotation.X, centerOfRotation.Y);
 
-            return (oMatrix);
+            return oMatrix;
         }
 
         public static PathFigure GetPathFigureFromPoints(Point startPoint, params Point[] otherPoints)
@@ -537,7 +532,7 @@ namespace Westermo.GraphX.Controls
             oPathGeometry.Figures.Add(oPathFigure);
             TryFreeze(oPathGeometry);
 
-            return (oPathGeometry);
+            return oPathGeometry;
         }
     }
 }

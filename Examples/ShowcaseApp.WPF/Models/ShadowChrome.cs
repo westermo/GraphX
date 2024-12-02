@@ -25,26 +25,26 @@ namespace ShowcaseApp.WPF.Models
         protected override void OnRender(DrawingContext drawingContext)
         {
             // Calculate the size of the shadow
-            double shadowSize = Math.Min(Margin.Right, Margin.Bottom);
+            var shadowSize = Math.Min(Margin.Right, Margin.Bottom);
             // If there is no shadow, or it is bigger than the size of the child, then just return
-            if (shadowSize <= 0 || this.ActualWidth < shadowSize * 2 || this.ActualHeight < shadowSize * 2)
+            if (shadowSize <= 0 || ActualWidth < shadowSize * 2 || ActualHeight < shadowSize * 2)
                 return;
             // Draw the background (this may show through rounded corners of the child object)
-            Rect backgroundRect = new Rect(shadowSize, shadowSize, this.ActualWidth - shadowSize, this.ActualHeight - shadowSize);
+            var backgroundRect = new Rect(shadowSize, shadowSize, ActualWidth - shadowSize, ActualHeight - shadowSize);
             drawingContext.DrawRectangle(backgroundBrush, null, backgroundRect);
             // Now draw the shadow gradients
-            Rect topRightRect = new Rect(this.ActualWidth, shadowSize, shadowSize, shadowSize);
+            var topRightRect = new Rect(ActualWidth, shadowSize, shadowSize, shadowSize);
             drawingContext.DrawRectangle(topRightBrush, null, topRightRect);
-            Rect rightRect = new Rect(this.ActualWidth, shadowSize * 2, shadowSize, this.ActualHeight - shadowSize * 2);
+            var rightRect = new Rect(ActualWidth, shadowSize * 2, shadowSize, ActualHeight - shadowSize * 2);
             drawingContext.DrawRectangle(rightBrush, null, rightRect);
 
-            Rect bottomRightRect = new Rect(this.ActualWidth, this.ActualHeight, shadowSize, shadowSize);
+            var bottomRightRect = new Rect(ActualWidth, ActualHeight, shadowSize, shadowSize);
             drawingContext.DrawRectangle(bottomRightBrush, null, bottomRightRect);
 
-            Rect bottomRect = new Rect(shadowSize * 2, this.ActualHeight, this.ActualWidth - shadowSize * 2, shadowSize);
+            var bottomRect = new Rect(shadowSize * 2, ActualHeight, ActualWidth - shadowSize * 2, shadowSize);
             drawingContext.DrawRectangle(bottomBrush, null, bottomRect);
 
-            Rect bottomLeftRect = new Rect(shadowSize, this.ActualHeight, shadowSize, shadowSize);
+            var bottomLeftRect = new Rect(shadowSize, ActualHeight, shadowSize, shadowSize);
             drawingContext.DrawRectangle(bottomLeftBrush, null, bottomLeftRect);
         }
 
@@ -53,12 +53,14 @@ namespace ShowcaseApp.WPF.Models
         private static void CreateBrushes()
         {
             // Get the colors for the shadow
-            Color shadowColor = Color.FromArgb(128, 0, 0, 0);
-            Color transparentColor = Color.FromArgb(16, 0, 0, 0);
+            var shadowColor = Color.FromArgb(128, 0, 0, 0);
+            var transparentColor = Color.FromArgb(16, 0, 0, 0);
             // Create a GradientStopCollection from these
-            GradientStopCollection gradient = new GradientStopCollection(2);
-            gradient.Add(new GradientStop(shadowColor, 0.5));
-            gradient.Add(new GradientStop(transparentColor, 1.0));
+            var gradient = new GradientStopCollection(2)
+            {
+                new GradientStop(shadowColor, 0.5),
+                new GradientStop(transparentColor, 1.0)
+            };
             gradient.Freeze();
             // Create the background brush
             backgroundBrush = new SolidColorBrush(shadowColor);

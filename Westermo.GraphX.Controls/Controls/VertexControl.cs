@@ -42,7 +42,7 @@ namespace Westermo.GraphX.Controls
             Vertex = vertexData;
 
             EventOptions = new VertexEventOptions(this) { PositionChangeNotification = tracePositionChange };
-            foreach (var item in Enum.GetValues(typeof(EventType)).Cast<EventType>())
+            foreach (var item in Enum.GetValues<EventType>().Cast<EventType>())
                 UpdateEventhandling(item);
         }
 
@@ -199,8 +199,8 @@ namespace Westermo.GraphX.Controls
 
         public event RoutedEventHandler Click
         {
-            add { AddHandler(ClickEvent, value); }
-            remove { RemoveHandler(ClickEvent, value); }
+            add => AddHandler(ClickEvent, value);
+            remove => RemoveHandler(ClickEvent, value);
         }
 
         #endregion Click Event
@@ -236,14 +236,13 @@ namespace Westermo.GraphX.Controls
 
             public object MonitorForChange
             {
-                get { return GetValue(MonitorForChangeProperty); }
-                set { SetValue(MonitorForChangeProperty, value); }
+                get => GetValue(MonitorForChangeProperty);
+                set => SetValue(MonitorForChangeProperty, value);
             }
 
             private static void MonitoredPropertyChanged(object source, DependencyPropertyChangedEventArgs args)
             {
-                var cm = source as ChangeMonitor;
-                if (cm == null)
+                if (source is not ChangeMonitor cm)
                 {
                     return;
                 }
@@ -265,7 +264,7 @@ namespace Westermo.GraphX.Controls
             base.OnApplyTemplate();
 
             if (Template == null) return;
-            VertexLabelControl = VertexLabelControl ?? FindDescendant<IVertexLabelControl>("PART_vertexLabel");
+            VertexLabelControl ??= FindDescendant<IVertexLabelControl>("PART_vertexLabel");
 
             VCPRoot ??= FindDescendant<Panel>("PART_vcproot");
 

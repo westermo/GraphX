@@ -13,12 +13,10 @@ using QuikGraph;
  */
 namespace ShowcaseApp.WPF
 {
-    public class ExampleExternalLayoutAlgorithm: IExternalLayout<DataVertex, DataEdge>
+    public class ExampleExternalLayoutAlgorithm(IMutableBidirectionalGraph<DataVertex, DataEdge> graph)
+        : IExternalLayout<DataVertex, DataEdge>
     {
-        public bool SupportsObjectFreeze
-        {
-            get { return true; }
-        }
+        public bool SupportsObjectFreeze => true;
 
         public void ResetGraph(IEnumerable<DataVertex> vertices, IEnumerable<DataEdge> edges)
         {
@@ -27,11 +25,7 @@ namespace ShowcaseApp.WPF
             _graph.AddEdgeRange(edges);
         }
 
-        private IMutableBidirectionalGraph<DataVertex, DataEdge> _graph;
-        public ExampleExternalLayoutAlgorithm(IMutableBidirectionalGraph<DataVertex, DataEdge> graph)
-        {
-            _graph = graph;
-        }
+        private IMutableBidirectionalGraph<DataVertex, DataEdge> _graph = graph;
 
         public void Compute(CancellationToken cancellationToken)
         {
@@ -45,17 +39,11 @@ namespace ShowcaseApp.WPF
             _vertexPositions = algo.VertexPositions;
         }
 
-        IDictionary<DataVertex, Point> _vertexPositions = new Dictionary<DataVertex, Point>();
-        public IDictionary<DataVertex, Point> VertexPositions
-        {
-            get { return _vertexPositions;  }
-        }
+        private IDictionary<DataVertex, Point> _vertexPositions = new Dictionary<DataVertex, Point>();
+        public IDictionary<DataVertex, Point> VertexPositions => _vertexPositions;
 
         public IDictionary<DataVertex, Size> VertexSizes { get; set; }
 
-        public bool NeedVertexSizes
-        {
-            get { return true; }
-        }
+        public bool NeedVertexSizes => true;
     }
 }

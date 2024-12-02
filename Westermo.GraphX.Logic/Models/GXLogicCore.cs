@@ -50,8 +50,8 @@ namespace Westermo.GraphX.Logic.Models
         /// <summary>
         /// Gets is LayoutAlgorithmTypeEnum.Custom (NOT external) layout selected and used. Custom layout used to manualy generate graph.
         /// </summary>
-        public bool IsCustomLayout { get { return DefaultLayoutAlgorithm == LayoutAlgorithmTypeEnum.Custom && ExternalLayoutAlgorithm == null; } }
-        
+        public bool IsCustomLayout => DefaultLayoutAlgorithm == LayoutAlgorithmTypeEnum.Custom && ExternalLayoutAlgorithm == null;
+
         /// <summary>
         /// Gets or sets external layout algorithm that will be used instead of the default one.
         /// Negates DefaultLayoutAlgorithm property value if set.
@@ -75,7 +75,8 @@ namespace Westermo.GraphX.Logic.Models
         /// Gets or sets default layout algorithm that will be used on graph generation/relayouting
         /// </summary>
         public LayoutAlgorithmTypeEnum DefaultLayoutAlgorithm { 
-            get { return _defaultLayoutAlgorithm; } set { _defaultLayoutAlgorithm = value; SetDefaultParams(0); } 
+            get => _defaultLayoutAlgorithm;
+            set { _defaultLayoutAlgorithm = value; SetDefaultParams(0); } 
         }
 
         private OverlapRemovalAlgorithmTypeEnum _defaultOverlapRemovalAlgorithm;
@@ -83,7 +84,7 @@ namespace Westermo.GraphX.Logic.Models
         /// Gets or sets default overlap removal algorithm that will be used on graph generation/relayouting
         /// </summary>
         public OverlapRemovalAlgorithmTypeEnum DefaultOverlapRemovalAlgorithm {
-            get { return _defaultOverlapRemovalAlgorithm; }
+            get => _defaultOverlapRemovalAlgorithm;
             set { _defaultOverlapRemovalAlgorithm = value; SetDefaultParams(1);}
         }
 
@@ -92,7 +93,8 @@ namespace Westermo.GraphX.Logic.Models
         /// Gets or sets default edge routing algorithm that will be used on graph generation/relayouting
         /// </summary>
         public EdgeRoutingAlgorithmTypeEnum DefaultEdgeRoutingAlgorithm { 
-            get { return _defaultEdgeRoutingAlgorithm; } set { _defaultEdgeRoutingAlgorithm = value; SetDefaultParams(2); } }
+            get => _defaultEdgeRoutingAlgorithm;
+            set { _defaultEdgeRoutingAlgorithm = value; SetDefaultParams(2); } }
 
         /// <summary>
         /// Gets or sets default layout algorithm parameters that will be used on graph generation/relayouting
@@ -138,7 +140,7 @@ namespace Westermo.GraphX.Logic.Models
         /// </summary>
         public void PushFilters()
         {
-            int i = 0;
+            var i = 0;
             IsFilterRemoved = false;
             //remember original graph if we're about to start filtering
             if (Filters.Count > 0 && !IsFiltered)
@@ -183,7 +185,7 @@ namespace Westermo.GraphX.Logic.Models
         /// Represents graph filters queue (FIFO)
         /// </summary>
         public Queue<IGraphFilter<TVertex, TEdge, TGraph>> Filters { get; set; } =
-            new Queue<IGraphFilter<TVertex, TEdge, TGraph>>();
+            new();
 
         /// <summary>
         /// Create default params if algorithm was changed and default params property is null
@@ -229,8 +231,8 @@ namespace Westermo.GraphX.Logic.Models
         /// </summary>
         public TGraph Graph
         {
-            get { return _graph; }
-            set { _graph = value; }
+            get => _graph;
+            set => _graph = value;
         }
 
         /// <summary>
@@ -253,13 +255,8 @@ namespace Westermo.GraphX.Logic.Models
         /// <summary>
         /// Gets if edge routing will be performed on Compute() method execution
         /// </summary>
-        public bool IsEdgeRoutingEnabled
-        {
-            get
-            {
-                return (ExternalEdgeRoutingAlgorithm == null && DefaultEdgeRoutingAlgorithm != EdgeRoutingAlgorithmTypeEnum.None) || ExternalEdgeRoutingAlgorithm != null;
-            }
-        }
+        public bool IsEdgeRoutingEnabled => (ExternalEdgeRoutingAlgorithm == null && DefaultEdgeRoutingAlgorithm != EdgeRoutingAlgorithmTypeEnum.None) || ExternalEdgeRoutingAlgorithm != null;
+
         #endregion
         #endregion
 
@@ -274,7 +271,7 @@ namespace Westermo.GraphX.Logic.Models
         }
 
         public GXLogicCore()
-            : this((TGraph)Activator.CreateInstance(typeof(TGraph)))
+            : this(Activator.CreateInstance<TGraph>())
         {
         }
 

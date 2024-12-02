@@ -8,11 +8,12 @@ namespace Westermo.GraphX.Logic.Algorithms.LayoutAlgorithms
         where TEdge : IEdge<TVertex>
         where TGraph : IVertexAndEdgeListGraph<TVertex, TEdge>, IMutableVertexAndEdgeSet<TVertex, TEdge>
 	{
-		private class SugiEdge : TypedEdge<SugiVertex>
+		private class SugiEdge(TEdge original, SugiVertex source, SugiVertex target, EdgeTypes type)
+			: TypedEdge<SugiVertex>(source, target, type)
 		{
 			public bool IsLongEdge
 			{
-				get { return DummyVertices != null; }
+				get => DummyVertices != null;
 				set
 				{
 					if ( IsLongEdge != value )
@@ -23,20 +24,8 @@ namespace Westermo.GraphX.Logic.Algorithms.LayoutAlgorithms
 			}
 
 			public IList<SugiVertex> DummyVertices { get; private set; }
-			public TEdge Original { get; private set; }
-			public bool IsReverted
-			{
-				get
-				{
-					return !Original.Equals(default(TEdge)) && Original.Source == Target.Original && Original.Target == Source.Original;
-				}
-			}
-
-			public SugiEdge( TEdge original, SugiVertex source, SugiVertex target, EdgeTypes type )
-				: base( source, target, type )
-			{
-				Original = original;
-			}
+			public TEdge Original { get; private set; } = original;
+			public bool IsReverted => !Original.Equals(default(TEdge)) && Original.Source == Target.Original && Original.Target == Source.Original;
 		}
 	}
 }

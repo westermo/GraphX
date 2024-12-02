@@ -18,7 +18,7 @@ namespace Westermo.GraphX.Logic.Algorithms.LayoutAlgorithms
         /// <summary>
         /// Gets if current algorithm supports vertex freeze feature (part of VAESPS)
         /// </summary>
-        public virtual bool SupportsObjectFreeze { get { return false; } }
+        public virtual bool SupportsObjectFreeze => false;
 
         /// <summary>
         /// Updates graph from plain vertices and edges. Needed for easier inter-algorithm calls for complex algorithms.
@@ -41,12 +41,9 @@ namespace Westermo.GraphX.Logic.Algorithms.LayoutAlgorithms
 
 	    public IDictionary<TVertex, Size> VertexSizes { get; set; }
 
-        public virtual bool NeedVertexSizes
-        {
-            get { return false; }
-        }
+        public virtual bool NeedVertexSizes => false;
 
-	    protected bool TryCreateNewGraph()
+        protected bool TryCreateNewGraph()
 	    {
 	        try
 	        {

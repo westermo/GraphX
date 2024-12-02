@@ -20,7 +20,7 @@ namespace Westermo.GraphX.Logic.Algorithms.LayoutAlgorithms
 		/// </summary>
 		internal int VertexCount
 		{
-			get { return _vertexCount; }
+			get => _vertexCount;
 			set
 			{
 				_vertexCount = value;
@@ -67,7 +67,7 @@ namespace Westermo.GraphX.Logic.Algorithms.LayoutAlgorithms
 		/// </summary>
 		public double AttractionMultiplier
 		{
-			get { return _attractionMultiplier; }
+			get => _attractionMultiplier;
 			set
 			{
 				_attractionMultiplier = value;
@@ -86,7 +86,7 @@ namespace Westermo.GraphX.Logic.Algorithms.LayoutAlgorithms
 		/// </summary>
 		public double RepulsiveMultiplier
 		{
-			get { return _repulsiveMultiplier; }
+			get => _repulsiveMultiplier;
 			set
 			{
 				_repulsiveMultiplier = value;
@@ -100,7 +100,7 @@ namespace Westermo.GraphX.Logic.Algorithms.LayoutAlgorithms
 		/// </summary>
 		public int IterationLimit
 		{
-			get { return _iterationLimit; }
+			get => _iterationLimit;
 			set
 			{
 				_iterationLimit = value;
@@ -113,7 +113,7 @@ namespace Westermo.GraphX.Logic.Algorithms.LayoutAlgorithms
 		/// </summary>
 		public double Lambda
 		{
-			get { return _lambda; }
+			get => _lambda;
 			set
 			{
 				_lambda = value;
@@ -126,7 +126,7 @@ namespace Westermo.GraphX.Logic.Algorithms.LayoutAlgorithms
 		/// </summary>
 		public FRCoolingFunction CoolingFunction
 		{
-			get { return _coolingFunction; }
+			get => _coolingFunction;
 			set
 			{
 				_coolingFunction = value;

@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
@@ -32,8 +31,8 @@ namespace Westermo.GraphX
         /// </summary>
         public LogicCoreChangedAction LogicCoreChangeAction
         {
-            get { return (LogicCoreChangedAction)GetValue(LogicCoreChangeActionProperty); }
-            set { SetValue(LogicCoreChangeActionProperty, value); }
+            get => (LogicCoreChangedAction)GetValue(LogicCoreChangeActionProperty);
+            set => SetValue(LogicCoreChangeActionProperty, value);
         }
 
         public static readonly DependencyProperty LogicCoreChangeActionProperty =
@@ -150,8 +149,8 @@ namespace Westermo.GraphX
         /// </summary>
         public object ExternalSettings
         {
-            get { return GetValue(ExternalSettingsProperty); }
-            set { SetValue(ExternalSettingsProperty, value); }
+            get => GetValue(ExternalSettingsProperty);
+            set => SetValue(ExternalSettingsProperty, value);
         }
         #endregion
 
@@ -162,8 +161,8 @@ namespace Westermo.GraphX
         /// </summary>
         public MoveAnimationBase? MoveAnimation
         {
-            get { return (MoveAnimationBase)GetValue(MoveAnimationProperty); }
-            set { SetValue(MoveAnimationProperty, value); }
+            get => (MoveAnimationBase)GetValue(MoveAnimationProperty);
+            set => SetValue(MoveAnimationProperty, value);
         }
 
         public static readonly DependencyProperty MoveAnimationProperty =
@@ -174,8 +173,8 @@ namespace Westermo.GraphX
         /// </summary>
         public IOneWayControlAnimation? DeleteAnimation
         {
-            get { return (IOneWayControlAnimation?)GetValue(DeleteAnimationProperty); }
-            set { SetValue(DeleteAnimationProperty, value); }
+            get => (IOneWayControlAnimation?)GetValue(DeleteAnimationProperty);
+            set => SetValue(DeleteAnimationProperty, value);
         }
 
         public static readonly DependencyProperty DeleteAnimationProperty =
@@ -194,7 +193,7 @@ namespace Westermo.GraphX
 
         }
 
-        static void GraphAreaBase_Completed(object sender, ControlEventArgs e)
+        private static void GraphAreaBase_Completed(object sender, ControlEventArgs e)
         {
             e.Control?.RootArea?.RemoveAnimatedControl(e.Control, e.RemoveDataObject);
         }
@@ -211,8 +210,8 @@ namespace Westermo.GraphX
         /// </summary>
         public IBidirectionalControlAnimation? MouseOverAnimation
         {
-            get { return (IBidirectionalControlAnimation)GetValue(MouseOverAnimationProperty); }
-            set { SetValue(MouseOverAnimationProperty, value); }
+            get => (IBidirectionalControlAnimation)GetValue(MouseOverAnimationProperty);
+            set => SetValue(MouseOverAnimationProperty, value);
         }
 
         public static readonly DependencyProperty MouseOverAnimationProperty =
@@ -227,7 +226,7 @@ namespace Westermo.GraphX
 
         #region Child EVENTS
 
-        internal static readonly Size DesignSize = new Size(70, 25);
+        internal static readonly Size DesignSize = new(70, 25);
 
         /// <summary>
         /// Fires when ContentSize property is changed
@@ -486,7 +485,7 @@ namespace Westermo.GraphX
         /// Gets the size of the GraphArea taking into account positions of the children
         /// This is the main size pointer. Don't use DesiredSize or ActualWidth props as they are simulated.
         /// </summary>
-        public Rect ContentSize => new Rect(_topLeft, _bottomRight);
+        public Rect ContentSize => new(_topLeft, _bottomRight);
 
         /// <summary>
         /// Translation of the GraphArea object
@@ -553,7 +552,7 @@ namespace Westermo.GraphX
                 child.Arrange(new Rect(x, y, child.DesiredSize.Width, child.DesiredSize.Height));
             }
 
-            return DesignerProperties.GetIsInDesignMode(this) ? DesignSize : (IsInPrintMode ? ContentSize.Size : new Size(10, 10));
+            return DesignerProperties.GetIsInDesignMode(this) ? DesignSize : IsInPrintMode ? ContentSize.Size : new Size(10, 10);
         }
 
         /// <summary>
@@ -581,10 +580,8 @@ namespace Westermo.GraphX
 
                 if (double.IsNaN(left) || double.IsNaN(top))
                 {
-                    var ec = child as EdgeControl;
-                    if (!COUNT_ROUTE_PATHS || ec == null) continue;
-                    var routingInfo = ec.Edge as IRoutingInfo;
-                    if (routingInfo == null) continue;
+                    if (!COUNT_ROUTE_PATHS || child is not EdgeControl ec) continue;
+                    if (ec.Edge is not IRoutingInfo routingInfo) continue;
                     var rps = routingInfo.RoutingPoints;
                     if (rps == null) continue;
                     foreach (var item in rps)
@@ -618,7 +615,7 @@ namespace Westermo.GraphX
             var newSize = ContentSize;
             if (oldSize != newSize)
                 OnContentSizeChanged(oldSize, newSize);
-            return DesignerProperties.GetIsInDesignMode(this) ? DesignSize : (IsInPrintMode ? ContentSize.Size : new Size(10, 10));
+            return DesignerProperties.GetIsInDesignMode(this) ? DesignSize : IsInPrintMode ? ContentSize.Size : new Size(10, 10);
         }
         #endregion
 

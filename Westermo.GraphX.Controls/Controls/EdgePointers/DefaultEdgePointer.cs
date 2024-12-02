@@ -52,8 +52,8 @@ namespace Westermo.GraphX.Controls
         /// <inheritdoc />
         public bool NeedRotation
         {
-            get { return (bool)GetValue(NeedRotationProperty); }
-            set { SetValue(NeedRotationProperty, value); }
+            get => (bool)GetValue(NeedRotationProperty);
+            set => SetValue(NeedRotationProperty, value);
         }
 
         /// <inheritdoc />
@@ -64,12 +64,12 @@ namespace Westermo.GraphX.Controls
 
         public void Show()
         {
-            SetCurrentValue(UIElement.VisibilityProperty, Visibility.Visible);
+            SetCurrentValue(VisibilityProperty, Visibility.Visible);
         }
 
         public void Hide()
         {
-            SetCurrentValue(UIElement.VisibilityProperty, Visibility.Collapsed);
+            SetCurrentValue(VisibilityProperty, Visibility.Collapsed);
         }
 
 		/// <summary>
@@ -98,8 +98,8 @@ namespace Westermo.GraphX.Controls
 		/// </summary>
 		public bool IsSuppressed
 		{
-			get { return (bool)GetValue(IsSuppressedProperty); }
-			private set { SetValue(IsSuppressedPropertyKey, value); }
+			get => (bool)GetValue(IsSuppressedProperty);
+			private set => SetValue(IsSuppressedPropertyKey, value);
 		}
 
 		/// <summary>
@@ -117,8 +117,7 @@ namespace Westermo.GraphX.Controls
 		/// </summary>
 		private static object CoerceVisibility(DependencyObject d, object baseValue)
 		{
-			var ecb = d as DefaultEdgePointer;
-			if (ecb == null || !ecb.IsSuppressed)
+			if (d is not DefaultEdgePointer ecb || !ecb.IsSuppressed)
 				return baseValue;
 
 			return Visibility.Collapsed;
@@ -186,14 +185,14 @@ namespace Westermo.GraphX.Controls
             _edgeControl = null;
         }
 
-        void EdgePointer_LayoutUpdated(object? sender, DefaultEventArgs e)
+        private void EdgePointer_LayoutUpdated(object? sender, DefaultEventArgs e)
         {
             if (LastKnownRectSize != Rect.Empty && !double.IsNaN(LastKnownRectSize.Width) && LastKnownRectSize.Width != 0
                 && EdgeControl != null)
                 Arrange(LastKnownRectSize);
         }
 
-        DependencyObject GetParent()
+        private DependencyObject GetParent()
         {
             return VisualParent;
         }

@@ -40,7 +40,7 @@ namespace Westermo.GraphX.Controls
             }
 
             var childCount = VisualTreeHelper.GetChildrenCount(element);
-            for (int i = 0; i < childCount; i++)
+            for (var i = 0; i < childCount; i++)
             {
                 var result = (VisualTreeHelper.GetChild(element, i) as FrameworkElement).FindDescendantByName(name);
                 if (result != null) { return result; }

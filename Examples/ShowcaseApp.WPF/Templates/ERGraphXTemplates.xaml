@@ -2,8 +2,8 @@
 	xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" 
 	xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:controls="https://westermo.com/graphx/"
-    xmlns:wpf="clr-namespace:ShowcaseApp.WPF">
-    <wpf:ValueToImageConverter x:Key="ValueToImage"/>
+    xmlns:models="clr-namespace:ShowcaseApp.WPF.Models">
+    <models:ValueToImageConverter x:Key="ValueToImage"/>
 
     <!-- VERTEX CONTROL -->
     <Style TargetType="{x:Type controls:VertexControl}">

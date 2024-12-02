@@ -25,7 +25,7 @@ namespace Westermo.GraphX.Logic.Algorithms.LayoutAlgorithms
             Contract.Invariant(_treeGrowingStep > 0);
         }*/
 
-        private double _temperature = 0;
+        private double _temperature;
         //private double _temperatureDelta; //need to be initialized
         private const double TEMPERATURE_LAMBDA = 0.99;
 
@@ -43,7 +43,7 @@ namespace Westermo.GraphX.Logic.Algorithms.LayoutAlgorithms
         /// <summary>
         /// The maximal iteration count in the phases.
         /// </summary>
-        private /*readonly*/ int[] _maxIterationCounts = new int[3] { 30, 70, 50 };
+        private /*readonly*/ int[] _maxIterationCounts = [30, 70, 50];
 
         /// <summary>
         /// The error thresholds for the phases (calculated inside the Init method).
@@ -54,15 +54,12 @@ namespace Westermo.GraphX.Logic.Algorithms.LayoutAlgorithms
         /// Indicates whether the removed tree-node 
         /// has been grown back or not.
         /// </summary>
-        private bool _allTreesGrown
-        {
-            get { return _removedRootTreeNodeLevels.Count == 0; }
-        }
+        private bool _allTreesGrown => _removedRootTreeNodeLevels.Count == 0;
 
         /// <summary>
         /// Grows back a tree-node level in every 'treeGrowingStep'th step.
         /// </summary>
-        private int _treeGrowingStep = 5;
+        private readonly int _treeGrowingStep = 5;
 
         /// <summary>
         /// The magnitude of the gravity force calculated in the init phased.
@@ -188,7 +185,7 @@ namespace Westermo.GraphX.Logic.Algorithms.LayoutAlgorithms
 
             var iterationEndedArgs =
                 new TestingCompoundLayoutIterationEventArgs<TVertex, TEdge, TestingCompoundVertexInfo, object>(
-                    0, 0, string.Format("Phase: {0}, Steps: {1}", _phase, _step),
+                    0, 0, $"Phase: {_phase}, Steps: {_step}",
                     VertexPositions,
                     InnerCanvasSizes,
                     vertexInfos,
@@ -219,7 +216,7 @@ namespace Westermo.GraphX.Logic.Algorithms.LayoutAlgorithms
 
         private Vector GetSpringForce(double idealLength, Point uPos, Point vPos, Size uSize, Size vSize, Random rnd)
         {
-            var positionVector = (uPos - vPos);
+            var positionVector = uPos - vPos;
             if (positionVector.Length == 0)
             {
                 var compensationVector = new Vector(rnd.NextDouble(), rnd.NextDouble());
@@ -233,7 +230,7 @@ namespace Westermo.GraphX.Logic.Algorithms.LayoutAlgorithms
             var c_u = LayoutUtil.GetClippingPoint(uSize, uPos, vPos);
             var c_v = LayoutUtil.GetClippingPoint(vSize, vPos, uPos);
 
-            var F = (c_u - c_v);
+            var F = c_u - c_v;
             var isSameDirection = LayoutUtil.IsSameDirection(positionVector, F);
             double length = 0;
             if (isSameDirection)
@@ -247,13 +244,13 @@ namespace Westermo.GraphX.Logic.Algorithms.LayoutAlgorithms
             if (length > 0)
                 F *= -1;
 
-            var Fs = Math.Pow(length / (idealLength), 2) / Parameters.ElasticConstant * F;
+            var Fs = Math.Pow(length / idealLength, 2) / Parameters.ElasticConstant * F;
             return Fs;
         }
 
         private Vector GetRepulsionForce(Point uPos, Point vPos, Size uSize, Size vSize, double repulsionRange, Random rnd)
         {
-            var positionVector = (uPos - vPos);
+            var positionVector = uPos - vPos;
             if (positionVector.Length == 0)
             {
                 var compensationVector = new Vector(rnd.NextDouble(), rnd.NextDouble());

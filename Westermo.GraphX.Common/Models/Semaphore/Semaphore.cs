@@ -6,9 +6,9 @@ namespace Westermo.GraphX.Common.Models.Semaphore
 {
     public class Semaphore : BWaitHandle, IDisposable
     {
-        int _count;
-        readonly int _maxCount = int.MaxValue;
-        EventWaitHandle _ewh;
+        private int _count;
+        private readonly int _maxCount = int.MaxValue;
+        private EventWaitHandle _ewh;
 
         public Semaphore()
         {
@@ -83,9 +83,6 @@ namespace Westermo.GraphX.Common.Models.Semaphore
             }
         }
 
-        internal override WaitHandle WaitHandle
-        {
-            get { return _ewh; }
-        }
+        internal override WaitHandle WaitHandle => _ewh;
     }
 }

@@ -3,7 +3,7 @@
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
     <UseWPF>true</UseWPF>
-    <TargetFramework>net8.0-windows</TargetFramework>
+    <TargetFramework>net9.0-windows</TargetFramework>
     <LangVersion>latest</LangVersion>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
     <IsPackable>false</IsPackable>
@@ -16,7 +16,7 @@
   <ItemGroup>
     <PackageReference Include="AvalonEdit" Version="6.3.0.90" />
     <PackageReference Include="ModernUI.CoreWPF" Version="3.1.2" />
-    <PackageReference Include="YAXLib" Version="4.2.0" />
+    <PackageReference Include="YAXLib" Version="4.3.0" />
   </ItemGroup>
 
   <ItemGroup>

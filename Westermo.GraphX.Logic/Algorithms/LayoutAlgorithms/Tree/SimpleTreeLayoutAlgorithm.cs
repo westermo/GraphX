@@ -6,7 +6,6 @@ using Westermo.GraphX.Measure;
 using Westermo.GraphX.Common.Exceptions;
 using QuikGraph;
 using QuikGraph.Algorithms.Search;
-using QuikGraph.Collections;
 
 namespace Westermo.GraphX.Logic.Algorithms.LayoutAlgorithms
 {
@@ -18,13 +17,13 @@ namespace Westermo.GraphX.Logic.Algorithms.LayoutAlgorithms
         protected BidirectionalGraph<TVertex, Edge<TVertex>> SpanningTree;
         protected IDictionary<TVertex, Size> Sizes;
         protected readonly IDictionary<TVertex, VertexData> Data = new Dictionary<TVertex, VertexData>();
-        protected readonly IList<Layer> Layers = new List<Layer>();
+        protected readonly IList<Layer> Layers = [];
         private int _direction;
 
         public SimpleTreeLayoutAlgorithm( TGraph visitedGraph, IDictionary<TVertex, Point> vertexPositions, IDictionary<TVertex, Size> vertexSizes, SimpleTreeLayoutParameters parameters )
             : base( visitedGraph, vertexPositions, parameters )
         {
-            VertexSizes = vertexSizes == null ? new Dictionary<TVertex, Size>() : new Dictionary<TVertex, Size>(vertexSizes);
+            VertexSizes = vertexSizes == null ? [] : new Dictionary<TVertex, Size>(vertexSizes);
         }
 
         public override void Compute(CancellationToken cancellationToken)
@@ -91,13 +90,13 @@ namespace Westermo.GraphX.Logic.Algorithms.LayoutAlgorithms
             SpanningTree = new BidirectionalGraph<TVertex, Edge<TVertex>>( false );
             SpanningTree.AddVertexRange(VisitedGraph.Vertices.OrderBy(v => VisitedGraph.InDegree(v)));
 
-			EdgeAction<TVertex, TEdge> action = e =>
-			{
-				cancellationToken.ThrowIfCancellationRequested();
-				SpanningTree.AddEdge(new Edge<TVertex>(e.Source, e.Target));
-			};
+            void action(TEdge e)
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+                SpanningTree.AddEdge(new Edge<TVertex>(e.Source, e.Target));
+            }
 
-			switch ( Parameters.SpanningTreeGeneration )
+            switch ( Parameters.SpanningTreeGeneration )
             {
                 case SpanningTreeGeneration.BFS:
                     var bfsAlgo = new BreadthFirstSearchAlgorithm<TVertex, TEdge>( VisitedGraph );
@@ -147,12 +146,12 @@ namespace Westermo.GraphX.Logic.Algorithms.LayoutAlgorithms
             }
             else
             {
-                double minPos = double.MaxValue;
-                double maxPos = -double.MaxValue;
+                var minPos = double.MaxValue;
+                var maxPos = -double.MaxValue;
                 //first put the children
                 foreach ( var child in SpanningTree.OutEdges( v ).Select( e => e.Target ) )
                 {
-                    double childPos = CalculatePosition( child, v, l + 1, firstOfComponent );
+                    var childPos = CalculatePosition( child, v, l + 1, firstOfComponent );
 
                     if ( childPos >= 0 )
                     {
@@ -182,7 +181,7 @@ namespace Westermo.GraphX.Logic.Algorithms.LayoutAlgorithms
         protected virtual void AssignPositions(CancellationToken cancellationToken)
         {
             double layerSize = 0;
-            bool changeCoordinates = ( Parameters.Direction == LayoutDirection.LeftToRight || Parameters.Direction == LayoutDirection.RightToLeft );
+            var changeCoordinates = Parameters.Direction == LayoutDirection.LeftToRight || Parameters.Direction == LayoutDirection.RightToLeft;
 
             foreach ( var layer in Layers )
             {

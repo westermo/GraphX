@@ -1,15 +1,9 @@
 ﻿namespace Westermo.GraphX.Controls.Models
 {
-    public sealed class ControlEventArgs : System.EventArgs
+    public sealed class ControlEventArgs(IGraphControl vc, bool removeDataObject) : System.EventArgs
     {
-        public IGraphControl Control { get; private set; }
+        public IGraphControl Control { get; private set; } = vc;
 
-        public bool RemoveDataObject { get; private set; }
-
-        public ControlEventArgs(IGraphControl vc, bool removeDataObject)
-        {
-            RemoveDataObject = removeDataObject;
-            Control = vc;
-        }
+        public bool RemoveDataObject { get; private set; } = removeDataObject;
     }
 }
