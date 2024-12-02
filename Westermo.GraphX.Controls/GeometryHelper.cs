@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using Westermo.GraphX.Common.Enums;
-using System.Windows.Data;
 using System.Windows;
 using System.Windows.Media;
 /* Code here is partially used from NodeXL (https://nodexl.codeplex.com/)
@@ -191,7 +190,7 @@ namespace Westermo.GraphX.Controls
             oPathGeometry.Figures.Add(oPathFigure);
            // FreezeIfFreezable(oPathGeometry);
 
-            return (oPathGeometry);
+            return oPathGeometry;
         }
         
         /// <summary>
@@ -243,8 +242,8 @@ namespace Westermo.GraphX.Controls
 
             var dEdgeAngle = MathHelper.GetAngleBetweenPoints(oVertexALocation, oVertexBLocation);
             var pt =  new Point(
-                oVertexALocation.X + (dVertexARadius * Math.Cos(dEdgeAngle)),
-                oVertexALocation.Y - (dVertexARadius * Math.Sin(dEdgeAngle))
+                oVertexALocation.X + dVertexARadius * Math.Cos(dEdgeAngle),
+                oVertexALocation.Y - dVertexARadius * Math.Sin(dEdgeAngle)
                 );
             return pt;
         }
@@ -262,8 +261,8 @@ namespace Westermo.GraphX.Controls
                 dEdgeAngle = (dEdgeAngle.ToDegrees() + angle).ToRadians();
 
             var pt =  new Point(
-                sourcePoint.X + (dVertexARadiusWidth * Math.Cos(dEdgeAngle)),
-                sourcePoint.Y - (dVertexARadiusHeight * Math.Sin(dEdgeAngle))
+                sourcePoint.X + dVertexARadiusWidth * Math.Cos(dEdgeAngle),
+                sourcePoint.Y - dVertexARadiusHeight * Math.Sin(dEdgeAngle)
                 );
             if (angle != 0)
                 pt = MathHelper.RotatePoint(pt, oVertexALocation, angle);
@@ -412,11 +411,11 @@ namespace Westermo.GraphX.Controls
             var ov2 = p2 + v + n;
             var fig = new PathFigure
             {
-                StartPoint = ip2, Segments = new PathSegmentCollection
-                {
-                    new LineSegment {Point = new Point(ov1.X, ov1.Y)},
-                    new LineSegment {Point = new Point(ov2.X, ov2.Y)}
-                },
+                StartPoint = ip2, Segments =
+                [
+                    new LineSegment { Point = new Point(ov1.X, ov1.Y) },
+                    new LineSegment { Point = new Point(ov2.X, ov2.Y) }
+                ],
                 IsClosed = true
             };
             TryFreeze(fig);
@@ -486,7 +485,7 @@ namespace Westermo.GraphX.Controls
             oMatrix.RotateAt(angleToRotateDegrees,
                 centerOfRotation.X, centerOfRotation.Y);
 
-            return (oMatrix);
+            return oMatrix;
         }
 
         public static PathFigure GetPathFigureFromPoints(Point startPoint, params Point[] otherPoints)
@@ -537,7 +536,7 @@ namespace Westermo.GraphX.Controls
             oPathGeometry.Figures.Add(oPathFigure);
             TryFreeze(oPathGeometry);
 
-            return (oPathGeometry);
+            return oPathGeometry;
         }
     }
 }

@@ -27,7 +27,7 @@ namespace ShowcaseApp.WPF.Pages.Mini
             graphArea.SideExpansionSize = new Size(80, 80);
         }
 
-        void ControlLoaded(object sender, RoutedEventArgs e)
+        private void ControlLoaded(object sender, RoutedEventArgs e)
         {
             GenerateGraph();
         }
@@ -87,8 +87,8 @@ namespace ShowcaseApp.WPF.Pages.Mini
             zoomControl.ZoomToFill();
         }
 
-        private double _headerHeight = 30;
-        private double _groupInnerPadding = 20;
+        private readonly double _headerHeight = 30;
+        private readonly double _groupInnerPadding = 20;
 
         private Border GenerateGroupBorder(AlgorithmGroupParameters<DataVertex, DataEdge> prms)
         {
@@ -109,7 +109,7 @@ namespace ShowcaseApp.WPF.Pages.Mini
                     Height = _headerHeight,
                     Child = new TextBlock
                     {
-                        Text = string.Format("Group {0}", prms.GroupId),
+                        Text = $"Group {prms.GroupId}",
                         VerticalAlignment = VerticalAlignment.Center,
                         HorizontalAlignment = HorizontalAlignment.Center,
                         Foreground = Brushes.White,

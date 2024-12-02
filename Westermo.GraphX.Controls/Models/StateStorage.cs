@@ -11,19 +11,13 @@ using System.Windows;
 
 namespace Westermo.GraphX.Controls.Models
 {
-    public class StateStorage<TVertex, TEdge, TGraph>: IDisposable
+    public class StateStorage<TVertex, TEdge, TGraph>(GraphArea<TVertex, TEdge, TGraph> area) : IDisposable
         where TEdge : class, IGraphXEdge<TVertex>
-        where TVertex: class, IGraphXVertex
-        where TGraph: class, IMutableBidirectionalGraph<TVertex, TEdge>
+        where TVertex : class, IGraphXVertex
+        where TGraph : class, IMutableBidirectionalGraph<TVertex, TEdge>
     {
-        private readonly Dictionary<string, GraphState<TVertex, TEdge, TGraph>> _states;
-        private GraphArea<TVertex, TEdge, TGraph> _area;
-
-        public StateStorage(GraphArea<TVertex, TEdge, TGraph> area)
-        {
-            _area = area;
-            _states = new Dictionary<string, GraphState<TVertex, TEdge, TGraph>>();
-        }
+        private readonly Dictionary<string, GraphState<TVertex, TEdge, TGraph>> _states = new();
+        private GraphArea<TVertex, TEdge, TGraph> _area = area;
 
         /// <summary>
         /// Returns true if state with supplied ID exists in the current states collection
@@ -75,7 +69,7 @@ namespace Westermo.GraphX.Controls.Models
         public virtual void ImportState(string key, GraphState<TVertex, TEdge, TGraph> state)
         {
             if (ContainsState(key))
-                throw new GX_ConsistencyException(string.Format("Graph state {0} already exist in state storage", key));
+                throw new GX_ConsistencyException($"Graph state {key} already exist in state storage");
 
             //if(!unsafeImport && (_area.LogicCore == null || _area.LogicCore.Graph == null || _area.LogicCore.Graph != state.Graph))
            //     throw new GX_ConsistencyException("Can't validate that imported graph state belong to the target area Graph! You can try to import the state with unsafeImport parameter set to True.");
@@ -93,7 +87,7 @@ namespace Westermo.GraphX.Controls.Models
 
             if (!_states.ContainsKey(id))
             {
-                Debug.WriteLine(string.Format("LoadState() -> State id {0} not found! Skipping...", id));
+                Debug.WriteLine($"LoadState() -> State id {id} not found! Skipping...");
                 return;
             }
 

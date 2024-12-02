@@ -8,26 +8,17 @@ namespace Westermo.GraphX.Common.Models
     /// Base class for graph edge
     /// </summary>
     /// <typeparam name="TVertex">Vertex class</typeparam>
-    public abstract class EdgeBase<TVertex> : IGraphXEdge<TVertex>
+    public abstract class EdgeBase<TVertex>(TVertex source, TVertex target, double weight = 1) : IGraphXEdge<TVertex>
     {
         /// <summary>
         /// Skip edge in algo calc and visualization
         /// </summary>
         public ProcessingOptionEnum SkipProcessing { get; set; }
 
-        protected EdgeBase(TVertex source, TVertex target, double weight = 1)
-        {
-
-            Source = source;
-            Target = target;
-            Weight = weight;
-            ID = -1;
-        }
-
         /// <summary>
         /// Unique edge ID
         /// </summary>
-        public long ID { get; set; }
+        public long ID { get; set; } = -1;
 
         /// <summary>
         /// Returns true if Source vertex equals Target vertex
@@ -52,19 +43,19 @@ namespace Westermo.GraphX.Common.Models
         /// <summary>
         /// Source vertex
         /// </summary>
-        public TVertex Source { get; set; }
+        public TVertex Source { get; set; } = source;
 
         /// <summary>
         /// Target vertex
         /// </summary>
-        public TVertex Target { get; set; }
+        public TVertex Target { get; set; } = target;
 
         /// <summary>
         /// Edge weight that can be used by some weight-related layout algorithms
         /// </summary>
-        public double Weight { get; set; }
+        public double Weight { get; set; } = weight;
 
-		/// <summary>
+        /// <summary>
 		/// Reverse the calculated routing path points.
 		/// </summary>
 		public bool ReversePath { get; set; }

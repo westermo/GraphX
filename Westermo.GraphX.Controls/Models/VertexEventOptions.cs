@@ -2,12 +2,13 @@
 
 namespace Westermo.GraphX.Controls.Models
 {
-    public sealed class VertexEventOptions
+    public sealed class VertexEventOptions(VertexControl vc)
     {
         /// <summary>
         /// Gets or sets if MouseMove event should be enabled
         /// </summary>
-        public bool MouseMoveEnabled { get { return _mousemove; } set {
+        public bool MouseMoveEnabled { get => _mousemove;
+            set {
             if (_mousemove == value) return;
             _mousemove = value; _vc.UpdateEventhandling(EventType.MouseMove);
         } }
@@ -15,7 +16,8 @@ namespace Westermo.GraphX.Controls.Models
         /// <summary>
         /// Gets or sets if MouseEnter event should be enabled
         /// </summary>
-        public bool MouseEnterEnabled { get { return _mouseenter; } set {
+        public bool MouseEnterEnabled { get => _mouseenter;
+            set {
             if (_mouseenter == value) return;
             _mouseenter = value; _vc.UpdateEventhandling(EventType.MouseEnter);
         } }
@@ -23,7 +25,8 @@ namespace Westermo.GraphX.Controls.Models
         /// <summary>
         /// Gets or sets if MouseLeave event should be enabled
         /// </summary>
-        public bool MouseLeaveEnabled { get { return _mouseleave; } set {
+        public bool MouseLeaveEnabled { get => _mouseleave;
+            set {
             if (_mouseleave == value) return;
             _mouseleave = value; _vc.UpdateEventhandling(EventType.MouseLeave);
         } }
@@ -31,7 +34,8 @@ namespace Westermo.GraphX.Controls.Models
         /// <summary>
         /// Gets or sets if MouseDown event should be enabled
         /// </summary>
-        public bool MouseClickEnabled { get { return _mouseclick; } set {
+        public bool MouseClickEnabled { get => _mouseclick;
+            set {
             if (_mouseclick == value) return;
             _mouseclick = value; _vc.UpdateEventhandling(EventType.MouseClick);
         } }
@@ -39,7 +43,8 @@ namespace Westermo.GraphX.Controls.Models
         /// <summary>
         /// Gets or sets if MouseDoubleClick event should be enabled
         /// </summary>
-        public bool MouseDoubleClickEnabled { get { return _mousedblclick; } set {
+        public bool MouseDoubleClickEnabled { get => _mousedblclick;
+            set {
             if (_mousedblclick == value) return;
             _mousedblclick = value; _vc.UpdateEventhandling(EventType.MouseDoubleClick);
         } }
@@ -50,10 +55,7 @@ namespace Westermo.GraphX.Controls.Models
         /// True by default. 
         /// </summary>
         public bool PositionChangeNotification { 
-            get 
-            { 
-                return _poschange; 
-            } 
+            get => _poschange;
             set 
             {
                 if (_poschange == value) return;
@@ -64,12 +66,7 @@ namespace Westermo.GraphX.Controls.Models
         }
         private bool _poschange = true;
 
-        private VertexControl _vc;
-
-        public VertexEventOptions(VertexControl vc)
-        {
-            _vc = vc;
-        }
+        private VertexControl _vc = vc;
 
         public void Clean()
         {

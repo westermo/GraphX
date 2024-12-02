@@ -25,7 +25,7 @@
         /// </summary>
         public double IdealEdgeLength
         {
-            get { return _idealEdgeLength; }
+            get => _idealEdgeLength;
             set
             {
                 if (value == _idealEdgeLength)
@@ -41,7 +41,7 @@
         /// </summary>
         public double ElasticConstant
         {
-            get { return _elasticConstant; }
+            get => _elasticConstant;
             set
             {
                 if (value == _elasticConstant)
@@ -58,7 +58,7 @@
         /// </summary>
         public double RepulsionConstant
         {
-            get { return _repulsionConstant; }
+            get => _repulsionConstant;
             set
             {
                 if (value == _repulsionConstant)
@@ -75,7 +75,7 @@
         /// </summary>
         public double NestingFactor
         {
-            get { return _nestingFactor; }
+            get => _nestingFactor;
             set
             {
                 if (value == _nestingFactor)
@@ -91,7 +91,7 @@
         /// </summary>
         public double GravitationFactor
         {
-            get { return _gravitationFactor; }
+            get => _gravitationFactor;
             set
             {
                 if (value == _gravitationFactor)
@@ -104,7 +104,7 @@
 
         public int Phase1Iterations
         {
-            get { return _phase1Iterations; }
+            get => _phase1Iterations;
             set
             {
                 if (value == _phase1Iterations)
@@ -117,7 +117,7 @@
 
         public int Phase2Iterations
         {
-            get { return _phase2Iterations; }
+            get => _phase2Iterations;
             set
             {
                 if (value == _phase2Iterations)
@@ -130,7 +130,7 @@
 
         public int Phase3Iterations
         {
-            get { return _phase3Iterations; }
+            get => _phase3Iterations;
             set
             {
                 if (value == _phase3Iterations)
@@ -143,7 +143,7 @@
 
         public double Phase2TemperatureInitialMultiplier
         {
-            get { return _phase2TemperatureInitialMultiplier; }
+            get => _phase2TemperatureInitialMultiplier;
             set
             {
                 if (value == _phase2TemperatureInitialMultiplier)
@@ -156,7 +156,7 @@
 
         public double Phase3TemperatureInitialMultiplier
         {
-            get { return _phase3TemperatureInitialMultiplier; }
+            get => _phase3TemperatureInitialMultiplier;
             set
             {
                 if (value == _phase3TemperatureInitialMultiplier)
@@ -169,7 +169,7 @@
 
         public double TemperatureDecreasing
         {
-            get { return _temperatureDecreasing; }
+            get => _temperatureDecreasing;
             set
             {
                 if (value == _temperatureDecreasing)
@@ -182,7 +182,7 @@
 
         public double TemperatureFactor
         {
-            get { return _temperatureFactor; }
+            get => _temperatureFactor;
             set
             {
                 if (value == _temperatureFactor)
@@ -195,7 +195,7 @@
 
         public double DisplacementLimitMultiplier
         {
-            get { return _displacementLimitMultiplier; }
+            get => _displacementLimitMultiplier;
             set
             {
                 if (value == _displacementLimitMultiplier)
@@ -208,7 +208,7 @@
 
         public double SeparationMultiplier
         {
-            get { return _separationMultiplier; }
+            get => _separationMultiplier;
             set
             {
                 if (value == _separationMultiplier)

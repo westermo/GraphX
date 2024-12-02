@@ -5,13 +5,8 @@ namespace Westermo.GraphX.Controls.Models
     /// <summary>
     /// Factory class responsible for VertexControl and EdgeControl objects creation
     /// </summary>
-    public class GraphControlFactory : IGraphControlFactory
+    public class GraphControlFactory(GraphAreaBase graphArea) : IGraphControlFactory
     {
-        public GraphControlFactory(GraphAreaBase graphArea)
-        {
-            FactoryRootArea = graphArea;
-        }
-
         public virtual EdgeControl CreateEdgeControl(VertexControl source, VertexControl target, object edge, bool showArrows = true, Visibility visibility = Visibility.Visible)
         {
             var edgectrl = new EdgeControl(source, target, edge, showArrows) { RootArea = FactoryRootArea};
@@ -26,6 +21,6 @@ namespace Westermo.GraphX.Controls.Models
         }
 
 
-        public GraphAreaBase FactoryRootArea { get; set; }
+        public GraphAreaBase FactoryRootArea { get; set; } = graphArea;
     }
 }

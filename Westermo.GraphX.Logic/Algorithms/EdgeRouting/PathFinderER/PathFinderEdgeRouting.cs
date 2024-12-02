@@ -72,17 +72,17 @@ namespace Westermo.GraphX.Logic.Algorithms.EdgeRouting
 
         private Point _minPoint = new Point(double.PositiveInfinity, double.PositiveInfinity);
         private Point _maxPoint = new Point(double.NegativeInfinity, double.NegativeInfinity);
-        private double _horizontalGs = 100;
-        private double _verticalGs = 100;
-        private double _sideAreaOffset = 500;
-        private bool _useDiagonals = true;
-        private double _vertexSafeDistance = 30;
-        private bool _punishChangeDirection;
-        private bool _useHeavyDiagonals;
-        private int _pfHeuristic = 2;
-        private bool _useTieBreaker;
-        private int _searchLimit = 50000;
-        private PathFindAlgorithm _pathAlgo = PathFindAlgorithm.Manhattan;
+        private readonly double _horizontalGs = 100;
+        private readonly double _verticalGs = 100;
+        private readonly double _sideAreaOffset = 500;
+        private readonly bool _useDiagonals = true;
+        private readonly double _vertexSafeDistance = 30;
+        private readonly bool _punishChangeDirection;
+        private readonly bool _useHeavyDiagonals;
+        private readonly int _pfHeuristic = 2;
+        private readonly bool _useTieBreaker;
+        private readonly int _searchLimit = 50000;
+        private readonly PathFindAlgorithm _pathAlgo = PathFindAlgorithm.Manhattan;
 
         private MatrixItem[,] _resMatrix;
         private List<MatrixItem> _validPoints;
@@ -135,13 +135,13 @@ namespace Westermo.GraphX.Logic.Algorithms.EdgeRouting
             var vCount = (int)((br.Y - tl.Y) / _verticalGs) + 1;
 
             _resMatrix = new MatrixItem[hCount, vCount];
-            _validPoints = new List<MatrixItem>();
+            _validPoints = [];
 
             var lastPt = new Point(0, 0);
 
             //get the intersection matrix
-            for (int i = 0; i < hCount; i++)
-                for (int j = 0; j < vCount; j++)
+            for (var i = 0; i < hCount; i++)
+                for (var j = 0; j < vCount; j++)
                 {
                     cancellationToken.ThrowIfCancellationRequested();
 
@@ -151,10 +151,10 @@ namespace Westermo.GraphX.Logic.Algorithms.EdgeRouting
                 }
             ////////////debug
 #if DEBUG
-            for (int i = 0; i < vCount; i++)
+            for (var i = 0; i < vCount; i++)
             {
                 var str = "";
-                for (int j = 0; j < hCount; j++)
+                for (var j = 0; j < hCount; j++)
                 {
                     str += _resMatrix[j, i].IsIntersected ? "0 " : "1 ";
                 }
@@ -202,7 +202,7 @@ namespace Westermo.GraphX.Logic.Algorithms.EdgeRouting
 
         private double GetFakeDistance(Point source, Point target)
         {
-            double dx = target.X - source.X; double dy = target.Y - source.Y;
+            var dx = target.X - source.X; var dy = target.Y - source.Y;
             return dx * dx + dy * dy;
         }
     }

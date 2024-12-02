@@ -14,6 +14,6 @@ namespace Westermo.GraphX.Common.Models
         public Point TargetPosition { get; set; }
         public Size TargetSize { get; set; }
 
-        IRoutingInfo Edge { get; set; }
+        private IRoutingInfo Edge { get; set; }
     }
 }

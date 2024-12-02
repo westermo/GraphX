@@ -11,10 +11,10 @@ namespace Westermo.GraphX.Logic.Algorithms
 		#region Properties, fields
 		private class TypedEdgeCollectionWrapper
 		{
-			public readonly List<TEdge> InHierarchicalEdges = new List<TEdge>();
-			public readonly List<TEdge> OutHierarchicalEdges = new List<TEdge>();
-			public readonly List<TEdge> InGeneralEdges = new List<TEdge>();
-			public readonly List<TEdge> OutGeneralEdges = new List<TEdge>();
+			public readonly List<TEdge> InHierarchicalEdges = [];
+			public readonly List<TEdge> OutHierarchicalEdges = [];
+			public readonly List<TEdge> InGeneralEdges = [];
+			public readonly List<TEdge> OutGeneralEdges = [];
 		}
 		private readonly Dictionary<TVertex, TypedEdgeCollectionWrapper> _typedEdgeCollections = new Dictionary<TVertex, TypedEdgeCollectionWrapper>();
 		#endregion
@@ -43,19 +43,19 @@ namespace Westermo.GraphX.Logic.Algorithms
 
 		public override bool RemoveVertex(TVertex v)
 		{
-			bool ret = base.RemoveVertex(v);
+			var ret = base.RemoveVertex(v);
 			if (ret)
 			{
 				//remove the edges from the typedEdgeCollections
-				TypedEdgeCollectionWrapper edgeCollection = _typedEdgeCollections[v];
-				foreach (TEdge e in edgeCollection.InGeneralEdges)
+				var edgeCollection = _typedEdgeCollections[v];
+				foreach (var e in edgeCollection.InGeneralEdges)
 					_typedEdgeCollections[e.Source].OutGeneralEdges.Remove(e);
-				foreach (TEdge e in edgeCollection.OutGeneralEdges)
+				foreach (var e in edgeCollection.OutGeneralEdges)
 					_typedEdgeCollections[e.Target].InGeneralEdges.Remove(e);
 
-				foreach (TEdge e in edgeCollection.InHierarchicalEdges)
+				foreach (var e in edgeCollection.InHierarchicalEdges)
 					_typedEdgeCollections[e.Source].OutHierarchicalEdges.Remove(e);
-				foreach (TEdge e in edgeCollection.OutHierarchicalEdges)
+				foreach (var e in edgeCollection.OutHierarchicalEdges)
 					_typedEdgeCollections[e.Target].InHierarchicalEdges.Remove(e);
 
 				_typedEdgeCollections.Remove(v);
@@ -203,10 +203,7 @@ namespace Westermo.GraphX.Logic.Algorithms
 		#region IHierarchicalBidirectionalGraph<TVertex,TEdge> Members
 
 
-		public IEnumerable<TEdge> HierarchicalEdges
-		{
-			get { return Vertices.SelectMany(OutHierarchicalEdges); }
-		}
+		public IEnumerable<TEdge> HierarchicalEdges => Vertices.SelectMany(OutHierarchicalEdges);
 
 		public int HierarchicalEdgeCount
 		{
@@ -216,12 +213,7 @@ namespace Westermo.GraphX.Logic.Algorithms
 			}
 		}
 
-		public IEnumerable<TEdge> GeneralEdges
-		{
-			get {
-			    return Vertices.SelectMany(OutGeneralEdges);
-			}
-		}
+		public IEnumerable<TEdge> GeneralEdges => Vertices.SelectMany(OutGeneralEdges);
 
 		public int GeneralEdgeCount
 		{

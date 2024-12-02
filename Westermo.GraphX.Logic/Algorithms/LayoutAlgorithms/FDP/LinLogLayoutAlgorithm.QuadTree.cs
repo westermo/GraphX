@@ -9,49 +9,25 @@ namespace Westermo.GraphX.Logic.Algorithms.LayoutAlgorithms
 		where TEdge : IEdge<TVertex>
         where TGraph : IBidirectionalGraph<TVertex, TEdge>, IMutableVertexAndEdgeSet<TVertex, TEdge>
 	{
-		class QuadTree
+		private class QuadTree(int index, Point position, double weight, Point minPos, Point maxPos)
 		{
 			#region Properties
 			private readonly QuadTree[] _children = new QuadTree[4];
-			public QuadTree[] Children
-			{
-				get { return _children; }
-			}
+			public QuadTree[] Children => _children;
 
-		    public int Index { get; private set; }
+			public int Index { get; private set; } = index;
 
-		    private Point _position;
+			private Point _position = position;
 
-			public Point Position
-			{
-				get { return _position; }
-			}
+			public Point Position => _position;
 
-		    public double Weight { get; private set; }
-
-		    private Point _minPos;
-			private Point _maxPos;
+			public double Weight { get; private set; } = weight;
 
 			#endregion
 
-			public double Width
-			{
-				get
-				{
-					return Math.Max( _maxPos.X - _minPos.X, _maxPos.Y - _minPos.Y );
-				}
-			}
+			public double Width => Math.Max( maxPos.X - minPos.X, maxPos.Y - minPos.Y );
 
-		    private const int MAX_DEPTH = 20;
-
-			public QuadTree( int index, Point position, double weight, Point minPos, Point maxPos )
-			{
-				Index = index;
-				_position = position;
-				Weight = weight;
-				_minPos = minPos;
-				_maxPos = maxPos;
-			}
+			private const int MAX_DEPTH = 20;
 
 			public void AddNode( int nodeIndex, Point nodePos, double nodeWeight, int depth )
 			{
@@ -75,8 +51,8 @@ namespace Westermo.GraphX.Logic.Algorithms.LayoutAlgorithms
 			{
 				//Debug.WriteLine( string.Format( "AddNode2 {0} {1} {2} {3}", nodeIndex, nodePos, nodeWeight, depth ) );
 				var childIndex = 0;
-				var middleX = ( _minPos.X + _maxPos.X ) / 2;
-				var middleY = ( _minPos.Y + _maxPos.Y ) / 2;
+				var middleX = ( minPos.X + maxPos.X ) / 2;
+				var middleY = ( minPos.Y + maxPos.Y ) / 2;
 
 				if ( nodePos.X > middleX )
 					childIndex += 1;
@@ -93,23 +69,23 @@ namespace Westermo.GraphX.Logic.Algorithms.LayoutAlgorithms
 					var newMax = new Point();
 					if ( nodePos.X <= middleX )
 					{
-						newMin.X = _minPos.X;
+						newMin.X = minPos.X;
 						newMax.X = middleX;
 					}
 					else
 					{
 						newMin.X = middleX;
-						newMax.X = _maxPos.X;
+						newMax.X = maxPos.X;
 					}
 					if ( nodePos.Y <= middleY )
 					{
-						newMin.Y = _minPos.Y;
+						newMin.Y = minPos.Y;
 						newMax.Y = middleY;
 					}
 					else
 					{
 						newMin.Y = middleY;
-						newMax.Y = _maxPos.Y;
+						newMax.Y = maxPos.Y;
 					}
 					_children[childIndex] = new QuadTree( nodeIndex, nodePos, nodeWeight, newMin, newMax );
 				}
@@ -127,11 +103,11 @@ namespace Westermo.GraphX.Logic.Algorithms.LayoutAlgorithms
 			/// <param name="nodeWeight"></param>
 			public void MoveNode( Point oldPos, Point newPos, double nodeWeight )
 			{
-				_position += ( ( newPos - oldPos ) * ( nodeWeight / Weight ) );
+				_position += ( newPos - oldPos ) * ( nodeWeight / Weight );
 
 				var childIndex = 0;
-				var middleX = ( _minPos.X + _maxPos.X ) / 2;
-				var middleY = ( _minPos.Y + _maxPos.Y ) / 2;
+				var middleX = ( minPos.X + maxPos.X ) / 2;
+				var middleY = ( minPos.Y + maxPos.Y ) / 2;
 
 				if ( oldPos.X > middleX )
 					childIndex += 1;

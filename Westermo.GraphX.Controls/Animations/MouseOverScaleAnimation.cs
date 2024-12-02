@@ -5,28 +5,23 @@ using System.Windows.Media.Animation;
 
 namespace Westermo.GraphX.Controls.Animations
 {
-    public sealed class MouseOverScaleAnimation : IBidirectionalControlAnimation
+    public sealed class MouseOverScaleAnimation(double duration = .3, double scaleto = 1.2, bool centerscale = true)
+        : IBidirectionalControlAnimation
     {
         /// <summary>
         /// Scale to this value. Default size is 1. For ex. 2 will double the size of the object.
         /// </summary>
-        public double ScaleTo { get; set; }
+        public double ScaleTo { get; set; } = scaleto;
+
         /// <summary>
         /// Scale from the center of the object or from the left top corner
         /// </summary>
-        public bool CenterScale { get; set; }
+        public bool CenterScale { get; set; } = centerscale;
 
         /// <summary>
         /// Animation duration
         /// </summary>
-        public double Duration { get; set; }
-
-        public MouseOverScaleAnimation(double duration = .3, double scaleto = 1.2, bool centerscale = true)
-        {
-            Duration = duration;
-            ScaleTo = scaleto;
-            CenterScale = centerscale;
-        }
+        public double Duration { get; set; } = duration;
 
         public void AnimateVertexForward(VertexControl target)
         {

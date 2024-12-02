@@ -3,16 +3,15 @@ using Westermo.GraphX.Common.Interfaces;
 
 namespace Westermo.GraphX.Logic.Models
 {
-    public sealed class AlgorithmStorage<TVertex, TEdge> : IAlgorithmStorage<TVertex, TEdge>
+    public sealed class AlgorithmStorage<TVertex, TEdge>(
+        IExternalLayout<TVertex, TEdge> layout,
+        IExternalOverlapRemoval<TVertex> or,
+        IExternalEdgeRouting<TVertex, TEdge> er)
+        : IAlgorithmStorage<TVertex, TEdge>
     {
-        public IExternalLayout<TVertex, TEdge> Layout { get; private set; }
-        public IExternalOverlapRemoval<TVertex> OverlapRemoval { get; private set; }
-        public IExternalEdgeRouting<TVertex, TEdge> EdgeRouting { get; private set; }
-
-        public AlgorithmStorage(IExternalLayout<TVertex, TEdge> layout, IExternalOverlapRemoval<TVertex> or, IExternalEdgeRouting<TVertex, TEdge> er)
-        {
-            Layout = layout; OverlapRemoval = or; EdgeRouting = er;
-        }
+        public IExternalLayout<TVertex, TEdge> Layout { get; private set; } = layout;
+        public IExternalOverlapRemoval<TVertex> OverlapRemoval { get; private set; } = or;
+        public IExternalEdgeRouting<TVertex, TEdge> EdgeRouting { get; private set; } = er;
 
         public void RemoveSingleEdge(TEdge edge)
         {

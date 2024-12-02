@@ -9,9 +9,6 @@ namespace ShowcaseApp.WPF.Models
         /// <summary>
         /// Gets the navigate link routed command.
         /// </summary>
-        public static RoutedUICommand ShowMiniSpecialDialog
-        {
-            get { return ShowMiniSpecialDialogInternal; }
-        }
+        public static RoutedUICommand ShowMiniSpecialDialog => ShowMiniSpecialDialogInternal;
     }
 }

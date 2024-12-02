@@ -70,22 +70,22 @@ namespace Westermo.GraphX.Logic.Algorithms.EdgeRouting
         #endregion
 
         #region Variables Declaration
-        private MatrixItem[,] mGrid = null;
-        private PriorityQueueB<PathFinderNode>  mOpen                   = new PriorityQueueB<PathFinderNode>(new ComparePFNode());
-        private List<PathFinderNode>            mClose                  = new List<PathFinderNode>();
-        private bool                            mStop                   = false;
+        private readonly MatrixItem[,] mGrid;
+        private readonly PriorityQueueB<PathFinderNode>  mOpen                   = new PriorityQueueB<PathFinderNode>(new ComparePFNode());
+        private readonly List<PathFinderNode>            mClose                  = [];
+        private bool                            mStop;
         private bool                            mStopped                = true;
-        private int                             mHoriz                  = 0;
+        private int                             mHoriz;
         private HeuristicFormula                mFormula                = HeuristicFormula.Manhattan;
         private bool                            mDiagonals              = true;
         private int                             mHEstimate              = 2;
-        private bool                            mPunishChangeDirection  = false;
-        private bool                            mTieBreaker             = false;
-        private bool                            mHeavyDiagonals         = false;
+        private bool                            mPunishChangeDirection;
+        private bool                            mTieBreaker;
+        private bool                            mHeavyDiagonals;
         private int                             mSearchLimit            = 2000;
         //private double                          mCompletedTime          = 0; //not used
-        private bool                            mDebugProgress          = false;
-        private bool                            mDebugFoundPath         = false;
+        private bool                            mDebugProgress;
+        private bool                            mDebugFoundPath;
         #endregion
 
         #region Constructors
@@ -99,51 +99,48 @@ namespace Westermo.GraphX.Logic.Algorithms.EdgeRouting
         #endregion
 
         #region Properties
-        public bool Stopped
-        {
-            get { return mStopped; }
-        }
+        public bool Stopped => mStopped;
 
         public HeuristicFormula Formula
         {
-            get { return mFormula; }
-            set { mFormula = value; }
+            get => mFormula;
+            set => mFormula = value;
         }
 
         public bool Diagonals
         {
-            get { return mDiagonals; }
-            set { mDiagonals = value; }
+            get => mDiagonals;
+            set => mDiagonals = value;
         }
 
         public bool HeavyDiagonals
         {
-            get { return mHeavyDiagonals; }
-            set { mHeavyDiagonals = value; }
+            get => mHeavyDiagonals;
+            set => mHeavyDiagonals = value;
         }
 
         public int HeuristicEstimate
         {
-            get { return mHEstimate; }
-            set { mHEstimate = value; }
+            get => mHEstimate;
+            set => mHEstimate = value;
         }
 
         public bool PunishChangeDirection
         {
-            get { return mPunishChangeDirection; }
-            set { mPunishChangeDirection = value; }
+            get => mPunishChangeDirection;
+            set => mPunishChangeDirection = value;
         }
 
         public bool TieBreaker
         {
-            get { return mTieBreaker; }
-            set { mTieBreaker = value; }
+            get => mTieBreaker;
+            set => mTieBreaker = value;
         }
 
         public int SearchLimit
         {
-            get { return mSearchLimit; }
-            set { mSearchLimit = value; }
+            get => mSearchLimit;
+            set => mSearchLimit = value;
         }
 
         /*public double CompletedTime
@@ -154,14 +151,14 @@ namespace Westermo.GraphX.Logic.Algorithms.EdgeRouting
 
         public bool DebugProgress
         {
-            get { return mDebugProgress; }
-            set { mDebugProgress = value; }
+            get => mDebugProgress;
+            set => mDebugProgress = value;
         }
 
         public bool DebugFoundPath
         {
-            get { return mDebugFoundPath; }
-            set { mDebugFoundPath = value; }
+            get => mDebugFoundPath;
+            set => mDebugFoundPath = value;
         }
         #endregion
 
@@ -176,9 +173,9 @@ namespace Westermo.GraphX.Logic.Algorithms.EdgeRouting
             //!PCL-NON-COMPL! HighResolutionTime.Start();
 
             PathFinderNode parentNode;
-            bool found  = false;
-            int  gridX  = mGrid.GetUpperBound(0);
-            int  gridY  = mGrid.GetUpperBound(1);
+            var found  = false;
+            var  gridX  = mGrid.GetUpperBound(0);
+            var  gridY  = mGrid.GetUpperBound(1);
 
             mStop       = false;
             mStopped    = false;
@@ -229,10 +226,10 @@ namespace Westermo.GraphX.Logic.Algorithms.EdgeRouting
                 }
 
                 if (mPunishChangeDirection)
-                    mHoriz = (parentNode.X - parentNode.PX); 
+                    mHoriz = parentNode.X - parentNode.PX; 
 
                 //Lets calculate each successors
-                for (int i=0; i<(mDiagonals ? 8 : 4); i++)
+                for (var i=0; i<(mDiagonals ? 8 : 4); i++)
                 {
                     PathFinderNode newNode;
                     newNode.X = parentNode.X + direction[i,0];
@@ -256,12 +253,12 @@ namespace Westermo.GraphX.Logic.Algorithms.EdgeRouting
 
                     if (mPunishChangeDirection)
                     {
-                        if ((newNode.X - parentNode.X) != 0)
+                        if (newNode.X - parentNode.X != 0)
                         {
                             if (mHoriz == 0)
                                 newG += 20;
                         }
-                        if ((newNode.Y - parentNode.Y) != 0)
+                        if (newNode.Y - parentNode.Y != 0)
                         {
                             if (mHoriz != 0)
                                 newG += 20;
@@ -269,8 +266,8 @@ namespace Westermo.GraphX.Logic.Algorithms.EdgeRouting
                         }
                     }
 
-                    int     foundInOpenIndex = -1;
-                    for(int j=0; j<mOpen.Count; j++)
+                    var     foundInOpenIndex = -1;
+                    for(var j=0; j<mOpen.Count; j++)
                     {
                         if (mOpen[j].X == newNode.X && mOpen[j].Y == newNode.Y)
                         {
@@ -281,8 +278,8 @@ namespace Westermo.GraphX.Logic.Algorithms.EdgeRouting
                     if (foundInOpenIndex != -1 && mOpen[foundInOpenIndex].G <= newG)
                         continue;
 
-                    int     foundInCloseIndex = -1;
-                    for(int j=0; j<mClose.Count; j++)
+                    var     foundInCloseIndex = -1;
+                    for(var j=0; j<mClose.Count; j++)
                     {
                         if (mClose[j].X == newNode.X && mClose[j].Y == newNode.Y)
                         {
@@ -304,32 +301,32 @@ namespace Westermo.GraphX.Logic.Algorithms.EdgeRouting
                             newNode.H       = mHEstimate * (Math.Abs(newNode.X - (int)end.X) + Math.Abs(newNode.Y - (int)end.Y));
                             break;
                         case HeuristicFormula.MaxDXDY:
-                            newNode.H = mHEstimate * (Math.Max(Math.Abs(newNode.X - (int)end.X), Math.Abs(newNode.Y - (int)end.Y)));
+                            newNode.H = mHEstimate * Math.Max(Math.Abs(newNode.X - (int)end.X), Math.Abs(newNode.Y - (int)end.Y));
                             break;
                         case HeuristicFormula.DiagonalShortCut:
-                            int h_diagonal = Math.Min(Math.Abs(newNode.X - (int)end.X), Math.Abs(newNode.Y - (int)end.Y));
-                            int h_straight = (Math.Abs(newNode.X - (int)end.X) + Math.Abs(newNode.Y - (int)end.Y));
-                            newNode.H       = (mHEstimate * 2) * h_diagonal + mHEstimate * (h_straight - 2 * h_diagonal);
+                            var h_diagonal = Math.Min(Math.Abs(newNode.X - (int)end.X), Math.Abs(newNode.Y - (int)end.Y));
+                            var h_straight = Math.Abs(newNode.X - (int)end.X) + Math.Abs(newNode.Y - (int)end.Y);
+                            newNode.H       = mHEstimate * 2 * h_diagonal + mHEstimate * (h_straight - 2 * h_diagonal);
                             break;
                         case HeuristicFormula.Euclidean:
-                            newNode.H       = (int) (mHEstimate * Math.Sqrt(Math.Pow((newNode.X - end.X) , 2) + Math.Pow((newNode.Y - end.Y), 2)));
+                            newNode.H       = (int) (mHEstimate * Math.Sqrt(Math.Pow(newNode.X - end.X , 2) + Math.Pow(newNode.Y - end.Y, 2)));
                             break;
                         case HeuristicFormula.EuclideanNoSQR:
-                            newNode.H       = (int) (mHEstimate * (Math.Pow((newNode.X - end.X) , 2) + Math.Pow((newNode.Y - end.Y), 2)));
+                            newNode.H       = (int) (mHEstimate * (Math.Pow(newNode.X - end.X , 2) + Math.Pow(newNode.Y - end.Y, 2)));
                             break;
                         case HeuristicFormula.Custom1:
-                            Point dxy       = new Point(Math.Abs(end.X - newNode.X), Math.Abs(end.Y - newNode.Y));
-                            int Orthogonal  = (int)Math.Abs(dxy.X - dxy.Y);
-                            int Diagonal    = (int)Math.Abs(((dxy.X + dxy.Y) - Orthogonal) / 2);
+                            var dxy       = new Point(Math.Abs(end.X - newNode.X), Math.Abs(end.Y - newNode.Y));
+                            var Orthogonal  = (int)Math.Abs(dxy.X - dxy.Y);
+                            var Diagonal    = (int)Math.Abs((dxy.X + dxy.Y - Orthogonal) / 2);
                             newNode.H       = mHEstimate * (int)(Diagonal + Orthogonal + dxy.X + dxy.Y);
                             break;
                     }
                     if (mTieBreaker)
                     {
-                        double dx1 = parentNode.X - end.X;
-                        double dy1 = parentNode.Y - end.Y;
-                        double dx2 = start.X - end.X;
-                        double dy2 = start.Y - end.Y;
+                        var dx1 = parentNode.X - end.X;
+                        var dy1 = parentNode.Y - end.Y;
+                        var dx2 = start.X - end.X;
+                        var dy2 = start.Y - end.Y;
                         var cross = (int)Math.Abs(dx1 * dy2 - dx2 * dy1);
                         newNode.H = (int) (newNode.H + cross * 0.001);
                     }
@@ -361,8 +358,8 @@ namespace Westermo.GraphX.Logic.Algorithms.EdgeRouting
             //mCompletedTime = HighResolutionTime.GetTime();
             if (found)
             {
-                PathFinderNode fNode = mClose[mClose.Count - 1];
-                for(int i=mClose.Count - 1; i>=0; i--)
+                var fNode = mClose[mClose.Count - 1];
+                for(var i=mClose.Count - 1; i>=0; i--)
                 {
                     if (fNode.PX == mClose[i].X && fNode.PY == mClose[i].Y || i == mClose.Count - 1)
                     {

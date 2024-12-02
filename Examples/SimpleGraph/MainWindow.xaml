@@ -1,29 +1,28 @@
 ﻿<Window x:Class="SimpleGraph.MainWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        xmlns:local="clr-namespace:SimpleGraph"
         xmlns:controls="https://westermo.com/graphx/"
         xmlns:models="clr-namespace:SimpleGraph.Models"
         Title="Simple graph example. Read code comments for more info." Height="600" Width="825">
     <Grid>
         <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="*"/>
-            <ColumnDefinition Width="Auto"/>
+            <ColumnDefinition Width="*" />
+            <ColumnDefinition Width="Auto" />
         </Grid.ColumnDefinitions>
 
         <!-- Here we create our GraphArea layout container wrapped into the Zoombox for vast zooming capabilities.
              This is the standard approach for GraphX.-->
-        <controls:ZoomControl x:Name="zoomctrl" Grid.Row="1">
-            <models:GraphAreaExample x:Name="Area"/>
+        <controls:ZoomControl x:Name="zoomctrl" Grid.Row="0">
+            <models:GraphAreaExample x:Name="Area" />
         </controls:ZoomControl>
 
         <DockPanel LastChildFill="False" Grid.Column="1" Margin="3" Grid.RowSpan="2">
             <StackPanel Orientation="Horizontal" DockPanel.Dock="Top" HorizontalAlignment="Center">
-                <Button Height="50" Margin="3" Name="gg_but_randomgraph"  DockPanel.Dock="Top" UseLayoutRounding="True">
-                    <Image Source="Images/dice.png"/>
+                <Button Height="50" Margin="3" Name="gg_but_randomgraph" DockPanel.Dock="Top" UseLayoutRounding="True">
+                    <Image Source="Images/dice.png" />
                 </Button>
                 <Button Height="50" Margin="3" Name="gg_but_relayout" DockPanel.Dock="Top" UseLayoutRounding="True">
-                    <Image Source="Images/update.png"/>
+                    <Image Source="Images/update.png" />
                 </Button>
             </StackPanel>
         </DockPanel>

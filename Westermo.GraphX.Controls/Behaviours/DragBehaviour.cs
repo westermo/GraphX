@@ -3,7 +3,6 @@ using System.Diagnostics;
 using System.Windows;
 using Westermo.GraphX.Common.Exceptions;
 using Westermo.GraphX.Common.Interfaces;
-using Westermo.GraphX.Common.Models;
 
 namespace Westermo.GraphX.Controls
 {
@@ -47,20 +46,18 @@ namespace Westermo.GraphX.Controls
 
         #region Built-in snapping behavior
 
-        private static readonly Predicate<DependencyObject> _builtinIsSnappingPredicate = obj =>
-        {
-            return System.Windows.Input.Keyboard.Modifiers == System.Windows.Input.ModifierKeys.Shift;
-        };
+        private static readonly Predicate<DependencyObject>? _builtinIsSnappingPredicate = _ =>
+            System.Windows.Input.Keyboard.Modifiers == System.Windows.Input.ModifierKeys.Shift;
 
-        private static readonly Predicate<DependencyObject> _builtinIsIndividualSnappingPredicate = obj => false;
+        private static readonly Predicate<DependencyObject> _builtinIsIndividualSnappingPredicate = _ => false;
 
-        private static readonly SnapModifierFunc _builtinSnapModifier = (area, obj, val) => Math.Round(val * 0.1) * 10.0;
+        private static readonly SnapModifierFunc? _builtinSnapModifier = (_, _, val) => Math.Round(val * 0.1) * 10.0;
 
         #endregion Built-in snapping behavior
 
         #region Global snapping behavior management
 
-        private static Predicate<DependencyObject> _globalIsSnappingPredicate = _builtinIsSnappingPredicate;
+        private static Predicate<DependencyObject>? _globalIsSnappingPredicate = _builtinIsSnappingPredicate;
 
         /// <summary>
         /// Gets or sets the predicate used to determine whether to snap an object. The global predicate is used whenever the
@@ -69,23 +66,14 @@ namespace Westermo.GraphX.Controls
         /// <remarks>
         /// Setting to null will restore the built in behavior, but it is recommended to track the preceding value and restore that.
         /// </remarks>
-        public static Predicate<DependencyObject> GlobalIsSnappingPredicate
+        public static Predicate<DependencyObject>? GlobalIsSnappingPredicate
         {
-            get { return _globalIsSnappingPredicate; }
-            set
-            {
-                if (value == null)
-                {
-                    _globalIsSnappingPredicate = _builtinIsSnappingPredicate;
-                }
-                else
-                {
-                    _globalIsSnappingPredicate = value;
-                }
-            }
+            get => _globalIsSnappingPredicate;
+            set => _globalIsSnappingPredicate = value ?? _builtinIsSnappingPredicate;
         }
 
-        private static Predicate<DependencyObject> _globalIsIndividualSnappingPredicate = _builtinIsIndividualSnappingPredicate;
+        private static Predicate<DependencyObject> _globalIsIndividualSnappingPredicate =
+            _builtinIsIndividualSnappingPredicate;
 
         /// <summary>
         /// Gets or sets the predicate used to determine whether to perform individual snapping on a group of dragged objects.
@@ -95,23 +83,13 @@ namespace Westermo.GraphX.Controls
         /// <remarks>
         /// Setting to null will restore the built in behavior, but it is recommended to track the preceding value and restore that.
         /// </remarks>
-        public static Predicate<DependencyObject> GlobalIsIndividualSnappingPredicate
+        public static Predicate<DependencyObject>? GlobalIsIndividualSnappingPredicate
         {
-            get { return _globalIsIndividualSnappingPredicate; }
-            set
-            {
-                if (value == null)
-                {
-                    _globalIsIndividualSnappingPredicate = _builtinIsIndividualSnappingPredicate;
-                }
-                else
-                {
-                    _globalIsIndividualSnappingPredicate = value;
-                }
-            }
+            get => _globalIsIndividualSnappingPredicate;
+            set => _globalIsIndividualSnappingPredicate = value ?? _builtinIsIndividualSnappingPredicate;
         }
 
-        private static SnapModifierFunc _globalXSnapModifier = _builtinSnapModifier;
+        private static SnapModifierFunc? _globalXSnapModifier = _builtinSnapModifier;
 
         /// <summary>
         /// Gets or sets the X value modifier to use when snapping an object. The global modifier is used whenever the
@@ -120,23 +98,13 @@ namespace Westermo.GraphX.Controls
         /// <remarks>
         /// Setting to null will restore the built in behavior, but it is recommended to track the preceding value and restore that.
         /// </remarks>
-        public static SnapModifierFunc GlobalXSnapModifier
+        public static SnapModifierFunc? GlobalXSnapModifier
         {
-            get { return _globalXSnapModifier; }
-            set
-            {
-                if (value == null)
-                {
-                    _globalXSnapModifier = _builtinSnapModifier;
-                }
-                else
-                {
-                    _globalXSnapModifier = value;
-                }
-            }
+            get => _globalXSnapModifier;
+            set => _globalXSnapModifier = value ?? _builtinSnapModifier;
         }
 
-        private static SnapModifierFunc _globalYSnapModifier = _builtinSnapModifier;
+        private static SnapModifierFunc? _globalYSnapModifier = _builtinSnapModifier;
 
         /// <summary>
         /// Gets or sets the Y value modifier to use when snapping an object. The global modifier is used whenever the
@@ -145,47 +113,71 @@ namespace Westermo.GraphX.Controls
         /// <remarks>
         /// Setting to null will restore the built in behavior, but it is recommended to track the preceding value and restore that.
         /// </remarks>
-        public static SnapModifierFunc GlobalYSnapModifier
+        public static SnapModifierFunc? GlobalYSnapModifier
         {
-            get { return _globalYSnapModifier; }
-            set
-            {
-                if (value == null)
-                {
-                    _globalYSnapModifier = _builtinSnapModifier;
-                }
-                else
-                {
-                    _globalYSnapModifier = value;
-                }
-            }
+            get => _globalYSnapModifier;
+            set => _globalYSnapModifier = value ?? _builtinSnapModifier;
         }
 
         #endregion Global snapping behavior management
 
         #region Attached DPs
 
-        public static readonly DependencyProperty IsDragEnabledProperty = DependencyProperty.RegisterAttached("IsDragEnabled", typeof(bool), typeof(DragBehaviour), new PropertyMetadata(false, OnIsDragEnabledPropertyChanged));
-        public static readonly DependencyProperty UpdateEdgesOnMoveProperty = DependencyProperty.RegisterAttached("UpdateEdgesOnMove", typeof(bool), typeof(DragBehaviour), new PropertyMetadata(false));
-        public static readonly DependencyProperty IsTaggedProperty = DependencyProperty.RegisterAttached("IsTagged", typeof(bool), typeof(DragBehaviour), new PropertyMetadata(false));
-        public static readonly DependencyProperty IsDraggingProperty = DependencyProperty.RegisterAttached("IsDragging", typeof(bool), typeof(DragBehaviour), new PropertyMetadata(false));
-        public static readonly DependencyProperty IsSnappingPredicateProperty = DependencyProperty.RegisterAttached("IsSnappingPredicate", typeof(Predicate<DependencyObject>), typeof(DragBehaviour), new PropertyMetadata(new Predicate<DependencyObject>(obj => { return _globalIsSnappingPredicate(obj); })));
-        public static readonly DependencyProperty IsIndividualSnappingPredicateProperty = DependencyProperty.RegisterAttached("IsIndividualSnappingPredicate", typeof(Predicate<DependencyObject>), typeof(DragBehaviour), new PropertyMetadata(new Predicate<DependencyObject>(obj => { return _globalIsIndividualSnappingPredicate(obj); })));
+        public static readonly DependencyProperty IsDragEnabledProperty =
+            DependencyProperty.RegisterAttached("IsDragEnabled", typeof(bool), typeof(DragBehaviour),
+                new PropertyMetadata(false, OnIsDragEnabledPropertyChanged));
+
+        public static readonly DependencyProperty UpdateEdgesOnMoveProperty =
+            DependencyProperty.RegisterAttached("UpdateEdgesOnMove", typeof(bool), typeof(DragBehaviour),
+                new PropertyMetadata(false));
+
+        public static readonly DependencyProperty IsTaggedProperty =
+            DependencyProperty.RegisterAttached("IsTagged", typeof(bool), typeof(DragBehaviour),
+                new PropertyMetadata(false));
+
+        public static readonly DependencyProperty IsDraggingProperty =
+            DependencyProperty.RegisterAttached("IsDragging", typeof(bool), typeof(DragBehaviour),
+                new PropertyMetadata(false));
+
+        public static readonly DependencyProperty IsSnappingPredicateProperty = DependencyProperty.RegisterAttached(
+            "IsSnappingPredicate", typeof(Predicate<DependencyObject>), typeof(DragBehaviour),
+            new PropertyMetadata(new Predicate<DependencyObject>(obj => { return _globalIsSnappingPredicate(obj); })));
+
+        public static readonly DependencyProperty IsIndividualSnappingPredicateProperty =
+            DependencyProperty.RegisterAttached("IsIndividualSnappingPredicate", typeof(Predicate<DependencyObject>),
+                typeof(DragBehaviour),
+                new PropertyMetadata(
+                    new Predicate<DependencyObject>(obj => _globalIsIndividualSnappingPredicate(obj))));
 
         /// <summary>
         /// Snap feature modifier delegate for X axis
         /// </summary>
-        public static readonly DependencyProperty XSnapModifierProperty = DependencyProperty.RegisterAttached("XSnapModifier", typeof(SnapModifierFunc), typeof(DragBehaviour), new PropertyMetadata(new SnapModifierFunc((area, obj, val) => _globalXSnapModifier(area, obj, val))));
+        public static readonly DependencyProperty XSnapModifierProperty =
+            DependencyProperty.RegisterAttached("XSnapModifier", typeof(SnapModifierFunc), typeof(DragBehaviour),
+                new PropertyMetadata(new SnapModifierFunc((area, obj, val) => _globalXSnapModifier(area, obj, val))));
 
         /// <summary>
         /// Snap feature modifier delegate for Y axis
         /// </summary>
-        public static readonly DependencyProperty YSnapModifierProperty = DependencyProperty.RegisterAttached("YSnapModifier", typeof(SnapModifierFunc), typeof(DragBehaviour), new PropertyMetadata(new SnapModifierFunc((area, obj, val) => _globalYSnapModifier(area, obj, val))));
+        public static readonly DependencyProperty YSnapModifierProperty =
+            DependencyProperty.RegisterAttached("YSnapModifier", typeof(SnapModifierFunc), typeof(DragBehaviour),
+                new PropertyMetadata(new SnapModifierFunc((area, obj, val) => _globalYSnapModifier(area, obj, val))));
 
-        private static readonly DependencyProperty OriginalXProperty = DependencyProperty.RegisterAttached("OriginalX", typeof(double), typeof(DragBehaviour), new PropertyMetadata(0.0));
-        private static readonly DependencyProperty OriginalYProperty = DependencyProperty.RegisterAttached("OriginalY", typeof(double), typeof(DragBehaviour), new PropertyMetadata(0.0));
-        private static readonly DependencyProperty OriginalMouseXProperty = DependencyProperty.RegisterAttached("OriginalMouseX", typeof(double), typeof(DragBehaviour), new PropertyMetadata(0.0));
-        private static readonly DependencyProperty OriginalMouseYProperty = DependencyProperty.RegisterAttached("OriginalMouseY", typeof(double), typeof(DragBehaviour), new PropertyMetadata(0.0));
+        private static readonly DependencyProperty OriginalXProperty =
+            DependencyProperty.RegisterAttached("OriginalX", typeof(double), typeof(DragBehaviour),
+                new PropertyMetadata(0.0));
+
+        private static readonly DependencyProperty OriginalYProperty =
+            DependencyProperty.RegisterAttached("OriginalY", typeof(double), typeof(DragBehaviour),
+                new PropertyMetadata(0.0));
+
+        private static readonly DependencyProperty OriginalMouseXProperty =
+            DependencyProperty.RegisterAttached("OriginalMouseX", typeof(double), typeof(DragBehaviour),
+                new PropertyMetadata(0.0));
+
+        private static readonly DependencyProperty OriginalMouseYProperty =
+            DependencyProperty.RegisterAttached("OriginalMouseY", typeof(double), typeof(DragBehaviour),
+                new PropertyMetadata(0.0));
 
         #endregion Attached DPs
 
@@ -321,8 +313,7 @@ namespace Westermo.GraphX.Controls
 
         private static void OnIsDragEnabledPropertyChanged(DependencyObject obj, DependencyPropertyChangedEventArgs e)
         {
-            var element = obj as IInputElement;
-            if (element == null)
+            if (obj is not IInputElement element)
                 return;
 
             if (e.NewValue is bool == false)
@@ -344,24 +335,26 @@ namespace Westermo.GraphX.Controls
             }
             else
             {
-                //unregister the event handlers
-                if (element is VertexControl)
+                switch (element)
                 {
-                    element.MouseLeftButtonDown -= OnVertexDragStarted;
-                    element.PreviewMouseLeftButtonUp -= OnVertexDragFinished;
-                }
-                else if (element is EdgeControl)
-                {
-                    element.MouseLeftButtonDown -= OnEdgeDrageStarted;
-                    element.PreviewMouseLeftButtonUp -= OnEdgeDragFinished;
+                    //unregister the event handlers
+                    case VertexControl:
+                        element.MouseLeftButtonDown -= OnVertexDragStarted;
+                        element.PreviewMouseLeftButtonUp -= OnVertexDragFinished;
+                        break;
+                    case EdgeControl:
+                        element.MouseLeftButtonDown -= OnEdgeDrageStarted;
+                        element.PreviewMouseLeftButtonUp -= OnEdgeDragFinished;
+                        break;
                 }
             }
         }
 
         #endregion PropertyChanged callbacks
+
         private static void OnEdgeDrageStarted(object sender, System.Windows.Input.MouseButtonEventArgs e)
         {
-            DependencyObject obj = (DependencyObject) sender;
+            var obj = (DependencyObject)sender;
 
             SetIsDragging(obj, true);
 
@@ -371,18 +364,20 @@ namespace Westermo.GraphX.Controls
                 element.MouseMove -= OnEdgeDragging;
                 element.MouseMove += OnEdgeDragging;
             }
-            else throw new GX_InvalidDataException("The control must be a descendent of the FrameworkElement or FrameworkContentElement!");
+            else
+                throw new GX_InvalidDataException(
+                    "The control must be a descendent of the FrameworkElement or FrameworkContentElement!");
 
             e.Handled = false;
         }
 
         private static void OnEdgeDragging(object sender, System.Windows.Input.MouseEventArgs e)
         {
-            var obj = (DependencyObject) sender;
+            var obj = (DependencyObject)sender;
             if (!GetIsDragging(obj))
                 return;
 
-            EdgeControl edgeControl = (EdgeControl) sender;
+            var edgeControl = (EdgeControl)sender;
 
             edgeControl.PrepareEdgePathFromMousePointer();
 
@@ -391,13 +386,11 @@ namespace Westermo.GraphX.Controls
 
         private static void OnEdgeDragFinished(object sender, System.Windows.Input.MouseButtonEventArgs e)
         {
-            EdgeControl? edgeControl = sender as EdgeControl;
+            if (sender is not EdgeControl edgeControl) return;
 
-            if (edgeControl == null) return;
+            var graphAreaBase = edgeControl.RootArea;
 
-            GraphAreaBase graphAreaBase = edgeControl.RootArea!;
-
-            VertexControl? vertexControl = graphAreaBase.GetVertexControlAt(e.GetPosition(graphAreaBase));
+            var vertexControl = graphAreaBase.GetVertexControlAt(e.GetPosition(graphAreaBase));
 
             if (vertexControl != null)
             {
@@ -405,9 +398,9 @@ namespace Westermo.GraphX.Controls
 
                 if (vertexControl.VertexConnectionPointsList.Count > 0)
                 {
-                    IVertexConnectionPoint? vertexConnectionPoint = vertexControl.GetConnectionPointAt(e.GetPosition(graphAreaBase));
+                    var vertexConnectionPoint = vertexControl.GetConnectionPointAt(e.GetPosition(graphAreaBase));
 
-                    var edge = (IGraphXCommonEdge) edgeControl.Edge!;
+                    var edge = (IGraphXCommonEdge)edgeControl.Edge!;
 
                     if (vertexConnectionPoint != null)
                     {
@@ -428,8 +421,7 @@ namespace Westermo.GraphX.Controls
                 //obj.ClearValue(OriginalXProperty);
                 //obj.ClearValue(OriginalYProperty);
 
-                var element = sender as IInputElement;
-                if (element != null)
+                if (sender is IInputElement element)
                 {
                     element.MouseMove -= OnVertexDragging;
                     element.ReleaseMouseCapture();
@@ -439,7 +431,7 @@ namespace Westermo.GraphX.Controls
 
         private static void OnVertexDragStarted(object sender, System.Windows.Input.MouseButtonEventArgs e)
         {
-            var obj = (DependencyObject) sender;
+            var obj = (DependencyObject)sender;
             //we are starting the drag
             SetIsDragging(obj, true);
 
@@ -462,20 +454,20 @@ namespace Westermo.GraphX.Controls
                 }
 
             //capture the mouse
-            var element = obj as IInputElement;
-            if (element != null)
+            if (obj is IInputElement element)
             {
                 element.CaptureMouse();
                 element.MouseMove -= OnVertexDragging;
                 element.MouseMove += OnVertexDragging;
             }
+
             //else throw new GX_InvalidDataException("The control must be a descendent of the FrameworkElement or FrameworkContentElement!");
             e.Handled = false;
         }
 
         private static void OnVertexDragFinished(object sender, System.Windows.Input.MouseButtonEventArgs e)
         {
-            UpdateVertexEdges((VertexControl) sender);
+            UpdateVertexEdges((VertexControl)sender);
 
             var obj = (DependencyObject)sender;
             SetIsDragging(obj, false);
@@ -504,19 +496,19 @@ namespace Westermo.GraphX.Controls
 
         private static void OnVertexDragging(object sender, System.Windows.Input.MouseEventArgs e)
         {
-            var obj = (DependencyObject) sender;
+            var obj = (DependencyObject)sender;
             if (!GetIsDragging(obj))
                 return;
 
             var area = GetAreaFromObject(obj);
             var pos = GetPositionInArea(area, e);
 
-            double horizontalChange = pos.X - GetOriginalMouseX(obj);
-            double verticalChange = pos.Y - GetOriginalMouseY(obj);
+            var horizontalChange = pos.X - GetOriginalMouseX(obj);
+            var verticalChange = pos.Y - GetOriginalMouseY(obj);
 
             // Determine whether to use snapping
-            bool snap = GetIsSnappingPredicate(obj)(obj);
-            bool individualSnap = false;
+            var snap = GetIsSnappingPredicate(obj)(obj);
+            var individualSnap = false;
             // Snap modifier functions to apply to the primary dragged object
             SnapModifierFunc? snapXMod = null;
             SnapModifierFunc? snapYMod = null;
@@ -546,8 +538,7 @@ namespace Westermo.GraphX.Controls
                 var primaryDragVertex = obj as VertexControl;
                 if (primaryDragVertex == null)
                 {
-                    var ec = obj as EdgeControl;
-                    if (ec != null)
+                    if (obj is EdgeControl ec)
                         primaryDragVertex = ec.Source ?? ec.Target;
 
                     if (primaryDragVertex == null)
@@ -556,6 +547,7 @@ namespace Westermo.GraphX.Controls
                         return;
                     }
                 }
+
                 UpdateCoordinates(area!, primaryDragVertex, horizontalChange, verticalChange, snapXMod, snapYMod);
 
                 if (!individualSnap)
@@ -569,30 +561,31 @@ namespace Westermo.GraphX.Controls
 
                 foreach (var item in area!.GetAllVertexControls())
                     if (!ReferenceEquals(item, primaryDragVertex) && GetIsTagged(item))
-                        UpdateCoordinates(area, item, horizontalChange, verticalChange, individualSnapXMod, individualSnapYMod);
+                        UpdateCoordinates(area, item, horizontalChange, verticalChange, individualSnapXMod,
+                            individualSnapYMod);
             }
             else UpdateCoordinates(area!, obj, horizontalChange, verticalChange, snapXMod, snapYMod);
+
             e.Handled = true;
         }
 
         private static void UpdateVertexEdges(VertexControl vc)
         {
-            if (vc?.Vertex != null)
-            {
-                var ra = vc.RootArea;
-                if (ra == null) throw new GX_InvalidDataException("OnDragFinished() - IGraphControl object must always have RootArea property set!");
-                if (ra.IsEdgeRoutingEnabled)
-                {
-                    ra.ComputeEdgeRoutesByVertex(vc);
-                    vc.InvalidateVisual();
-                }
-            }
+            if (vc.Vertex == null) return;
+            var ra = vc.RootArea;
+            if (ra == null)
+                throw new GX_InvalidDataException(
+                    "OnDragFinished() - IGraphControl object must always have RootArea property set!");
+            if (!ra.IsEdgeRoutingEnabled) return;
+            ra.ComputeEdgeRoutesByVertex(vc);
+            vc.InvalidateVisual();
         }
 
-        private static void UpdateCoordinates(GraphAreaBase area, DependencyObject obj, double horizontalChange, double verticalChange, SnapModifierFunc? xSnapModifier, SnapModifierFunc? ySnapModifier)
+        private static void UpdateCoordinates(GraphAreaBase area, DependencyObject obj, double horizontalChange,
+            double verticalChange, SnapModifierFunc? xSnapModifier, SnapModifierFunc? ySnapModifier)
         {
             if (double.IsNaN(GraphAreaBase.GetX(obj)))
-                GraphAreaBase.SetX(obj, 0, true);
+                GraphAreaBase.SetX(obj, 0);
             if (double.IsNaN(GraphAreaBase.GetY(obj)))
                 GraphAreaBase.SetY(obj, 0, true);
 
@@ -600,7 +593,7 @@ namespace Westermo.GraphX.Controls
             var x = GetOriginalX(obj) + horizontalChange;
             if (xSnapModifier != null)
                 x = xSnapModifier(area, obj, x);
-            GraphAreaBase.SetX(obj, x, true);
+            GraphAreaBase.SetX(obj, x);
 
             var y = GetOriginalY(obj) + verticalChange;
             if (ySnapModifier != null)
@@ -608,7 +601,7 @@ namespace Westermo.GraphX.Controls
             GraphAreaBase.SetY(obj, y, true);
 
             if (GetUpdateEdgesOnMove(obj))
-                UpdateVertexEdges((VertexControl) obj);
+                UpdateVertexEdges((VertexControl)obj);
 
             //Debug.WriteLine("({0:##0.00000}, {1:##0.00000})", x, y);
         }
@@ -620,7 +613,9 @@ namespace Westermo.GraphX.Controls
                 var pos = e.GetPosition(area);
                 return pos;
             }
-            throw new GX_InvalidDataException("DragBehavior.GetPositionInArea() - The input element must be a child of a GraphAreaBase.");
+
+            throw new GX_InvalidDataException(
+                "DragBehavior.GetPositionInArea() - The input element must be a child of a GraphAreaBase.");
         }
 
         private static GraphAreaBase? GetAreaFromObject(object obj)
@@ -632,7 +627,9 @@ namespace Westermo.GraphX.Controls
             else if (obj is EdgeControl)
                 area = ((EdgeControl)obj).RootArea;
             else if (obj is DependencyObject)
-                area = VisualTreeHelperEx.FindAncestorByType((DependencyObject)obj, typeof(GraphAreaBase), false) as GraphAreaBase;
+                area =
+                    VisualTreeHelperEx.FindAncestorByType((DependencyObject)obj, typeof(GraphAreaBase), false) as
+                        GraphAreaBase;
 
             return area;
         }

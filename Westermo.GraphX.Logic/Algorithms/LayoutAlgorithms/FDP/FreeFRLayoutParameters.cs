@@ -6,22 +6,16 @@ namespace Westermo.GraphX.Logic.Algorithms.LayoutAlgorithms
     {
         private double _idealEdgeLength = 10;
 
-        public override double K
-        {
-            get { return _idealEdgeLength; }
-        }
+        public override double K => _idealEdgeLength;
 
-        public override double InitialTemperature
-        {
-            get { return Math.Sqrt(Math.Pow(_idealEdgeLength, 2) * VertexCount); }
-        }
+        public override double InitialTemperature => Math.Sqrt(Math.Pow(_idealEdgeLength, 2) * VertexCount);
 
         /// <summary>
         /// Constant. Represents the ideal length of the edges.
         /// </summary>
         public double IdealEdgeLength
         {
-            get { return _idealEdgeLength; }
+            get => _idealEdgeLength;
             set
             {
                 _idealEdgeLength = value;

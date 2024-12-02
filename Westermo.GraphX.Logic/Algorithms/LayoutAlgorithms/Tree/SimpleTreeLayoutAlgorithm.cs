@@ -6,7 +6,6 @@ using Westermo.GraphX.Measure;
 using Westermo.GraphX.Common.Exceptions;
 using QuikGraph;
 using QuikGraph.Algorithms.Search;
-using QuikGraph.Collections;
 
 namespace Westermo.GraphX.Logic.Algorithms.LayoutAlgorithms
 {
@@ -147,12 +146,12 @@ namespace Westermo.GraphX.Logic.Algorithms.LayoutAlgorithms
             }
             else
             {
-                double minPos = double.MaxValue;
-                double maxPos = -double.MaxValue;
+                var minPos = double.MaxValue;
+                var maxPos = -double.MaxValue;
                 //first put the children
                 foreach ( var child in SpanningTree.OutEdges( v ).Select( e => e.Target ) )
                 {
-                    double childPos = CalculatePosition( child, v, l + 1, firstOfComponent );
+                    var childPos = CalculatePosition( child, v, l + 1, firstOfComponent );
 
                     if ( childPos >= 0 )
                     {
@@ -182,7 +181,7 @@ namespace Westermo.GraphX.Logic.Algorithms.LayoutAlgorithms
         protected virtual void AssignPositions(CancellationToken cancellationToken)
         {
             double layerSize = 0;
-            bool changeCoordinates = ( Parameters.Direction == LayoutDirection.LeftToRight || Parameters.Direction == LayoutDirection.RightToLeft );
+            var changeCoordinates = Parameters.Direction == LayoutDirection.LeftToRight || Parameters.Direction == LayoutDirection.RightToLeft;
 
             foreach ( var layer in Layers )
             {

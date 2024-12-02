@@ -3,8 +3,6 @@
 using System.ComponentModel;
 using Westermo.GraphX.Controls.Models;
 using System.Windows;
-using DefaultEventArgs = System.EventArgs;
-using System.Windows.Controls;
 using Westermo.GraphX.Common.Exceptions;
 
 namespace Westermo.GraphX.Controls
@@ -14,7 +12,8 @@ namespace Westermo.GraphX.Controls
         /// <summary>
         /// Gets label attach node
         /// </summary>
-        public VertexControl? AttachNode { get { return (VertexControl)GetValue(AttachNodeProperty); } private set { SetValue(AttachNodeProperty, value); OnPropertyChanged("AttachNode"); } }
+        public VertexControl? AttachNode { get => (VertexControl)GetValue(AttachNodeProperty);
+            private set { SetValue(AttachNodeProperty, value); OnPropertyChanged("AttachNode"); } }
 
         public static readonly DependencyProperty AttachNodeProperty = DependencyProperty.Register(nameof(AttachNode), typeof(VertexControl), typeof(AttachableVertexLabelControl), 
             new PropertyMetadata(null));
@@ -53,7 +52,7 @@ namespace Westermo.GraphX.Controls
             AttachNode = null;
         }
 
-        void AttachNode_IsVisibleChanged(object sender, DependencyPropertyChangedEventArgs e)
+        private void AttachNode_IsVisibleChanged(object sender, DependencyPropertyChangedEventArgs e)
         {
             if (AttachNode!.IsVisible && AttachNode.ShowLabel)
                 Show();

@@ -6,45 +6,56 @@ namespace Westermo.GraphX.Measure
     public struct Size
     {
         internal double _width;
-        public double Width { get { return _width; } 
-            set 
+
+        public double Width
+        {
+            get => _width;
+            set
             {
                 if (IsEmpty)
                     throw new InvalidOperationException("Size_CannotModifyEmptySize");
                 if (value < 0.0)
                     throw new ArgumentException("Size_WidthCannotBeNegative");
-                _width = value; 
-            } }
+                _width = value;
+            }
+        }
+
         internal double _height;
-        public double Height { get { return _height; } 
-            set 
+
+        public double Height
+        {
+            get => _height;
+            set
             {
                 if (IsEmpty)
                     throw new InvalidOperationException("Size_CannotModifyEmptySize");
                 if (value < 0.0)
                     throw new ArgumentException("Size_HeightCannotBeNegative");
                 _width = value;
-                _height = value; 
-            } }
+                _height = value;
+            }
+        }
 
         private static readonly Size SEmpty;
-        public static Size Empty { get { return SEmpty; } }
-        public bool IsEmpty { get { return (_width < 0.0); } }
+        public static Size Empty => SEmpty;
+        public bool IsEmpty => _width < 0.0;
 
-        public Size(double width, double height) 
+        public Size(double width, double height)
         {
-            if ((width < 0.0) || (height < 0.0))
+            if (width < 0.0 || height < 0.0)
             {
                 throw new ArgumentException("Size_WidthAndHeightCannotBeNegative");
-            } 
-            _width = width; _height = height; 
+            }
+
+            _width = width;
+            _height = height;
         }
 
         #region Custom operators overload
 
         public static bool operator ==(Size size1, Size size2)
         {
-            return size1.Width == size2.Width && size1.Height == size2.Height;
+            return Math.Abs(size1.Width - size2.Width) < 1e-12 && Math.Abs(size1.Height - size2.Height) < 1e-12;
         }
 
         public static bool operator !=(Size size1, Size size2)
@@ -80,7 +91,8 @@ namespace Westermo.GraphX.Measure
             {
                 return size2.IsEmpty;
             }
-            return (size1.Width.Equals(size2.Width) && size1.Height.Equals(size2.Height));
+
+            return size1.Width.Equals(size2.Width) && size1.Height.Equals(size2.Height);
         }
 
         public override bool Equals(object o)
@@ -101,7 +113,8 @@ namespace Westermo.GraphX.Measure
             {
                 return 0;
             }
-            return (Width.GetHashCode() ^ Height.GetHashCode());
+
+            return Width.GetHashCode() ^ Height.GetHashCode();
         }
     }
 }

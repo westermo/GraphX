@@ -2,8 +2,6 @@
 
 using Westermo.GraphX.Controls.Models;
 using System.Windows;
-using System.Windows.Controls;
-using DefaultEventArgs = System.EventArgs;
 using Westermo.GraphX.Common.Exceptions;
 
 namespace Westermo.GraphX.Controls
@@ -13,7 +11,9 @@ namespace Westermo.GraphX.Controls
         /// <summary>
         /// Gets label attach node
         /// </summary>
-        public EdgeControl? AttachNode { get { return (EdgeControl) GetValue(AttachNodeProperty); } private set {SetValue(AttachNodeProperty, value);} }
+        public EdgeControl? AttachNode { get => (EdgeControl) GetValue(AttachNodeProperty);
+            private set => SetValue(AttachNodeProperty, value);
+        }
 
         public static readonly DependencyProperty AttachNodeProperty = DependencyProperty.Register(nameof(AttachNode), typeof(EdgeControl), typeof(AttachableEdgeLabelControl), 
             new PropertyMetadata(null));
@@ -51,13 +51,13 @@ namespace Westermo.GraphX.Controls
             AttachNode = null;
         }
 
-        void AttachNode_IsVisibleChanged(object sender, DependencyPropertyChangedEventArgs e)
+        private void AttachNode_IsVisibleChanged(object sender, DependencyPropertyChangedEventArgs e)
         {
             if(AttachNode!.IsVisible && ShowLabel)
-                base.Show();
+                Show();
             else if (!AttachNode.IsVisible)
             {
-                base.Hide();
+                Hide();
             }
         }
 

@@ -23,19 +23,15 @@ namespace Westermo.GraphX.Logic.Algorithms.OverlapRemoval
     /// <summary>
     /// http://adaptagrams.svn.sourceforge.net/viewvc/adaptagrams/trunk/RectangleOverlapSolver/placement/FSA.java?view=markup
     /// </summary>
-    public class FSAAlgorithm<TObject, TParam> : OverlapRemovalAlgorithmBase<TObject, TParam>
+    public class FSAAlgorithm<TObject, TParam>(IDictionary<TObject, Rect> rectangles, TParam parameters)
+        : OverlapRemovalAlgorithmBase<TObject, TParam>(rectangles, parameters)
         where TObject : class
         where TParam : IOverlapRemovalParameters
     {
-        public FSAAlgorithm( IDictionary<TObject, Rect> rectangles, TParam parameters )
-            : base( rectangles, parameters )
-        {
-        }
-
         protected override void RemoveOverlap(CancellationToken cancellationToken)
         {
             //DateTime t0 = DateTime.Now;
-            double cost = HorizontalImproved(cancellationToken);
+            var cost = HorizontalImproved(cancellationToken);
             //DateTime t1 = DateTime.Now;
 
             //Debug.WriteLine( "PFS horizontal: cost=" + cost + " time=" + ( t1 - t0 ) );
@@ -50,11 +46,11 @@ namespace Westermo.GraphX.Logic.Algorithms.OverlapRemoval
         protected Vector Force( Rect vi, Rect vj )
         {
             var f = new Vector( 0, 0 );
-            Vector d = vj.GetCenter() - vi.GetCenter();
-            double adx = Math.Abs( d.X );
-            double ady = Math.Abs( d.Y );
-            double gij = d.Y / d.X;
-            double Gij = ( vi.Height + vj.Height ) / ( vi.Width + vj.Width );
+            var d = vj.GetCenter() - vi.GetCenter();
+            var adx = Math.Abs( d.X );
+            var ady = Math.Abs( d.Y );
+            var gij = d.Y / d.X;
+            var Gij = ( vi.Height + vj.Height ) / ( vi.Width + vj.Width );
             if ( Gij >= gij && gij > 0 || -Gij <= gij && gij < 0 || gij == 0 )
             {
                 // vi and vj touch with y-direction boundaries
@@ -73,8 +69,8 @@ namespace Westermo.GraphX.Logic.Algorithms.OverlapRemoval
         protected Vector Force2( Rect vi, Rect vj )
         {
             var f = new Vector( 0, 0 );
-            Vector d = vj.GetCenter() - vi.GetCenter();
-            double gij = d.Y / d.X;
+            var d = vj.GetCenter() - vi.GetCenter();
+            var gij = d.Y / d.X;
             if ( vi.IntersectsWith( vj ) )
             {
                 f.X = ( vi.Width + vj.Width ) / 2.0 - d.X;
@@ -92,8 +88,8 @@ namespace Westermo.GraphX.Logic.Algorithms.OverlapRemoval
 
         protected int XComparison( RectangleWrapper<TObject> r1, RectangleWrapper<TObject> r2 )
         {
-            double r1CenterX = r1.CenterX;
-            double r2CenterX = r2.CenterX;
+            var r1CenterX = r1.CenterX;
+            var r2CenterX = r2.CenterX;
 
             if ( r1CenterX < r2CenterX )
             {
@@ -173,8 +169,8 @@ namespace Westermo.GraphX.Logic.Algorithms.OverlapRemoval
                 var u = WrappedRectangles[i];
 
                 //i-vel azonos k�z�pponttal rendelkez� t�glalapok meghat�roz�sa
-                int k = i;
-                for ( int j = i + 1; j < n; j++ )
+                var k = i;
+                for ( var j = i + 1; j < n; j++ )
                 {
                     cancellationToken.ThrowIfCancellationRequested();
                     var v = WrappedRectangles[j];
@@ -193,17 +189,17 @@ namespace Westermo.GraphX.Logic.Algorithms.OverlapRemoval
                 //i-k intervallumban l�v� t�glalapokra er�sz�m�t�s a t�l�k balra l�v�kkel
                 if ( u.CenterX > x0 )
                 {
-                    for ( int m = i; m <= k; m++ )
+                    for ( var m = i; m <= k; m++ )
                     {
                         double ggg = 0;
-                        for ( int j = 0; j < i; j++ )
+                        for ( var j = 0; j < i; j++ )
                         {
                             cancellationToken.ThrowIfCancellationRequested();
-                            Vector f = Force( WrappedRectangles[j].Rectangle, WrappedRectangles[m].Rectangle );
+                            var f = Force( WrappedRectangles[j].Rectangle, WrappedRectangles[m].Rectangle );
                             ggg = Math.Max( f.X + gamma[j], ggg );
                         }
                         var v = WrappedRectangles[m];
-                        double gg =
+                        var gg =
                             v.Rectangle.Left + ggg < lmin.Rectangle.Left
                                 ? sigma
                                 : ggg;
@@ -212,11 +208,11 @@ namespace Westermo.GraphX.Logic.Algorithms.OverlapRemoval
                 }
                 //megjegyezz�k az elemek eltol�s�st x t�mbbe
                 //bal sz�l� elemet �jra meghat�rozzuk
-                for ( int m = i; m <= k; m++ )
+                for ( var m = i; m <= k; m++ )
                 {
                     cancellationToken.ThrowIfCancellationRequested();
                     gamma[m] = g;
-                    RectangleWrapper<TObject> r = WrappedRectangles[m];
+                    var r = WrappedRectangles[m];
                     x[m] = r.Rectangle.Left + g;
                     if ( r.Rectangle.Left < lmin.Rectangle.Left )
                     {
@@ -227,12 +223,12 @@ namespace Westermo.GraphX.Logic.Algorithms.OverlapRemoval
                 //az i-k intervallum n�gyzeteit�l jobbra l�v�kkel er�sz�m�t�s, legnagyobb er� t�rol�sa
                 // delta = max(0, max{f.x(m,j)|i<=m<=k<j<n})
                 double delta = 0;
-                for ( int m = i; m <= k; m++ )
+                for ( var m = i; m <= k; m++ )
                 {
-                    for ( int j = k + 1; j < n; j++ )
+                    for ( var j = k + 1; j < n; j++ )
                     {
                         cancellationToken.ThrowIfCancellationRequested();
-                        Vector f = Force( WrappedRectangles[m].Rectangle, WrappedRectangles[j].Rectangle );
+                        var f = Force( WrappedRectangles[m].Rectangle, WrappedRectangles[j].Rectangle );
                         if ( f.X > delta )
                         {
                             delta = f.X;
@@ -248,12 +244,12 @@ namespace Westermo.GraphX.Logic.Algorithms.OverlapRemoval
                 cancellationToken.ThrowIfCancellationRequested();
 
                 var r = WrappedRectangles[i];
-                double oldPos = r.Rectangle.Left;
-                double newPos = x[i];
+                var oldPos = r.Rectangle.Left;
+                var newPos = x[i];
 
                 r.Rectangle.X = newPos;
 
-                double diff = oldPos - newPos;
+                var diff = oldPos - newPos;
                 cost += diff * diff;
             }
             return cost;
@@ -261,8 +257,8 @@ namespace Westermo.GraphX.Logic.Algorithms.OverlapRemoval
 
         protected int YComparison( RectangleWrapper<TObject> r1, RectangleWrapper<TObject> r2 )
         {
-            double r1CenterY = r1.CenterY;
-            double r2CenterY = r2.CenterY;
+            var r1CenterY = r1.CenterY;
+            var r2CenterY = r2.CenterY;
 
             if ( r1CenterY < r2CenterY )
             {
@@ -331,19 +327,19 @@ namespace Westermo.GraphX.Logic.Algorithms.OverlapRemoval
             if (WrappedRectangles.Count == 0) return 0;
             WrappedRectangles.Sort( YComparison );
             int i = 0, n = WrappedRectangles.Count;
-            RectangleWrapper<TObject> lmin = WrappedRectangles[0];
+            var lmin = WrappedRectangles[0];
             double sigma = 0, y0 = lmin.CenterY;
             var gamma = new double[WrappedRectangles.Count];
             var y = new double[WrappedRectangles.Count];
             while ( i < n )
             {
-                RectangleWrapper<TObject> u = WrappedRectangles[i];
-                int k = i;
-                for ( int j = i + 1; j < n; j++ )
+                var u = WrappedRectangles[i];
+                var k = i;
+                for ( var j = i + 1; j < n; j++ )
                 {
                     cancellationToken.ThrowIfCancellationRequested();
 
-                    RectangleWrapper<TObject> v = WrappedRectangles[j];
+                    var v = WrappedRectangles[j];
                     if ( u.CenterY == v.CenterY )
                     {
                         u = v;
@@ -357,30 +353,30 @@ namespace Westermo.GraphX.Logic.Algorithms.OverlapRemoval
                 double g = 0;
                 if ( u.CenterY > y0 )
                 {
-                    for ( int m = i; m <= k; m++ )
+                    for ( var m = i; m <= k; m++ )
                     {
                         cancellationToken.ThrowIfCancellationRequested();
 
                         double ggg = 0;
-                        for ( int j = 0; j < i; j++ )
+                        for ( var j = 0; j < i; j++ )
                         {
-                            Vector f = Force2( WrappedRectangles[j].Rectangle, WrappedRectangles[m].Rectangle );
+                            var f = Force2( WrappedRectangles[j].Rectangle, WrappedRectangles[m].Rectangle );
                             ggg = Math.Max( f.Y + gamma[j], ggg );
                         }
-                        RectangleWrapper<TObject> v = WrappedRectangles[m];
-                        double gg =
+                        var v = WrappedRectangles[m];
+                        var gg =
                             v.Rectangle.Top + ggg < lmin.Rectangle.Top
                                 ? sigma
                                 : ggg;
                         g = Math.Max( g, gg );
                     }
                 }
-                for ( int m = i; m <= k; m++ )
+                for ( var m = i; m <= k; m++ )
                 {
                     cancellationToken.ThrowIfCancellationRequested();
 
                     gamma[m] = g;
-                    RectangleWrapper<TObject> r = WrappedRectangles[m];
+                    var r = WrappedRectangles[m];
                     y[m] = r.Rectangle.Top + g;
                     if ( r.Rectangle.Top < lmin.Rectangle.Top )
                     {
@@ -389,13 +385,13 @@ namespace Westermo.GraphX.Logic.Algorithms.OverlapRemoval
                 }
                 // delta = max(0, max{f.x(m,j)|i<=m<=k<j<n})
                 double delta = 0;
-                for ( int m = i; m <= k; m++ )
+                for ( var m = i; m <= k; m++ )
                 {
-                    for ( int j = k + 1; j < n; j++ )
+                    for ( var j = k + 1; j < n; j++ )
                     {
                         cancellationToken.ThrowIfCancellationRequested();
 
-                        Vector f = Force( WrappedRectangles[m].Rectangle, WrappedRectangles[j].Rectangle );
+                        var f = Force( WrappedRectangles[m].Rectangle, WrappedRectangles[j].Rectangle );
                         if ( f.Y > delta )
                         {
                             delta = f.Y;
@@ -409,13 +405,13 @@ namespace Westermo.GraphX.Logic.Algorithms.OverlapRemoval
             double cost = 0;
             for ( i = 0; i < n; i++ )
             {
-                RectangleWrapper<TObject> r = WrappedRectangles[i];
-                double oldPos = r.Rectangle.Top;
-                double newPos = y[i];
+                var r = WrappedRectangles[i];
+                var oldPos = r.Rectangle.Top;
+                var newPos = y[i];
 
                 r.Rectangle.Y = newPos;
 
-                double diff = oldPos - newPos;
+                var diff = oldPos - newPos;
                 cost += diff * diff;
             }
             return cost;

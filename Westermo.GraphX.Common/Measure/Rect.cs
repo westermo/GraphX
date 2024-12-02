@@ -11,17 +11,47 @@ namespace Westermo.GraphX.Measure
     {
         internal double _x;
         internal double _y;
-        public double X { get { return _x; } set { _x = value; } }
-        public double Y { get { return _y; } set { _y = value; } }
 
-        public double Left { get { return _x; } }
-        public double Top { get { return _y; } }
-        public double Bottom { get { if (IsEmpty) return double.NegativeInfinity; return (_y + _height); } }
-        public double Right { get { if (IsEmpty) return double.NegativeInfinity; return (_x + _width); } }
+        public double X
+        {
+            get => _x;
+            set => _x = value;
+        }
+
+        public double Y
+        {
+            get => _y;
+            set => _y = value;
+        }
+
+        public double Left => _x;
+        public double Top => _y;
+
+        public double Bottom
+        {
+            get
+            {
+                if (IsEmpty) return double.NegativeInfinity;
+                return _y + _height;
+            }
+        }
+
+        public double Right
+        {
+            get
+            {
+                if (IsEmpty) return double.NegativeInfinity;
+                return _x + _width;
+            }
+        }
 
         internal double _width;
-        public double Width { get { return _width; } 
-            set {
+
+        public double Width
+        {
+            get => _width;
+            set
+            {
                 if (IsEmpty)
                     throw new InvalidOperationException("Rect_CannotModifyEmptyRect");
                 if (value < 0.0)
@@ -29,43 +59,48 @@ namespace Westermo.GraphX.Measure
                 _width = value;
             }
         }
+
         internal double _height;
-        public double Height { get { return _height; } 
-            set {
+
+        public double Height
+        {
+            get => _height;
+            set
+            {
                 if (IsEmpty)
                     throw new InvalidOperationException("Rect_CannotModifyEmptyRect");
                 if (value < 0.0)
                     throw new ArgumentException("Size_HeightCannotBeNegative");
                 _height = value;
-            } }
+            }
+        }
 
-        public Point BottomLeft { get { return new Point(_x, Bottom); } }
-        public Point TopLeft { get { return new Point(_x, _y); } }
-        public Point TopRight { get { return new Point(Right, _y); } }
-        public Point BottomRight { get { return new Point(Right, Bottom); } }
+        public Point BottomLeft => new(_x, Bottom);
+        public Point TopLeft => new(_x, _y);
+        public Point TopRight => new(Right, _y);
+        public Point BottomRight => new(Right, Bottom);
 
         private static readonly Rect SEmpty;
-        public static Rect Empty { get { return SEmpty; } }
-        public bool IsEmpty { get { return (_width < 0.0); } }
+        public static Rect Empty => SEmpty;
+        public bool IsEmpty => _width < 0.0;
 
         public Point Location
         {
-            get
-            {
-                return new Point(_x, _y);
-            }
+            get => new(_x, _y);
             set
             {
                 if (IsEmpty)
                 {
                     _x = 0;
                     _y = 0;
-                    return;                    
+                    return;
                 }
+
                 _x = value._x;
                 _y = value._y;
             }
         }
+
         public Size Size
         {
             get
@@ -74,6 +109,7 @@ namespace Westermo.GraphX.Measure
                 {
                     return Size.Empty;
                 }
+
                 return new Size(_width, _height);
             }
             set
@@ -91,6 +127,7 @@ namespace Westermo.GraphX.Measure
                         _height = 0;
                         return;
                     }
+
                     _width = value._width;
                     _height = value._height;
                 }
@@ -118,10 +155,11 @@ namespace Westermo.GraphX.Measure
 
         public Rect(double x, double y, double width, double height)
         {
-            if ((width < 0.0) || (height < 0.0))
+            if (width < 0.0 || height < 0.0)
             {
                 throw new ArgumentException("Size_WidthAndHeightCannotBeNegative");
             }
+
             _x = x;
             _y = y;
             _width = width;
@@ -162,7 +200,10 @@ namespace Westermo.GraphX.Measure
 
         public static bool operator ==(Rect value1, Rect value2)
         {
-            return value1.Left == value2.Left && value1.Top == value2.Top && value1.Right == value2.Right && value1.Bottom == value2.Bottom;
+            return Math.Abs(value1.Left - value2.Left) < 1e-12
+                   && Math.Abs(value1.Top - value2.Top) < 1e-12
+                   && Math.Abs(value1.Right - value2.Right) < 1e-12 &&
+                   Math.Abs(value1.Bottom - value2.Bottom) < 1e-12;
         }
 
         public static bool operator !=(Rect rect1, Rect rect2)
@@ -178,7 +219,9 @@ namespace Westermo.GraphX.Measure
             {
                 return rect2.IsEmpty;
             }
-            return (((rect1.X.Equals(rect2.X) && rect1.Y.Equals(rect2.Y)) && rect1.Width.Equals(rect2.Width)) && rect1.Height.Equals(rect2.Height));
+
+            return rect1.X.Equals(rect2.X) && rect1.Y.Equals(rect2.Y) && rect1.Width.Equals(rect2.Width) &&
+                   rect1.Height.Equals(rect2.Height);
         }
 
         public override bool Equals(object o)
@@ -199,7 +242,8 @@ namespace Westermo.GraphX.Measure
             {
                 return 0;
             }
-            return (((X.GetHashCode() ^ Y.GetHashCode()) ^ Width.GetHashCode()) ^ Height.GetHashCode());
+
+            return X.GetHashCode() ^ Y.GetHashCode() ^ Width.GetHashCode() ^ Height.GetHashCode();
         }
 
         public void Offset(Vector offsetVector)
@@ -208,6 +252,7 @@ namespace Westermo.GraphX.Measure
             {
                 throw new InvalidOperationException("Rect_CannotCallMethod");
             }
+
             _x += offsetVector._x;
             _y += offsetVector._y;
         }
@@ -218,6 +263,7 @@ namespace Westermo.GraphX.Measure
             {
                 throw new InvalidOperationException("Rect_CannotCallMethod");
             }
+
             _x += offsetX;
             _y += offsetY;
         }
@@ -240,7 +286,8 @@ namespace Westermo.GraphX.Measure
             {
                 return false;
             }
-            return ((((rect.Left <= Right) && (rect.Right >= Left)) && (rect.Top <= Bottom)) && (rect.Bottom >= Top));
+
+            return rect.Left <= Right && rect.Right >= Left && rect.Top <= Bottom && rect.Bottom >= Top;
         }
 
         public void Intersect(Rect rect)
@@ -280,26 +327,28 @@ namespace Westermo.GraphX.Measure
             }
             else if (!rect.IsEmpty)
             {
-                double num2 = Math.Min(Left, rect.Left);
-                double num = Math.Min(Top, rect.Top);
-                if ((rect.Width == double.PositiveInfinity) || (Width == double.PositiveInfinity))
+                var num2 = Math.Min(Left, rect.Left);
+                var num = Math.Min(Top, rect.Top);
+                if (double.IsPositiveInfinity(rect.Width) || double.IsPositiveInfinity(Width))
                 {
                     _width = double.PositiveInfinity;
                 }
                 else
                 {
-                    double num4 = Math.Max(Right, rect.Right);
+                    var num4 = Math.Max(Right, rect.Right);
                     _width = Math.Max(num4 - num2, 0.0);
                 }
-                if ((rect.Height == double.PositiveInfinity) || (Height == double.PositiveInfinity))
+
+                if (double.IsPositiveInfinity(rect.Height) || double.IsPositiveInfinity(Height))
                 {
                     _height = double.PositiveInfinity;
                 }
                 else
                 {
-                    double num3 = Math.Max(Bottom, rect.Bottom);
+                    var num3 = Math.Max(Bottom, rect.Bottom);
                     _height = Math.Max(num3 - num, 0.0);
                 }
+
                 _x = num2;
                 _y = num;
             }
@@ -333,6 +382,7 @@ namespace Westermo.GraphX.Measure
             {
                 return false;
             }
+
             return ContainsInternal(x, y);
         }
 
@@ -342,17 +392,23 @@ namespace Westermo.GraphX.Measure
             {
                 return false;
             }
-            return ((((_x <= rect._x) && (_y <= rect._y)) && ((_x + _width) >= (rect._x + rect._width))) && ((_y + _height) >= (rect._y + rect._height)));
+
+            return _x <= rect._x && _y <= rect._y && _x + _width >= rect._x + rect._width &&
+                   _y + _height >= rect._y + rect._height;
         }
 
         private bool ContainsInternal(double x, double y)
         {
-            return ((((x >= _x) && ((x - _width) <= _x)) && (y >= _y)) && ((y - _height) <= _y));
+            return x >= _x && x - _width <= _x && y >= _y && y - _height <= _y;
         }
 
         private static Rect CreateEmptyRect()
         {
-            return new Rect() { _x = double.PositiveInfinity, _y = double.PositiveInfinity, _width = double.NegativeInfinity, _height = double.NegativeInfinity };
+            return new Rect()
+            {
+                _x = double.PositiveInfinity, _y = double.PositiveInfinity, _width = double.NegativeInfinity,
+                _height = double.NegativeInfinity
+            };
         }
 
         static Rect()
@@ -371,13 +427,14 @@ namespace Westermo.GraphX.Measure
             {
                 throw new InvalidOperationException("Rect_CannotCallMethod");
             }
+
             _x -= width;
             _y -= height;
             _width += width;
             _width += width;
             _height += height;
             _height += height;
-            if ((_width < 0.0) || (_height < 0.0))
+            if (_width < 0.0 || _height < 0.0)
             {
                 _x = 0;
                 _y = 0;

@@ -1,20 +1,20 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
-  <PropertyGroup>
-    <TargetFramework>netstandard2.0</TargetFramework>
-    <LangVersion>latest</LangVersion>
-    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
-    <RootNamespace>Westermo.GraphX.Logic</RootNamespace>
-  </PropertyGroup>
+    <PropertyGroup>
+        <TargetFramework>net9.0</TargetFramework>
+        <LangVersion>latest</LangVersion>
+        <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+        <RootNamespace>Westermo.GraphX.Logic</RootNamespace>
+    </PropertyGroup>
 
-  <ItemGroup>
-    <ProjectReference Include="..\Westermo.GraphX.Common\Westermo.GraphX.Common.csproj" />
-  </ItemGroup>
+    <ItemGroup>
+        <ProjectReference Include="..\Westermo.GraphX.Common\Westermo.GraphX.Common.csproj"/>
+    </ItemGroup>
 
-  <!-- NuGet related -->
-  <PropertyGroup>
-    <AssemblyTitle>Westermo GraphX Controls Library (Support library)</AssemblyTitle>
-    <Description>Support library for Westermo.GraphX.Controls</Description>
-  </PropertyGroup>
+    <!-- NuGet related -->
+    <PropertyGroup>
+        <AssemblyTitle>Westermo GraphX Controls Library (Support library)</AssemblyTitle>
+        <Description>Support library for Westermo.GraphX.Controls</Description>
+    </PropertyGroup>
 
 </Project>

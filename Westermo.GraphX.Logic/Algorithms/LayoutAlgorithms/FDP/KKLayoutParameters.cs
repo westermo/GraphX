@@ -8,7 +8,7 @@
 		/// </summary>
 		public double Width
 		{
-			get { return _width; }
+			get => _width;
 			set
 			{
 				_width = value;
@@ -22,7 +22,7 @@
 		/// </summary>
 		public double Height
 		{
-			get { return _height; }
+			get => _height;
 			set
 			{
 				_height = value;
@@ -36,7 +36,7 @@
 		/// </summary>
 		public int MaxIterations
 		{
-			get { return _maxIterations; }
+			get => _maxIterations;
 			set
 			{
 				_maxIterations = value;
@@ -47,7 +47,7 @@
 		private double _k = 1;
 		public double K
 		{
-			get { return _k; }
+			get => _k;
 			set
 			{
 				_k = value;
@@ -63,7 +63,7 @@
 		/// </summary>
 		public bool AdjustForGravity
 		{
-			get { return _adjustForGravity; }
+			get => _adjustForGravity;
 			set
 			{
 				_adjustForGravity = value;
@@ -74,7 +74,7 @@
 		private bool _exchangeVertices;
 		public bool ExchangeVertices
 		{
-			get { return _exchangeVertices; }
+			get => _exchangeVertices;
 			set
 			{
 				_exchangeVertices = value;
@@ -88,7 +88,7 @@
 		/// </summary>
 		public double LengthFactor
 		{
-			get { return _lengthFactor; }
+			get => _lengthFactor;
 			set
 			{
 				_lengthFactor = value;
@@ -102,7 +102,7 @@
 		/// </summary>
 		public double DisconnectedMultiplier
 		{
-			get { return _disconnectedMultiplier; }
+			get => _disconnectedMultiplier;
 			set
 			{
 				_disconnectedMultiplier = value;

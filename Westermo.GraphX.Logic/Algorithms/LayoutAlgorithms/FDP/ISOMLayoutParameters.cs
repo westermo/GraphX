@@ -8,7 +8,7 @@
 		/// </summary>
 		public double Width
 		{
-			get { return _width; }
+			get => _width;
 			set
 			{
 				_width = value;
@@ -22,7 +22,7 @@
 		/// </summary>
 		public double Height
 		{
-			get { return _height; }
+			get => _height;
 			set
 			{
 				_height = value;
@@ -36,7 +36,7 @@
 		/// </summary>
 		public int MaxEpoch
 		{
-			get { return _maxEpoch; }
+			get => _maxEpoch;
 			set
 			{
 				_maxEpoch = value;
@@ -50,7 +50,7 @@
 		/// </summary>
 		public int RadiusConstantTime
 		{
-			get { return _radiusConstantTime; }
+			get => _radiusConstantTime;
 			set
 			{
 				_radiusConstantTime = value;
@@ -64,7 +64,7 @@
 		/// </summary>
 		public int InitialRadius
 		{
-			get { return _initialRadius; }
+			get => _initialRadius;
 			set
 			{
 				_initialRadius = value;
@@ -78,7 +78,7 @@
 		/// </summary>
 		public int MinRadius
 		{
-			get { return _minRadius; }
+			get => _minRadius;
 			set
 			{
 				_minRadius = value;
@@ -92,7 +92,7 @@
 		/// </summary>
 		public double InitialAdaption
 		{
-			get { return _initialAdaption; }
+			get => _initialAdaption;
 			set
 			{
 				_initialAdaption = value;
@@ -106,7 +106,7 @@
 		/// </summary>
 		public double MinAdaption
 		{
-			get { return _minAdaption; }
+			get => _minAdaption;
 			set
 			{
 				_minAdaption = value;
@@ -120,7 +120,7 @@
 		/// </summary>
 		public double CoolingFactor
 		{
-			get { return _coolingFactor; }
+			get => _coolingFactor;
 			set
 			{
 				_coolingFactor = value;

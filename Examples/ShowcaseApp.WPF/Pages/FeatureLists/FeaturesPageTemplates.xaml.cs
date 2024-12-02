@@ -1,12 +1,12 @@
 ﻿using System.ComponentModel;
 using System.Windows.Controls;
 
-namespace ShowcaseApp.WPF.Pages
+namespace ShowcaseApp.WPF.Pages.FeatureLists
 {
     /// <summary>
     /// Interaction logic for DebugGraph.xaml
     /// </summary>
-    public partial class FeaturesPageTemplates : UserControl, INotifyPropertyChanged
+    public partial class FeaturesPageTemplates : INotifyPropertyChanged
     {
         public FeaturesPageTemplates()
         {
@@ -19,7 +19,7 @@ namespace ShowcaseApp.WPF.Pages
         protected virtual void OnPropertyChanged(string propertyName)
         {
             var handler = PropertyChanged;
-            if (handler != null) handler(this, new PropertyChangedEventArgs(propertyName));
+            handler?.Invoke(this, new PropertyChangedEventArgs(propertyName));
         }
     }
 }

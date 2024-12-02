@@ -1,8 +1,4 @@
-﻿using System.Collections.Generic;
-using System.Linq;
-using Westermo.GraphX.Common.Interfaces;
-
-namespace Westermo.GraphX.Logic.Algorithms.OverlapRemoval
+﻿namespace Westermo.GraphX.Logic.Algorithms.OverlapRemoval
 {
 	/*public class StandardOverlapRemovalAlgorithmFactory<TVertex> : IOverlapRemovalAlgorithmFactory<TVertex>
 		where TVertex : class

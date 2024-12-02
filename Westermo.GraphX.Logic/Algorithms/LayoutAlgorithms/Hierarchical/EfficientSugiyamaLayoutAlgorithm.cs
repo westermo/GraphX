@@ -7,9 +7,14 @@ using QuikGraph;
 
 namespace Westermo.GraphX.Logic.Algorithms.LayoutAlgorithms
 {
-    public partial class EfficientSugiyamaLayoutAlgorithm<TVertex, TEdge, TGraph> 
-        : DefaultParameterizedLayoutAlgorithmBase<TVertex, TEdge, TGraph, EfficientSugiyamaLayoutParameters>,
-          ILayoutEdgeRouting<TEdge>
+    public partial class EfficientSugiyamaLayoutAlgorithm<TVertex, TEdge, TGraph>(
+        TGraph visitedGraph,
+        EfficientSugiyamaLayoutParameters parameters,
+        IDictionary<TVertex, Point> vertexPositions,
+        IDictionary<TVertex, Size> vertexSizes)
+        : DefaultParameterizedLayoutAlgorithmBase<TVertex, TEdge, TGraph, EfficientSugiyamaLayoutParameters>(
+                visitedGraph, vertexPositions, parameters),
+            ILayoutEdgeRouting<TEdge>
         where TVertex : class
         where TEdge : IEdge<TVertex>
         where TGraph : IVertexAndEdgeListGraph<TVertex, TEdge>, IMutableVertexAndEdgeSet<TVertex, TEdge>
@@ -27,8 +32,6 @@ namespace Westermo.GraphX.Logic.Algorithms.LayoutAlgorithms
 
         private readonly IDictionary<TEdge, IList<SugiVertex>> _dummyVerticesOfEdges =
             new Dictionary<TEdge, IList<SugiVertex>>();
-
-        private readonly IDictionary<TVertex, Size> _vertexSizes;
 
         private readonly IDictionary<TVertex, SugiVertex> _vertexMap = 
             new Dictionary<TVertex, SugiVertex>();
@@ -58,16 +61,6 @@ namespace Westermo.GraphX.Logic.Algorithms.LayoutAlgorithms
             : this(visitedGraph, parameters, null, vertexSizes)
         { }
 
-        public EfficientSugiyamaLayoutAlgorithm(
-            TGraph visitedGraph, 
-            EfficientSugiyamaLayoutParameters parameters, 
-            IDictionary<TVertex, Point> vertexPositions,
-            IDictionary<TVertex, Size> vertexSizes)
-            : base(visitedGraph, vertexPositions, parameters)
-        {
-            _vertexSizes = vertexSizes;
-        }
-
         /// <summary>
         /// Initializes the private _graph field which stores the graph that 
         /// we operate on.
@@ -80,9 +73,9 @@ namespace Westermo.GraphX.Logic.Algorithms.LayoutAlgorithms
             //copy the vertices
             foreach (var vertex in VisitedGraph.Vertices)
             {
-                Size size = new Size();
-                if (_vertexSizes != null)
-                    _vertexSizes.TryGetValue(vertex, out size);
+                var size = new Size();
+                if (vertexSizes != null)
+                    vertexSizes.TryGetValue(vertex, out size);
 
                 var vertexWrapper = new SugiVertex(vertex, size);
                 _graph.AddVertex(vertexWrapper);
@@ -141,10 +134,7 @@ namespace Westermo.GraphX.Logic.Algorithms.LayoutAlgorithms
 
         #region ILayoutEdgeRouting<TEdge> Members
 
-        public IDictionary<TEdge, Point[]> EdgeRoutes
-        {
-            get { return _edgeRoutingPoints; }
-        }
+        public IDictionary<TEdge, Point[]> EdgeRoutes => _edgeRoutingPoints;
 
         #endregion
     }

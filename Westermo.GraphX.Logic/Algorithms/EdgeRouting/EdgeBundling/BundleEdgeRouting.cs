@@ -4,7 +4,6 @@ using System.Linq;
 using System.Threading;
 using Westermo.GraphX.Measure;
 using Westermo.GraphX.Common.Interfaces;
-using Westermo.GraphX.Common.Models.Semaphore;
 using QuikGraph;
 
 /* Code here is partially used from NodeXL (https://nodexl.codeplex.com/)
@@ -36,8 +35,7 @@ namespace Westermo.GraphX.Logic.Algorithms.EdgeRouting
         {
             Parameters = parameters;
             AreaRectangle = graphArea;
-            var prm = parameters as BundleEdgeRoutingParameters;
-            if (prm != null)
+            if (parameters is BundleEdgeRoutingParameters prm)
             {
                 SubdivisionPoints = prm.SubdivisionPoints;
                 Straightening = prm.Straightening;
@@ -351,8 +349,8 @@ namespace Westermo.GraphX.Logic.Algorithms.EdgeRouting
         {
             var avg = (ed1.Length + ed2.Length) / 2;
             var dis = VectorTools.Distance(ed1.Middle, ed2.Middle);
-            if ((avg + dis) == 0) return 0;
-            return (avg / (avg + dis));
+            if (avg + dis == 0) return 0;
+            return avg / (avg + dis);
         }
 
         /// <summary>
@@ -516,8 +514,8 @@ namespace Westermo.GraphX.Logic.Algorithms.EdgeRouting
         /// </returns>
         private bool CalculateDirectedness(EdgeGroupData ed1, EdgeGroupData ed2)
         {
-            if ((VectorTools.Distance(ed1.V1, ed2.V1) + VectorTools.Distance(ed1.V2, ed2.V2)) <
-                (VectorTools.Distance(ed1.V1, ed2.V2) + VectorTools.Distance(ed1.V2, ed2.V1)))
+            if (VectorTools.Distance(ed1.V1, ed2.V1) + VectorTools.Distance(ed1.V2, ed2.V2) <
+                VectorTools.Distance(ed1.V1, ed2.V2) + VectorTools.Distance(ed1.V2, ed2.V1))
                 return true;
             else return false;
         }
@@ -583,8 +581,8 @@ namespace Westermo.GraphX.Logic.Algorithms.EdgeRouting
                 foreach (var p2 in _edgeGroupData)
                 {
                     if (p2.Value.Length < 50) continue;//??????
-                    if (((p1.Key.K1 == p2.Key.K1) && (p1.Key.K2 == p2.Key.K2))
-                        || (p1.Value.CompatibleGroups.ContainsKey(p2.Key)))
+                    if ((p1.Key.K1 == p2.Key.K1 && p1.Key.K2 == p2.Key.K2)
+                        || p1.Value.CompatibleGroups.ContainsKey(p2.Key))
                         continue;
                     //if ((((p1.Value.v1 == p2.Value.v1) && (p1.Value.v1.Y == p2.Value.v1.Y)) && (p1.Value.v2.X == p2.Value.v2.X) && (p1.Value.v2.Y == p2.Value.v2.Y)) ||
                     //(((p1.Value.v1.X == p2.Value.v2.X) && (p1.Value.v1.Y == p2.Value.v2.Y)) && (p1.Value.v2.X == p2.Value.v1.X) && (p1.Value.v2.Y == p2.Value.v1.Y)))
@@ -718,7 +716,7 @@ namespace Westermo.GraphX.Logic.Algorithms.EdgeRouting
                 var p = ed.ControlPoints[i];
                 Point p1, p2;
                 p1 = i == 0 ? ed.V1 : ed.ControlPoints[i - 1];
-                p2 = i == (_subdivisionPoints - 1) ? ed.V2 : ed.ControlPoints[i + 1];
+                p2 = i == _subdivisionPoints - 1 ? ed.V2 : ed.ControlPoints[i + 1];
                 //SizeF sp = new SizeF(p);
                 var f = VectorTools.Multiply(VectorTools.Plus(VectorTools.Minus(p1, p), VectorTools.Minus(p2, p)), ed.K);
                 var r = new Point(0, 0);
@@ -730,7 +728,7 @@ namespace Westermo.GraphX.Logic.Algorithms.EdgeRouting
                     Point q;
                     var j = 1f;
                     EdgeGroupData ed2;
-                    if ((epd.Ed1.ID.K1 == ed.ID.K1) && (epd.Ed1.ID.K2 == ed.ID.K2))
+                    if (epd.Ed1.ID.K1 == ed.ID.K1 && epd.Ed1.ID.K2 == ed.ID.K2)
                         ed2 = epd.Ed2;
                     else
                         ed2 = epd.Ed1;
@@ -748,13 +746,13 @@ namespace Westermo.GraphX.Logic.Algorithms.EdgeRouting
                     var l = VectorTools.Length(fs);
                     if (l > 0)//???
                     {
-                        fs = VectorTools.Multiply(fs, epd.C / (l));
+                        fs = VectorTools.Multiply(fs, epd.C / l);
 
                         //fs = VectorTools.Multiply(fs, VectorTools.Length(fs) * ed2.edges.Count);
                         fs = VectorTools.Multiply(fs, VectorTools.Length(fs) * ed2.EdgeCount);
 
-                        r.X += (j * fs.X);
-                        r.Y += (j * fs.Y);
+                        r.X += j * fs.X;
+                        r.Y += j * fs.Y;
                     }
                 }
 
@@ -917,8 +915,8 @@ namespace Westermo.GraphX.Logic.Algorithms.EdgeRouting
         /// </summary>
         public int SubdivisionPoints
         {
-            get { return _subdivisionPoints; }
-            set { _subdivisionPoints = value; }
+            get => _subdivisionPoints;
+            set => _subdivisionPoints = value;
         }
 
         /// <summary>
@@ -927,8 +925,8 @@ namespace Westermo.GraphX.Logic.Algorithms.EdgeRouting
         /// </summary>
         public int Iterations
         {
-            get { return _iterations; }
-            set { _iterations = value; }
+            get => _iterations;
+            set => _iterations = value;
         }
 
         /// <summary>
@@ -937,8 +935,8 @@ namespace Westermo.GraphX.Logic.Algorithms.EdgeRouting
         /// </summary>
         public bool RepulseOpposite
         {
-            get { return _repulseOpposite; }
-            set { _repulseOpposite = value; }
+            get => _repulseOpposite;
+            set => _repulseOpposite = value;
         }
 
         /// <summary>
@@ -947,8 +945,8 @@ namespace Westermo.GraphX.Logic.Algorithms.EdgeRouting
         /// </summary>
         public bool UseThreading
         {
-            get { return _useThreading; }
-            set { _useThreading = value; }
+            get => _useThreading;
+            set => _useThreading = value;
         }
 
         /// <summary>
@@ -958,8 +956,8 @@ namespace Westermo.GraphX.Logic.Algorithms.EdgeRouting
         /// </summary>
         public float SpringConstant
         {
-            get { return _springConstant; }
-            set { _springConstant = value; }
+            get => _springConstant;
+            set => _springConstant = value;
         }
 
         /// <summary>
@@ -971,8 +969,8 @@ namespace Westermo.GraphX.Logic.Algorithms.EdgeRouting
         /// </summary>
         public float Threshold
         {
-            get { return _threshold; }
-            set { _threshold = value; }
+            get => _threshold;
+            set => _threshold = value;
         }
 
         /// <summary>
@@ -982,8 +980,8 @@ namespace Westermo.GraphX.Logic.Algorithms.EdgeRouting
         /// </summary>
         public float RepulsionCoefficient
         {
-            get { return _repulsionCoefficient; }
-            set { _repulsionCoefficient = value; }
+            get => _repulsionCoefficient;
+            set => _repulsionCoefficient = value;
         }
 
         /// <summary>
@@ -993,27 +991,21 @@ namespace Westermo.GraphX.Logic.Algorithms.EdgeRouting
         /// </summary>
         public float Straightening
         {
-            get { return _straightening; }
-            set { _straightening = value; }
+            get => _straightening;
+            set => _straightening = value;
         }
 
-        struct KeyPair
+        private struct KeyPair(long n1, long n2)
         {
-            public KeyPair(long n1, long n2)
-            {
-                K1 = n1;
-                K2 = n2;
-            }
-
-            public readonly long K1;
+            public readonly long K1 = n1;
             
-            public readonly long K2;
+            public readonly long K2 = n2;
         }
 
         /// <summary>
         /// Class used for storing the needed edge metadata
         /// </summary>
-        class EdgeGroupData
+        private class EdgeGroupData
         {
             public Point V1;
 
@@ -1041,23 +1033,15 @@ namespace Westermo.GraphX.Logic.Algorithms.EdgeRouting
         /// <summary>
         /// Class used for storing data for a pair of groups of edges (direction and compatibility coefficient)
         /// </summary>
-        class GroupPairData
+        private class GroupPairData(float cc, EdgeGroupData e1, EdgeGroupData e2, bool dd)
         {
-            public GroupPairData(float cc, EdgeGroupData e1, EdgeGroupData e2, bool dd)
-            {
-                C = cc;
-                Ed1 = e1;
-                Ed2 = e2;
-                D = dd;
-            }
+            public readonly float C = cc;
 
-            public readonly float C;
+            public readonly EdgeGroupData Ed1 = e1;
 
-            public readonly EdgeGroupData Ed1;
+            public readonly EdgeGroupData Ed2 = e2;
 
-            public readonly EdgeGroupData Ed2;
-
-            public readonly bool D;
+            public readonly bool D = dd;
         }
 
     }

@@ -19,8 +19,8 @@ namespace Westermo.GraphX.Logic.Algorithms.LayoutAlgorithms
             /// </summary>
             public void EnsureAlternatingAndPositions()
             {
-                bool shouldBeAContainer = true;
-                for (int i = 0; i < Count; i++, shouldBeAContainer = !shouldBeAContainer)
+                var shouldBeAContainer = true;
+                for (var i = 0; i < Count; i++, shouldBeAContainer = !shouldBeAContainer)
                 {
                     if (shouldBeAContainer && this[i] is SugiVertex)
                     {
@@ -53,7 +53,7 @@ namespace Westermo.GraphX.Logic.Algorithms.LayoutAlgorithms
             protected void EnsurePositions()
             {
                 //assign positions to vertices on the actualLayer (L_i)
-                for (int i = 1; i < this.Count; i += 2)
+                for (var i = 1; i < Count; i += 2)
                 {
                     var precedingContainer = this[i - 1] as SegmentContainer;
                     var vertex = this[i] as SugiVertex;
@@ -69,7 +69,7 @@ namespace Westermo.GraphX.Logic.Algorithms.LayoutAlgorithms
                 }
 
                 //assign positions to containers on the actualLayer (L_i+1)
-                for (int i = 0; i < this.Count; i += 2)
+                for (var i = 0; i < Count; i += 2)
                 {
                     var container = this[i] as SegmentContainer;
                     if (i == 0)
@@ -86,17 +86,15 @@ namespace Westermo.GraphX.Logic.Algorithms.LayoutAlgorithms
 
             public void SetPositions()
             {
-                int nextPosition = 0;
-                for (int i = 0; i < this.Count; i++)
+                var nextPosition = 0;
+                for (var i = 0; i < Count; i++)
                 {
-                    var segmentContainer = this[i] as SegmentContainer;
-                    var vertex = this[i] as SugiVertex;
-                    if (segmentContainer != null)
+                    if (this[i] is SegmentContainer segmentContainer)
                     {
                         segmentContainer.Position = nextPosition;
                         nextPosition += segmentContainer.Count;
                     }
-                    else if (vertex != null)
+                    else if (this[i] is SugiVertex vertex)
                     {
                         vertex.Position = nextPosition;
                         nextPosition += 1;
@@ -109,8 +107,7 @@ namespace Westermo.GraphX.Logic.Algorithms.LayoutAlgorithms
                 var clonedLayer = new AlternatingLayer();
                 foreach (var item in this)
                 {
-                    var cloneableItem = item as ICloneable;
-                    if (cloneableItem != null)
+                    if (item is ICloneable cloneableItem)
                         clonedLayer.Add(cloneableItem.Clone() as IData);
                     else
                         clonedLayer.Add(item);
@@ -122,7 +119,7 @@ namespace Westermo.GraphX.Logic.Algorithms.LayoutAlgorithms
 
             object ICloneable.Clone()
             {
-                return this.Clone();
+                return Clone();
             }
 
             #endregion

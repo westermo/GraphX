@@ -46,7 +46,7 @@
 		/// </summary>
 		public float HorizontalGap
 		{
-			get { return Horizontalgap; }
+			get => Horizontalgap;
 			set
 			{
 				if ( Horizontalgap != value )
@@ -59,7 +59,7 @@
 
 		public float MaxWidth
 		{
-			get { return _maxWidth; }
+			get => _maxWidth;
 			set
 			{
 				if ( _maxWidth != value )
@@ -72,7 +72,7 @@
 
 		public bool BaryCenteringByPosition
 		{
-			get { return _baryCenteringByPosition; }
+			get => _baryCenteringByPosition;
 			set
 			{
 				if ( _baryCenteringByPosition != value )
@@ -88,7 +88,7 @@
 		/// </summary>
 		public float VerticalGap
 		{
-			get { return Verticalgap; }
+			get => Verticalgap;
 			set
 			{
 				if ( Verticalgap != value )
@@ -105,7 +105,7 @@
 		/// </summary>
 		public bool DirtyRound
 		{
-			get { return _dirty; }
+			get => _dirty;
 			set
 			{
 				if ( _dirty != value )
@@ -121,7 +121,7 @@
 		/// </summary>
 		public int Phase1IterationCount
 		{
-			get { return _phase1IterationCount; }
+			get => _phase1IterationCount;
 			set
 			{
 				if ( _phase1IterationCount != value )
@@ -137,7 +137,7 @@
 		/// </summary>
 		public int Phase2IterationCount
 		{
-			get { return _phase2IterationCount; }
+			get => _phase2IterationCount;
 			set
 			{
 				if ( _phase2IterationCount != value )
@@ -150,7 +150,7 @@
 
 		public bool MinimizeHierarchicalEdgeLong
 		{
-			get { return _minimizeHierarchicalEdgeLong; }
+			get => _minimizeHierarchicalEdgeLong;
 			set
 			{
 				if ( _minimizeHierarchicalEdgeLong != value )
@@ -163,7 +163,7 @@
 
 		public PositionCalculationMethodTypes PositionCalculationMethod
 		{
-			get { return _positionCalculationMethod; }
+			get => _positionCalculationMethod;
 			set
 			{
 				if ( value != _positionCalculationMethod )
@@ -182,7 +182,7 @@
 		/// </summary>
 		public bool Simplify
 		{
-			get { return _simplify; }
+			get => _simplify;
 			set
 			{
 				if ( _simplify != value )
@@ -198,7 +198,7 @@
 		/// </summary>
 		public PromptingConstraintType Prompting
 		{
-			get { return _promptingConstraint; }
+			get => _promptingConstraint;
 			set
 			{
 				if ( _promptingConstraint != value )

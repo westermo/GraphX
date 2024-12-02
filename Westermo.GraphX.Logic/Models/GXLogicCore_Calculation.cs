@@ -34,7 +34,7 @@ namespace Westermo.GraphX.Logic.Models
         public bool AreOverlapNeeded()
         {
             return (ExternalOverlapRemovalAlgorithm == null && AlgorithmFactory.NeedOverlapRemoval(DefaultLayoutAlgorithm) && DefaultOverlapRemovalAlgorithm != OverlapRemovalAlgorithmTypeEnum.None) ||
-                    (ExternalOverlapRemovalAlgorithm != null);
+                    ExternalOverlapRemovalAlgorithm != null;
         }
 
         /// <summary>

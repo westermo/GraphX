@@ -6,7 +6,7 @@
 
 		public double AttractionExponent
 		{
-			get { return attractionExponent; }
+			get => attractionExponent;
 			set
 			{
 				attractionExponent = value;
@@ -18,7 +18,7 @@
 
 		public double RepulsiveExponent
 		{
-			get { return repulsiveExponent; }
+			get => repulsiveExponent;
 			set
 			{
 				repulsiveExponent = value;
@@ -30,7 +30,7 @@
 
 		public double GravitationMultiplier
 		{
-			get { return gravitationMultiplier; }
+			get => gravitationMultiplier;
 			set
 			{
 				gravitationMultiplier = value;
@@ -42,7 +42,7 @@
 
 		public int IterationCount
 		{
-			get { return iterationCount; }
+			get => iterationCount;
 			set
 			{
 				iterationCount = value;

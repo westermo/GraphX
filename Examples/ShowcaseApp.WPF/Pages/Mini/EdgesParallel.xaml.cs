@@ -3,7 +3,6 @@ using System.ComponentModel;
 using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
-using Westermo.GraphX.Controls;
 using Westermo.GraphX.Controls.Models;
 using Westermo.GraphX.Common.Enums;
 using ShowcaseApp.WPF.Models;
@@ -16,7 +15,7 @@ namespace ShowcaseApp.WPF.Pages.Mini
     public partial class EdgesParallel : UserControl, INotifyPropertyChanged
     {
         private int _edgeDistance;
-        public int EdgeDistance { get { return _edgeDistance; } 
+        public int EdgeDistance { get => _edgeDistance;
             set 
             { 
                 _edgeDistance = value;
@@ -45,7 +44,7 @@ namespace ShowcaseApp.WPF.Pages.Mini
             graphArea.UpdateAllEdges(true);
         }
 
-        void ControlLoaded(object sender, RoutedEventArgs e)
+        private void ControlLoaded(object sender, RoutedEventArgs e)
         {
             OnPropertyChanged("EdgeDistance");
             GenerateGraph();
@@ -107,7 +106,7 @@ namespace ShowcaseApp.WPF.Pages.Mini
         protected virtual void OnPropertyChanged(string propertyName)
         {
             var handler = PropertyChanged;
-            if (handler != null) handler(this, new PropertyChangedEventArgs(propertyName));
+            handler?.Invoke(this, new PropertyChangedEventArgs(propertyName));
         }
     }
 }

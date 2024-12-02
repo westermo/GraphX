@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Drawing;
 using System.IO;
 using System.Windows;
 using System.Windows.Controls;
@@ -7,7 +6,6 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using Westermo.GraphX.Common.Enums;
 using Westermo.GraphX.Common.Exceptions;
-using Brushes = System.Windows.Media.Brushes;
 using Size = System.Windows.Size;
 
 namespace Westermo.GraphX.Controls
@@ -33,8 +31,8 @@ namespace Westermo.GraphX.Controls
         /// <param name="estPixelCount">Pixel quantity threshold</param>
         public static double CalculateEstimatedDPI(IGraphAreaBase vis, double imgdpi, double dpiStep, ulong estPixelCount)
         {
-            bool result = false;
-            double currentDPI = imgdpi;
+            var result = false;
+            var currentDPI = imgdpi;
             while (!result)
             {
                 if (CalulateSize(vis.ContentSize.Size, currentDPI) <= estPixelCount)
@@ -93,7 +91,7 @@ namespace Westermo.GraphX.Controls
                 
            
             //Create a file stream for saving image
-            using (FileStream outStream = new FileStream(path.LocalPath, FileMode.Create))
+            using (var outStream = new FileStream(path.LocalPath, FileMode.Create))
             {
                 //Use png encoder for our data
                 BitmapEncoder encoder;
@@ -136,7 +134,7 @@ namespace Westermo.GraphX.Controls
             {
                 //apply layout rounding
                 var isCtrl = surface is Control;
-                bool oldLR = false;
+                var oldLR = false;
                 double oldWidth = 0;
                 double oldHeight = 0;
                 if (isCtrl && compat)

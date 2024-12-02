@@ -36,8 +36,7 @@ namespace ShowcaseApp.WPF.Pages.Mini
             vc.VCPRoot.Children.Add(ctrl);
             vc.VertexConnectionPointsList.Add(vcp);
             //update edge to use new connection point
-            var ec = graphArea.GetRelatedEdgeControls(vc, EdgesType.Out).First() as EdgeControl;
-            if (ec == null)
+            if (graphArea.GetRelatedEdgeControls(vc, EdgesType.Out).First() is not EdgeControl ec)
             {
                 ec = graphArea.GetRelatedEdgeControls(vc, EdgesType.In).First() as EdgeControl;
                 (ec.Edge as DataEdge).TargetConnectionPointId = newId;
@@ -58,7 +57,7 @@ namespace ShowcaseApp.WPF.Pages.Mini
             graphArea.UpdateAllEdges(true);
         }
 
-        void ControlLoaded(object sender, RoutedEventArgs e)
+        private void ControlLoaded(object sender, RoutedEventArgs e)
         {
             GenerateGraph();
         }

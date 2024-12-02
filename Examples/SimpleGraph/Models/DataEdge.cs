@@ -31,7 +31,7 @@ namespace SimpleGraph.Models
         /// Default parameterless constructor (for serialization compatibility)
         /// </summary>
         public DataEdge()
-            : base(null, null, 1)
+            : base(null, null)
         {
         }
 

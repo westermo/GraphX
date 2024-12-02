@@ -38,7 +38,7 @@ namespace ShowcaseApp.WPF.Pages.Mini
 
         }
 
-        void ControlLoaded(object sender, RoutedEventArgs e)
+        private void ControlLoaded(object sender, RoutedEventArgs e)
         {
             GenerateGraph();
         }

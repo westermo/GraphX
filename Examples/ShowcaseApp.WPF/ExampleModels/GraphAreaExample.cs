@@ -1,4 +1,3 @@
-using Westermo.GraphX;
 using Westermo.GraphX.Controls;
 using QuikGraph;
 

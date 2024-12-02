@@ -17,7 +17,7 @@
         /// </summary>
         public LayoutDirection Direction
         {
-            get { return _direction; }
+            get => _direction;
             set
             {
                 if (value == _direction)
@@ -30,7 +30,7 @@
 
         public double LayerDistance
         {
-            get { return _layerDistance; }
+            get => _layerDistance;
             set
             {
                 if (value == _layerDistance)
@@ -43,7 +43,7 @@
 
         public double VertexDistance
         {
-            get { return _vertexDistance; }
+            get => _vertexDistance;
             set
             {
                 if (value == _vertexDistance)
@@ -56,7 +56,7 @@
 
         public int PositionMode
         {
-            get { return _positionMode; }
+            get => _positionMode;
             set
             {
                 if (value == _positionMode)
@@ -69,7 +69,7 @@
 
         public double WidthPerHeight
         {
-            get { return _widthPerHeight; }
+            get => _widthPerHeight;
             set
             {
                 if (value == _widthPerHeight)
@@ -82,7 +82,7 @@
 
         public bool OptimizeWidth
         {
-            get { return _optimizeWidth; }
+            get => _optimizeWidth;
             set
             {
                 if (value == _optimizeWidth)
@@ -95,7 +95,7 @@
 
         public bool MinimizeEdgeLength
         {
-            get { return _minimizeEdgeLength; }
+            get => _minimizeEdgeLength;
             set
             {
                 if (value == _minimizeEdgeLength)
@@ -108,7 +108,7 @@
 
         public SugiyamaEdgeRoutings EdgeRouting
         {
-            get { return _edgeRouting; }
+            get => _edgeRouting;
             set
             {
                 if (value == _edgeRouting)

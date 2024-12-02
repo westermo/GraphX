@@ -6,7 +6,6 @@ using Westermo.GraphX.Common;
 using Westermo.GraphX.Common.Exceptions;
 using Westermo.GraphX.Common.Interfaces;
 using Westermo.GraphX.Logic.Algorithms.OverlapRemoval;
-using Westermo.GraphX.Logic.Helpers;
 using QuikGraph;
 
 namespace Westermo.GraphX.Logic.Algorithms.LayoutAlgorithms.Grouped
@@ -17,14 +16,14 @@ namespace Westermo.GraphX.Logic.Algorithms.LayoutAlgorithms.Grouped
         where TGraph : IVertexAndEdgeListGraph<TVertex, TEdge>
     {        
 
-        public override bool NeedVertexSizes { get { return true; } }
+        public override bool NeedVertexSizes => true;
 
         public override void ResetGraph(IEnumerable<TVertex> vertices, IEnumerable<TEdge> edges)
         {
             //
         }
 
-        readonly GroupingLayoutAlgorithmParameters<TVertex, TEdge> _params;
+        private readonly GroupingLayoutAlgorithmParameters<TVertex, TEdge> _params;
 
         public GroupingLayoutAlgorithm(TGraph graph, IDictionary<TVertex, Point> positions, GroupingLayoutAlgorithmParameters<TVertex, TEdge> groupParams)
             :base(graph, positions)
@@ -79,18 +78,18 @@ namespace Westermo.GraphX.Logic.Algorithms.LayoutAlgorithms.Grouped
                 }
 
                 //write results to global positions storage
-                double?[] left = {null};
-                double?[] top = {null};
-                double?[] right = {null};
-                double?[] bottom = {null};
+                double?[] left = [null];
+                double?[] top = [null];
+                double?[] right = [null];
+                double?[] bottom = [null];
                 gp.LayoutAlgorithm.VertexPositions.ForEach(a =>
                 {
-                    left[0] = left[0].HasValue ? (a.Value.X < left[0] ? a.Value.X : left[0]) : a.Value.X;
+                    left[0] = left[0].HasValue ? a.Value.X < left[0] ? a.Value.X : left[0] : a.Value.X;
                     var w = a.Value.X + VertexSizes[a.Key].Width;
                     var h = a.Value.Y + VertexSizes[a.Key].Height;
-                    right[0] = right[0].HasValue ? (w > right[0] ? w : right[0]) : w;
-                    top[0] = top[0].HasValue ? (a.Value.Y < top[0] ? a.Value.Y : top[0]) : a.Value.Y;
-                    bottom[0] = bottom[0].HasValue ? (h > bottom[0] ? h : bottom[0]) : h;
+                    right[0] = right[0].HasValue ? w > right[0] ? w : right[0] : w;
+                    top[0] = top[0].HasValue ? a.Value.Y < top[0] ? a.Value.Y : top[0] : a.Value.Y;
+                    bottom[0] = bottom[0].HasValue ? h > bottom[0] ? h : bottom[0] : h;
 
                     if (VertexPositions.ContainsKey(a.Key)) VertexPositions[a.Key] = a.Value;
                     else VertexPositions.Add(a.Key, a.Value);
@@ -115,7 +114,7 @@ namespace Westermo.GraphX.Logic.Algorithms.LayoutAlgorithms.Grouped
                 cancellationToken.ThrowIfCancellationRequested();
                 ora.Rectangles.ForEach(a =>
                 {
-                    int group = (int) a.Key;
+                    var group = (int) a.Key;
                     //_params.GroupParametersList.FirstOrDefault(b => b.GroupId == (int)a.Key).ZoneRectangle = origList[a.Key];
                     ArrangeRectangle(a.Value, group, origList[a.Key]);
                 });

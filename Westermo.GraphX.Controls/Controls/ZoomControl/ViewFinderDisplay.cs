@@ -32,8 +32,8 @@ namespace Westermo.GraphX.Controls
 
         public Brush Background
         {
-            get { return (Brush) GetValue(BackgroundProperty); }
-            set { SetValue(BackgroundProperty, value); }
+            get => (Brush) GetValue(BackgroundProperty);
+            set => SetValue(BackgroundProperty, value);
         }
 
         #endregion
@@ -48,8 +48,8 @@ namespace Westermo.GraphX.Controls
 
         internal Rect ContentBounds
         {
-            get { return (Rect) GetValue(ContentBoundsProperty); }
-            set { SetValue(ContentBoundsPropertyKey, value); }
+            get => (Rect) GetValue(ContentBoundsProperty);
+            set => SetValue(ContentBoundsPropertyKey, value);
         }
 
         #endregion
@@ -62,8 +62,8 @@ namespace Westermo.GraphX.Controls
 
         public Brush ShadowBrush
         {
-            get { return (Brush) GetValue(ShadowBrushProperty); }
-            set { SetValue(ShadowBrushProperty, value); }
+            get => (Brush) GetValue(ShadowBrushProperty);
+            set => SetValue(ShadowBrushProperty, value);
         }
 
         #endregion
@@ -76,8 +76,8 @@ namespace Westermo.GraphX.Controls
 
         public Brush ViewportBrush
         {
-            get { return (Brush) GetValue(ViewportBrushProperty); }
-            set { SetValue(ViewportBrushProperty, value); }
+            get => (Brush) GetValue(ViewportBrushProperty);
+            set => SetValue(ViewportBrushProperty, value);
         }
 
         #endregion
@@ -90,8 +90,8 @@ namespace Westermo.GraphX.Controls
 
         public Pen ViewportPen
         {
-            get { return (Pen) GetValue(ViewportPenProperty); }
-            set { SetValue(ViewportPenProperty, value); }
+            get => (Pen) GetValue(ViewportPenProperty);
+            set => SetValue(ViewportPenProperty, value);
         }
 
         #endregion
@@ -104,8 +104,8 @@ namespace Westermo.GraphX.Controls
 
         public Rect ViewportRect
         {
-            get { return (Rect) GetValue(ViewportRectProperty); }
-            set { SetValue(ViewportRectProperty, value); }
+            get => (Rect) GetValue(ViewportRectProperty);
+            set => SetValue(ViewportRectProperty, value);
         }
 
         #endregion
@@ -120,8 +120,8 @@ namespace Westermo.GraphX.Controls
 
         internal VisualBrush? VisualBrush
         {
-            get { return (VisualBrush) GetValue(VisualBrushProperty); }
-            set { SetValue(VisualBrushPropertyKey, value); }
+            get => (VisualBrush) GetValue(VisualBrushProperty);
+            set => SetValue(VisualBrushPropertyKey, value);
         }
 
         #endregion
@@ -159,17 +159,17 @@ namespace Westermo.GraphX.Controls
             // Simulate size-to-content for the display panel by ensuring a width and height
             // based on the content bounds. Otherwise, the display panel may have no size, since it doesn't 
             // contain content.
-            double width = DoubleHelper.IsNaN(ContentBounds.Width) ? 0 : Math.Max(0, ContentBounds.Width);
-            double height = DoubleHelper.IsNaN(ContentBounds.Height) ? 0 : Math.Max(0, ContentBounds.Height);
-            Size displayPanelSize = new Size(width, height);
+            var width = DoubleHelper.IsNaN(ContentBounds.Width) ? 0 : Math.Max(0, ContentBounds.Width);
+            var height = DoubleHelper.IsNaN(ContentBounds.Height) ? 0 : Math.Max(0, ContentBounds.Height);
+            var displayPanelSize = new Size(width, height);
 
             // Now ensure that the result fits within the available size while maintaining
             // the width/height ratio of the content bounds
             if (displayPanelSize.Width > availableSize.Width || displayPanelSize.Height > availableSize.Height)
             {
-                double aspectX = availableSize.Width/displayPanelSize.Width;
-                double aspectY = availableSize.Height/displayPanelSize.Height;
-                double scale = (aspectX < aspectY) ? aspectX : aspectY;
+                var aspectX = availableSize.Width/displayPanelSize.Width;
+                var aspectY = availableSize.Height/displayPanelSize.Height;
+                var scale = aspectX < aspectY ? aspectX : aspectY;
                 displayPanelSize = new Size(Math.Max(0, displayPanelSize.Width * scale), Math.Max(0, displayPanelSize.Height * scale));
             }
 
@@ -187,10 +187,10 @@ namespace Westermo.GraphX.Controls
             if (ViewportRect.IntersectsWith(new Rect(RenderSize)))
             {
                 // draw shadow rectangles over the non-viewport regions
-                Rect r1 = new Rect(new Point(0, 0), new Size(RenderSize.Width, Math.Max(0, ViewportRect.Top)));
-                Rect r2 = new Rect(new Point(0, ViewportRect.Top), new Size(Math.Max(0, ViewportRect.Left), ViewportRect.Height));
-                Rect r3 = new Rect(new Point(ViewportRect.Right, ViewportRect.Top), new Size(Math.Max(0, RenderSize.Width - ViewportRect.Right), ViewportRect.Height));
-                Rect r4 = new Rect(new Point(0, ViewportRect.Bottom), new Size(RenderSize.Width, Math.Max(0, RenderSize.Height - ViewportRect.Bottom)));
+                var r1 = new Rect(new Point(0, 0), new Size(RenderSize.Width, Math.Max(0, ViewportRect.Top)));
+                var r2 = new Rect(new Point(0, ViewportRect.Top), new Size(Math.Max(0, ViewportRect.Left), ViewportRect.Height));
+                var r3 = new Rect(new Point(ViewportRect.Right, ViewportRect.Top), new Size(Math.Max(0, RenderSize.Width - ViewportRect.Right), ViewportRect.Height));
+                var r4 = new Rect(new Point(0, ViewportRect.Bottom), new Size(RenderSize.Width, Math.Max(0, RenderSize.Height - ViewportRect.Bottom)));
                 dc.DrawRectangle(ShadowBrush, null, r1);
                 dc.DrawRectangle(ShadowBrush, null, r2);
                 dc.DrawRectangle(ShadowBrush, null, r3);

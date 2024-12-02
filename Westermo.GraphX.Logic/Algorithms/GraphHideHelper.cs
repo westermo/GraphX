@@ -5,22 +5,21 @@ using QuikGraph;
 
 namespace Westermo.GraphX.Logic.Algorithms
 {
-	internal class GraphHideHelper<TVertex, TEdge> : ISoftMutableGraph<TVertex, TEdge>
+	internal class GraphHideHelper<TVertex, TEdge>(IMutableBidirectionalGraph<TVertex, TEdge> managedGraph)
+		: ISoftMutableGraph<TVertex, TEdge>
 		where TEdge : IEdge<TVertex>
 	{
-		private readonly IMutableBidirectionalGraph<TVertex, TEdge> _graph;
-
 		#region Helper Types
 		protected class HiddenCollection
 		{
-			public List<TVertex> hiddenVertices = new List<TVertex>();
-			public List<TEdge> hiddenEdges = new List<TEdge>();
+			public List<TVertex> hiddenVertices = [];
+			public List<TEdge> hiddenEdges = [];
 		}
 		#endregion
 
 		#region Properties, fields, events
-		private readonly List<TVertex> _hiddenVertices = new List<TVertex>();
-		private readonly List<TEdge> _hiddenEdges = new List<TEdge>();
+		private readonly List<TVertex> _hiddenVertices = [];
+		private readonly List<TEdge> _hiddenEdges = [];
 		private readonly IDictionary<string, HiddenCollection> _hiddenCollections = new Dictionary<string, HiddenCollection>();
 		private readonly IDictionary<TVertex, List<TEdge>> _hiddenEdgesOf = new Dictionary<TVertex, List<TEdge>>();
 
@@ -31,11 +30,6 @@ namespace Westermo.GraphX.Logic.Algorithms
 		public event VertexAction<TVertex> VertexUnhidden;
 		#endregion
 
-		public GraphHideHelper( IMutableBidirectionalGraph<TVertex, TEdge> managedGraph )
-		{
-			_graph = managedGraph;
-		}
-
 		#region Event handlers, helper methods
 
 		/// <summary>
@@ -45,7 +39,7 @@ namespace Westermo.GraphX.Logic.Algorithms
 		/// <returns>Edges, adjacent to the vertex <code>v</code>.</returns>
 		protected IEnumerable<TEdge> EdgesFor( TVertex v )
 		{
-			return _graph.InEdges( v ).Concat( _graph.OutEdges( v ) );
+			return managedGraph.InEdges( v ).Concat( managedGraph.OutEdges( v ) );
 		}
 
 		protected HiddenCollection GetHiddenCollection( string tag )
@@ -61,40 +55,30 @@ namespace Westermo.GraphX.Logic.Algorithms
 
 		protected void OnEdgeHidden( TEdge e )
 		{
-			if ( EdgeHidden != null )
-				EdgeHidden( e );
+			EdgeHidden?.Invoke(e);
 		}
 
 		protected void OnEdgeUnhidden( TEdge e )
 		{
-			if ( EdgeUnhidden != null )
-				EdgeUnhidden( e );
+			EdgeUnhidden?.Invoke(e);
 		}
 
 		protected void OnVertexHidden( TVertex v )
 		{
-			if ( VertexHidden != null )
-				VertexHidden( v );
+			VertexHidden?.Invoke(v);
 		}
 
 		protected void OnVertexUnhidden( TVertex v )
 		{
-			if ( VertexUnhidden != null )
-				VertexUnhidden( v );
+			VertexUnhidden?.Invoke(v);
 		}
 		#endregion
 
 		#region ISoftMutableGraph<TVertex,TEdge> Members
 
-		public IEnumerable<TVertex> HiddenVertices
-		{
-			get { return _hiddenVertices; }
-		}
+		public IEnumerable<TVertex> HiddenVertices => _hiddenVertices;
 
-		public IEnumerable<TEdge> HiddenEdges
-		{
-			get { return _hiddenEdges; }
-		}
+		public IEnumerable<TEdge> HiddenEdges => _hiddenEdges;
 
 		/// <summary>
 		/// Hides the vertex <code>v</code>.
@@ -102,12 +86,12 @@ namespace Westermo.GraphX.Logic.Algorithms
 		/// <param name="v">The vertex to hide.</param>
 		public bool HideVertex( TVertex v )
 		{
-			if ( _graph.ContainsVertex( v ) && !_hiddenVertices.Contains( v ) )
+			if ( managedGraph.ContainsVertex( v ) && !_hiddenVertices.Contains( v ) )
 			{
 				HideEdges( EdgesFor( v ) );
 
 				//hide the vertex
-				_graph.RemoveVertex( v );
+				managedGraph.RemoveVertex( v );
 				_hiddenVertices.Add( v );
 				OnVertexHidden( v );
 				return true;
@@ -123,7 +107,7 @@ namespace Westermo.GraphX.Logic.Algorithms
 		public void HideVertices( IEnumerable<TVertex> vertices )
 		{
 			var verticesToHide = new List<TVertex>( vertices );
-			foreach ( TVertex v in verticesToHide )
+			foreach ( var v in verticesToHide )
 			{
 				HideVertex( v );
 			}
@@ -131,12 +115,12 @@ namespace Westermo.GraphX.Logic.Algorithms
 
 		public bool HideVertex( TVertex v, string tag )
 		{
-			HiddenCollection h = GetHiddenCollection( tag );
+			var h = GetHiddenCollection( tag );
 			var eeh = new EdgeAction<TVertex, TEdge>( e => h.hiddenEdges.Add( e ) );
 			var veh = new VertexAction<TVertex>( vertex => h.hiddenVertices.Add( vertex ) );
 			EdgeHidden += eeh;
 			VertexHidden += veh;
-			bool ret = HideVertex( v );
+			var ret = HideVertex( v );
 			EdgeHidden -= eeh;
 			VertexHidden -= veh;
 			return ret;
@@ -152,13 +136,13 @@ namespace Westermo.GraphX.Logic.Algorithms
 
 		public void HideVerticesIf( Func<TVertex, bool> predicate, string tag )
 		{
-			var verticesToHide = _graph.Vertices.Where(predicate).ToList();
+			var verticesToHide = managedGraph.Vertices.Where(predicate).ToList();
 		    HideVertices( verticesToHide, tag );
 		}
 
 		public bool IsHiddenVertex( TVertex v )
 		{
-			return ( !_graph.ContainsVertex( v ) && _hiddenVertices.Contains( v ) );
+			return !managedGraph.ContainsVertex( v ) && _hiddenVertices.Contains( v );
 		}
 
 		public bool UnhideVertex( TVertex v )
@@ -168,7 +152,7 @@ namespace Westermo.GraphX.Logic.Algorithms
 				return false;
 
 			//unhide the vertex
-			_graph.AddVertex( v );
+			managedGraph.AddVertex( v );
 			_hiddenVertices.Remove( v );
 			OnVertexUnhidden( v );
 			return true;
@@ -185,9 +169,9 @@ namespace Westermo.GraphX.Logic.Algorithms
 
 		public bool HideEdge( TEdge e )
 		{
-			if ( _graph.ContainsEdge( e ) && !_hiddenEdges.Contains( e ) )
+			if ( managedGraph.ContainsEdge( e ) && !_hiddenEdges.Contains( e ) )
 			{
-				_graph.RemoveEdge( e );
+				managedGraph.RemoveEdge( e );
 				_hiddenEdges.Add( e );
 
 				GetHiddenEdgeListOf( e.Source ).Add( e );
@@ -206,7 +190,7 @@ namespace Westermo.GraphX.Logic.Algorithms
 			_hiddenEdgesOf.TryGetValue( v, out hiddenEdgeList );
 			if ( hiddenEdgeList == null )
 			{
-				hiddenEdgeList = new List<TEdge>();
+				hiddenEdgeList = [];
 				_hiddenEdgesOf[v] = hiddenEdgeList;
 			}
 			return hiddenEdgeList;
@@ -227,7 +211,7 @@ namespace Westermo.GraphX.Logic.Algorithms
 			var h = GetHiddenCollection( tag );
 			var eeh = new EdgeAction<TVertex, TEdge>( edge => h.hiddenEdges.Add( edge ) );
 			EdgeHidden += eeh;
-			bool ret = HideEdge( e );
+			var ret = HideEdge( e );
 			EdgeHidden -= eeh;
 			return ret;
 		}
@@ -252,13 +236,13 @@ namespace Westermo.GraphX.Logic.Algorithms
 
 		public void HideEdgesIf( Func<TEdge, bool> predicate, string tag )
 		{
-			var edgesToHide = _graph.Edges.Where(predicate).ToList();
+			var edgesToHide = managedGraph.Edges.Where(predicate).ToList();
 		    HideEdges( edgesToHide, tag );
 		}
 
 		public bool IsHiddenEdge( TEdge e )
 		{
-			return ( !_graph.ContainsEdge( e ) && _hiddenEdges.Contains( e ) );
+			return !managedGraph.ContainsEdge( e ) && _hiddenEdges.Contains( e );
 		}
 
 		public bool UnhideEdge( TEdge e )
@@ -267,7 +251,7 @@ namespace Westermo.GraphX.Logic.Algorithms
 				return false;
 
 			//unhide the edge
-			_graph.AddEdge( e );
+			managedGraph.AddEdge( e );
 			_hiddenEdges.Remove( e );
 
 			GetHiddenEdgeListOf( e.Source ).Remove( e );
@@ -294,12 +278,12 @@ namespace Westermo.GraphX.Logic.Algorithms
 
 		public bool Unhide( string tag )
 		{
-			HiddenCollection h = GetHiddenCollection( tag );
-			foreach ( TVertex v in h.hiddenVertices )
+			var h = GetHiddenCollection( tag );
+			foreach ( var v in h.hiddenVertices )
 			{
 				UnhideVertex( v );
 			}
-			foreach ( TEdge e in h.hiddenEdges )
+			foreach ( var e in h.hiddenEdges )
 			{
 				UnhideEdge( e );
 			}
@@ -319,15 +303,10 @@ namespace Westermo.GraphX.Logic.Algorithms
 			return true;
 		}
 
-		public int HiddenVertexCount
-		{
-			get { return _hiddenVertices.Count; }
-		}
+		public int HiddenVertexCount => _hiddenVertices.Count;
 
-		public int HiddenEdgeCount
-		{
-			get { return _hiddenEdges.Count; }
-		}
+		public int HiddenEdgeCount => _hiddenEdges.Count;
+
 		#endregion
 
 		#region IBidirectionalGraph<TVertex,TEdge> Members
@@ -404,15 +383,9 @@ namespace Westermo.GraphX.Logic.Algorithms
 
 		#region IGraph<TVertex,TEdge> Members
 
-		public bool AllowParallelEdges
-		{
-			get { throw new NotImplementedException(); }
-		}
+		public bool AllowParallelEdges => throw new NotImplementedException();
 
-		public bool IsDirected
-		{
-			get { throw new NotImplementedException(); }
-		}
+		public bool IsDirected => throw new NotImplementedException();
 
 		#endregion
 
@@ -423,20 +396,11 @@ namespace Westermo.GraphX.Logic.Algorithms
 			throw new NotImplementedException();
 		}
 
-		public bool IsVerticesEmpty
-		{
-			get { throw new NotImplementedException(); }
-		}
+		public bool IsVerticesEmpty => throw new NotImplementedException();
 
-		public int VertexCount
-		{
-			get { throw new NotImplementedException(); }
-		}
+		public int VertexCount => throw new NotImplementedException();
 
-		public IEnumerable<TVertex> Vertices
-		{
-			get { throw new NotImplementedException(); }
-		}
+		public IEnumerable<TVertex> Vertices => throw new NotImplementedException();
 
 		#endregion
 
@@ -447,20 +411,11 @@ namespace Westermo.GraphX.Logic.Algorithms
 			throw new NotImplementedException();
 		}
 
-		public int EdgeCount
-		{
-			get { throw new NotImplementedException(); }
-		}
+		public int EdgeCount => throw new NotImplementedException();
 
-		public IEnumerable<TEdge> Edges
-		{
-			get { throw new NotImplementedException(); }
-		}
+		public IEnumerable<TEdge> Edges => throw new NotImplementedException();
 
-		public bool IsEdgesEmpty
-		{
-			get { throw new NotImplementedException(); }
-		}
+		public bool IsEdgesEmpty => throw new NotImplementedException();
 
 		#endregion
 

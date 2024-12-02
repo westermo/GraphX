@@ -56,9 +56,9 @@ namespace Westermo.GraphX.Logic.Models
                     return new EfficientSugiyamaLayoutAlgorithm<TVertex, TEdge, TGraph>(graph, parameters as EfficientSugiyamaLayoutParameters, positions, sizes);
                 case LayoutAlgorithmTypeEnum.Sugiyama:
                     return new SugiyamaLayoutAlgorithm<TVertex, TEdge, TGraph>(graph, sizes, positions, parameters as SugiyamaLayoutParameters,
-                                                                                   e => (e is TypedEdge<TVertex>
-                                                                                        ? (e as TypedEdge<TVertex>).Type
-                                                                                        : EdgeTypes.Hierarchical));
+                                                                                   e => e is TypedEdge<TVertex>
+                                                                                       ? (e as TypedEdge<TVertex>).Type
+                                                                                       : EdgeTypes.Hierarchical);
                 case LayoutAlgorithmTypeEnum.CompoundFDP:
                     return new CompoundFDPLayoutAlgorithm<TVertex, TEdge, TGraph>(graph, sizes, new Dictionary<TVertex, Thickness>(), new Dictionary<TVertex, CompoundVertexInnerLayoutType>(),
                         positions, parameters as CompoundFDPLayoutParameters);
@@ -133,7 +133,7 @@ namespace Westermo.GraphX.Logic.Models
         /// <param name="algorithmType">Layout algorithm type</param>
         public bool NeedEdgeRouting(LayoutAlgorithmTypeEnum algorithmType)
         {
-            return (algorithmType != LayoutAlgorithmTypeEnum.Sugiyama) && (algorithmType != LayoutAlgorithmTypeEnum.EfficientSugiyama);
+            return algorithmType != LayoutAlgorithmTypeEnum.Sugiyama && algorithmType != LayoutAlgorithmTypeEnum.EfficientSugiyama;
         }
 
         /// <summary>
@@ -142,11 +142,11 @@ namespace Westermo.GraphX.Logic.Models
         /// <param name="algorithmType">Layout algorithm type</param>
         public bool NeedOverlapRemoval(LayoutAlgorithmTypeEnum algorithmType)
         {
-            return (algorithmType != LayoutAlgorithmTypeEnum.Sugiyama
-                && algorithmType != LayoutAlgorithmTypeEnum.EfficientSugiyama
-                && algorithmType != LayoutAlgorithmTypeEnum.Circular
-                && algorithmType != LayoutAlgorithmTypeEnum.Tree
-                /*&& algorithmType != LayoutAlgorithmTypeEnum.BalloonTree*/);
+            return algorithmType != LayoutAlgorithmTypeEnum.Sugiyama
+                   && algorithmType != LayoutAlgorithmTypeEnum.EfficientSugiyama
+                   && algorithmType != LayoutAlgorithmTypeEnum.Circular
+                   && algorithmType != LayoutAlgorithmTypeEnum.Tree;
+            /*&& algorithmType != LayoutAlgorithmTypeEnum.BalloonTree*/
         }
         #endregion
 

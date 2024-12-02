@@ -5,21 +5,23 @@ using Westermo.GraphX.Common.Interfaces;
 
 namespace Westermo.GraphX.Logic.Algorithms.OverlapRemoval
 {
-	public abstract class OverlapRemovalAlgorithmBase<TObject, TParam> : AlgorithmBase, IOverlapRemovalAlgorithm<TObject, TParam>
+	public abstract class OverlapRemovalAlgorithmBase<TObject, TParam>(
+		IDictionary<TObject, Rect> rectangles,
+		TParam parameters) : AlgorithmBase, IOverlapRemovalAlgorithm<TObject, TParam>
 		where TObject : class
 		where TParam : IOverlapRemovalParameters
 	{
-		protected IDictionary<TObject, Rect> OriginalRectangles;
+		protected IDictionary<TObject, Rect> OriginalRectangles = rectangles;
 		public IDictionary<TObject, Rect> Rectangles
 		{
-			get { return OriginalRectangles; }
-            set { OriginalRectangles = value; }
+			get => OriginalRectangles;
+			set => OriginalRectangles = value;
 		}
 
         /// <summary>
         /// Algorithm parameters
         /// </summary>
-		public TParam Parameters { get; private set; }
+		public TParam Parameters { get; private set; } = parameters;
 
 		public IOverlapRemovalParameters GetParameters()
 		{
@@ -28,13 +30,7 @@ namespace Westermo.GraphX.Logic.Algorithms.OverlapRemoval
 
 		protected List<RectangleWrapper<TObject>> WrappedRectangles;
 
-	    protected OverlapRemovalAlgorithmBase(IDictionary<TObject, Rect> rectangles, TParam parameters )
-		{
-			OriginalRectangles = rectangles;
-			Parameters = parameters;
-		}
-
-        /// <summary>
+		/// <summary>
         /// Initialize algorithm initial data
         /// </summary>
         /// <param name="rectangles">Size rectangles</param>
@@ -57,8 +53,8 @@ namespace Westermo.GraphX.Logic.Algorithms.OverlapRemoval
         private void GenerateWrappedRectangles(IDictionary<TObject, Rect> rectangles)
         {
             //wrapping the old rectangles, to remember which one belongs to which object
-            WrappedRectangles = new List<RectangleWrapper<TObject>>();
-            int i = 0;
+            WrappedRectangles = [];
+            var i = 0;
             foreach (var kvpRect in rectangles)
             {
                 WrappedRectangles.Insert(i, new RectangleWrapper<TObject>(kvpRect.Value, kvpRect.Key));

@@ -1,7 +1,6 @@
 ﻿
 using System.Linq;
 using System.Windows;
-using System.Windows.Controls;
 using System.Windows.Input;
 using Westermo.GraphX.Common.Enums;
 
@@ -73,8 +72,7 @@ namespace Westermo.GraphX.Controls
         #region PropertyChanged callbacks
         private static void OnIsHighlightEnabledPropertyChanged(DependencyObject obj, DependencyPropertyChangedEventArgs e)
         {
-            var element = obj as IInputElement;
-            if (element == null)
+            if (obj is not IInputElement element)
                 return;
 
             if (e.NewValue is bool == false)
@@ -94,11 +92,10 @@ namespace Westermo.GraphX.Controls
             }
         }
 
-        static void element_MouseLeave(object sender, MouseEventArgs e)
+        private static void element_MouseLeave(object sender, MouseEventArgs e)
         {
             if (sender is DependencyObject == false) return;
-            var ctrl = sender as IGraphControl;
-            if (ctrl == null) return;
+            if (sender is not IGraphControl ctrl) return;
 
             var type = GetHighlightControl((DependencyObject) sender);
             var edgesType = GetHighlightEdges((DependencyObject) sender);
@@ -116,11 +113,10 @@ namespace Westermo.GraphX.Controls
                 }
         }
 
-        static void element_MouseEnter(object sender, MouseEventArgs e)
+        private static void element_MouseEnter(object sender, MouseEventArgs e)
         {
             if(sender is DependencyObject == false) return;
-            var ctrl = sender as IGraphControl;
-            if(ctrl == null) return;
+            if(sender is not IGraphControl ctrl) return;
 
             var type = GetHighlightControl((DependencyObject) sender);
             var edgesType = GetHighlightEdges((DependencyObject) sender);

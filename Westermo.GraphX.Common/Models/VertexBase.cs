@@ -20,14 +20,10 @@ namespace Westermo.GraphX.Common.Models
         /// </summary>
         public ProcessingOptionEnum SkipProcessing { get; set; }
 
-        protected VertexBase()
-        {
-            ID = -1;
-        }
         /// <summary>
         /// Unique vertex ID
         /// </summary>
-        public long ID { get; set; }
+        public long ID { get; set; } = -1;
 
         public bool Equals(IGraphXVertex other)
         {

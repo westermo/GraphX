@@ -15,8 +15,8 @@ namespace ShowcaseApp.WPF
 
         public IDictionary<TVertex, Point> VertexPositions { get; set; }
 
-        readonly Dictionary<TEdge, Point[]> _edgeRoutes = new Dictionary<TEdge,Point[]>();
-        public IDictionary<TEdge, Point[]> EdgeRoutes { get { return _edgeRoutes; }}
+        private readonly Dictionary<TEdge, Point[]> _edgeRoutes = new Dictionary<TEdge,Point[]>();
+        public IDictionary<TEdge, Point[]> EdgeRoutes => _edgeRoutes;
 
         public Point[] ComputeSingle(TEdge edge) { return null; }
 

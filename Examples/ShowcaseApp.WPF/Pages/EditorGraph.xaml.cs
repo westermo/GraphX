@@ -12,7 +12,7 @@ namespace ShowcaseApp.WPF.Pages
     /// <summary>
     /// Interaction logic for DynamicGraph.xaml
     /// </summary>
-    public partial class EditorGraph: IDisposable
+    public partial class EditorGraph : IDisposable
     {
         private EditorOperationMode _opMode = EditorOperationMode.Select;
         private VertexControl _ecFrom;
@@ -49,30 +49,30 @@ namespace ShowcaseApp.WPF.Pages
             butSelect.IsChecked = true;
         }
 
-        void graphArea_EdgeSelected(object sender, EdgeSelectedEventArgs args)
+        private void graphArea_EdgeSelected(object sender, EdgeSelectedEventArgs args)
         {
             if (args.MouseArgs.LeftButton == MouseButtonState.Pressed && _opMode == EditorOperationMode.Delete)
                 graphArea.RemoveEdge(args.EdgeControl.Edge as DataEdge, true);
         }
 
-        void graphArea_VertexSelected(object sender, VertexSelectedEventArgs args)
+        private void graphArea_VertexSelected(object sender, VertexSelectedEventArgs args)
         {
-             if(args.MouseArgs.LeftButton == MouseButtonState.Pressed)            
-             {
-                 switch (_opMode)
-                 {
-                     case EditorOperationMode.Edit:
-                         CreateEdgeControl(args.VertexControl);
-                         break;
-                     case EditorOperationMode.Delete:
-                         SafeRemoveVertex(args.VertexControl);
-                         break;
-                     default:
-                         if (_opMode == EditorOperationMode.Select && args.Modifiers == ModifierKeys.Control)
-                             SelectVertex(args.VertexControl);
-                         break;
-                 }
-             }
+            if (args.MouseArgs.LeftButton == MouseButtonState.Pressed)
+            {
+                switch (_opMode)
+                {
+                    case EditorOperationMode.Edit:
+                        CreateEdgeControl(args.VertexControl);
+                        break;
+                    case EditorOperationMode.Delete:
+                        SafeRemoveVertex(args.VertexControl);
+                        break;
+                    default:
+                        if (_opMode == EditorOperationMode.Select && args.Modifiers == ModifierKeys.Control)
+                            SelectVertex(args.VertexControl);
+                        break;
+                }
+            }
         }
 
         private static void SelectVertex(DependencyObject vc)
@@ -89,7 +89,7 @@ namespace ShowcaseApp.WPF.Pages
             }
         }
 
-        void zoomCtrl_MouseDown(object sender, MouseButtonEventArgs e)
+        private void zoomCtrl_MouseDown(object sender, MouseButtonEventArgs e)
         {
             //create vertices and edges only in Edit mode
             if (e.LeftButton == MouseButtonState.Pressed)
@@ -97,11 +97,12 @@ namespace ShowcaseApp.WPF.Pages
                 if (_opMode == EditorOperationMode.Edit)
                 {
                     var pos = zoomCtrl.TranslatePoint(e.GetPosition(zoomCtrl), graphArea);
-                    pos.Offset(-22.5,-22.5);
+                    pos.Offset(-22.5, -22.5);
                     var vc = CreateVertexControl(pos);
                     if (_ecFrom != null)
                         CreateEdgeControl(vc);
-                }else if(_opMode == EditorOperationMode.Select)
+                }
+                else if (_opMode == EditorOperationMode.Select)
                 {
                     ClearSelectMode(true);
                 }
@@ -109,9 +110,9 @@ namespace ShowcaseApp.WPF.Pages
         }
 
 
-        void ToolbarButton_Checked(object sender, RoutedEventArgs e)
+        private void ToolbarButton_Checked(object sender, RoutedEventArgs e)
         {
-            if(butDelete.IsChecked == true && ReferenceEquals(sender, butDelete))
+            if (butDelete.IsChecked == true && ReferenceEquals(sender, butDelete))
             {
                 butEdit.IsChecked = false;
                 butSelect.IsChecked = false;
@@ -121,6 +122,7 @@ namespace ShowcaseApp.WPF.Pages
                 ClearSelectMode();
                 return;
             }
+
             if (butEdit.IsChecked == true && ReferenceEquals(sender, butEdit))
             {
                 butDelete.IsChecked = false;
@@ -130,6 +132,7 @@ namespace ShowcaseApp.WPF.Pages
                 ClearSelectMode();
                 return;
             }
+
             if (butSelect.IsChecked == true && ReferenceEquals(sender, butSelect))
             {
                 butEdit.IsChecked = false;
@@ -139,7 +142,6 @@ namespace ShowcaseApp.WPF.Pages
                 ClearEditMode();
                 graphArea.SetVerticesDrag(true, true);
                 graphArea.SetEdgesDrag(true);
-                return;
             }
         }
 
@@ -167,7 +169,8 @@ namespace ShowcaseApp.WPF.Pages
 
         private VertexControl CreateVertexControl(Point position)
         {
-            var data = new DataVertex("Vertex " + (graphArea.VertexList.Count + 1)) { ImageId = ShowcaseHelper.Rand.Next(0, ThemedDataStorage.EditorImages.Count) };
+            var data = new DataVertex("Vertex " + (graphArea.VertexList.Count + 1))
+                { ImageId = ShowcaseHelper.Rand.Next(0, ThemedDataStorage.EditorImages.Count) };
             var vc = new VertexControl(data);
             vc.SetPosition(position);
             graphArea.AddVertexAndData(data, vc, true);
@@ -176,14 +179,15 @@ namespace ShowcaseApp.WPF.Pages
 
         private void CreateEdgeControl(VertexControl vc)
         {
-            if(_ecFrom == null)
+            if (_ecFrom == null)
             {
                 _editorManager.CreateVirtualEdge(vc, vc.GetPosition());
                 _ecFrom = vc;
                 HighlightBehaviour.SetHighlighted(_ecFrom, true);
                 return;
             }
-            if(_ecFrom == vc) return;
+
+            if (_ecFrom == vc) return;
 
             var data = new DataEdge((DataVertex)_ecFrom.Vertex, (DataVertex)vc.Vertex);
             var ec = new EdgeControl(_ecFrom, vc, data);
@@ -202,12 +206,10 @@ namespace ShowcaseApp.WPF.Pages
 
         public void Dispose()
         {
-            if(_editorManager != null)
+            if (_editorManager != null)
                 _editorManager.Dispose();
-            if(graphArea != null)
-                graphArea.Dispose();                       
+            if (graphArea != null)
+                graphArea.Dispose();
         }
     }
-
-
 }

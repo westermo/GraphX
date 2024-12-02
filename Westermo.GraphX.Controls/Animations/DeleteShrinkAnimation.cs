@@ -6,16 +6,10 @@ using Westermo.GraphX.Controls.Models;
 
 namespace Westermo.GraphX.Controls.Animations
 {
-    public sealed class DeleteShrinkAnimation : IOneWayControlAnimation
+    public sealed class DeleteShrinkAnimation(double duration = .3, bool centered = true) : IOneWayControlAnimation
     {
-        public double Duration { get; set; }
-        public bool Centered { get; set; }
-
-        public DeleteShrinkAnimation(double duration = .3, bool centered = true)
-        {
-            Duration = duration;
-            Centered = centered;
-        }
+        public double Duration { get; set; } = duration;
+        public bool Centered { get; set; } = centered;
 
         public void AnimateVertex(VertexControl target, bool removeDataVertex = false)
         {
@@ -29,7 +23,7 @@ namespace Westermo.GraphX.Controls.Animations
             //create and run animation
             var scaleAnimation = new DoubleAnimation(1, 0, new Duration(TimeSpan.FromSeconds(Duration)));
             Timeline.SetDesiredFrameRate(scaleAnimation, 30);
-            scaleAnimation.Completed += (sender, e) => OnCompleted(target, removeDataVertex);
+            scaleAnimation.Completed += (_, _) => OnCompleted(target, removeDataVertex);
             transform.BeginAnimation(ScaleTransform.ScaleXProperty, scaleAnimation);
             transform.BeginAnimation(ScaleTransform.ScaleYProperty, scaleAnimation);            
         }

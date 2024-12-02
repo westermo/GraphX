@@ -35,21 +35,12 @@ namespace Westermo.GraphX.Logic.Algorithms.LayoutAlgorithms
         private readonly IList<HashSet<TVertex>> _levels =
             new List<HashSet<TVertex>>();
 
-        public IList<HashSet<TVertex>> Levels
-        {
-            get { return _levels; }
-        }
+        public IList<HashSet<TVertex>> Levels => _levels;
 
-        private class RemovedTreeNodeData
+        private class RemovedTreeNodeData(TVertex vertex, TEdge edge)
         {
-            public readonly TVertex Vertex;
-            public readonly TEdge Edge;
-
-            public RemovedTreeNodeData(TVertex vertex, TEdge edge)
-            {
-                Vertex = vertex;
-                Edge = edge;
-            }
+            public readonly TVertex Vertex = vertex;
+            public readonly TEdge Edge = edge;
         }
 
         /// <summary>
@@ -60,10 +51,10 @@ namespace Westermo.GraphX.Logic.Algorithms.LayoutAlgorithms
             new Stack<IList<RemovedTreeNodeData>>();
 
         private readonly HashSet<TVertex> _removedRootTreeNodes =
-            new HashSet<TVertex>();
+            [];
 
         private readonly HashSet<TEdge> _removedRootTreeEdges =
-            new HashSet<TEdge>();
+            [];
 
         /// <summary>
         /// Temporary dictionary for the inner canvas sizes (do not depend on this!!! inside 
@@ -194,7 +185,7 @@ namespace Westermo.GraphX.Logic.Algorithms.LayoutAlgorithms
             /// </summary>
             public Size InnerCanvasSize
             {
-                get { return _innerCanvasSize; }
+                get => _innerCanvasSize;
                 set
                 {
                     _innerCanvasSize = value;
@@ -208,10 +199,7 @@ namespace Westermo.GraphX.Logic.Algorithms.LayoutAlgorithms
             /// <summary>
             /// The overall size of the vertex (inner canvas size + borders + ...).
             /// </summary>
-            public override Size Size
-            {
-                get { return _size; }
-            }
+            public override Size Size => _size;
 
             /// <summary>
             /// Modifies the position of the children with the given
@@ -228,11 +216,8 @@ namespace Westermo.GraphX.Logic.Algorithms.LayoutAlgorithms
 
             public ICollection<VertexData> Children
             {
-                get { return _children; }
-                set
-                {
-                    _children = value;
-                }
+                get => _children;
+                set => _children = value;
             }
 
             internal override void ApplyForce(Vector force)
@@ -244,20 +229,16 @@ namespace Westermo.GraphX.Logic.Algorithms.LayoutAlgorithms
 
             public Point InnerCanvasCenter
             {
-                get
-                {
-                    return new Point(
+                get =>
+                    new(
                         Position.X - Size.Width / 2 + Borders.Left + InnerCanvasSize.Width / 2,
                         Position.Y - Size.Height / 2 + Borders.Top + InnerCanvasSize.Height / 2
-                        );
-                }
-                set
-                {
+                    );
+                set =>
                     Position = new Point(
                         value.X - InnerCanvasSize.Width / 2 - Borders.Left + Size.Width / 2,
                         value.Y - InnerCanvasSize.Height / 2 - Borders.Top + Size.Height / 2
-                        );
-                }
+                    );
             }
 
             public void RecalculateBounds()
@@ -268,8 +249,8 @@ namespace Westermo.GraphX.Logic.Algorithms.LayoutAlgorithms
                     return;
                 }
 
-                Point topLeft = new Point(double.PositiveInfinity, double.PositiveInfinity);
-                Point bottomRight = new Point(double.NegativeInfinity, double.NegativeInfinity);
+                var topLeft = new Point(double.PositiveInfinity, double.PositiveInfinity);
+                var bottomRight = new Point(double.NegativeInfinity, double.NegativeInfinity);
                 foreach (var child in _children)
                 {
                     topLeft.X = Math.Min(topLeft.X, child.Position.X - child.Size.Width / 2);
@@ -287,26 +268,23 @@ namespace Westermo.GraphX.Logic.Algorithms.LayoutAlgorithms
 
         #region Nested type: SimpleVertexData
 
-        private class SimpleVertexData : VertexData
+        private class SimpleVertexData(
+            TVertex vertex,
+            VertexData movableParent,
+            bool isFixed,
+            Point position,
+            Size size)
+            : VertexData(vertex, movableParent, isFixed, position)
         {
             /// <summary>
             /// The size of the vertex.
             /// </summary>
-            private readonly Size _size;
-
-            public SimpleVertexData(TVertex vertex, VertexData movableParent, bool isFixed, Point position, Size size)
-                : base(vertex, movableParent, isFixed, position)
-            {
-                _size = size;
-            }
+            private readonly Size _size = size;
 
             /// <summary>
             /// Gets the actual size of the vertex (inner size + border + anything else...).
             /// </summary>
-            public override Size Size
-            {
-                get { return _size; }
-            }
+            public override Size Size => _size;
 
             internal override void ApplyForce(Vector force)
             {
@@ -353,11 +331,8 @@ namespace Westermo.GraphX.Logic.Algorithms.LayoutAlgorithms
             /// </summary>
             public VertexData MovableParent
             {
-                get { return _movableParent; }
-                set
-                {
-                    _movableParent = value;
-                }
+                get => _movableParent;
+                set => _movableParent = value;
             }
 
             /// <summary>
@@ -386,7 +361,7 @@ namespace Westermo.GraphX.Logic.Algorithms.LayoutAlgorithms
             /// </summary>
             public Vector SpringForce
             {
-                get { return IsFixedToParent ? new Vector() : _springForce; }
+                get => IsFixedToParent ? new Vector() : _springForce;
                 set
                 {
                     if (IsFixedToParent)
@@ -400,7 +375,7 @@ namespace Westermo.GraphX.Logic.Algorithms.LayoutAlgorithms
             /// </summary>
             public Vector RepulsionForce
             {
-                get { return IsFixedToParent ? new Vector() : _repulsionForce; }
+                get => IsFixedToParent ? new Vector() : _repulsionForce;
                 set
                 {
                     if (IsFixedToParent)
@@ -414,7 +389,7 @@ namespace Westermo.GraphX.Logic.Algorithms.LayoutAlgorithms
             /// </summary>
             public Vector GravitationForce
             {
-                get { return IsFixedToParent ? new Vector() : _gravitationForce; }
+                get => IsFixedToParent ? new Vector() : _gravitationForce;
                 set
                 {
                     if (IsFixedToParent)
@@ -428,7 +403,7 @@ namespace Westermo.GraphX.Logic.Algorithms.LayoutAlgorithms
             /// </summary>
             public Vector ApplicationForce
             {
-                get { return IsFixedToParent ? new Vector() : _applicationForce; }
+                get => IsFixedToParent ? new Vector() : _applicationForce;
                 set
                 {
                     if (IsFixedToParent)
@@ -449,10 +424,10 @@ namespace Westermo.GraphX.Logic.Algorithms.LayoutAlgorithms
                 Parent._childrenForce += force;
 
                 if (force.Length > limit)
-                    force *= (limit / force.Length);
+                    force *= limit / force.Length;
                 force += 0.7 * _previousForce;
                 if (force.Length > limit)
-                    force *= (limit / force.Length);
+                    force *= limit / force.Length;
 
                 ApplyForce(force);
                 _springForce = new Vector();

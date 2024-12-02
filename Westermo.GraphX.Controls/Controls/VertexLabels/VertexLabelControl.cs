@@ -1,5 +1,4 @@
-﻿using System;
-using System.ComponentModel;
+﻿using System.ComponentModel;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
@@ -21,11 +20,9 @@ namespace Westermo.GraphX.Controls
 
         private static void AngleChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
         {
-            var ctrl = d as UIElement;
-            if (ctrl == null)
+            if (d is not UIElement ctrl)
                 return;
-            var tg = ctrl.RenderTransform as TransformGroup;
-            if (tg == null ) ctrl.RenderTransform = new RotateTransform {Angle = (double) e.NewValue, CenterX = .5, CenterY = .5};
+            if (ctrl.RenderTransform is not TransformGroup tg ) ctrl.RenderTransform = new RotateTransform {Angle = (double) e.NewValue, CenterX = .5, CenterY = .5};
             else
             {
                 var rt = tg.Children.FirstOrDefault(a => a is RotateTransform);
@@ -40,8 +37,8 @@ namespace Westermo.GraphX.Controls
         /// </summary>
         public double Angle
         {
-            get { return (double)GetValue(AngleProperty); }
-            set { SetValue(AngleProperty, value); }
+            get => (double)GetValue(AngleProperty);
+            set => SetValue(AngleProperty, value);
         }
 
         public static readonly DependencyProperty LabelPositionProperty = DependencyProperty.Register(nameof(LabelPosition),
@@ -54,8 +51,8 @@ namespace Westermo.GraphX.Controls
         /// </summary>
         public Point LabelPosition
         {
-            get { return (Point)GetValue(LabelPositionProperty); }
-            set { SetValue(LabelPositionProperty, value); }
+            get => (Point)GetValue(LabelPositionProperty);
+            set => SetValue(LabelPositionProperty, value);
         }
 
         public static readonly DependencyProperty LabelPositionModeProperty = DependencyProperty.Register(nameof(LabelPositionMode),
@@ -67,8 +64,8 @@ namespace Westermo.GraphX.Controls
         /// </summary>
         public VertexLabelPositionMode LabelPositionMode
         {
-            get { return (VertexLabelPositionMode)GetValue(LabelPositionModeProperty); }
-            set { SetValue(LabelPositionModeProperty, value); }
+            get => (VertexLabelPositionMode)GetValue(LabelPositionModeProperty);
+            set => SetValue(LabelPositionModeProperty, value);
         }
 
 
@@ -81,8 +78,8 @@ namespace Westermo.GraphX.Controls
         /// </summary>
         public VertexLabelPositionSide LabelPositionSide 
         {
-            get { return (VertexLabelPositionSide)GetValue(LabelPositionSideProperty); }
-            set { SetValue(LabelPositionSideProperty, value); }
+            get => (VertexLabelPositionSide)GetValue(LabelPositionSideProperty);
+            set => SetValue(LabelPositionSideProperty, value);
         }
 
         public VertexLabelControl()
@@ -98,8 +95,7 @@ namespace Westermo.GraphX.Controls
         {
             while (parent != null)
             {
-                var control = parent as VertexControl;
-                if (control != null) return control;
+                if (parent is VertexControl control) return control;
                 parent = VisualTreeHelper.GetParent(parent);
             }
             return null;
@@ -154,15 +150,15 @@ namespace Westermo.GraphX.Controls
 
         public void Hide()
         {
-            SetCurrentValue(UIElement.VisibilityProperty, Visibility.Collapsed);
+            SetCurrentValue(VisibilityProperty, Visibility.Collapsed);
         }
 
         public void Show()
         {
-            SetCurrentValue(UIElement.VisibilityProperty, Visibility.Visible);
+            SetCurrentValue(VisibilityProperty, Visibility.Visible);
         }
 
-        void VertexLabelControl_LayoutUpdated(object? sender, DefaultEventArgs e)
+        private void VertexLabelControl_LayoutUpdated(object? sender, DefaultEventArgs e)
         {
             var vc = GetVertexControl(GetParent());
             if (vc == null || !vc.ShowLabel) return;

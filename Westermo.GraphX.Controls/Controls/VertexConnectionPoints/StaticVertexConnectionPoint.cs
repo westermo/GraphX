@@ -27,8 +27,8 @@ namespace Westermo.GraphX.Controls
         /// </summary>
         public VertexShape Shape
         {
-            get { return (VertexShape)GetValue(ShapeProperty); }
-            set { SetValue(ShapeProperty, value); }
+            get => (VertexShape)GetValue(ShapeProperty);
+            set => SetValue(ShapeProperty, value);
         }
 
         private Rect _rectangularSize;
@@ -41,17 +41,17 @@ namespace Westermo.GraphX.Controls
                     UpdateLayout();
                 return _rectangularSize;
             }
-            private set { _rectangularSize = value; }
+            private set => _rectangularSize = value;
         }
 
         public void Show()
         {
-            SetCurrentValue(UIElement.VisibilityProperty, Visibility.Visible);
+            SetCurrentValue(VisibilityProperty, Visibility.Visible);
         }
 
         public void Hide()
         {
-            SetCurrentValue(UIElement.VisibilityProperty, Visibility.Collapsed);
+            SetCurrentValue(VisibilityProperty, Visibility.Collapsed);
         }
 
         private static VertexControl? GetVertexControl(DependencyObject? parent)

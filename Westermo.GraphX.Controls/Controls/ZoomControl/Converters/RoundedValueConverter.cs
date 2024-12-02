@@ -27,14 +27,8 @@ namespace Westermo.GraphX.Controls
 
     public int Precision
     {
-      get
-      {
-        return _precision;
-      }
-      set
-      {
-        _precision = value;
-      }
+      get => _precision;
+      set => _precision = value;
     }
 
     private int _precision;

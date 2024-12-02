@@ -3,7 +3,7 @@ using Westermo.GraphX.Common.Interfaces;
 
 namespace Westermo.GraphX.Logic.Algorithms.LayoutAlgorithms.Grouped
 {
-    public class GroupingLayoutAlgorithmParameters<TVertex, TEdge> : LayoutParametersBase
+    public class GroupingLayoutAlgorithmParameters<TVertex, TEdge>() : LayoutParametersBase
         where TVertex : class, IGraphXVertex
         where TEdge : IGraphXEdge<TVertex>
     {
@@ -30,12 +30,7 @@ namespace Westermo.GraphX.Logic.Algorithms.LayoutAlgorithms.Grouped
         /// <summary>
         /// Gets ort sets parameters list containing parameters for vertex groups
         /// </summary>
-        public List<AlgorithmGroupParameters<TVertex, TEdge>> GroupParametersList { get; set; }
-
-        public GroupingLayoutAlgorithmParameters()
-        {
-            GroupParametersList = new List<AlgorithmGroupParameters<TVertex, TEdge>>();
-        }
+        public List<AlgorithmGroupParameters<TVertex, TEdge>> GroupParametersList { get; set; } = [];
 
         /// <summary>
         /// Creates grouping algorithm parameters

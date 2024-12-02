@@ -2,13 +2,12 @@
 using System.Windows;
 using System.Windows.Media;
 using System.Windows.Shapes;
-using Westermo.GraphX;
 using Westermo.GraphX.Controls;
 using Westermo.GraphX.Controls.Models;
 
 namespace ShowcaseApp.WPF.Models
 {
-    public class EditorObjectManager: IDisposable
+    public class EditorObjectManager : IDisposable
     {
         private GraphAreaExample _graphArea;
         private ZoomControl _zoomControl;
@@ -27,15 +26,15 @@ namespace ShowcaseApp.WPF.Models
             };
         }
 
-        public void CreateVirtualEdge(VertexControl source, Point mousePos)        
+        public void CreateVirtualEdge(VertexControl source, Point mousePos)
         {
-            _edgeBp = new EdgeBlueprint(source, mousePos, (LinearGradientBrush)_rd["EdgeBrush"]);
+            _edgeBp = new EdgeBlueprint(source, (LinearGradientBrush)_rd["EdgeBrush"]);
             _graphArea.InsertCustomChildControl(0, _edgeBp.EdgePath);
         }
 
-        void _zoomControl_MouseMove(object sender, System.Windows.Input.MouseEventArgs e)
+        private void _zoomControl_MouseMove(object sender, System.Windows.Input.MouseEventArgs e)
         {
-            if(_edgeBp == null) return;
+            if (_edgeBp == null) return;
             var pos = _zoomControl.TranslatePoint(e.GetPosition(_zoomControl), _graphArea);
             pos.Offset(2, 2);
             _edgeBp.UpdateTargetPosition(pos);
@@ -43,7 +42,7 @@ namespace ShowcaseApp.WPF.Models
 
         private void ClearEdgeBp()
         {
-            if(_edgeBp == null) return;
+            if (_edgeBp == null) return;
             _graphArea.RemoveCustomChildControl(_edgeBp.EdgePath);
             _edgeBp.Dispose();
             _edgeBp = null;
@@ -53,7 +52,7 @@ namespace ShowcaseApp.WPF.Models
         {
             ClearEdgeBp();
             _graphArea = null;
-            if(_zoomControl != null)
+            if (_zoomControl != null)
                 _zoomControl.MouseMove -= _zoomControl_MouseMove;
             _zoomControl = null;
             _rd = null;
@@ -65,20 +64,24 @@ namespace ShowcaseApp.WPF.Models
         }
     }
 
-    public class EdgeBlueprint: IDisposable
+    public class EdgeBlueprint : IDisposable
     {
         public VertexControl Source { get; set; }
         public Point TargetPos { get; set; }
         public Path EdgePath { get; set; }
 
-        public EdgeBlueprint(VertexControl source, Point targetPos, Brush brush)
+        public EdgeBlueprint(VertexControl source, Brush brush)
         {
-            EdgePath = new Path() { Stroke = brush, Data = new LineGeometry() };
+            EdgePath = new Path
+            {
+                Stroke = brush,
+                Data = new LineGeometry()
+            };
             Source = source;
             Source.PositionChanged += Source_PositionChanged;
         }
 
-        void Source_PositionChanged(object sender, VertexPositionEventArgs args)
+        private void Source_PositionChanged(object sender, VertexPositionEventArgs args)
         {
             UpdateGeometry(Source.GetCenterPosition(), TargetPos);
         }
@@ -92,7 +95,7 @@ namespace ShowcaseApp.WPF.Models
         private void UpdateGeometry(Point start, Point end)
         {
             EdgePath.Data = new LineGeometry(start, end);
-            (EdgePath.Data as LineGeometry).Freeze();
+            (EdgePath.Data as LineGeometry)?.Freeze();
         }
 
         public void Dispose()

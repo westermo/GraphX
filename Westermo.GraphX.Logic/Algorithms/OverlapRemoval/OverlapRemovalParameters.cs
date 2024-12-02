@@ -12,7 +12,7 @@ namespace Westermo.GraphX.Logic.Algorithms.OverlapRemoval
         /// </summary>
 		public float VerticalGap
 		{
-			get { return _verticalGap; }
+			get => _verticalGap;
 			set
 			{
 			    if (_verticalGap == value) return;
@@ -26,7 +26,7 @@ namespace Westermo.GraphX.Logic.Algorithms.OverlapRemoval
         /// </summary>
 		public float HorizontalGap
 		{
-			get { return _horizontalGap; }
+			get => _horizontalGap;
 			set
 			{
 			    if (_horizontalGap == value) return;
@@ -42,8 +42,7 @@ namespace Westermo.GraphX.Logic.Algorithms.OverlapRemoval
 
 		protected void NotifyChanged( string propertyName )
 		{
-			if ( PropertyChanged != null )
-				PropertyChanged( this, new System.ComponentModel.PropertyChangedEventArgs( propertyName ) );
+			PropertyChanged?.Invoke(this, new System.ComponentModel.PropertyChangedEventArgs( propertyName ));
 		}
 
 		public event System.ComponentModel.PropertyChangedEventHandler PropertyChanged;

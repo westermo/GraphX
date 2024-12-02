@@ -11,10 +11,7 @@ namespace Westermo.GraphX.Logic.Algorithms.OverlapRemoval
 		where TObject : class
 	{
 		private readonly TObject id;
-		public TObject Id
-		{
-			get { return id; }
-		}
+		public TObject Id => id;
 
 		public Rect Rectangle;
 
@@ -30,19 +27,10 @@ namespace Westermo.GraphX.Logic.Algorithms.OverlapRemoval
 			this.id = id;
 		}
 
-		public double CenterX
-		{
-			get { return Rectangle.Left + Rectangle.Width / 2; }
-		}
+		public double CenterX => Rectangle.Left + Rectangle.Width / 2;
 
-		public double CenterY
-		{
-			get { return Rectangle.Top + Rectangle.Height / 2; }
-		}
+		public double CenterY => Rectangle.Top + Rectangle.Height / 2;
 
-		public Point Center
-		{
-			get { return new Point( CenterX, CenterY ); }
-		}
+		public Point Center => new( CenterX, CenterY );
 	}
 }

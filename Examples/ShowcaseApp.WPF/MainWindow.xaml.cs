@@ -13,19 +13,21 @@ namespace ShowcaseApp.WPF
     /// <summary>
     /// Interaction logic for MainWindow.xaml
     /// </summary>
-    public partial class MainWindow : ModernWindow
+    public partial class MainWindow
     {
         public MainWindow()
         {
             InitializeComponent();
-            Title = "Westermo GraphX for WPF showcase application v" + FileVersionInfo.GetVersionInfo(Assembly.GetExecutingAssembly().Location).FileVersion;
+            Title = "Westermo GraphX for WPF showcase application v" +
+                    FileVersionInfo.GetVersionInfo(Assembly.GetExecutingAssembly().Location).FileVersion;
 #if DEBUG
-            var lg = new LinkGroup {DisplayName = "Debug"};
-            lg.Links.Add(new Link { DisplayName = "Debug", Source = new Uri("Pages/Debug/DebugGraph.xaml", UriKind.Relative) });          
+            var lg = new LinkGroup { DisplayName = "Debug" };
+            lg.Links.Add(new Link
+                { DisplayName = "Debug", Source = new Uri("Pages/Debug/DebugGraph.xaml", UriKind.Relative) });
             MenuLinkGroups.Add(lg);
 #endif
-            this.CommandBindings.Add(new CommandBinding(LinkCommands.ShowMiniSpecialDialog, OnShowMiniSpecialDialog, OnCanShowMiniSpecialDialog));
-
+            CommandBindings.Add(new CommandBinding(LinkCommands.ShowMiniSpecialDialog, OnShowMiniSpecialDialog,
+                OnCanShowMiniSpecialDialog));
         }
 
         private void OnShowMiniSpecialDialog(object sender, ExecutedRoutedEventArgs e)
@@ -33,7 +35,7 @@ namespace ShowcaseApp.WPF
             var dlg = new ModernDialog
             {
                 Title = "Help & code window",
-                Content = new SpecialWindowControl(e.Parameter),               
+                Content = new SpecialWindowControl(e.Parameter),
                 ResizeMode = ResizeMode.CanResize,
                 MaxWidth = 1920,
                 MaxHeight = 1080,
@@ -42,12 +44,14 @@ namespace ShowcaseApp.WPF
                 Width = 700,
                 Height = 500,
                 SizeToContent = SizeToContent.Manual,
-                
+                OkButton =
+                {
+                    Content = "OK",
+                    VerticalContentAlignment = VerticalAlignment.Center
+                }
             };
-            dlg.OkButton.Content = "OK";
-            dlg.OkButton.VerticalContentAlignment = VerticalAlignment.Center;
             //dlg.OkButton.FontWeight = FontWeights.Bold;
-            dlg.Buttons = new[] { dlg.OkButton };
+            dlg.Buttons = [dlg.OkButton];
             dlg.ShowDialog();
         }
 

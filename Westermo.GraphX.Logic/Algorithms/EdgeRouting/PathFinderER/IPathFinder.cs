@@ -3,7 +3,7 @@ using Westermo.GraphX.Measure;
 
 namespace Westermo.GraphX.Logic.Algorithms.EdgeRouting
 {
-    interface IPathFinder
+    internal interface IPathFinder
     {
         #region Events
         event PathFinderDebugHandler PathFinderDebug;

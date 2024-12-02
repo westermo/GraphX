@@ -12,24 +12,24 @@ namespace Westermo.GraphX.Logic.Algorithms
 		#region Events
 		public event EdgeAction<TVertex, TEdge> EdgeHidden
 		{
-			add { _hideHelper.EdgeHidden += value; }
-			remove { _hideHelper.EdgeHidden -= value; }
+			add => _hideHelper.EdgeHidden += value;
+			remove => _hideHelper.EdgeHidden -= value;
 		}
 		public event EdgeAction<TVertex, TEdge> EdgeUnhidden
 		{
-			add { _hideHelper.EdgeUnhidden += value; }
-			remove { _hideHelper.EdgeUnhidden -= value; }
+			add => _hideHelper.EdgeUnhidden += value;
+			remove => _hideHelper.EdgeUnhidden -= value;
 		}
 
 		public event VertexAction<TVertex> VertexHidden
 		{
-			add { _hideHelper.VertexHidden += value; }
-			remove { _hideHelper.VertexHidden -= value; }
+			add => _hideHelper.VertexHidden += value;
+			remove => _hideHelper.VertexHidden -= value;
 		}
 		public event VertexAction<TVertex> VertexUnhidden
 		{
-			add { _hideHelper.VertexUnhidden += value; }
-			remove { _hideHelper.VertexUnhidden -= value; }
+			add => _hideHelper.VertexUnhidden += value;
+			remove => _hideHelper.VertexUnhidden -= value;
 		}
 		#endregion
 
@@ -105,15 +105,9 @@ namespace Westermo.GraphX.Logic.Algorithms
 			_hideHelper.UnhideVertexAndEdges( v );
 		}
 
-		public IEnumerable<TVertex> HiddenVertices
-		{
-			get { return _hideHelper.HiddenVertices; }
-		}
+		public IEnumerable<TVertex> HiddenVertices => _hideHelper.HiddenVertices;
 
-		public int HiddenVertexCount
-		{
-			get { return _hideHelper.HiddenVertexCount; }
-		}
+		public int HiddenVertexCount => _hideHelper.HiddenVertexCount;
 
 		public bool HideEdge( TEdge e )
 		{
@@ -170,15 +164,9 @@ namespace Westermo.GraphX.Logic.Algorithms
 			return _hideHelper.HiddenEdgeCountOf( v );
 		}
 
-		public IEnumerable<TEdge> HiddenEdges
-		{
-			get { return _hideHelper.HiddenEdges; }
-		}
+		public IEnumerable<TEdge> HiddenEdges => _hideHelper.HiddenEdges;
 
-		public int HiddenEdgeCount
-		{
-			get { return _hideHelper.HiddenEdgeCount; }
-		}
+		public int HiddenEdgeCount => _hideHelper.HiddenEdgeCount;
 
 		public bool Unhide( string tag )
 		{
