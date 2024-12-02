@@ -73,7 +73,7 @@ namespace Westermo.GraphX.Logic.Algorithms.LayoutAlgorithms
             if (_childrenRegistry.TryGetValue(vertex, out childrenList) || !createIfNotExists)
                 return childrenList;
 
-            childrenList = new List<TVertex>();
+            childrenList = [];
             _childrenRegistry[vertex] = childrenList;
             return childrenList;
         }

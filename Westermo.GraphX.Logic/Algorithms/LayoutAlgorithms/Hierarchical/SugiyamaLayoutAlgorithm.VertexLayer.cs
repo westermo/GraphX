@@ -413,7 +413,7 @@ namespace Westermo.GraphX.Logic.Algorithms.LayoutAlgorithms
 			private class MeasureComparer : IComparer<SugiVertex>
 			{
 				private static MeasureComparer _instance;
-				public static MeasureComparer Instance => _instance ?? (_instance = new MeasureComparer());
+				public static MeasureComparer Instance => _instance ??= new MeasureComparer();
 
 				private MeasureComparer() { }
 
@@ -426,7 +426,7 @@ namespace Westermo.GraphX.Logic.Algorithms.LayoutAlgorithms
 			private class PositionComparer : IComparer<SugiVertex>
 			{
 				private static PositionComparer _instance;
-				public static PositionComparer Instance => _instance ?? (_instance = new PositionComparer());
+				public static PositionComparer Instance => _instance ??= new PositionComparer();
 
 				private PositionComparer() { }
 
@@ -439,7 +439,7 @@ namespace Westermo.GraphX.Logic.Algorithms.LayoutAlgorithms
 			private class MeasureAndPermutationIndexComparer : IComparer<SugiVertex>
 			{
 				private static MeasureAndPermutationIndexComparer _instance;
-				public static MeasureAndPermutationIndexComparer Instance => _instance ?? (_instance = new MeasureAndPermutationIndexComparer());
+				public static MeasureAndPermutationIndexComparer Instance => _instance ??= new MeasureAndPermutationIndexComparer();
 
 				private MeasureAndPermutationIndexComparer() { }
 

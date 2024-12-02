@@ -16,7 +16,7 @@ namespace Westermo.GraphX.Controls.Models
         where TVertex : class, IGraphXVertex
         where TGraph : class, IMutableBidirectionalGraph<TVertex, TEdge>
     {
-        private readonly Dictionary<string, GraphState<TVertex, TEdge, TGraph>> _states = new();
+        private readonly Dictionary<string, GraphState<TVertex, TEdge, TGraph>> _states = [];
         private GraphArea<TVertex, TEdge, TGraph> _area = area;
 
         /// <summary>
@@ -85,7 +85,7 @@ namespace Westermo.GraphX.Controls.Models
             if (_area.LogicCore == null)
                 throw new GX_InvalidDataException("GraphArea.LogicCore -> Not initialized!");
 
-            if (!_states.ContainsKey(id))
+            if (!_states.TryGetValue(id, out GraphState<TVertex, TEdge, TGraph>? value))
             {
                 Debug.WriteLine($"LoadState() -> State id {id} not found! Skipping...");
                 return;
@@ -94,18 +94,18 @@ namespace Westermo.GraphX.Controls.Models
            // _area.RemoveAllVertices();
            // _area.RemoveAllEdges();
             //One action: clear all, preload vertices, assign Graph property
-            _area.PreloadVertexes(_states[id].Graph, true, true);
-            _area.LogicCore.Graph = _states[id].Graph;
-            _area.LogicCore.AlgorithmStorage = _states[id].AlgorithmStorage;
+            _area.PreloadVertexes(value.Graph, true, true);
+            _area.LogicCore.Graph = value.Graph;
+            _area.LogicCore.AlgorithmStorage = value.AlgorithmStorage;
 
             //setup vertex positions
-            foreach (var item in _states[id].VertexPositions)
+            foreach (var item in value.VertexPositions)
             {
                 _area.VertexList[item.Key].SetPosition(item.Value.X, item.Value.Y);
                 _area.VertexList[item.Key].SetCurrentValue(GraphAreaBase.PositioningCompleteProperty, true);
             }
             //setup visible edges
-            foreach (var item in _states[id].VisibleEdges)
+            foreach (var item in value.VisibleEdges)
             {
                var edgectrl =  _area.ControlFactory.CreateEdgeControl(_area.VertexList[item.Source], _area.VertexList[item.Target],
                                                        item);

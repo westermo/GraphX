@@ -216,7 +216,7 @@ namespace Westermo.GraphX.Logic.Algorithms.LayoutAlgorithms
             int startIndex, endIndex;
             maxRangeLength = 0;
             var rangeCount = 0;
-            ranges = new List<int>();
+            ranges = [];
             for (startIndex = 0; startIndex < vertices.Length; startIndex = endIndex + 1)
             {
                 cancellationToken.ThrowIfCancellationRequested();
@@ -259,7 +259,7 @@ namespace Westermo.GraphX.Logic.Algorithms.LayoutAlgorithms
                     _sparseCompactionGraph.RemoveEdge(edge);
             }
 
-            _sparseCompationGraphEdgesOfLayer = new List<Edge<Data>>();
+            _sparseCompationGraphEdgesOfLayer = [];
             SugiVertex vertex = null, prevVertex = null;
             for (var i = 1; i < nextAlternatingLayer.Count; i += 2)
             {
@@ -797,7 +797,7 @@ namespace Westermo.GraphX.Logic.Algorithms.LayoutAlgorithms
                     alternatingLayer.Insert(i, sc1);
                     alternatingLayer.Insert(i + 1, vertex);
                     alternatingLayer.Insert(i + 2, sc2);
-                    i = i + 1;
+                    i++;
                     break;
                 }
             }

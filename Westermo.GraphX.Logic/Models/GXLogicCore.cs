@@ -271,7 +271,7 @@ namespace Westermo.GraphX.Logic.Models
         }
 
         public GXLogicCore()
-            : this((TGraph)Activator.CreateInstance(typeof(TGraph)))
+            : this(Activator.CreateInstance<TGraph>())
         {
         }
 

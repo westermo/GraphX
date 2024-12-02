@@ -94,7 +94,7 @@ namespace Westermo.GraphX.Logic.Algorithms.LayoutAlgorithms
                     //the vertex is a leaf tree node
                     removed = true;
                     while (_removedRootTreeNodeLevels.Count <= i)
-                        _removedRootTreeNodeLevels.Push(new List<RemovedTreeNodeData>());
+                        _removedRootTreeNodeLevels.Push([]);
 
                     //add to the removed vertices
                     _removedRootTreeNodeLevels.Peek().Add(new RemovedTreeNodeData(vertex, edge));

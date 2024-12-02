@@ -421,8 +421,8 @@ namespace Westermo.GraphX.Logic.Algorithms.LayoutAlgorithms
                     {
                         List<SugiEdge> neighbourEdges = null;
                         neighbourEdges = upperLowerEdges == UpperLowerEdges.Upper
-                            ? _graph.InEdges(vertex).OrderBy(e => e.Source.Position).ToList()
-                            : _graph.OutEdges(vertex).OrderBy(e => e.Target.Position).ToList();
+                            ? [.. _graph.InEdges(vertex).OrderBy(e => e.Source.Position)]
+                            : [.. _graph.OutEdges(vertex).OrderBy(e => e.Target.Position)];
                         if (neighbourEdges.Count <= 0)
                             continue;
 

@@ -16,7 +16,7 @@ namespace Westermo.GraphX.Controls.Animations
         /// <summary>
         /// Stores initial vertex data
         /// </summary>
-        public Dictionary<IGraphControl, Measure.Point> VertexStorage { get; private set; } = new();
+        public Dictionary<IGraphControl, Measure.Point> VertexStorage { get; private set; } = [];
 
         /// <summary>
         /// Stores initial edges data

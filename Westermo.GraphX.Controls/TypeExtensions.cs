@@ -31,8 +31,8 @@ namespace Westermo.GraphX.Controls
 
         public static void Offset(this Point point, Point value)
         {
-            point.X = point.X + value.X;
-            point.Y = point.Y + value.Y;
+            point.X += value.X;
+            point.Y += value.Y;
         }
 
         /// <summary>

@@ -12,44 +12,34 @@ namespace Westermo.GraphX.Controls.Models
         /// <param name="duration">Animation duration</param>
         public static MoveAnimationBase? CreateMoveAnimation(MoveAnimation type, TimeSpan duration)
         {
-            switch (type)
+            return type switch
             {
-                case MoveAnimation.None: 
-                    return null;
-                case MoveAnimation.Move:
-                    return new MoveSimpleAnimation(duration);
-                case MoveAnimation.Fade:
-                    return new MoveFadeAnimation(duration);
-                
-            }
-            return null;
+                MoveAnimation.None => null,
+                MoveAnimation.Move => new MoveSimpleAnimation(duration),
+                MoveAnimation.Fade => new MoveFadeAnimation(duration),
+                _ => null,
+            };
         }
 
         public static IOneWayControlAnimation? CreateDeleteAnimation(DeleteAnimation type, double duration = .3)
         {
-            switch (type)
+            return type switch
             {
-                case DeleteAnimation.None:
-                    return null;
-                case DeleteAnimation.Shrink:
-                    return new DeleteShrinkAnimation(duration);
-                case DeleteAnimation.Fade:
-                    return new DeleteFadeAnimation(duration);
-
-            }
-            return null;
+                DeleteAnimation.None => null,
+                DeleteAnimation.Shrink => new DeleteShrinkAnimation(duration),
+                DeleteAnimation.Fade => new DeleteFadeAnimation(duration),
+                _ => null,
+            };
         }
 
         public static IBidirectionalControlAnimation? CreateMouseOverAnimation(MouseOverAnimation type, double duration = .3)
         {
-            switch (type)
+            return type switch
             {
-                case MouseOverAnimation.None:
-                    return null;
-                case MouseOverAnimation.Scale:
-                    return new MouseOverScaleAnimation(duration);
-            }
-            return null;
+                MouseOverAnimation.None => null,
+                MouseOverAnimation.Scale => new MouseOverScaleAnimation(duration),
+                _ => null,
+            };
         }
     }
 }

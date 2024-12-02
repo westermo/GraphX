@@ -56,9 +56,11 @@ namespace ShowcaseApp.WPF.Models
             var shadowColor = Color.FromArgb(128, 0, 0, 0);
             var transparentColor = Color.FromArgb(16, 0, 0, 0);
             // Create a GradientStopCollection from these
-            var gradient = new GradientStopCollection(2);
-            gradient.Add(new GradientStop(shadowColor, 0.5));
-            gradient.Add(new GradientStop(transparentColor, 1.0));
+            var gradient = new GradientStopCollection(2)
+            {
+                new GradientStop(shadowColor, 0.5),
+                new GradientStop(transparentColor, 1.0)
+            };
             gradient.Freeze();
             // Create the background brush
             backgroundBrush = new SolidColorBrush(shadowColor);

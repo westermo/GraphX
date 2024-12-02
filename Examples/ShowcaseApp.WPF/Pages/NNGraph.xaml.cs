@@ -19,7 +19,7 @@ namespace ShowcaseApp.WPF.Pages
         /// <summary>
         /// tmp collection to speedup selected vertices search
         /// </summary>
-        private readonly List<VertexControl> _selectedVertices = new();
+        private readonly List<VertexControl> _selectedVertices = [];
 
         private EditorOperationMode _opMode = EditorOperationMode.Select;
         private VertexControl _ecFrom;

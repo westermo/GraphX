@@ -207,7 +207,7 @@ namespace Westermo.GraphX.Logic.Algorithms.EdgeRouting
             tempList.Add(endPoint);
 
 
-            EdgeRoutes[ctrl] = tempList.Count > 2 ? tempList.ToArray() : null;
+            EdgeRoutes[ctrl] = tempList.Count > 2 ? [.. tempList] : null;
         }
 
         #region Math helper implementation

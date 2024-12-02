@@ -42,7 +42,7 @@ namespace Westermo.GraphX.Controls
             Vertex = vertexData;
 
             EventOptions = new VertexEventOptions(this) { PositionChangeNotification = tracePositionChange };
-            foreach (var item in Enum.GetValues(typeof(EventType)).Cast<EventType>())
+            foreach (var item in Enum.GetValues<EventType>().Cast<EventType>())
                 UpdateEventhandling(item);
         }
 
@@ -264,7 +264,7 @@ namespace Westermo.GraphX.Controls
             base.OnApplyTemplate();
 
             if (Template == null) return;
-            VertexLabelControl = VertexLabelControl ?? FindDescendant<IVertexLabelControl>("PART_vertexLabel");
+            VertexLabelControl ??= FindDescendant<IVertexLabelControl>("PART_vertexLabel");
 
             VCPRoot ??= FindDescendant<Panel>("PART_vcproot");
 

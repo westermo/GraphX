@@ -43,7 +43,7 @@ namespace Westermo.GraphX.Logic.Algorithms.LayoutAlgorithms
 			InitParameters( oldParameters );
 
 			_queue = new Queue<TVertex>();
-			_isomDataDict = new Dictionary<TVertex, ISOMData>();
+			_isomDataDict = [];
 			_adaptation = Parameters.InitialAdaption;
 		}
 		#endregion

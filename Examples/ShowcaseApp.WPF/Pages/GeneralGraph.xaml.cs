@@ -34,14 +34,14 @@ namespace ShowcaseApp.WPF.Pages
             gg_oralgo.SelectionChanged += gg_oralgo_SelectionChanged;
             gg_eralgo.SelectionChanged += gg_eralgo_SelectionChanged;
 
-            gg_layalgo.ItemsSource = Enum.GetValues(typeof(LayoutAlgorithmTypeEnum)).Cast<LayoutAlgorithmTypeEnum>();
+            gg_layalgo.ItemsSource = Enum.GetValues<LayoutAlgorithmTypeEnum>().Cast<LayoutAlgorithmTypeEnum>();
             gg_layalgo.SelectedItem = LayoutAlgorithmTypeEnum.KK;
 
-            gg_oralgo.ItemsSource = Enum.GetValues(typeof(OverlapRemovalAlgorithmTypeEnum))
+            gg_oralgo.ItemsSource = Enum.GetValues<OverlapRemovalAlgorithmTypeEnum>()
                 .Cast<OverlapRemovalAlgorithmTypeEnum>();
             gg_oralgo.SelectedIndex = 0;
 
-            gg_eralgo.ItemsSource = Enum.GetValues(typeof(EdgeRoutingAlgorithmTypeEnum))
+            gg_eralgo.ItemsSource = Enum.GetValues<EdgeRoutingAlgorithmTypeEnum>()
                 .Cast<EdgeRoutingAlgorithmTypeEnum>();
             gg_eralgo.SelectedItem = EdgeRoutingAlgorithmTypeEnum.SimpleER;
 

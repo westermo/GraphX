@@ -286,12 +286,11 @@ namespace Westermo.GraphX.Logic.Algorithms.LayoutAlgorithms
 
             #region 1) Unhide general edges between vertices participating in the hierarchy
             var analyze = new HashSet<SugiVertex>();
-            EdgeAction<SugiVertex, SugiEdge> eeh =
-                edge =>
-                {
-                    analyze.Add( edge.Source );
-                    analyze.Add( edge.Target );
-                };
+            void eeh(SugiEdge edge)
+            {
+                analyze.Add(edge.Source);
+                analyze.Add(edge.Target);
+            }
             _graph.EdgeUnhidden += eeh;
             _graph.UnhideEdgesIf( e => e.Type == EdgeTypes.General && _graph.ContainsVertex( e.Source ) && _graph.ContainsVertex( e.Target ) );
             _graph.EdgeUnhidden -= eeh;

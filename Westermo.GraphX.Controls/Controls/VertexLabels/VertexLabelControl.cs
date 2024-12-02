@@ -111,36 +111,18 @@ namespace Westermo.GraphX.Controls
 
             if (LabelPositionMode == VertexLabelPositionMode.Sides)
             {
-                Point pt;
-                switch (LabelPositionSide)
+                var pt = LabelPositionSide switch
                 {
-                    case VertexLabelPositionSide.TopRight:
-                        pt = new Point(vc.DesiredSize.Width, -DesiredSize.Height);
-                        break;
-                    case VertexLabelPositionSide.BottomRight:
-                        pt = new Point(vc.DesiredSize.Width, vc.DesiredSize.Height);
-                        break;
-                    case VertexLabelPositionSide.TopLeft:
-                        pt = new Point(-DesiredSize.Width, -DesiredSize.Height);
-                        break;
-                    case VertexLabelPositionSide.BottomLeft:
-                        pt = new Point(-DesiredSize.Width, vc.DesiredSize.Height);
-                        break;
-                    case VertexLabelPositionSide.Top:
-                        pt = new Point(vc.DesiredSize.Width *.5 - DesiredSize.Width *.5, -DesiredSize.Height);
-                        break;
-                    case VertexLabelPositionSide.Bottom:
-                        pt = new Point(vc.DesiredSize.Width * .5 - DesiredSize.Width * .5, vc.DesiredSize.Height);
-                        break;
-                    case VertexLabelPositionSide.Left:
-                        pt = new Point(-DesiredSize.Width, vc.DesiredSize.Height * .5f - DesiredSize.Height * .5);
-                        break;
-                    case VertexLabelPositionSide.Right:
-                        pt = new Point(vc.DesiredSize.Width, vc.DesiredSize.Height * .5f - DesiredSize.Height * .5);
-                        break;
-                    default:
-                        throw new GX_InvalidDataException("UpdatePosition() -> Unknown vertex label side!");
-                }
+                    VertexLabelPositionSide.TopRight => new Point(vc.DesiredSize.Width, -DesiredSize.Height),
+                    VertexLabelPositionSide.BottomRight => new Point(vc.DesiredSize.Width, vc.DesiredSize.Height),
+                    VertexLabelPositionSide.TopLeft => new Point(-DesiredSize.Width, -DesiredSize.Height),
+                    VertexLabelPositionSide.BottomLeft => new Point(-DesiredSize.Width, vc.DesiredSize.Height),
+                    VertexLabelPositionSide.Top => new Point(vc.DesiredSize.Width * .5 - DesiredSize.Width * .5, -DesiredSize.Height),
+                    VertexLabelPositionSide.Bottom => new Point(vc.DesiredSize.Width * .5 - DesiredSize.Width * .5, vc.DesiredSize.Height),
+                    VertexLabelPositionSide.Left => new Point(-DesiredSize.Width, vc.DesiredSize.Height * .5f - DesiredSize.Height * .5),
+                    VertexLabelPositionSide.Right => new Point(vc.DesiredSize.Width, vc.DesiredSize.Height * .5f - DesiredSize.Height * .5),
+                    _ => throw new GX_InvalidDataException("UpdatePosition() -> Unknown vertex label side!"),
+                };
                 LastKnownRectSize = new Rect(pt, DesiredSize);
             } 
             else LastKnownRectSize = new Rect(LabelPosition, DesiredSize);

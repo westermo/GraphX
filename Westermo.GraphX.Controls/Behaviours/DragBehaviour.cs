@@ -572,10 +572,7 @@ namespace Westermo.GraphX.Controls
         private static void UpdateVertexEdges(VertexControl vc)
         {
             if (vc.Vertex == null) return;
-            var ra = vc.RootArea;
-            if (ra == null)
-                throw new GX_InvalidDataException(
-                    "OnDragFinished() - IGraphControl object must always have RootArea property set!");
+            var ra = vc.RootArea ?? throw new GX_InvalidDataException("OnDragFinished() - IGraphControl object must always have RootArea property set!");
             if (!ra.IsEdgeRoutingEnabled) return;
             ra.ComputeEdgeRoutesByVertex(vc);
             vc.InvalidateVisual();
@@ -622,13 +619,13 @@ namespace Westermo.GraphX.Controls
         {
             GraphAreaBase? area = null;
 
-            if (obj is VertexControl)
-                area = ((VertexControl)obj).RootArea;
-            else if (obj is EdgeControl)
-                area = ((EdgeControl)obj).RootArea;
-            else if (obj is DependencyObject)
+            if (obj is VertexControl control1)
+                area = control1.RootArea;
+            else if (obj is EdgeControl control)
+                area = control.RootArea;
+            else if (obj is DependencyObject @object)
                 area =
-                    VisualTreeHelperEx.FindAncestorByType((DependencyObject)obj, typeof(GraphAreaBase), false) as
+                    VisualTreeHelperEx.FindAncestorByType(@object, typeof(GraphAreaBase), false) as
                         GraphAreaBase;
 
             return area;

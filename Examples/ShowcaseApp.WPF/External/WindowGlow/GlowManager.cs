@@ -185,6 +185,6 @@ namespace ShowcaseApp.WPF.External.WindowGlow
 
     internal class GlowInfo
     {
-        public readonly Collection<GlowWindow> glows = new();
+        public readonly Collection<GlowWindow> glows = [];
     }
 }

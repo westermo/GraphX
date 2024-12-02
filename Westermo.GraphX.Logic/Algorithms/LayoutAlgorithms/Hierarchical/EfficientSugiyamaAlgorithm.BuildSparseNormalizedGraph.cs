@@ -47,7 +47,7 @@ namespace Westermo.GraphX.Logic.Algorithms.LayoutAlgorithms
         private double _actualWidthPerHeight => _actualWidth / _actualHeight;
 
         private readonly IList<WHOptimizationLayerInfo> _whOptLayerInfos =
-            new List<WHOptimizationLayerInfo>();
+            [];
 
         private readonly IDictionary<SugiVertex, WHOptimizationVertexInfo> _whOptVertexInfos =
             new Dictionary<SugiVertex, WHOptimizationVertexInfo>();
@@ -158,7 +158,7 @@ namespace Westermo.GraphX.Logic.Algorithms.LayoutAlgorithms
 
                 insertedLayerInfo = new WHOptimizationLayerInfo();
                 insertedLayerInfo.LayerWidth = width;
-                insertedLayer = new List<SugiVertex>();
+                insertedLayer = [];
                 _whOptLayerInfos.Insert(insertedLayerIndex, insertedLayerInfo);
                 _layers.Insert(insertedLayerIndex, insertedLayer);
 
@@ -271,7 +271,7 @@ namespace Westermo.GraphX.Logic.Algorithms.LayoutAlgorithms
             for (var i = 0; i < lts.LayerCount; i++)
             {
                 //set the layer
-                _layers.Add(lts.Layers[i].ToList());
+                _layers.Add([.. lts.Layers[i]]);
 
                 //assign the layerindex
                 foreach (var v in _layers[i])

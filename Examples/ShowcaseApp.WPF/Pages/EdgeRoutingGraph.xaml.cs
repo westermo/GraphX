@@ -77,17 +77,17 @@ namespace ShowcaseApp.WPF.Pages
                 (PathFinderEdgeRoutingParameters)_logicCore.AlgorithmFactory.CreateEdgeRoutingParameters(
                     EdgeRoutingAlgorithmTypeEnum.PathFinder);
 
-            erg_pfprm_formula.ItemsSource = Enum.GetValues(typeof(PathFindAlgorithm)).Cast<PathFindAlgorithm>();
+            erg_pfprm_formula.ItemsSource = Enum.GetValues<PathFindAlgorithm>().Cast<PathFindAlgorithm>();
             erg_pfprm_formula.SelectedIndex = 0;
 
             erg_but_randomgraph.Click += erg_but_randomgraph_Click;
             erg_but_relayout.Click += erg_but_relayout_Click;
             erg_useExternalERAlgo.Checked += erg_useExternalERAlgo_Checked;
             erg_useExternalERAlgo.Unchecked += erg_useExternalERAlgo_Checked;
-            erg_dashstyle.ItemsSource = Enum.GetValues(typeof(EdgeDashStyle)).Cast<EdgeDashStyle>();
+            erg_dashstyle.ItemsSource = Enum.GetValues<EdgeDashStyle>().Cast<EdgeDashStyle>();
             erg_dashstyle.SelectedIndex = 0;
             erg_dashstyle.SelectionChanged += erg_dashstyle_SelectionChanged;
-            erg_eralgo.ItemsSource = Enum.GetValues(typeof(EdgeRoutingAlgorithmTypeEnum))
+            erg_eralgo.ItemsSource = Enum.GetValues<EdgeRoutingAlgorithmTypeEnum>()
                 .Cast<EdgeRoutingAlgorithmTypeEnum>();
             erg_eralgo.SelectedIndex = 0;
             erg_eralgo.SelectionChanged += erg_eralgo_SelectionChanged;

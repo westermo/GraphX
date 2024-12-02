@@ -15,7 +15,7 @@ namespace ShowcaseApp.WPF.Pages
     /// <summary>
     /// Interaction logic for ThemedGraph.xaml
     /// </summary>
-    public partial class ThemedGraph : INotifyPropertyChanged
+    public partial class ThemedGraph
     {
         // private ZoomControl tg_zoomctrl = new ZoomControl();
 
@@ -37,28 +37,28 @@ namespace ShowcaseApp.WPF.Pages
 
             tg_edgeMode.ItemsSource = new[] { "Draw all", "Draw for selected" };
             tg_edgeMode.SelectedIndex = 0;
-            tg_edgeType.ItemsSource = Enum.GetValues(typeof(EdgesType)).Cast<EdgesType>();
+            tg_edgeType.ItemsSource = Enum.GetValues<EdgesType>().Cast<EdgesType>();
             tg_edgeType.SelectedItem = EdgesType.All;
-            tg_moveAnimation.ItemsSource = Enum.GetValues(typeof(MoveAnimation)).Cast<MoveAnimation>();
+            tg_moveAnimation.ItemsSource = Enum.GetValues<MoveAnimation>().Cast<MoveAnimation>();
             tg_moveAnimation.SelectedItem = MoveAnimation.Move;
-            tg_deleteAnimation.ItemsSource = Enum.GetValues(typeof(DeleteAnimation)).Cast<DeleteAnimation>();
+            tg_deleteAnimation.ItemsSource = Enum.GetValues<DeleteAnimation>().Cast<DeleteAnimation>();
             tg_deleteAnimation.SelectedItem = DeleteAnimation.Shrink;
-            tg_mouseoverAnimation.ItemsSource = Enum.GetValues(typeof(MouseOverAnimation)).Cast<MouseOverAnimation>();
+            tg_mouseoverAnimation.ItemsSource = Enum.GetValues<MouseOverAnimation>().Cast<MouseOverAnimation>();
             tg_mouseoverAnimation.SelectedItem = MouseOverAnimation.Scale;
-            tg_highlightType.ItemsSource = Enum.GetValues(typeof(GraphControlType)).Cast<GraphControlType>();
+            tg_highlightType.ItemsSource = Enum.GetValues<GraphControlType>().Cast<GraphControlType>();
             tg_highlightType.SelectedItem = GraphControlType.VertexAndEdge;
-            tg_highlightEdgeType.ItemsSource = Enum.GetValues(typeof(EdgesType)).Cast<EdgesType>();
+            tg_highlightEdgeType.ItemsSource = Enum.GetValues<EdgesType>().Cast<EdgesType>();
             tg_highlightEdgeType.SelectedItem = EdgesType.All;
-            tg_highlightEnabled_Checked(null, null);
-            tg_dragMoveEdges_Checked(null, null);
-            tg_dragEnabled_Checked(null, null);
+            HighlightEnabledSelectionChanged(null, null);
+            DragMoveEdgesChecked(null, null);
+            DragEnabledChanged(null, null);
 
 
-            tg_Area.VertexSelected += tg_Area_VertexSelected;
-            tg_Area.GenerateGraphFinished += tg_Area_GenerateGraphFinished;
-            tg_Area.RelayoutFinished += tg_Area_RelayoutFinished;
-            tg_dragMoveEdges.Checked += tg_dragMoveEdges_Checked;
-            tg_dragMoveEdges.Unchecked += tg_dragMoveEdges_Checked;
+            tg_Area.VertexSelected += AreaVertexSelected;
+            tg_Area.GenerateGraphFinished += AreaGeneratedGraphFinished;
+            tg_Area.RelayoutFinished += AreaRelayoutFinished;
+            tg_dragMoveEdges.Checked += DragMoveEdgesChecked;
+            tg_dragMoveEdges.Unchecked += DragMoveEdgesChecked;
 
             ZoomControl.SetViewFinderVisibility(tg_zoomctrl, Visibility.Visible);
 
@@ -91,7 +91,7 @@ namespace ShowcaseApp.WPF.Pages
 
         #endregion
 
-        private void tg_Area_VertexSelected(object sender, VertexSelectedEventArgs args)
+        private void AreaVertexSelected(object sender, VertexSelectedEventArgs args)
         {
             if (args.MouseArgs!.LeftButton == MouseButtonState.Pressed && tg_edgeMode.SelectedIndex == 1)
             {
@@ -101,12 +101,12 @@ namespace ShowcaseApp.WPF.Pages
             if (args.MouseArgs.RightButton != MouseButtonState.Pressed) return;
             args.VertexControl.ContextMenu = new ContextMenu();
             var menuitem = new MenuItem { Header = "Delete item", Tag = args.VertexControl };
-            menuitem.Click += tg_deleteitem_Click;
+            menuitem.Click += DeleteItemClick;
             args.VertexControl.ContextMenu.Items.Add(menuitem);
             args.VertexControl.ContextMenu.IsOpen = true;
         }
 
-        private void tg_deleteitem_Click(object sender, RoutedEventArgs e)
+        private void DeleteItemClick(object sender, RoutedEventArgs e)
         {
             if (sender is not MenuItem menuItem) return;
             if (menuItem.Tag is not VertexControl vc) return;
@@ -114,7 +114,7 @@ namespace ShowcaseApp.WPF.Pages
             tg_Area.RemoveVertexAndEdges(vertex);
         }
 
-        private void tg_but_randomgraph_Click(object sender, RoutedEventArgs e)
+        private void ButRandomGraphClick(object sender, RoutedEventArgs e)
         {
             var graph = ShowcaseHelper.GenerateDataGraph(ShowcaseHelper.Rand.Next(10, 20));
 
@@ -132,7 +132,7 @@ namespace ShowcaseApp.WPF.Pages
                 tg_loader.Visibility = Visibility.Visible;
         }
 
-        private void tg_Area_RelayoutFinished(object sender, EventArgs e)
+        private void AreaRelayoutFinished(object sender, EventArgs e)
         {
             if (tg_Area.LogicCore!.AsyncAlgorithmCompute)
                 tg_loader.Visibility = Visibility.Collapsed;
@@ -140,30 +140,30 @@ namespace ShowcaseApp.WPF.Pages
                 tg_zoomctrl.ZoomToFill();
         }
 
-        private void tg_Area_GenerateGraphFinished(object sender, EventArgs e)
+        private void AreaGeneratedGraphFinished(object sender, EventArgs e)
         {
             if (tg_Area.LogicCore!.AsyncAlgorithmCompute)
                 tg_loader.Visibility = Visibility.Collapsed;
 
-            tg_highlightType_SelectionChanged(null, null);
-            tg_highlightEnabled_Checked(null, null);
-            tg_highlightEdgeType_SelectionChanged(null, null);
-            tg_dragMoveEdges_Checked(null, null);
-            tg_dragEnabled_Checked(null, null);
+            HighlightTypeSelectionChanged(null, null);
+            HighlightEnabledSelectionChanged(null, null);
+            HighlightEdgeTypeSelectionChanged(null, null);
+            DragMoveEdgesChecked(null, null);
+            DragEnabledChanged(null, null);
 
             tg_Area.SetEdgesDashStyle(EdgeDashStyle.Dash);
             tg_zoomctrl.ZoomToFill(); // ZoomToFill(); //manually update zoom control to fill the area
         }
 
-        private void tg_edgeMode_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        private void EdgeModeSelectionChanged(object sender, SelectionChangedEventArgs e)
         {
         }
 
-        private void tg_edgeType_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        private void EdgeTypeSelectionChanged(object sender, SelectionChangedEventArgs e)
         {
         }
 
-        private void tg_dragMoveEdges_Checked(object sender, RoutedEventArgs e)
+        private void DragMoveEdgesChecked(object sender, RoutedEventArgs e)
         {
             foreach (var item in tg_Area.VertexList)
                 DragBehaviour.SetUpdateEdgesOnMove(item.Value,
@@ -171,7 +171,7 @@ namespace ShowcaseApp.WPF.Pages
         }
 
 
-        private void tg_dragEnabled_Checked(object sender, RoutedEventArgs e)
+        private void DragEnabledChanged(object sender, RoutedEventArgs e)
         {
             if (tg_dragEnabled.IsChecked == null) return;
             tg_dragMoveEdges.IsEnabled = (bool)tg_dragEnabled.IsChecked;
@@ -184,7 +184,7 @@ namespace ShowcaseApp.WPF.Pages
             }
         }
 
-        private void tg_moveAnimation_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        private void MoveAnimationSelectionChanged(object sender, SelectionChangedEventArgs e)
         {
             switch ((MoveAnimation)tg_moveAnimation.SelectedItem)
             {
@@ -205,7 +205,7 @@ namespace ShowcaseApp.WPF.Pages
             tg_zoomctrl.ZoomToFill();
         }
 
-        private void tg_deleteAnimation_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        private void DeleteAnimationSelectionChanged(object sender, SelectionChangedEventArgs e)
         {
             tg_Area.DeleteAnimation = (DeleteAnimation)tg_deleteAnimation.SelectedItem switch
             {
@@ -216,22 +216,16 @@ namespace ShowcaseApp.WPF.Pages
             };
         }
 
-        private void tg_mouseoverAnimation_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        private void MouseOverAnimationSelectionChanged(object sender, SelectionChangedEventArgs e)
         {
-            switch ((MouseOverAnimation)tg_mouseoverAnimation.SelectedItem)
+            tg_Area.MouseOverAnimation = (MouseOverAnimation)tg_mouseoverAnimation.SelectedItem switch
             {
-                case MouseOverAnimation.None:
-                    tg_Area.MouseOverAnimation = null;
-                    break;
-                default:
-                    tg_Area.MouseOverAnimation =
-                        AnimationFactory.CreateMouseOverAnimation(
-                            (MouseOverAnimation)tg_mouseoverAnimation.SelectedItem);
-                    break;
-            }
+                MouseOverAnimation.None => null,
+                _ => AnimationFactory.CreateMouseOverAnimation((MouseOverAnimation)tg_mouseoverAnimation.SelectedItem),
+            };
         }
 
-        private void tg_highlightType_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        private void HighlightTypeSelectionChanged(object sender, SelectionChangedEventArgs e)
         {
             foreach (var item in tg_Area.VertexList)
                 HighlightBehaviour.SetHighlightControl(item.Value, (GraphControlType)tg_highlightType.SelectedItem);
@@ -239,7 +233,7 @@ namespace ShowcaseApp.WPF.Pages
                 HighlightBehaviour.SetHighlightControl(item.Value, (GraphControlType)tg_highlightType.SelectedItem);
         }
 
-        private void tg_highlightEnabled_Checked(object sender, RoutedEventArgs e)
+        private void HighlightEnabledSelectionChanged(object sender, RoutedEventArgs e)
         {
             foreach (var item in tg_Area.VertexList)
                 HighlightBehaviour.SetIsHighlightEnabled(item.Value,
@@ -249,7 +243,7 @@ namespace ShowcaseApp.WPF.Pages
                     tg_highlightEnabled.IsChecked != null && tg_highlightEnabled.IsChecked.Value);
         }
 
-        private void tg_highlightEdgeType_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        private void HighlightEdgeTypeSelectionChanged(object sender, SelectionChangedEventArgs e)
         {
             foreach (var item in tg_Area.VertexList)
                 HighlightBehaviour.SetHighlightEdges(item.Value, (EdgesType)tg_highlightEdgeType.SelectedItem);
@@ -257,10 +251,5 @@ namespace ShowcaseApp.WPF.Pages
                 HighlightBehaviour.SetHighlightEdges(item.Value, (EdgesType)tg_highlightEdgeType.SelectedItem);
         }
 
-        #region INotifyPropertyChanged
-
-        public event PropertyChangedEventHandler PropertyChanged;
-
-        #endregion
     }
 }

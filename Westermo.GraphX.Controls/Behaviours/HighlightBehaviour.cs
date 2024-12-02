@@ -97,18 +97,18 @@ namespace Westermo.GraphX.Controls
             if ((bool)e.NewValue)
             {
                 //register the event handlers
-                element.MouseEnter += element_MouseEnter;
-                element.MouseLeave += element_MouseLeave;
+                element.MouseEnter += Element_MouseEnter;
+                element.MouseLeave += Element_MouseLeave;
             }
             else
             {
                 //unregister the event handlers
-                element.MouseEnter -= element_MouseEnter;
-                element.MouseLeave -= element_MouseLeave;
+                element.MouseEnter -= Element_MouseEnter;
+                element.MouseLeave -= Element_MouseLeave;
             }
         }
 
-        private static void element_MouseLeave(object sender, MouseEventArgs e)
+        private static void Element_MouseLeave(object sender, MouseEventArgs e)
         {
             if (sender is DependencyObject == false) return;
             if (sender is not IGraphControl ctrl) return;
@@ -129,7 +129,7 @@ namespace Westermo.GraphX.Controls
                 }
         }
 
-        private static void element_MouseEnter(object sender, MouseEventArgs e)
+        private static void Element_MouseEnter(object sender, MouseEventArgs e)
         {
             if (sender is DependencyObject == false) return;
             if (sender is not IGraphControl ctrl) return;

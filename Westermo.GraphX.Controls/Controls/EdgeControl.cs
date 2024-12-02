@@ -245,7 +245,7 @@ namespace Westermo.GraphX.Controls
             if (!this.IsInDesignMode())
             {
                 EventOptions = new EdgeEventOptions(this);
-                foreach (var item in Enum.GetValues(typeof(EventType)).Cast<EventType>())
+                foreach (var item in Enum.GetValues<EventType>().Cast<EventType>())
                     UpdateEventhandling(item);
 
                 // Trigger initial state

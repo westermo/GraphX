@@ -49,7 +49,7 @@ namespace ShowcaseApp.WPF.Pages
             butVCP.Click += butVCP_Click;
             butEdgeLabels.Click += butEdgeLabels_Click;
             butGroupedGraph.Click += butGroupedGraph_Click;
-            cbDebugMode.ItemsSource = Enum.GetValues(typeof(DebugModeEnum)).Cast<DebugModeEnum>();
+            cbDebugMode.ItemsSource = Enum.GetValues<DebugModeEnum>().Cast<DebugModeEnum>();
             cbDebugMode.SelectionChanged += cbDebugMode_SelectionChanged;
             dg_zoomctrl.PropertyChanged += dg_zoomctrl_PropertyChanged;
             CreateNewArea();

@@ -11,7 +11,7 @@ namespace Westermo.GraphX.Logic.Algorithms.LayoutAlgorithms
         {
             public double Size;
             public double NextPosition;
-            public readonly IList<TVertex> Vertices = new List<TVertex>();
+            public readonly IList<TVertex> Vertices = [];
             public double LastTranslate = 0;
 
             /* Width and Height Optimization */

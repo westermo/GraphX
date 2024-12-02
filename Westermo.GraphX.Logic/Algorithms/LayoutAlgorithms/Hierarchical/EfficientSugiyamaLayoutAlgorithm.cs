@@ -46,13 +46,13 @@ namespace Westermo.GraphX.Logic.Algorithms.LayoutAlgorithms
         /// Edges that has been involved in cycles in the original graph. (These has
         /// been reverted during this layout algorithm).
         /// </summary>
-        private readonly IList<TEdge> _cycleEdges = new List<TEdge>();
+        private readonly IList<TEdge> _cycleEdges = [];
 
         /// <summary>
         /// It stores the vertices or segments which inside the layers.
         /// </summary>
         private readonly IList<IList<SugiVertex>> _layers =
-            new List<IList<SugiVertex>>();
+            [];
 
         public EfficientSugiyamaLayoutAlgorithm(
             TGraph visitedGraph, 

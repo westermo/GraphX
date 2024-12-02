@@ -176,33 +176,15 @@ namespace Westermo.GraphX.Controls
         private static void dashstyle_changed(DependencyObject d, DependencyPropertyChangedEventArgs e)
         {
             if (d is not EdgeControlBase ec) return;
-            switch ((EdgeDashStyle)e.NewValue)
+            ec.StrokeDashArray = (EdgeDashStyle)e.NewValue switch
             {
-                case EdgeDashStyle.Solid:
-                    ec.StrokeDashArray = null;
-                    break;
-
-                case EdgeDashStyle.Dash:
-                    ec.StrokeDashArray = [4.0, 2.0];
-                    break;
-
-                case EdgeDashStyle.Dot:
-                    ec.StrokeDashArray = [1.0, 2.0];
-                    break;
-
-                case EdgeDashStyle.DashDot:
-                    ec.StrokeDashArray = [4.0, 2.0, 1.0, 2.0];
-                    break;
-
-                case EdgeDashStyle.DashDotDot:
-                    ec.StrokeDashArray = [4.0, 2.0, 1.0, 2.0, 1.0, 2.0];
-                    break;
-
-                default:
-                    ec.StrokeDashArray = null;
-                    break;
-            }
-
+                EdgeDashStyle.Solid => null,
+                EdgeDashStyle.Dash => [4.0, 2.0],
+                EdgeDashStyle.Dot => [1.0, 2.0],
+                EdgeDashStyle.DashDot => [4.0, 2.0, 1.0, 2.0],
+                EdgeDashStyle.DashDotDot => [4.0, 2.0, 1.0, 2.0, 1.0, 2.0],
+                _ => null,
+            };
             ec.UpdateEdge(false);
         }
 
@@ -294,7 +276,7 @@ namespace Westermo.GraphX.Controls
         /// </summary>
         protected Path? LinePathObject;
 
-        private IList<IEdgeLabelControl> _edgeLabelControls = new List<IEdgeLabelControl>();
+        private IList<IEdgeLabelControl> _edgeLabelControls = [];
 
         /// <summary>
         /// Templated label control to display labels
@@ -810,7 +792,7 @@ namespace Westermo.GraphX.Controls
                 if (RootArea.EdgeCurvingEnabled)
                 {
                     var oPolyLineSegment =
-                        GeometryHelper.GetCurveThroughPoints(routePoints.ToArray(), 0.5, RootArea.EdgeCurvingTolerance);
+                        GeometryHelper.GetCurveThroughPoints([.. routePoints], 0.5, RootArea.EdgeCurvingTolerance);
 
                     if (hasEpTarget)
                     {
@@ -1120,7 +1102,7 @@ namespace Westermo.GraphX.Controls
                 if (RootArea.EdgeCurvingEnabled)
                 {
                     var oPolyLineSegment =
-                        GeometryHelper.GetCurveThroughPoints(routePoints.ToArray(), 0.5, RootArea.EdgeCurvingTolerance);
+                        GeometryHelper.GetCurveThroughPoints([.. routePoints], 0.5, RootArea.EdgeCurvingTolerance);
 
                     if (hasEpTarget)
                     {
@@ -1256,7 +1238,7 @@ namespace Westermo.GraphX.Controls
         /// </summary>
         public IList<IEdgeLabelControl> GetLabelControls()
         {
-            return EdgeLabelControls.ToList();
+            return [.. EdgeLabelControls];
         }
     }
 }

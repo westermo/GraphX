@@ -44,7 +44,7 @@ namespace Westermo.GraphX.Logic.Algorithms.EdgeRouting
             CalculateMatrix(CancellationToken.None);//maybe shouldnt do this cause can be used from algo storage and already inited
             SetupPathFinder();//
             ComputeER(edge, CancellationToken.None);
-            return EdgeRoutes.ContainsKey(edge) ? EdgeRoutes[edge] : null;
+            return EdgeRoutes.TryGetValue(edge, out Point[] value) ? value : null;
         }
 
         public override void Compute(CancellationToken cancellationToken)
@@ -100,28 +100,16 @@ namespace Westermo.GraphX.Logic.Algorithms.EdgeRouting
             _pathFinder.TieBreaker = _useTieBreaker;
             _pathFinder.SearchLimit = _searchLimit;
 
-            switch (_pathAlgo)
+            _pathFinder.Formula = _pathAlgo switch
             {
-                case PathFindAlgorithm.Manhattan:
-                    _pathFinder.Formula = HeuristicFormula.Manhattan;
-                    break;
-                case PathFindAlgorithm.MaxDXDY:
-                    _pathFinder.Formula = HeuristicFormula.MaxDXDY;
-                    break;
-                case PathFindAlgorithm.Euclidean:
-                    _pathFinder.Formula = HeuristicFormula.Euclidean;
-                    break;
-                case PathFindAlgorithm.EuclideanNoSQR:
-                    _pathFinder.Formula = HeuristicFormula.EuclideanNoSQR;
-                    break;
-                case PathFindAlgorithm.DiagonalShortCut:
-                    _pathFinder.Formula = HeuristicFormula.DiagonalShortCut;
-                    break;
-                case PathFindAlgorithm.Custom1:
-                    _pathFinder.Formula = HeuristicFormula.Custom1;
-                    break;
-                default: throw new Exception("setupPathFinder() -> Unknown formula!");
-            }
+                PathFindAlgorithm.Manhattan => HeuristicFormula.Manhattan,
+                PathFindAlgorithm.MaxDXDY => HeuristicFormula.MaxDXDY,
+                PathFindAlgorithm.Euclidean => HeuristicFormula.Euclidean,
+                PathFindAlgorithm.EuclideanNoSQR => HeuristicFormula.EuclideanNoSQR,
+                PathFindAlgorithm.DiagonalShortCut => HeuristicFormula.DiagonalShortCut,
+                PathFindAlgorithm.Custom1 => HeuristicFormula.Custom1,
+                _ => throw new Exception("setupPathFinder() -> Unknown formula!"),
+            };
         }
         #endregion
 
@@ -181,8 +169,8 @@ namespace Westermo.GraphX.Logic.Algorithms.EdgeRouting
                 ptlst.Add(mi.Point);
             }
             if (EdgeRoutes.ContainsKey(item))
-                EdgeRoutes[item] = ptlst.ToArray();
-            else EdgeRoutes.Add(new KeyValuePair<TEdge,Point[]>(item, ptlst.ToArray()));
+                EdgeRoutes[item] = [.. ptlst];
+            else EdgeRoutes.Add(new KeyValuePair<TEdge,Point[]>(item, [.. ptlst]));
         }
 
         private bool IsOverlapped(Point pt)

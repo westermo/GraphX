@@ -489,7 +489,7 @@ namespace Westermo.GraphX.Controls
             OnDrag(new DragDeltaEventArgs(-dx / scale / _viewboxFactor, -dy / scale / _viewboxFactor));
 
             // for a drag operation, update the origin with each delta
-            _originPoint = _originPoint + new Vector(dx, dy);
+            _originPoint += new Vector(dx, dy);
         }
 
         private void ResizeDisplayViewport(DragDeltaEventArgs e, ResizeEdge relativeTo)

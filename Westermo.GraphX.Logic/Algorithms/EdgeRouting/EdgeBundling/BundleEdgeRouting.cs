@@ -55,7 +55,7 @@ namespace Westermo.GraphX.Logic.Algorithms.EdgeRouting
         public override Point[] ComputeSingle(TEdge edge)
         {
             BundleEdges(Graph, new List<TEdge>() { edge });
-            return EdgeRoutes.ContainsKey(edge) ? EdgeRoutes[edge] : null;
+            return EdgeRoutes.TryGetValue(edge, out Point[] value) ? value : null;
         }
 
         /// <summary>
@@ -123,7 +123,7 @@ namespace Westermo.GraphX.Logic.Algorithms.EdgeRouting
                     //list2.Insert(0, p1); list2.Add(p2);
                     list2.Insert(0, list2.First()); list2.Add(list2.Last());
 
-                    EdgeRoutes.Add(e, list2.ToArray());
+                    EdgeRoutes.Add(e, [.. list2]);
                 }
             }
         }
@@ -183,8 +183,8 @@ namespace Westermo.GraphX.Logic.Algorithms.EdgeRouting
                     }
 
                     if (EdgeRoutes.ContainsKey(e))
-                        EdgeRoutes[e] = list2.ToArray();
-                    else EdgeRoutes.Add(e, list2.ToArray());
+                        EdgeRoutes[e] = [.. list2];
+                    else EdgeRoutes.Add(e, [.. list2]);
                 }
                     //e.SetValue(ReservedMetadataKeys.PerEdgeIntermediateCurvePoints, ed.controlPoints);
             }
@@ -245,7 +245,7 @@ namespace Westermo.GraphX.Logic.Algorithms.EdgeRouting
                 var mid = VectorTools.MidPoint(p1, p2);
                 ed.Middle = mid;
                 ed.Length = VectorTools.Distance(p1, p2);
-                ed.CompatibleGroups = new Dictionary<KeyPair, GroupPairData>();
+                ed.CompatibleGroups = [];
                 //ed.edges = new HashSet<int>();
                 ed.EdgeCount = 0;
                 _edgeGroupData.Add(key, ed);
@@ -302,7 +302,7 @@ namespace Westermo.GraphX.Logic.Algorithms.EdgeRouting
                 if (ed.K > 0.5f) ed.K = 0.5f;
                 //ed.edges = new HashSet<int>();
                 ed.EdgeCount = 0;
-                ed.CompatibleGroups = new Dictionary<KeyPair, GroupPairData>();
+                ed.CompatibleGroups = [];
                 _edgeGroupData.Add(key, ed);
             }
             //ed.edges.Add(e.ID);
@@ -880,9 +880,9 @@ namespace Westermo.GraphX.Logic.Algorithms.EdgeRouting
             }
         }
 
-        private readonly Dictionary<KeyPair, EdgeGroupData> _edgeGroupData = new();
+        private readonly Dictionary<KeyPair, EdgeGroupData> _edgeGroupData = [];
 
-        private readonly Dictionary<KeyPair, EdgeGroupData> _movedEdgeGroupData = new();
+        private readonly Dictionary<KeyPair, EdgeGroupData> _movedEdgeGroupData = [];
 
 
 

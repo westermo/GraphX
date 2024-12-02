@@ -82,7 +82,7 @@ namespace Westermo.GraphX.Controls
         /// <summary>
         /// List of found vertex connection points
         /// </summary>
-        public List<IVertexConnectionPoint> VertexConnectionPointsList { get; protected set; } = new();
+        public List<IVertexConnectionPoint> VertexConnectionPointsList { get; protected set; } = [];
 
         /// <summary>
         /// Provides settings for event calls within single vertex control

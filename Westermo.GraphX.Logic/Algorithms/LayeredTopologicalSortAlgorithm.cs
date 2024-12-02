@@ -84,7 +84,7 @@ namespace Westermo.GraphX.Logic.Algorithms
 				                 	} );
 
 				//prepare for the next layer
-				sources = newSources.ToList();
+				sources = [.. newSources];
 				newSources = [];
 			}
 

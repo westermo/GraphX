@@ -80,7 +80,7 @@
 
         <DockPanel Grid.Column="2" Grid.Row="0" Grid.RowSpan="2">
             <StackPanel Orientation="Horizontal" DockPanel.Dock="Top" HorizontalAlignment="Center">
-                <Button Height="50" Margin="3" Name="tg_but_randomgraph" Click="tg_but_randomgraph_Click"
+                <Button Height="50" Margin="3" Name="tg_but_randomgraph" Click="ButRandomGraphClick"
                         DockPanel.Dock="Top" UseLayoutRounding="True"
                         BorderBrush="{DynamicResource ModernButtonBorder}">
                     <Image Width="44" Height="41.1667" Source="/Assets/dice.png" Stretch="Uniform" />
@@ -97,31 +97,31 @@
                     <Expander IsExpanded="True" Header="Edge options">
                         <DockPanel LastChildFill="False" HorizontalAlignment="Stretch">
                             <TextBlock DockPanel.Dock="Top" Text="Edge display mode" HorizontalAlignment="Center" />
-                            <ComboBox x:Name="tg_edgeMode" Margin="3" SelectionChanged="tg_edgeMode_SelectionChanged"
+                            <ComboBox x:Name="tg_edgeMode" Margin="3" SelectionChanged="EdgeModeSelectionChanged"
                                       DockPanel.Dock="Top" IsReadOnly="True" />
                             <TextBlock DockPanel.Dock="Top" Text="Edge display type" HorizontalAlignment="Center" />
-                            <ComboBox x:Name="tg_edgeType" Margin="3" SelectionChanged="tg_edgeType_SelectionChanged"
+                            <ComboBox x:Name="tg_edgeType" Margin="3" SelectionChanged="EdgeTypeSelectionChanged"
                                       DockPanel.Dock="Top" IsReadOnly="True" />
                         </DockPanel>
                     </Expander>
                     <Expander Header="Behaviours">
                         <DockPanel LastChildFill="False" HorizontalAlignment="Stretch">
                             <CheckBox Name="tg_dragEnabled" Content="Vertex drag enabled" Margin="3"
-                                      DockPanel.Dock="Top" Checked="tg_dragEnabled_Checked"
-                                      Unchecked="tg_dragEnabled_Checked" />
+                                      DockPanel.Dock="Top" Checked="DragEnabledChanged"
+                                      Unchecked="DragEnabledChanged" />
                             <CheckBox Name="tg_dragMoveEdges" Content="Update edges on move" Margin="3"
                                       DockPanel.Dock="Top" />
 
                             <CheckBox Name="tg_highlightEnabled" Content="Highlight enabled" Margin="3"
-                                      DockPanel.Dock="Top" Checked="tg_highlightEnabled_Checked"
-                                      Unchecked="tg_highlightEnabled_Checked" />
+                                      DockPanel.Dock="Top" Checked="HighlightEnabledSelectionChanged"
+                                      Unchecked="HighlightEnabledSelectionChanged" />
                             <TextBlock DockPanel.Dock="Top" Text="Affected control type" HorizontalAlignment="Center" />
                             <ComboBox x:Name="tg_highlightType" Margin="3"
-                                      SelectionChanged="tg_highlightType_SelectionChanged" DockPanel.Dock="Top"
+                                      SelectionChanged="HighlightTypeSelectionChanged" DockPanel.Dock="Top"
                                       IsReadOnly="True" />
                             <TextBlock DockPanel.Dock="Top" Text="Edge directions" HorizontalAlignment="Center" />
                             <ComboBox x:Name="tg_highlightEdgeType" Margin="3"
-                                      SelectionChanged="tg_highlightEdgeType_SelectionChanged" DockPanel.Dock="Top"
+                                      SelectionChanged="HighlightEdgeTypeSelectionChanged" DockPanel.Dock="Top"
                                       IsReadOnly="True" />
                         </DockPanel>
                     </Expander>
@@ -129,15 +129,15 @@
                         <DockPanel LastChildFill="False" HorizontalAlignment="Stretch">
                             <TextBlock DockPanel.Dock="Top" Text="Move animation" HorizontalAlignment="Center" />
                             <ComboBox x:Name="tg_moveAnimation" Margin="3"
-                                      SelectionChanged="tg_moveAnimation_SelectionChanged" DockPanel.Dock="Top"
+                                      SelectionChanged="MoveAnimationSelectionChanged" DockPanel.Dock="Top"
                                       IsReadOnly="True" />
                             <TextBlock DockPanel.Dock="Top" Text="Delete animation" HorizontalAlignment="Center" />
                             <ComboBox x:Name="tg_deleteAnimation" Margin="3"
-                                      SelectionChanged="tg_deleteAnimation_SelectionChanged" DockPanel.Dock="Top"
+                                      SelectionChanged="DeleteAnimationSelectionChanged" DockPanel.Dock="Top"
                                       IsReadOnly="True" />
                             <TextBlock DockPanel.Dock="Top" Text="MouseOver animation" HorizontalAlignment="Center" />
                             <ComboBox x:Name="tg_mouseoverAnimation" Margin="3"
-                                      SelectionChanged="tg_mouseoverAnimation_SelectionChanged" DockPanel.Dock="Top"
+                                      SelectionChanged="MouseOverAnimationSelectionChanged" DockPanel.Dock="Top"
                                       IsReadOnly="True" />
                         </DockPanel>
                     </Expander>
