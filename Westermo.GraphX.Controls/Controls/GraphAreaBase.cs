@@ -226,7 +226,7 @@ namespace Westermo.GraphX
 
         #region Child EVENTS
 
-        internal static readonly Size DesignSize = new Size(70, 25);
+        internal static readonly Size DesignSize = new(70, 25);
 
         /// <summary>
         /// Fires when ContentSize property is changed
@@ -485,7 +485,7 @@ namespace Westermo.GraphX
         /// Gets the size of the GraphArea taking into account positions of the children
         /// This is the main size pointer. Don't use DesiredSize or ActualWidth props as they are simulated.
         /// </summary>
-        public Rect ContentSize => new Rect(_topLeft, _bottomRight);
+        public Rect ContentSize => new(_topLeft, _bottomRight);
 
         /// <summary>
         /// Translation of the GraphArea object

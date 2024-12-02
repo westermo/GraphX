@@ -15,26 +15,28 @@ namespace Westermo.GraphX.Controls
 {
     public abstract class EdgeLabelControl : ContentControl, IEdgeLabelControl
     {
-        
-        public static readonly DependencyProperty AlignToEdgeProperty = DependencyProperty.Register("AlignToEdge",
+        public static readonly DependencyProperty AlignToEdgeProperty = DependencyProperty.Register(nameof(AlignToEdge),
             typeof(bool),
             typeof(EdgeLabelControl),
             new PropertyMetadata(false, (o, e) =>
             {
-                var ctrl = (EdgeLabelControl) o;
+                var ctrl = (EdgeLabelControl)o;
                 if ((bool)e.NewValue == false) ctrl.Angle = 0;
                 ctrl.UpdatePosition();
-            } ));
+            }));
 
         /// <summary>
         /// Gets or sets if lables should be aligned to edges and be displayed under the same angle
         /// </summary>
-        public bool AlignToEdge { get => (bool)GetValue(AlignToEdgeProperty);
+        public bool AlignToEdge
+        {
+            get => (bool)GetValue(AlignToEdgeProperty);
             set => SetValue(AlignToEdgeProperty, value);
         }
 
 
-        public static readonly DependencyProperty LabelVerticalOffsetProperty = DependencyProperty.Register("LabelVerticalOffset",
+        public static readonly DependencyProperty LabelVerticalOffsetProperty = DependencyProperty.Register(
+            nameof(LabelVerticalOffset),
             typeof(double),
             typeof(EdgeLabelControl),
             new PropertyMetadata(0d));
@@ -42,11 +44,14 @@ namespace Westermo.GraphX.Controls
         /// <summary>
         /// Offset for label Y axis to display it above/below the edge
         /// </summary>
-        public double LabelVerticalOffset { get => (double)GetValue(LabelVerticalOffsetProperty);
+        public double LabelVerticalOffset
+        {
+            get => (double)GetValue(LabelVerticalOffsetProperty);
             set => SetValue(LabelVerticalOffsetProperty, value);
         }
 
-        public static readonly DependencyProperty LabelHorizontalOffsetProperty = DependencyProperty.Register("LabelHorizontalOffset",
+        public static readonly DependencyProperty LabelHorizontalOffsetProperty = DependencyProperty.Register(
+            nameof(LabelHorizontalOffset),
             typeof(double),
             typeof(EdgeLabelControl),
             new PropertyMetadata(0d));
@@ -54,11 +59,13 @@ namespace Westermo.GraphX.Controls
         /// <summary>
         /// Offset for label X axis to display it along the edge
         /// </summary>
-        public double LabelHorizontalOffset { get => (double)GetValue(LabelHorizontalOffsetProperty);
+        public double LabelHorizontalOffset
+        {
+            get => (double)GetValue(LabelHorizontalOffsetProperty);
             set => SetValue(LabelHorizontalOffsetProperty, value);
         }
 
-        public static readonly DependencyProperty ShowLabelProperty = DependencyProperty.Register("ShowLabel",
+        public static readonly DependencyProperty ShowLabelProperty = DependencyProperty.Register(nameof(ShowLabel),
             typeof(bool),
             typeof(EdgeLabelControl),
             new PropertyMetadata(false, showlabel_changed));
@@ -71,14 +78,18 @@ namespace Westermo.GraphX.Controls
         /// <summary>
         /// Show edge label.Default value is False.
         /// </summary>
-        public bool ShowLabel { get => (bool)GetValue(ShowLabelProperty);
+        public bool ShowLabel
+        {
+            get => (bool)GetValue(ShowLabelProperty);
             set => SetValue(ShowLabelProperty, value);
         }
 
-        public static readonly DependencyProperty DisplayForSelfLoopedEdgesProperty = DependencyProperty.Register("DisplayForSelfLoopedEdges",
-                                                                       typeof(bool),
-                                                                       typeof(EdgeLabelControl),
-                                                                       new PropertyMetadata(false));
+        public static readonly DependencyProperty DisplayForSelfLoopedEdgesProperty = DependencyProperty.Register(
+            nameof(DisplayForSelfLoopedEdges),
+            typeof(bool),
+            typeof(EdgeLabelControl),
+            new PropertyMetadata(false));
+
         /// <summary>
         /// Gets or sets if label should be visible for self looped edge
         /// </summary>
@@ -88,10 +99,12 @@ namespace Westermo.GraphX.Controls
             set => SetValue(DisplayForSelfLoopedEdgesProperty, value);
         }
 
-        public static readonly DependencyProperty FlipOnRotationProperty = DependencyProperty.Register("FlipOnRotation",
-                                                               typeof(bool),
-                                                               typeof(EdgeLabelControl),
-                                                               new PropertyMetadata(true));
+        public static readonly DependencyProperty FlipOnRotationProperty = DependencyProperty.Register(
+            nameof(FlipOnRotation),
+            typeof(bool),
+            typeof(EdgeLabelControl),
+            new PropertyMetadata(true));
+
         /// <summary>
         /// Gets or sets if label should flip on rotation when axis changes
         /// </summary>
@@ -102,22 +115,22 @@ namespace Westermo.GraphX.Controls
         }
 
 
-
         public static readonly DependencyProperty AngleProperty = DependencyProperty.Register(nameof(Angle),
-                                                                                       typeof(double),
-                                                                                       typeof(EdgeLabelControl),
-                                                                                       new PropertyMetadata(0.0, AngleChanged));
+            typeof(double),
+            typeof(EdgeLabelControl),
+            new PropertyMetadata(0.0, AngleChanged));
+
         private static void AngleChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
         {
             if (d is not UIElement ctrl) return;
-            if (ctrl.RenderTransform is not TransformGroup tg) 
-                ctrl.RenderTransform = new RotateTransform {Angle = (double) e.NewValue, CenterX = .5, CenterY = .5};
+            if (ctrl.RenderTransform is not TransformGroup tg)
+                ctrl.RenderTransform = new RotateTransform { Angle = (double)e.NewValue, CenterX = .5, CenterY = .5 };
             else
             {
                 var rt = (RotateTransform?)tg.Children.FirstOrDefault(a => a is RotateTransform);
                 if (rt == null)
-                    tg.Children.Add(new RotateTransform {Angle = (double) e.NewValue, CenterX = .5, CenterY = .5});
-                else rt.Angle = (double) e.NewValue;
+                    tg.Children.Add(new RotateTransform { Angle = (double)e.NewValue, CenterX = .5, CenterY = .5 });
+                else rt.Angle = (double)e.NewValue;
             }
         }
 
@@ -139,6 +152,7 @@ namespace Westermo.GraphX.Controls
                 if (parent is EdgeControl control) return control;
                 parent = VisualTreeHelper.GetParent(parent);
             }
+
             return null;
         }
 
@@ -154,10 +168,9 @@ namespace Westermo.GraphX.Controls
         }
 
 
-
         private static double GetLabelDistance(double edgeLength)
         {
-            return edgeLength * .5;  // set the label halfway the length of the edge
+            return edgeLength * .5; // set the label halfway the length of the edge
         }
 
         /// <summary>
@@ -174,6 +187,7 @@ namespace Westermo.GraphX.Controls
                 Debug.WriteLine("EdgeLabelControl_LayoutUpdated() -> Got empty edgecontrol!");
                 return;
             }
+
             //if hidden
             if (Visibility != Visibility.Visible) return;
 
@@ -222,18 +236,22 @@ namespace Westermo.GraphX.Controls
                         if (i == 0)
                             lengthOfSegment = MathHelper.GetDistanceBetweenPoints(newp1 = p1, newp2 = routePoints[0]);
                         else if (i == rplen)
-                            lengthOfSegment = MathHelper.GetDistanceBetweenPoints(newp1 = routePoints[rplen - 1], newp2 = p2);
+                            lengthOfSegment =
+                                MathHelper.GetDistanceBetweenPoints(newp1 = routePoints[rplen - 1], newp2 = p2);
                         else
-                            lengthOfSegment = MathHelper.GetDistanceBetweenPoints(newp1 = routePoints[i - 1], newp2 = routePoints[i]);
+                            lengthOfSegment =
+                                MathHelper.GetDistanceBetweenPoints(newp1 = routePoints[i - 1], newp2 = routePoints[i]);
                         if (lengthOfSegment >= edgeLength)
                             break;
                         edgeLength -= lengthOfSegment;
                     }
+
                     // redefine our edge points
                     p1 = newp1;
                     p2 = newp2;
                 }
             }
+
             // The label control should be laid out on a rectangle, in the middle of the edge
             var angleBetweenPoints = MathHelper.GetAngleBetweenPoints(p1, p2);
             var desiredSize = DesiredSize;
@@ -242,12 +260,14 @@ namespace Westermo.GraphX.Controls
             ApplyLabelHorizontalOffset(edgeLength, LabelHorizontalOffset);
 
             // Calculate the center point of the edge
-            var centerPoint = new Point(p1.X + edgeLength * Math.Cos(angleBetweenPoints), p1.Y - edgeLength * Math.Sin(angleBetweenPoints));
+            var centerPoint = new Point(p1.X + edgeLength * Math.Cos(angleBetweenPoints),
+                p1.Y - edgeLength * Math.Sin(angleBetweenPoints));
             if (AlignToEdge)
             {
                 // If we're aligning labels to the edges make sure add the label vertical offset
                 var yEdgeOffset = LabelVerticalOffset;
-                if (FlipOnRotation && flipAxis && !EdgeControl.IsParallel) // If we've flipped axis, move the offset to the other side of the edge
+                if (FlipOnRotation && flipAxis &&
+                    !EdgeControl.IsParallel) // If we've flipped axis, move the offset to the other side of the edge
                     yEdgeOffset = -yEdgeOffset;
 
                 // Adjust offset for rotation. Remember, the offset is perpendicular from the edge tangent.
@@ -289,13 +309,15 @@ namespace Westermo.GraphX.Controls
 
         private void SetSelfLoopedSize(Point pt, SysSize idesiredSize)
         {
-            pt.Offset(-idesiredSize.Width / 2, EdgeControl!.Source!.DesiredSize.Height * .5 + 2 + idesiredSize.Height * .5);
+            pt.Offset(-idesiredSize.Width / 2,
+                EdgeControl!.Source!.DesiredSize.Height * .5 + 2 + idesiredSize.Height * .5);
             LastKnownRectSize = new SysRect(pt.X, pt.Y, idesiredSize.Width, idesiredSize.Height);
         }
 
         private void UpdateFinalPosition(Point centerPoint, SysSize desiredSize)
         {
-            LastKnownRectSize = new SysRect(centerPoint.X - desiredSize.Width / 2, centerPoint.Y - desiredSize.Height / 2, desiredSize.Width, desiredSize.Height);
+            LastKnownRectSize = new SysRect(centerPoint.X - desiredSize.Width / 2,
+                centerPoint.Y - desiredSize.Height / 2, desiredSize.Width, desiredSize.Height);
         }
 
         /// <summary>
@@ -318,14 +340,15 @@ namespace Westermo.GraphX.Controls
 
         private void EdgeLabelControl_Loaded(object? sender, RoutedOrCommonArgs e)
         {
-            if (EdgeControl is {IsSelfLooped: true} && !DisplayForSelfLoopedEdges) Hide();
+            if (EdgeControl is { IsSelfLooped: true } && !DisplayForSelfLoopedEdges) Hide();
             else Show();
         }
 
         private void EdgeLabelControl_LayoutUpdated(object? sender, DefaultEventArgs e)
         {
             if (EdgeControl == null || !ShowLabel) return;
-            if (LastKnownRectSize == SysRect.Empty || double.IsNaN(LastKnownRectSize.Width) || LastKnownRectSize.Width == 0)
+            if (LastKnownRectSize == SysRect.Empty || double.IsNaN(LastKnownRectSize.Width) ||
+                LastKnownRectSize.Width == 0)
             {
                 UpdateLayout();
                 UpdatePosition();
@@ -350,7 +373,7 @@ namespace Westermo.GraphX.Controls
         {
             if (!UpdateLabelOnSizeChange) return;
             UpdatePosition();
-           // Debug.WriteLine(EdgeControl.Edge.ToString());
+            // Debug.WriteLine(EdgeControl.Edge.ToString());
         }
 
         private DependencyObject GetParent()

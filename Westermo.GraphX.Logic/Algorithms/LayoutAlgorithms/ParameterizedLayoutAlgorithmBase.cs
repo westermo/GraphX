@@ -51,7 +51,7 @@ namespace Westermo.GraphX.Logic.Algorithms.LayoutAlgorithms
         {
         }
 
-        protected override TParam DefaultParameters => new TParam();
+        protected override TParam DefaultParameters => new();
     }
 
 	/// <typeparam name="TVertex">Type of the vertices.</typeparam>

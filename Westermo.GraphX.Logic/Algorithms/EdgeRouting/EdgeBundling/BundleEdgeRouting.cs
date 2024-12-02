@@ -880,9 +880,9 @@ namespace Westermo.GraphX.Logic.Algorithms.EdgeRouting
             }
         }
 
-        private readonly Dictionary<KeyPair, EdgeGroupData> _edgeGroupData = new Dictionary<KeyPair, EdgeGroupData>();
+        private readonly Dictionary<KeyPair, EdgeGroupData> _edgeGroupData = new();
 
-        private readonly Dictionary<KeyPair, EdgeGroupData> _movedEdgeGroupData = new Dictionary<KeyPair, EdgeGroupData>();
+        private readonly Dictionary<KeyPair, EdgeGroupData> _movedEdgeGroupData = new();
 
 
 
@@ -906,7 +906,7 @@ namespace Westermo.GraphX.Logic.Algorithms.EdgeRouting
 
         private float _straightening = 0.15f;
 
-        private readonly Common.Models.Semaphore.Semaphore _sem = new Common.Models.Semaphore.Semaphore(0, Int32.MaxValue);
+        private readonly Common.Models.Semaphore.Semaphore _sem = new(0, Int32.MaxValue);
 
 
         /// <summary>

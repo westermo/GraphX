@@ -261,11 +261,6 @@ namespace ShowcaseApp.WPF.Pages
 
         public event PropertyChangedEventHandler PropertyChanged;
 
-        private void OnPropertyChanged(string name)
-        {
-            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
-        }
-
         #endregion
     }
 }

@@ -16,7 +16,7 @@ namespace Westermo.GraphX.Logic.Algorithms
 			public readonly List<TEdge> InGeneralEdges = [];
 			public readonly List<TEdge> OutGeneralEdges = [];
 		}
-		private readonly Dictionary<TVertex, TypedEdgeCollectionWrapper> _typedEdgeCollections = new Dictionary<TVertex, TypedEdgeCollectionWrapper>();
+		private readonly Dictionary<TVertex, TypedEdgeCollectionWrapper> _typedEdgeCollections = new();
 		#endregion
 
 		#region Constructors

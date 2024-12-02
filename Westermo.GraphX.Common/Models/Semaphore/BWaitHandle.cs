@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Threading;
 
-namespace Westermo.GraphX
+namespace Westermo.GraphX.Common.Models.Semaphore
 {
     public abstract class BWaitHandle
     {

@@ -22,7 +22,7 @@ namespace Westermo.GraphX.Controls
 
         #region Center Command
 
-        public static RoutedUICommand Center = new RoutedUICommand("Center Content", "Center", typeof(ZoomControl));
+        public static RoutedUICommand Center = new("Center Content", "Center", typeof(ZoomControl));
 
         private void CenterContent(object sender, ExecutedRoutedEventArgs e)
         {
@@ -33,7 +33,7 @@ namespace Westermo.GraphX.Controls
 
         #region Fill Command
 
-        public static RoutedUICommand Fill = new RoutedUICommand("Fill Bounds with Content", "FillToBounds", typeof(ZoomControl));
+        public static RoutedUICommand Fill = new("Fill Bounds with Content", "FillToBounds", typeof(ZoomControl));
 
         private void FillToBounds(object sender, ExecutedRoutedEventArgs e)
         {
@@ -44,7 +44,7 @@ namespace Westermo.GraphX.Controls
 
         #region ResetZoom Command
 
-        public static RoutedUICommand ResetZoom = new RoutedUICommand("Reset zoom", "ResetZoom", typeof(ZoomControl));
+        public static RoutedUICommand ResetZoom = new("Reset zoom", "ResetZoom", typeof(ZoomControl));
         /// <summary>
         /// Executes when ResetZoom command is fired and resets the Zoom value to default one. Override to reset to custom zoom value.
         /// Default Zoom value is 1.
@@ -58,7 +58,7 @@ namespace Westermo.GraphX.Controls
 
         #region Refocus Command
 
-        public static RoutedUICommand Refocus = new RoutedUICommand("Refocus View", "Refocus", typeof(ZoomControl));
+        public static RoutedUICommand Refocus = new("Refocus View", "Refocus", typeof(ZoomControl));
 
         private void CanRefocusView(object sender, CanExecuteRoutedEventArgs e)
         {
@@ -251,10 +251,10 @@ namespace Westermo.GraphX.Controls
 
         // state variables used during drag and select operations
         private Rect _resizeViewportBounds = Rect.Empty;
-        private Point _resizeAnchorPoint = new Point(0, 0);
-        private Point _resizeDraggingPoint = new Point(0, 0);
-        private Point _originPoint = new Point(0, 0);
-        private BitVector32 _cacheBits = new BitVector32(0);
+        private Point _resizeAnchorPoint = new(0, 0);
+        private Point _resizeDraggingPoint = new(0, 0);
+        private Point _originPoint = new(0, 0);
+        private BitVector32 _cacheBits = new(0);
 
         private void ViewFinderDisplayBeginCapture(object sender, MouseButtonEventArgs e)
         {
@@ -880,7 +880,7 @@ namespace Westermo.GraphX.Controls
         /// <summary>
         /// Gets origo (area center) position
         /// </summary>
-        public Point OrigoPosition => new Point(ActualWidth / 2, ActualHeight / 2);
+        public Point OrigoPosition => new(ActualWidth / 2, ActualHeight / 2);
 
         /// <summary>
         /// Gets or sets translation value for X property
@@ -1041,12 +1041,12 @@ namespace Westermo.GraphX.Controls
             set => SetValue(ModeProperty, value);
         }
 
-        public RoutedUICommand CommandZoomIn = new RoutedUICommand("Zoom In", "ZoomIn", typeof(ZoomControl));
-        public RoutedUICommand CommandZoomOut = new RoutedUICommand("Zoom Out", "ZoomOut", typeof(ZoomControl));
-        public RoutedUICommand CommandPanLeft = new RoutedUICommand("Pan Left", "PanLeft", typeof(ZoomControl));
-        public RoutedUICommand CommandPanRight = new RoutedUICommand("Pan Right", "PanRight", typeof(ZoomControl));
-        public RoutedUICommand CommandPanTop = new RoutedUICommand("Pan Top", "PanTop", typeof(ZoomControl));
-        public RoutedUICommand CommandPanBottom = new RoutedUICommand("Pan Bottom", "PanBottom", typeof(ZoomControl));
+        public RoutedUICommand CommandZoomIn = new("Zoom In", "ZoomIn", typeof(ZoomControl));
+        public RoutedUICommand CommandZoomOut = new("Zoom Out", "ZoomOut", typeof(ZoomControl));
+        public RoutedUICommand CommandPanLeft = new("Pan Left", "PanLeft", typeof(ZoomControl));
+        public RoutedUICommand CommandPanRight = new("Pan Right", "PanRight", typeof(ZoomControl));
+        public RoutedUICommand CommandPanTop = new("Pan Top", "PanTop", typeof(ZoomControl));
+        public RoutedUICommand CommandPanBottom = new("Pan Bottom", "PanBottom", typeof(ZoomControl));
 
         #endregion
 

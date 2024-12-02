@@ -19,7 +19,7 @@ namespace Westermo.GraphX.Measure
             set => _y = value;
         }
 
-        public static Vector Zero { get; } = new Vector();
+        public static Vector Zero { get; } = new();
 
         #region Overloaded operators
 
@@ -81,8 +81,7 @@ namespace Westermo.GraphX.Measure
 
         public void Normalize()
         {
-            var v = this / Math.Max(Math.Abs(_x), Math.Abs(_y));
-            v = this / Length;
+            var v = this / Length;
             _x = v._x;
             _y = v._y;
         }
@@ -110,6 +109,6 @@ namespace Westermo.GraphX.Measure
             return $"{_x}:{_y}";
         }
 
-        public Point ToPoint => new Point(_x, _y);
+        public Point ToPoint => new(_x, _y);
     }
 }

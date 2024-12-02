@@ -310,7 +310,7 @@ namespace Westermo.GraphX.Logic.Algorithms.LayoutAlgorithms
         {
             public int Accumulator;
             public bool InnerSegmentMarker;
-            public readonly Queue<SugiEdge> NonInnerSegmentQueue = new Queue<SugiEdge>();
+            public readonly Queue<SugiEdge> NonInnerSegmentQueue = new();
         }
 
         private int DoCrossCountingAndOptimization(

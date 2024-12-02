@@ -71,7 +71,7 @@ namespace Westermo.GraphX.Logic.Algorithms.EdgeRouting
 
         #region Variables Declaration
         private readonly MatrixItem[,] mGrid;
-        private readonly PriorityQueueB<PathFinderNode>  mOpen                   = new PriorityQueueB<PathFinderNode>(new ComparePFNode());
+        private readonly PriorityQueueB<PathFinderNode>  mOpen                   = new(new ComparePFNode());
         private readonly List<PathFinderNode>            mClose                  = [];
         private bool                            mStop;
         private bool                            mStopped                = true;

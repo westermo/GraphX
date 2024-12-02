@@ -196,8 +196,8 @@ namespace Westermo.GraphX.Controls
 
         #endregion
 
-        private readonly Dictionary<TEdge, EdgeControl> _edgeslist = new Dictionary<TEdge, EdgeControl>();
-        private readonly Dictionary<TVertex, VertexControl> _vertexlist = new Dictionary<TVertex, VertexControl>();
+        private readonly Dictionary<TEdge, EdgeControl> _edgeslist = new();
+        private readonly Dictionary<TVertex, VertexControl> _vertexlist = new();
 
         /// <summary>
         /// Gets edge controls read only collection. To modify collection use AddEdge() RemoveEdge() methods.
@@ -534,7 +534,7 @@ namespace Westermo.GraphX.Controls
             AddEdge(edgeData, edgeControl, generateLabel);
         }
 
-        protected void InternalAddEdge(TEdge edgeData, EdgeControl edgeControl)
+        protected void InternalAddEdge(TEdge? edgeData, EdgeControl? edgeControl)
         {
             if (edgeControl == null || edgeData == null) return;
             if (_edgeslist.ContainsKey(edgeData))
@@ -552,7 +552,7 @@ namespace Westermo.GraphX.Controls
         /// <param name="edgeControl">Edge visual control</param>
         /// <param name="num">Insert position</param>
         /// <param name="generateLabel">Generate edge label for this control using EdgeLabelFactory</param>
-        public void InsertEdge(TEdge edgeData, EdgeControl edgeControl, int num = 0, bool generateLabel = false)
+        public void InsertEdge(TEdge edgeData, EdgeControl? edgeControl, int num = 0, bool generateLabel = false)
         {
             if (AutoAssignMissingDataId && edgeData.ID == -1)
                 edgeData.ID = GetNextUniqueId(false);
@@ -865,12 +865,10 @@ namespace Westermo.GraphX.Controls
 
                     LogicCore.Graph.Edges.ForEach(e =>
                     {
-                        if (!_edgeslist.ContainsKey(e))
-                        {
-                            var source = _vertexlist[e.Source];
-                            var target = _vertexlist[e.Target];
-                            AddEdge(e, ControlFactory.CreateEdgeControl(source, target, e));
-                        }
+                        if (_edgeslist.ContainsKey(e)) return;
+                        var source = _vertexlist[e.Source];
+                        var target = _vertexlist[e.Target];
+                        AddEdge(e, ControlFactory.CreateEdgeControl(source, target, e));
                     });
                 }
 
@@ -905,8 +903,7 @@ namespace Westermo.GraphX.Controls
                 //setup vertex positions from result data
                 foreach (var item in resultCoords)
                 {
-                    if (!_vertexlist.ContainsKey(item.Key)) continue;
-                    var vc = _vertexlist[item.Key];
+                    if (!_vertexlist.TryGetValue(item.Key, out var vc)) continue;
 
                     SetFinalX(vc, item.Value.X);
                     SetFinalY(vc, item.Value.Y);

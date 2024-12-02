@@ -1,5 +1,4 @@
 ﻿using System.ComponentModel;
-using System.Windows.Controls;
 
 namespace ShowcaseApp.WPF.Pages.FeatureLists
 {

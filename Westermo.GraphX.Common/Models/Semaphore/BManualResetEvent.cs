@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Threading;
 
-namespace Westermo.GraphX
+namespace Westermo.GraphX.Common.Models.Semaphore
 {
     public class BManualResetEvent(bool initialState) : BWaitHandle, IDisposable
     {
@@ -16,6 +16,7 @@ namespace Westermo.GraphX
         {
             return _mre.Reset();
         }
+
         //
         // Summary:
         //     Sets the state of the event to signaled, which allows one or more waiting

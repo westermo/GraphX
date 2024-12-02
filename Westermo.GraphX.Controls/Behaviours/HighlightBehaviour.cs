@@ -1,5 +1,4 @@
-﻿
-using System.Linq;
+﻿using System.Linq;
 using System.Windows;
 using System.Windows.Input;
 using Westermo.GraphX.Common.Enums;
@@ -9,13 +8,28 @@ namespace Westermo.GraphX.Controls
     public static class HighlightBehaviour
     {
         #region Attached props
+
         //trigger
-        public static readonly DependencyProperty HighlightedProperty = DependencyProperty.RegisterAttached("Highlighted", typeof(bool), typeof(HighlightBehaviour), new PropertyMetadata(false));
+        public static readonly DependencyProperty HighlightedProperty =
+            DependencyProperty.RegisterAttached("Highlighted", typeof(bool), typeof(HighlightBehaviour),
+                new PropertyMetadata(false));
+
         //settings
-        public static readonly DependencyProperty IsHighlightEnabledProperty = DependencyProperty.RegisterAttached("IsHighlightEnabled", typeof(bool), typeof(HighlightBehaviour), new PropertyMetadata(false, OnIsHighlightEnabledPropertyChanged));
-        public static readonly DependencyProperty HighlightControlProperty = DependencyProperty.RegisterAttached("HighlightControl", typeof(GraphControlType), typeof(HighlightBehaviour), new PropertyMetadata(GraphControlType.VertexAndEdge));
-        public static readonly DependencyProperty HighlightEdgesProperty = DependencyProperty.RegisterAttached("HighlightEdges", typeof(EdgesType), typeof(HighlightBehaviour), new PropertyMetadata(EdgesType.Out));
-        public static readonly DependencyProperty HighlightedEdgeTypeProperty = DependencyProperty.RegisterAttached("HighlightedEdgeType", typeof(HighlightedEdgeType), typeof(HighlightBehaviour), new PropertyMetadata(HighlightedEdgeType.None));
+        public static readonly DependencyProperty IsHighlightEnabledProperty =
+            DependencyProperty.RegisterAttached("IsHighlightEnabled", typeof(bool), typeof(HighlightBehaviour),
+                new PropertyMetadata(false, OnIsHighlightEnabledPropertyChanged));
+
+        public static readonly DependencyProperty HighlightControlProperty =
+            DependencyProperty.RegisterAttached("HighlightControl", typeof(GraphControlType),
+                typeof(HighlightBehaviour), new PropertyMetadata(GraphControlType.VertexAndEdge));
+
+        public static readonly DependencyProperty HighlightEdgesProperty =
+            DependencyProperty.RegisterAttached("HighlightEdges", typeof(EdgesType), typeof(HighlightBehaviour),
+                new PropertyMetadata(EdgesType.Out));
+
+        public static readonly DependencyProperty HighlightedEdgeTypeProperty =
+            DependencyProperty.RegisterAttached("HighlightedEdgeType", typeof(HighlightedEdgeType),
+                typeof(HighlightBehaviour), new PropertyMetadata(HighlightedEdgeType.None));
 
         public static HighlightedEdgeType GetHighlightedEdgeType(DependencyObject obj)
         {
@@ -70,7 +84,9 @@ namespace Westermo.GraphX.Controls
         #endregion
 
         #region PropertyChanged callbacks
-        private static void OnIsHighlightEnabledPropertyChanged(DependencyObject obj, DependencyPropertyChangedEventArgs e)
+
+        private static void OnIsHighlightEnabledPropertyChanged(DependencyObject obj,
+            DependencyPropertyChangedEventArgs e)
         {
             if (obj is not IInputElement element)
                 return;
@@ -97,9 +113,9 @@ namespace Westermo.GraphX.Controls
             if (sender is DependencyObject == false) return;
             if (sender is not IGraphControl ctrl) return;
 
-            var type = GetHighlightControl((DependencyObject) sender);
-            var edgesType = GetHighlightEdges((DependencyObject) sender);
-            SetHighlighted((DependencyObject) sender, false);
+            var type = GetHighlightControl((DependencyObject)sender);
+            var edgesType = GetHighlightEdges((DependencyObject)sender);
+            SetHighlighted((DependencyObject)sender, false);
 
             if (type == GraphControlType.Vertex || type == GraphControlType.VertexAndEdge)
                 foreach (var item in ctrl.RootArea.GetRelatedVertexControls(ctrl, edgesType).Cast<DependencyObject>())
@@ -115,15 +131,15 @@ namespace Westermo.GraphX.Controls
 
         private static void element_MouseEnter(object sender, MouseEventArgs e)
         {
-            if(sender is DependencyObject == false) return;
-            if(sender is not IGraphControl ctrl) return;
+            if (sender is DependencyObject == false) return;
+            if (sender is not IGraphControl ctrl) return;
 
-            var type = GetHighlightControl((DependencyObject) sender);
-            var edgesType = GetHighlightEdges((DependencyObject) sender);
-            SetHighlighted((DependencyObject) sender, true);
+            var type = GetHighlightControl((DependencyObject)sender);
+            var edgesType = GetHighlightEdges((DependencyObject)sender);
+            SetHighlighted((DependencyObject)sender, true);
 
             //highlight related vertices
-            if(type == GraphControlType.Vertex || type == GraphControlType.VertexAndEdge)
+            if (type == GraphControlType.Vertex || type == GraphControlType.VertexAndEdge)
                 foreach (var item in ctrl.RootArea.GetRelatedVertexControls(ctrl, edgesType).Cast<DependencyObject>())
                     SetHighlighted(item, true);
             //highlight related edges
@@ -131,19 +147,23 @@ namespace Westermo.GraphX.Controls
             {
                 //separetely get in and out edges to set direction flag
                 if (edgesType == EdgesType.In || edgesType == EdgesType.All)
-                    foreach (var item in ctrl.RootArea.GetRelatedEdgeControls(ctrl, EdgesType.In).Cast<DependencyObject>())
+                    foreach (var item in ctrl.RootArea.GetRelatedEdgeControls(ctrl, EdgesType.In)
+                                 .Cast<DependencyObject>())
                     {
                         SetHighlighted(item, true);
                         SetHighlightedEdgeType(item, HighlightedEdgeType.In);
                     }
+
                 if (edgesType == EdgesType.Out || edgesType == EdgesType.All)
-                    foreach (var item in ctrl.RootArea.GetRelatedEdgeControls(ctrl, EdgesType.Out).Cast<DependencyObject>())
+                    foreach (var item in ctrl.RootArea.GetRelatedEdgeControls(ctrl, EdgesType.Out)
+                                 .Cast<DependencyObject>())
                     {
                         SetHighlighted(item, true);
                         SetHighlightedEdgeType(item, HighlightedEdgeType.Out);
                     }
             }
         }
+
         #endregion
 
         public enum HighlightType
@@ -152,7 +172,7 @@ namespace Westermo.GraphX.Controls
             Edge,
             VertexAndEdge
         }
-        
+
         public enum HighlightedEdgeType
         {
             In,

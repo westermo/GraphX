@@ -185,7 +185,7 @@ namespace Westermo.GraphX.Logic.Models
         /// Represents graph filters queue (FIFO)
         /// </summary>
         public Queue<IGraphFilter<TVertex, TEdge, TGraph>> Filters { get; set; } =
-            new Queue<IGraphFilter<TVertex, TEdge, TGraph>>();
+            new();
 
         /// <summary>
         /// Create default params if algorithm was changed and default params property is null

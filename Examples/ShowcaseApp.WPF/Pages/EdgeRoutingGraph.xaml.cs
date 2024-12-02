@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
 using System.Windows;
@@ -260,22 +259,19 @@ namespace ShowcaseApp.WPF.Pages
             }
         }
 
-        private Dictionary<DataVertex, Point> GenerateRandomVertices(GraphExample graph, int index, int count, int minX,
+        private void GenerateRandomVertices(GraphExample graph, int index, int count, int minX,
             int maxX, int minY, int maxY)
         {
             var list = graph.Vertices.ToList();
-            var vertexPositions = new Dictionary<DataVertex, Point>();
             for (var i = index; i < index + count; i++)
             {
                 var vertex = list[i];
                 var vc = new VertexControl(vertex);
                 erg_Area.AddVertex(vertex, vc);
-                vertexPositions[vertex] = new Point(ShowcaseHelper.Rand.Next(minX, maxX),
+                var point = new Point(ShowcaseHelper.Rand.Next(minX, maxX),
                     ShowcaseHelper.Rand.Next(minY, maxY));
-                vc.SetPosition(vertexPositions[vertex]);
+                vc.SetPosition(point);
             }
-
-            return vertexPositions;
         }
 
         private void erg_but_randomgraph_Click(object sender, RoutedEventArgs e)
@@ -352,12 +348,9 @@ namespace ShowcaseApp.WPF.Pages
 
             //generate vertices
 
-            var vertexPositions = GenerateRandomVertices(graph, 0, 40, 0, 2000, 0, 2000)
-                .ToDictionary(item => item.Key, item => item.Value);
-            foreach (var item in GenerateRandomVertices(graph, 40, 40, 5000, 7000, 3000, 4000))
-                vertexPositions.Add(item.Key, item.Value);
-            foreach (var item in GenerateRandomVertices(graph, 80, 40, 500, 2500, 6000, 9000))
-                vertexPositions.Add(item.Key, item.Value);
+            GenerateRandomVertices(graph, 0, 40, 0, 2000, 0, 2000);
+            GenerateRandomVertices(graph, 40, 40, 5000, 7000, 3000, 4000);
+            GenerateRandomVertices(graph, 80, 40, 500, 2500, 6000, 9000);
             erg_Area.LogicCore!.Graph = graph;
             UpdateLayout();
 

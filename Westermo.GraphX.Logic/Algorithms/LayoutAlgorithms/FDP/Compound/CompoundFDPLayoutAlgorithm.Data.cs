@@ -47,8 +47,7 @@ namespace Westermo.GraphX.Logic.Algorithms.LayoutAlgorithms
         /// The list of the removed root-tree-nodes and edges by it's level
         /// (level = distance from the closest not removed node).
         /// </summary>
-        private readonly Stack<IList<RemovedTreeNodeData>> _removedRootTreeNodeLevels =
-            new Stack<IList<RemovedTreeNodeData>>();
+        private readonly Stack<IList<RemovedTreeNodeData>> _removedRootTreeNodeLevels = new();
 
         private readonly HashSet<TVertex> _removedRootTreeNodes =
             [];
@@ -86,7 +85,7 @@ namespace Westermo.GraphX.Logic.Algorithms.LayoutAlgorithms
         /// Represents the root vertex.
         /// </summary>
         private readonly CompoundVertexData _rootCompoundVertex =
-            new CompoundVertexData(
+            new(
                 null, null, false, new Point(),
                 new Size(), new Thickness(),
                 CompoundVertexInnerLayoutType.Automatic);

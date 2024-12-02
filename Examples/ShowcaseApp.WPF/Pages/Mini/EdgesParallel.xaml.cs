@@ -2,7 +2,6 @@
 using System.ComponentModel;
 using System.Linq;
 using System.Windows;
-using System.Windows.Controls;
 using Westermo.GraphX.Controls.Models;
 using Westermo.GraphX.Common.Enums;
 using ShowcaseApp.WPF.Models;
@@ -12,24 +11,28 @@ namespace ShowcaseApp.WPF.Pages.Mini
     /// <summary>
     /// Interaction logic for LayoutVCP.xaml
     /// </summary>
-    public partial class EdgesParallel : UserControl, INotifyPropertyChanged
+    public partial class EdgesParallel : INotifyPropertyChanged
     {
         private int _edgeDistance;
-        public int EdgeDistance { get => _edgeDistance;
-            set 
-            { 
+
+        public int EdgeDistance
+        {
+            get => _edgeDistance;
+            set
+            {
                 _edgeDistance = value;
-                graphArea.LogicCore.ParallelEdgeDistance = value; 
+                graphArea.LogicCore.ParallelEdgeDistance = value;
                 graphArea.UpdateAllEdges(true);
-                OnPropertyChanged("EdgeDistance"); 
-            } }
+                OnPropertyChanged("EdgeDistance");
+            }
+        }
 
         public EdgesParallel()
         {
             InitializeComponent();
             DataContext = this;
             Loaded += ControlLoaded;
-        
+
             cbEnablePE.IsChecked = true;
             _edgeDistance = 10;
 
@@ -40,7 +43,7 @@ namespace ShowcaseApp.WPF.Pages.Mini
 
         private void CbMathShapeOnChecked(object sender, RoutedEventArgs routedEventArgs)
         {
-            graphArea.LogicCore.EnableParallelEdges = (bool) cbEnablePE.IsChecked;
+            graphArea.LogicCore.EnableParallelEdges = (bool)cbEnablePE.IsChecked;
             graphArea.UpdateAllEdges(true);
         }
 
@@ -70,9 +73,9 @@ namespace ShowcaseApp.WPF.Pages.Mini
             //set positions 
             var posList = new Dictionary<DataVertex, Point>()
             {
-                {vList[0], new Point(0, -150)},
-                {vList[1], new Point(300, 0)},
-                {vList[2], new Point(600, -150)},
+                { vList[0], new Point(0, -150) },
+                { vList[1], new Point(300, 0) },
+                { vList[2], new Point(600, -150) },
             };
 
             //settings
@@ -93,8 +96,8 @@ namespace ShowcaseApp.WPF.Pages.Mini
             eList[1].GetLabelControls().FirstOrDefault().LabelVerticalOffset = 12;
 
             eList[2].GetLabelControls().FirstOrDefault().ShowLabel = false;
-           // eList[3].GetLabelControls().FirstOrDefault().LabelVerticalOffset = 12;
-           // eList[4].GetLabelControls().FirstOrDefault().LabelVerticalOffset = -12;
+            // eList[3].GetLabelControls().FirstOrDefault().LabelVerticalOffset = 12;
+            // eList[4].GetLabelControls().FirstOrDefault().LabelVerticalOffset = -12;
 
             //PS: to see how parallel edges logic works go to GraphArea::UpdateParallelEdgesData() method
 

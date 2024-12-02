@@ -67,7 +67,7 @@ namespace ShowcaseApp.WPF.Pages
             //generate group params
             var prms = new List<AlgorithmGroupParameters<DataVertex, DataEdge>>
             {
-                new AlgorithmGroupParameters<DataVertex, DataEdge>
+                new()
                 {
                     GroupId = 1,
                     LayoutAlgorithm =
@@ -76,7 +76,7 @@ namespace ShowcaseApp.WPF.Pages
 
                     // ZoneRectangle = new Rect(0, 0, 500, 500)
                 },
-                new AlgorithmGroupParameters<DataVertex, DataEdge>
+                new()
                 {
                     GroupId = 2,
                     LayoutAlgorithm =

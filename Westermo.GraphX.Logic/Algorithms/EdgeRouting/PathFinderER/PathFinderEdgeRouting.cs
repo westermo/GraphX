@@ -70,8 +70,8 @@ namespace Westermo.GraphX.Logic.Algorithms.EdgeRouting
                 ComputeER(item, cancellationToken);
         }
 
-        private Point _minPoint = new Point(double.PositiveInfinity, double.PositiveInfinity);
-        private Point _maxPoint = new Point(double.NegativeInfinity, double.NegativeInfinity);
+        private Point _minPoint = new(double.PositiveInfinity, double.PositiveInfinity);
+        private Point _maxPoint = new(double.NegativeInfinity, double.NegativeInfinity);
         private readonly double _horizontalGs = 100;
         private readonly double _verticalGs = 100;
         private readonly double _sideAreaOffset = 500;

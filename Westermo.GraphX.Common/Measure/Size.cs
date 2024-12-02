@@ -3,7 +3,7 @@
 
 namespace Westermo.GraphX.Measure
 {
-    public struct Size
+    public struct Size : IEquatable<Size>
     {
         internal double _width;
 
@@ -36,8 +36,8 @@ namespace Westermo.GraphX.Measure
             }
         }
 
-        private static readonly Size SEmpty;
-        public static Size Empty => SEmpty;
+        public static Size Empty { get; }
+
         public bool IsEmpty => _width < 0.0;
 
         public Size(double width, double height)
@@ -82,7 +82,7 @@ namespace Westermo.GraphX.Measure
 
         static Size()
         {
-            SEmpty = CreateEmptySize();
+            Empty = CreateEmptySize();
         }
 
         public static bool Equals(Size size1, Size size2)
@@ -97,9 +97,7 @@ namespace Westermo.GraphX.Measure
 
         public override bool Equals(object o)
         {
-            if (!(o is Size))
-                return false;
-            return Equals(this, (Size)o);
+            return o is Size size && Equals(this, size);
         }
 
         public bool Equals(Size value)

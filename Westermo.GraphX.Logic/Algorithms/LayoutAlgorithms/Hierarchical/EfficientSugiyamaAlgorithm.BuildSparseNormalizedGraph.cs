@@ -17,7 +17,7 @@ namespace Westermo.GraphX.Logic.Algorithms.LayoutAlgorithms
             public bool IsInsertedLayer;
             public double LayerWidth;
             public double LayerHeight;
-            public readonly Queue<WHOptimizationVertexInfo> Vertices = new Queue<WHOptimizationVertexInfo>();
+            public readonly Queue<WHOptimizationVertexInfo> Vertices = new();
         }
 
         private class WHOptimizationVertexInfo

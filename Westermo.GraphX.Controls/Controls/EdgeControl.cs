@@ -263,7 +263,7 @@ namespace Westermo.GraphX.Controls
             if (!_clickTrack)
                 return;
 
-            var curPoint = RootArea != null ? Mouse.GetPosition(RootArea) : new Point();
+            var curPoint = Mouse.GetPosition(RootArea);
 
             if (curPoint != _clickTrackPoint)
                 _clickTrack = false;
@@ -271,7 +271,7 @@ namespace Westermo.GraphX.Controls
 
         private void EdgeControl_MouseUp(object sender, MouseButtonEventArgs e)
         {
-            if (RootArea != null && Visibility == Visibility.Visible)
+            if (Visibility == Visibility.Visible)
             {
                 if (_clickTrack)
                 {

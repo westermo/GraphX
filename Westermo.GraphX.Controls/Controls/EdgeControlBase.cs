@@ -245,7 +245,7 @@ namespace Westermo.GraphX.Controls
         public bool UpdateLabelPosition
         {
             get => _updateLabelPosition;
-            set => _updateLabelPosition = true;
+            set => _updateLabelPosition = value;
         }
 
 
@@ -254,7 +254,7 @@ namespace Westermo.GraphX.Controls
         /// </summary>
         public bool IsHiddenEdgesUpdated { get; set; }
 
-        public static readonly DependencyProperty ShowArrowsProperty = DependencyProperty.Register("ShowArrows",
+        public static readonly DependencyProperty ShowArrowsProperty = DependencyProperty.Register(nameof(ShowArrows),
             typeof(bool), typeof(EdgeControlBase), new PropertyMetadata(true, showarrows_changed));
 
         private static void showarrows_changed(object sender, DependencyPropertyChangedEventArgs args)
@@ -730,11 +730,6 @@ namespace Westermo.GraphX.Controls
                 Y = useCurrentCoords ? GraphAreaBase.GetY(Source) : GraphAreaBase.GetFinalY(Source)
             };
             // Get the TopLeft position of the Target Vertex.
-            var targetPos1 = new Point
-            {
-                X = Mouse.GetPosition(RootArea).X,
-                Y = Mouse.GetPosition(RootArea).Y
-            };
 
             var hasEpSource = EdgePointerForSource != null;
             var hasEpTarget = EdgePointerForTarget != null;
@@ -747,7 +742,7 @@ namespace Westermo.GraphX.Controls
             }
 
             //check if we have some edge route data
-            var hasRouteInfo = routeInformation != null && routeInformation.Length > 1;
+            var hasRouteInfo = routeInformation is { Length: > 1 };
 
             var gEdge = Edge as IGraphXCommonEdge;
             Point p1;
@@ -798,7 +793,7 @@ namespace Westermo.GraphX.Controls
             TargetConnectionPoint = p2;
 
             Linegeometry = new PathGeometry();
-            var lineFigure = new PathFigure();
+            PathFigure lineFigure;
 
             //if we have route and route consist of 2 or more points
             if (hasRouteInfo)
@@ -819,8 +814,8 @@ namespace Westermo.GraphX.Controls
 
                     if (hasEpTarget)
                     {
-                        UpdateTargetEpData(oPolyLineSegment.Points[oPolyLineSegment.Points.Count - 1],
-                            oPolyLineSegment.Points[oPolyLineSegment.Points.Count - 2]);
+                        UpdateTargetEpData(oPolyLineSegment.Points[^1],
+                            oPolyLineSegment.Points[^2]);
                         oPolyLineSegment.Points.RemoveAt(oPolyLineSegment.Points.Count - 1);
                     }
 
@@ -841,8 +836,8 @@ namespace Westermo.GraphX.Controls
                         routePoints[0] =
                             routePoints[0].Subtract(UpdateSourceEpData(routePoints.First(), routePoints[1]));
                     if (hasEpTarget)
-                        routePoints[routePoints.Count - 1] = routePoints[routePoints.Count - 1]
-                            .Subtract(UpdateTargetEpData(p2, routePoints[routePoints.Count - 2]));
+                        routePoints[^1] = routePoints[^1]
+                            .Subtract(UpdateTargetEpData(p2, routePoints[^2]));
 
                     // Reverse the path if specified.
                     if (gEdge!.ReversePath)
@@ -986,25 +981,27 @@ namespace Westermo.GraphX.Controls
 
             #region Helper lambda expressions
 
-            Func<IVertexConnectionPoint> getSourceCpOrThrow = () =>
+            IVertexConnectionPoint GetSourceCpOrThrow()
             {
-                var cp = Source!.GetConnectionPointById(gEdge!.SourceConnectionPointId!.Value, true);
+                var cp = Source!.GetConnectionPointById(gEdge.SourceConnectionPointId!.Value, true);
                 if (cp == null)
                     throw new GX_ObjectNotFoundException(string.Format(
                         "Can't find source vertex VCP by edge source connection point Id({1}) : {0}", Source,
                         gEdge.SourceConnectionPointId));
                 return cp;
-            };
-            Func<IVertexConnectionPoint> getTargetCpOrThrow = () =>
+            }
+
+            IVertexConnectionPoint GetTargetCpOrThrow()
             {
-                var cp = Target.GetConnectionPointById(gEdge!.TargetConnectionPointId!.Value, true);
+                var cp = Target.GetConnectionPointById(gEdge.TargetConnectionPointId!.Value, true);
                 if (cp == null)
                     throw new GX_ObjectNotFoundException(string.Format(
                         "Can't find target vertex VCP by edge target connection point Id({1}) : {0}", Target,
                         gEdge.TargetConnectionPointId));
                 return cp;
-            };
-            Func<IVertexConnectionPoint, Point, Point, Point> getCpEndPoint = (cp, cpCenter, distantEnd) =>
+            }
+
+            Point GetCpEndPoint(IVertexConnectionPoint cp, Point cpCenter, Point distantEnd)
             {
                 // If the connection point (cp) doesn't have any shape, the edge comes from its center, otherwise find the location
                 // on its perimeter that the edge should come from.
@@ -1014,32 +1011,32 @@ namespace Westermo.GraphX.Controls
                 else
                     calculatedCp = GeometryHelper.GetEdgeEndpoint(cpCenter, cp.RectangularSize, distantEnd, cp.Shape);
                 return calculatedCp;
-            };
-            var needParallelCalc = () =>
-                RootArea != null && !hasRouteInfo && RootArea.EnableParallelEdges && IsParallel;
+            }
+
+            bool NeedParallelCalc() => !hasRouteInfo && RootArea.EnableParallelEdges && IsParallel;
 
             #endregion
 
             //calculate edge source (p1) and target (p2) endpoints based on different settings
-            if (gEdge?.SourceConnectionPointId != null && gEdge?.TargetConnectionPointId != null)
+            if (gEdge is { SourceConnectionPointId: not null, TargetConnectionPointId: not null })
             {
                 // Get the connection points and their centers
-                var sourceCp = getSourceCpOrThrow();
-                var targetCp = getTargetCpOrThrow();
+                var sourceCp = GetSourceCpOrThrow();
+                var targetCp = GetTargetCpOrThrow();
                 var sourceCpCenter = sourceCp.RectangularSize.Center();
                 var targetCpCenter = targetCp.RectangularSize.Center();
 
-                SourceConnectionPoint = getCpEndPoint(sourceCp, sourceCpCenter, targetCpCenter);
-                TargetConnectionPoint = getCpEndPoint(targetCp, targetCpCenter, sourceCpCenter);
+                SourceConnectionPoint = GetCpEndPoint(sourceCp, sourceCpCenter, targetCpCenter);
+                TargetConnectionPoint = GetCpEndPoint(targetCp, targetCpCenter, sourceCpCenter);
             }
             else if (gEdge?.SourceConnectionPointId != null)
             {
-                var sourceCp = getSourceCpOrThrow();
+                var sourceCp = GetSourceCpOrThrow();
                 var sourceCpCenter = sourceCp.RectangularSize.Center();
 
                 // In the case of parallel edges, the target direction needs to be found and the correct offset calculated. Otherwise, fall back
                 // to route information or simply the center of the target vertex.
-                if (needParallelCalc())
+                if (NeedParallelCalc())
                 {
                     var m = new Point(targetCenter.X - sourceCenter.X, targetCenter.Y - sourceCenter.Y);
                     targetCenter = new Point(sourceCpCenter.X + m.X, sourceCpCenter.Y + m.Y);
@@ -1049,7 +1046,7 @@ namespace Westermo.GraphX.Controls
                     targetCenter = routeInformation![1].ToWindows();
                 }
 
-                SourceConnectionPoint = getCpEndPoint(sourceCp, sourceCpCenter, targetCenter);
+                SourceConnectionPoint = GetCpEndPoint(sourceCp, sourceCpCenter, targetCenter);
                 TargetConnectionPoint = GeometryHelper.GetEdgeEndpoint(targetCenter,
                     new SysRect(targetTopLeft, targetSize),
                     hasRouteInfo ? routeInformation![routeInformation.Length - 2].ToWindows() : sourceCpCenter,
@@ -1057,12 +1054,12 @@ namespace Westermo.GraphX.Controls
             }
             else if (gEdge?.TargetConnectionPointId != null)
             {
-                var targetCp = getTargetCpOrThrow();
+                var targetCp = GetTargetCpOrThrow();
                 var targetCpCenter = targetCp.RectangularSize.Center();
 
                 // In the case of parallel edges, the source direction needs to be found and the correct offset calculated. Otherwise, fall back
                 // to route information or simply the center of the source vertex.
-                if (needParallelCalc())
+                if (NeedParallelCalc())
                 {
                     var m = new Point(sourceCenter.X - targetCenter.X, sourceCenter.Y - targetCenter.Y);
                     sourceCenter = new Point(targetCpCenter.X + m.X, targetCpCenter.Y + m.Y);
@@ -1075,12 +1072,12 @@ namespace Westermo.GraphX.Controls
                 SourceConnectionPoint = GeometryHelper.GetEdgeEndpoint(sourceCenter,
                     new SysRect(sourceTopLeft, sourceSize),
                     hasRouteInfo ? routeInformation![1].ToWindows() : targetCpCenter, Source!.VertexShape);
-                TargetConnectionPoint = getCpEndPoint(targetCp, targetCpCenter, sourceCenter);
+                TargetConnectionPoint = GetCpEndPoint(targetCp, targetCpCenter, sourceCenter);
             }
             else
             {
                 //calculate source and target edge attach points
-                if (needParallelCalc())
+                if (NeedParallelCalc())
                 {
                     var origSC = sourceCenter;
                     var origTC = targetCenter;
@@ -1127,8 +1124,8 @@ namespace Westermo.GraphX.Controls
 
                     if (hasEpTarget)
                     {
-                        UpdateTargetEpData(oPolyLineSegment.Points[oPolyLineSegment.Points.Count - 1],
-                            oPolyLineSegment.Points[oPolyLineSegment.Points.Count - 2]);
+                        UpdateTargetEpData(oPolyLineSegment.Points[^1],
+                            oPolyLineSegment.Points[^2]);
                         oPolyLineSegment.Points.RemoveAt(oPolyLineSegment.Points.Count - 1);
                     }
 
@@ -1149,8 +1146,8 @@ namespace Westermo.GraphX.Controls
                         routePoints[0] =
                             routePoints[0].Subtract(UpdateSourceEpData(routePoints.First(), routePoints[1]));
                     if (hasEpTarget)
-                        routePoints[routePoints.Count - 1] = routePoints[routePoints.Count - 1]
-                            .Subtract(UpdateTargetEpData(p2, routePoints[routePoints.Count - 2]));
+                        routePoints[^1] = routePoints[^1]
+                            .Subtract(UpdateTargetEpData(p2, routePoints[^2]));
 
                     // Reverse the path if specified.
                     if (gEdge!.ReversePath)
@@ -1239,7 +1236,7 @@ namespace Westermo.GraphX.Controls
         /// </summary>
         /// <param name="name">Template PART name</param>
         /// <returns></returns>
-        protected virtual object GetTemplatePart(string name)
+        protected virtual object? GetTemplatePart(string name)
         {
             return Template.FindName(name, this);
         }

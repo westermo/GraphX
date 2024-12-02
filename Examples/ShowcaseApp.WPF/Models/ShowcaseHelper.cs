@@ -18,7 +18,7 @@ namespace ShowcaseApp.WPF.Models
         public static List<DataItem> DataSource { get; set; }
 
         public const int DATASOURCE_SIZE = 5000;
-        public static readonly Random Rand = new Random(Guid.NewGuid().GetHashCode());
+        public static readonly Random Rand = new(Guid.NewGuid().GetHashCode());
 
         private static void GenerateData(int count)
         {

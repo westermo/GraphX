@@ -90,7 +90,7 @@ namespace ShowcaseApp.WPF.Pages
 
         #region SaveStateCommand
 
-        private static readonly RoutedCommand SaveStateCommand = new RoutedCommand();
+        private static readonly RoutedCommand SaveStateCommand = new();
 
         private void SaveStateCommandCanExecute(object sender, CanExecuteRoutedEventArgs e)
         {
@@ -108,7 +108,7 @@ namespace ShowcaseApp.WPF.Pages
 
         #region LoadStateCommand
 
-        private static readonly RoutedCommand LoadStateCommand = new RoutedCommand();
+        private static readonly RoutedCommand LoadStateCommand = new();
 
         private void LoadStateCommandCanExecute(object sender, CanExecuteRoutedEventArgs e)
         {
@@ -125,7 +125,7 @@ namespace ShowcaseApp.WPF.Pages
 
         #region SaveLayoutCommand
 
-        private static readonly RoutedCommand SaveLayoutCommand = new RoutedCommand();
+        private static readonly RoutedCommand SaveLayoutCommand = new();
 
         private void SaveLayoutCommandCanExecute(object sender, CanExecuteRoutedEventArgs e)
         {
@@ -146,7 +146,7 @@ namespace ShowcaseApp.WPF.Pages
 
         #region LoadLayoutCommand
 
-        private static readonly RoutedCommand LoadLayoutCommand = new RoutedCommand();
+        private static readonly RoutedCommand LoadLayoutCommand = new();
 
         private static void LoadLayoutCommandCanExecute(object sender, CanExecuteRoutedEventArgs e)
         {
