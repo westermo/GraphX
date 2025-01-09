@@ -11,6 +11,8 @@ using Westermo.GraphX.Controls.Models;
 using Westermo.GraphX.Logic.Algorithms.LayoutAlgorithms;
 using ShowcaseApp.WPF.Models;
 using Rect = Westermo.GraphX.Measure.Rect;
+using Westermo.GraphX;
+using System.Windows.Media;
 
 namespace ShowcaseApp.WPF.Pages
 {
@@ -65,6 +67,7 @@ namespace ShowcaseApp.WPF.Pages
             erg_Area.LogicCore = _logicCore;
             erg_Area.LogicCore.ParallelEdgeDistance = 20;
             erg_Area.EdgeLabelFactory = new DefaultEdgelabelFactory();
+            erg_Area.ControlFactory = new ExampleFactory();
 
             erg_showEdgeArrows.IsChecked = true;
             BundleEdgeRoutingParameters =
@@ -343,7 +346,7 @@ namespace ShowcaseApp.WPF.Pages
                 if (ShowcaseHelper.Rand.Next(0, 50) > 25) continue;
                 var vertex2 = vlist[ShowcaseHelper.Rand.Next(0, graph.VertexCount - 1)];
                 graph.AddEdge(new DataEdge(item, vertex2, ShowcaseHelper.Rand.Next(1, 50))
-                    { ToolTipText = $"{item} -> {vertex2}" });
+                { ToolTipText = $"{item} -> {vertex2}" });
             }
 
             //generate vertices
@@ -373,5 +376,52 @@ namespace ShowcaseApp.WPF.Pages
         }
 
         #endregion
+    }
+
+    internal class ExampleFactory : IGraphControlFactory
+    {
+        public GraphAreaBase FactoryRootArea => throw new NotImplementedException();
+
+        public EdgeControl CreateEdgeControl(VertexControl source, VertexControl target, object edge, bool showArrows = true, Visibility visibility = Visibility.Visible)
+        {
+            return new FunnyEdgeControl
+            {
+                Source = source,
+                Target = target,
+                Edge = edge,
+                ShowArrows = showArrows,
+            };
+        }
+
+        public VertexControl CreateVertexControl(object vertexData)
+        {
+            return new VertexControl(vertexData);
+        }
+    }
+    internal class FunnyEdgeControl : EdgeControl
+    {
+        internal int Frequency = 10;
+        internal int Amplitude = 20;
+        internal int PointCount = 90;
+        protected override PathFigure TransformUnroutedPath(PathFigure original)
+        {
+            var startPoint = original.StartPoint;
+            var endPoint = original.Segments.OfType<LineSegment>().First().Point;
+            original.Segments.Clear();
+            var poly = new PolyLineSegment();
+            var vector = endPoint - original.StartPoint;
+            var orthogonal = new Vector(-vector.Y, vector.X);
+            orthogonal.Normalize();
+            for (double i = 1; i <= PointCount; i++)
+            {
+                var p = startPoint
+                + vector * (i / PointCount)
+                + orthogonal * (Math.Sin(i * 2 * Math.PI * Frequency / PointCount) * Amplitude);
+                poly.Points.Add(p);
+            }
+            poly.IsStroked = true;
+            original.Segments.Add(poly);
+            return original;
+        }
     }
 }

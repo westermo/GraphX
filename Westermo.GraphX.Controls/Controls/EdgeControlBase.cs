@@ -829,7 +829,7 @@ namespace Westermo.GraphX.Controls
                     routePoints.ForEach(a => pcol.Add(a));
 
                     lineFigure = new PathFigure
-                        { StartPoint = p1, Segments = [new PolyLineSegment { Points = pcol }], IsClosed = false };
+                    { StartPoint = p1, Segments = [new PolyLineSegment { Points = pcol }], IsClosed = false };
                 }
             }
             else // no route defined
@@ -858,7 +858,8 @@ namespace Westermo.GraphX.Controls
 
                 lineFigure = new PathFigure
                 {
-                    StartPoint = gEdge!.ReversePath ? p2 : p1, Segments =
+                    StartPoint = gEdge!.ReversePath ? p2 : p1,
+                    Segments =
                         [new LineSegment() { Point = gEdge.ReversePath ? p1 : p2 }],
                     IsClosed = false
                 };
@@ -1139,7 +1140,11 @@ namespace Westermo.GraphX.Controls
                     routePoints.ForEach(a => pcol.Add(a));
 
                     lineFigure = new PathFigure
-                        { StartPoint = p1, Segments = [new PolyLineSegment { Points = pcol }], IsClosed = false };
+                    {
+                        StartPoint = p1,
+                        Segments = [new PolyLineSegment { Points = pcol }],
+                        IsClosed = false
+                    };
                 }
             }
             else // no route defined
@@ -1166,12 +1171,12 @@ namespace Westermo.GraphX.Controls
                 if (hasEpTarget)
                     p2 = p2.Subtract(UpdateTargetEpData(p2, p1, allowUpdateEpDataToUnsuppress));
 
-                lineFigure = new PathFigure
+                lineFigure = TransformUnroutedPath(new PathFigure
                 {
-                    StartPoint = gEdge!.ReversePath ? p2 : p1, Segments =
-                        [new LineSegment() { Point = gEdge.ReversePath ? p1 : p2 }],
+                    StartPoint = gEdge!.ReversePath ? p2 : p1,
+                    Segments = [new LineSegment() { Point = gEdge.ReversePath ? p1 : p2 }],
                     IsClosed = false
-                };
+                });
             }
 
             ((PathGeometry)Linegeometry).Figures.Add(lineFigure);
@@ -1179,6 +1184,11 @@ namespace Westermo.GraphX.Controls
             GeometryHelper.TryFreeze(Linegeometry);
             if (_updateLabelPosition && updateLabel)
                 EdgeLabelControls.Where(l => l.ShowLabel).ForEach(l => l.UpdatePosition());
+        }
+
+        protected virtual PathFigure TransformUnroutedPath(PathFigure original)
+        {
+            return original;
         }
 
         private Point UpdateSourceEpData(Point from, Point to, bool allowUnsuppress = true)
