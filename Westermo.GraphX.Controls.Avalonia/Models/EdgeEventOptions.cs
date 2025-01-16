@@ -1,6 +1,6 @@
 ﻿using Westermo.GraphX.Common.Enums;
 
-namespace Westermo.GraphX.Controls.Models
+namespace Westermo.GraphX.Controls.Avalonia.Models
 {
     public sealed class EdgeEventOptions(EdgeControl ec)
     {
