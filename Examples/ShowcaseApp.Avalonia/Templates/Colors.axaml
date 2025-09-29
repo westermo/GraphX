@@ -1,0 +1,49 @@
+﻿<ResourceDictionary xmlns="https://github.com/avaloniaui"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <LinearGradientBrush x:Key="NormalBrush" EndPoint="0.5,1" StartPoint="0.5,0">
+        <GradientStop Color="#FFFFFFFF" Offset="0" />
+        <GradientStop Color="#FFA4ADBB" Offset="0.521" />
+        <GradientStop Color="#FFD7E0EA" Offset="0.194" />
+        <GradientStop Color="#FFBAC1CF" Offset="0.811" />
+        <GradientStop Color="#FFBCC5D5" Offset="0.507" />
+        <GradientStop Color="#FFE3E4E6" Offset="1" />
+    </LinearGradientBrush>
+    <LinearGradientBrush x:Key="NormalBorderBrush" EndPoint="0.5,0" StartPoint="0.5,1">
+        <GradientStop Color="#FF8B8B8B" />
+        <GradientStop Color="#FFADADAD" Offset="1" />
+    </LinearGradientBrush>
+
+    <LinearGradientBrush x:Key="EdgeBrush" EndPoint="0.5,0" StartPoint="0.5,1">
+        <GradientStop Color="#FF000000" />
+        <GradientStop Color="#FFBF931E" Offset="1" />
+    </LinearGradientBrush>
+
+    <SolidColorBrush x:Key="EdgeArrowBrush" Color="Black" />
+    <SolidColorBrush x:Key="ButtonText" Color="DarkSlateGray" />
+
+    <LinearGradientBrush StartPoint="1,0" EndPoint="1,1" x:Key="PanelGradient" SpreadMethod="Pad">
+        <LinearGradientBrush.GradientStops>
+            <GradientStop Color="Transparent" Offset="0.1" />
+            <GradientStop Color="AliceBlue" Offset="0.3" />
+        </LinearGradientBrush.GradientStops>
+    </LinearGradientBrush>
+
+    <SolidColorBrush x:Key="NormalHighlightBrush" Color="#FFFFFFFF" />
+    <LinearGradientBrush x:Key="MouseOverBrush" EndPoint="0.5,1" StartPoint="0.5,0">
+        <GradientStop Color="#FFFFFFFF" Offset="0" />
+        <GradientStop Color="#FFFEF3B5" Offset="0.318" />
+        <GradientStop Color="#FFFFEB70" Offset="0.488" />
+        <GradientStop Color="#FFFFD02E" Offset="0.502" />
+        <GradientStop Color="#FFFFD932" Offset="0.834" />
+        <GradientStop Color="#FFFFF48B" Offset="1" />
+    </LinearGradientBrush>
+    <LinearGradientBrush x:Key="MouseOverBorderBrush" EndPoint="0.5,1" StartPoint="0.5,0">
+        <GradientStop Color="#FFEEE8CF" Offset="0" />
+        <GradientStop Color="#FFC4AF8C" Offset="0.536" />
+        <GradientStop Color="#FFDCD1BF" Offset="1" />
+    </LinearGradientBrush>
+    <LinearGradientBrush x:Key="MouseOverHighlightBrush" EndPoint="0.5,1" StartPoint="0.5,0">
+        <GradientStop Color="#FFFFFFFB" Offset="0" />
+        <GradientStop Color="#FFFEF3B5" Offset="1" />
+    </LinearGradientBrush>
+</ResourceDictionary>

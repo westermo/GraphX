@@ -6,7 +6,6 @@ using Avalonia.Data;
 using Avalonia.Input;
 using Westermo.GraphX.Common.Enums;
 using Westermo.GraphX.Common.Interfaces;
-using Westermo.GraphX.Controls.Avalonia.Animations;
 using Westermo.GraphX.Controls.Avalonia;
 using Westermo.GraphX.Controls.Avalonia.Models;
 
@@ -18,7 +17,6 @@ namespace Westermo.GraphX
         {
             XProperty.Changed.AddClassHandler<Control>(x_changed);
             YProperty.Changed.AddClassHandler<Control>(y_changed);
-            DeleteAnimationProperty.Changed.AddClassHandler<GraphAreaBase>(DeleteAnimationPropertyChanged);
         }
 
         /// <summary>
@@ -52,11 +50,6 @@ namespace Westermo.GraphX
 
         #region Attached Dependency Property registrations
 
-        public static readonly AttachedProperty<double> XProperty =
-            AvaloniaProperty.RegisterAttached<GraphAreaBase, Control, double>("X", double.NaN,
-                defaultBindingMode: BindingMode.TwoWay);
-
-
         private static void x_changed(Control control, AvaloniaPropertyChangedEventArgs e)
         {
             control.SetValue(LeftProperty, e.NewValue);
@@ -64,25 +57,31 @@ namespace Westermo.GraphX
                 reactive.XYChanged(e);
         }
 
-        public static readonly AttachedProperty<double> FinalXProperty =
-            AvaloniaProperty.RegisterAttached<GraphAreaBase, Control, double>("FinalY", double.NaN,
-                defaultBindingMode: BindingMode.TwoWay);
-
-        public static readonly AttachedProperty<double> FinalYProperty =
-            AvaloniaProperty.RegisterAttached<GraphAreaBase, Control, double>("FinalY", double.NaN,
-                defaultBindingMode: BindingMode.TwoWay);
-
-
-        public static readonly AttachedProperty<double> YProperty =
-            AvaloniaProperty.RegisterAttached<GraphAreaBase, Control, double>("Y", double.NaN,
-                defaultBindingMode: BindingMode.TwoWay);
-
         private static void y_changed(Control control, AvaloniaPropertyChangedEventArgs e)
         {
             control.SetValue(TopProperty, e.NewValue);
             if (control is IXYReactive reactive)
                 reactive.XYChanged(e);
         }
+
+        public static readonly AttachedProperty<double> XProperty =
+            AvaloniaProperty.RegisterAttached<GraphAreaBase, Control, double>("X",
+                defaultBindingMode: BindingMode.TwoWay, defaultValue: double.NaN);
+
+
+        public static readonly AttachedProperty<double> FinalXProperty =
+            AvaloniaProperty.RegisterAttached<GraphAreaBase, Control, double>("FinalX",
+                defaultBindingMode: BindingMode.TwoWay, defaultValue: double.NaN);
+
+        public static readonly AttachedProperty<double> FinalYProperty =
+            AvaloniaProperty.RegisterAttached<GraphAreaBase, Control, double>("FinalY",
+                defaultBindingMode: BindingMode.TwoWay, defaultValue: double.NaN);
+
+
+        public static readonly AttachedProperty<double> YProperty =
+            AvaloniaProperty.RegisterAttached<GraphAreaBase, Control, double>("Y",
+                defaultBindingMode: BindingMode.TwoWay, defaultValue: double.NaN);
+
 
         public static double GetX(Control obj)
         {
@@ -156,69 +155,6 @@ namespace Westermo.GraphX
 
         #endregion
 
-        #region DP - Animations
-
-        /// <summary>
-        /// Gets or sets vertex and edge controls animation
-        /// </summary>
-        public MoveAnimationBase? MoveAnimation
-        {
-            get => GetValue(MoveAnimationProperty);
-            set => SetValue(MoveAnimationProperty, value);
-        }
-
-        public static readonly StyledProperty<MoveAnimationBase?> MoveAnimationProperty =
-            AvaloniaProperty.Register<GraphAreaBase, MoveAnimationBase?>(nameof(MoveAnimation));
-
-        /// <summary>
-        /// Gets or sets vertex and edge controls delete animation
-        /// </summary>
-        public IOneWayControlAnimation? DeleteAnimation
-        {
-            get => GetValue(DeleteAnimationProperty);
-            set => SetValue(DeleteAnimationProperty, value);
-        }
-
-        public static readonly StyledProperty<IOneWayControlAnimation?> DeleteAnimationProperty =
-            AvaloniaProperty.Register<GraphAreaBase, IOneWayControlAnimation?>(nameof(DeleteAnimation));
-
-        private static void DeleteAnimationPropertyChanged(Control d, AvaloniaPropertyChangedEventArgs e)
-        {
-            if (e.OldValue is IOneWayControlAnimation animation)
-            {
-                var old = animation;
-                old.Completed -= GraphAreaBase_Completed;
-            }
-
-            if (e.NewValue is IOneWayControlAnimation newone)
-                newone.Completed += GraphAreaBase_Completed;
-        }
-
-        private static void GraphAreaBase_Completed(object sender, ControlEventArgs e)
-        {
-            e.Control.RootArea?.RemoveAnimatedControl(e.Control, e.RemoveDataObject);
-        }
-
-        /// <summary>
-        /// Deletes vertices and edges correctly after delete animation
-        /// </summary>
-        /// <param name="ctrl">Control</param>
-        /// <param name="removeDataObject">Also remove data object from data graph if possible</param>
-        protected abstract void RemoveAnimatedControl(IGraphControl ctrl, bool removeDataObject);
-
-        /// <summary>
-        /// Gets or sets vertex and edge controls mouse over animation
-        /// </summary>
-        public IBidirectionalControlAnimation? MouseOverAnimation
-        {
-            get => GetValue(MouseOverAnimationProperty);
-            set => SetValue(MouseOverAnimationProperty, value);
-        }
-
-        public static readonly StyledProperty<IBidirectionalControlAnimation?> MouseOverAnimationProperty =
-            AvaloniaProperty.Register<GraphAreaBase, IBidirectionalControlAnimation?>(nameof(MouseOverAnimation));
-
-        #endregion
 
         public static readonly StyledProperty<bool> PositioningCompleteProperty =
             AvaloniaProperty.RegisterAttached<GraphAreaBase, Control, bool>("PositioningComplete", true);
@@ -287,7 +223,6 @@ namespace Westermo.GraphX
         internal virtual void OnVertexMouseEnter(VertexControl vc, PointerEventArgs e)
         {
             VertexMouseEnter?.Invoke(this, new VertexSelectedEventArgs(vc, e, e.KeyModifiers));
-            MouseOverAnimation?.AnimateVertexForward(vc);
         }
 
         /// <summary>
@@ -308,7 +243,6 @@ namespace Westermo.GraphX
         internal virtual void OnVertexMouseLeave(VertexControl vc, PointerEventArgs e)
         {
             VertexMouseLeave?.Invoke(this, new VertexSelectedEventArgs(vc, e, e.KeyModifiers));
-            MouseOverAnimation?.AnimateVertexBackward(vc);
         }
 
         /// <summary>
@@ -400,7 +334,6 @@ namespace Westermo.GraphX
         internal void OnEdgeMouseEnter(EdgeControl edgeControl, PointerEventArgs? e, KeyModifiers keys)
         {
             EdgeMouseEnter?.Invoke(this, new EdgeSelectedEventArgs(edgeControl, e, keys));
-            MouseOverAnimation?.AnimateEdgeForward(edgeControl);
         }
 
         public event EdgeSelectedEventHandler? EdgeMouseLeave;
@@ -408,7 +341,6 @@ namespace Westermo.GraphX
         internal void OnEdgeMouseLeave(EdgeControl edgeControl, PointerEventArgs? e, KeyModifiers keys)
         {
             EdgeMouseLeave?.Invoke(this, new EdgeSelectedEventArgs(edgeControl, e, keys));
-            MouseOverAnimation?.AnimateEdgeBackward(edgeControl);
         }
 
         #endregion
@@ -524,6 +456,8 @@ namespace Westermo.GraphX
             var minPoint = new Point(double.PositiveInfinity, double.PositiveInfinity);
             var maxPoint = new Point(double.NegativeInfinity, double.NegativeInfinity);
 
+            static bool IsFinite(double v) => !(double.IsNaN(v) || double.IsInfinity(v));
+
             foreach (Control child in Children)
             {
                 var x = GetX(child);
@@ -531,15 +465,18 @@ namespace Westermo.GraphX
 
                 if (double.IsNaN(x) || double.IsNaN(y))
                 {
-                    var ec = child as EdgeControl;
-                    //not a vertex, set the coordinates of the top-left corner
-                    if (ec != null)
+                    if (child is EdgeControl ec)
                     {
-                        x = 0;
-                        y = 0;
+                        x = double.IsNaN(x) ? 0d : x;
+                        y = double.IsNaN(y) ? 0d : y;
+                    }
+                    else
+                    {
+                        // For vertices with undefined coordinates skip arranging until coordinates are set to avoid invalid rectangles
+                        continue;
                     }
 
-                    if (COUNT_ROUTE_PATHS && ec != null)
+                    if (COUNT_ROUTE_PATHS)
                     {
                         var routingInfo = ec.Edge as IRoutingInfo;
                         var rps = routingInfo?.RoutingPoints;
@@ -555,14 +492,18 @@ namespace Westermo.GraphX
                 }
                 else
                 {
-                    //get the top-left corner
-                    //x -= child.DesiredSize.Width * 0.5;
-                    //y -= child.DesiredSize.Height * 0.5;
                     minPoint = new Point(Math.Min(minPoint.X, x), Math.Min(minPoint.Y, y));
                     maxPoint = new Point(Math.Max(maxPoint.X, x), Math.Max(maxPoint.Y, y));
                 }
 
-                child.Arrange(new Rect(x, y, child.DesiredSize.Width, child.DesiredSize.Height));
+                if (!IsFinite(x)) x = 0d;
+                if (!IsFinite(y)) y = 0d;
+                var width = child.DesiredSize.Width;
+                var height = child.DesiredSize.Height;
+                if (!IsFinite(width) || width < 0) width = 0d;
+                if (!IsFinite(height) || height < 0) height = 0d;
+
+                child.Arrange(new Rect(x, y, width, height));
             }
 
             return CustomHelper.IsInDesignMode(this) ? DesignSize :
@@ -625,8 +566,8 @@ namespace Westermo.GraphX
             topLeft.Y -= SideExpansionSize.Height * .5;
             bottomRight.X += SideExpansionSize.Width * .5;
             bottomRight.Y += SideExpansionSize.Height * .5;
-            _topLeft = topLeft.ToAvaloniaPoint();
-            _bottomRight = bottomRight.ToAvaloniaPoint();
+            _topLeft = topLeft.ToAvalonia();
+            _bottomRight = bottomRight.ToAvalonia();
             var newSize = ContentSize;
             if (oldSize != newSize)
                 OnContentSizeChanged(oldSize, newSize);

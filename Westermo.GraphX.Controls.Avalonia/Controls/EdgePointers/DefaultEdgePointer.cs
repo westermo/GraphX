@@ -1,11 +1,8 @@
 ﻿using System;
-using System.Windows;
-using System.Windows.Controls;
-using System.Windows.Media;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Media;
-using DefaultEventArgs = System.EventArgs;
+using Avalonia.VisualTree;
 
 namespace Westermo.GraphX.Controls.Avalonia
 {
@@ -13,26 +10,30 @@ namespace Westermo.GraphX.Controls.Avalonia
     /// Edge pointer control for edge endpoints customization
     /// Represents ContentControl that can host different content, e.g. Image or Path
     /// </summary>
-    public class DefaultEdgePointer: ContentControl, IEdgePointer
+    public class DefaultEdgePointer : ContentControl, IEdgePointer
     {
-		/// <summary>
-		/// This static initializer is used to override PropertyMetadata of the Visibility property so that it
-		/// can be coerced according to the IsSuppressed property value. Suppressing an edge pointer will make
-		/// it invisible to the user without altering the underlying value of the Visibility property. Thus,
-		/// visibility can be controlled independently of other factors that may require making the pointer
-		/// invisible to the user. For example, the HideEdgePointerByEdgeLength feature of EdgeControlBase may
-		/// need to ensure the pointer is removed from view, but when the constraint is removed, it shouldn't
-		/// cause pointers to be shown that weren't shown before.
-		/// </summary>
-		static DefaultEdgePointer()
-		{
-			var oldPmd = VisibilityProperty.GetMetadata(typeof(DefaultEdgePointer).BaseType);
-			var newPmd = new PropertyMetadata(oldPmd.DefaultValue, oldPmd.PropertyChangedCallback, CoerceVisibility);
-			VisibilityProperty.OverrideMetadata(typeof(DefaultEdgePointer), newPmd);
-		}
+        /// <summary>
+        /// This static initializer is used to override PropertyMetadata of the Visibility property so that it
+        /// can be coerced according to the IsSuppressed property value. Suppressing an edge pointer will make
+        /// it invisible to the user without altering the underlying value of the Visibility property. Thus,
+        /// visibility can be controlled independently of other factors that may require making the pointer
+        /// invisible to the user. For example, the HideEdgePointerByEdgeLength feature of EdgeControlBase may
+        /// need to ensure the pointer is removed from view, but when the constraint is removed, it shouldn't
+        /// cause pointers to be shown that weren't shown before.
+        /// </summary>
+        static DefaultEdgePointer()
+        {
+            var oldPmd = IsVisibleProperty.GetMetadata(typeof(ContentControl));
+            var newPmd = new StyledPropertyMetadata<bool>(oldPmd.DefaultValue, coerce: CoerceVisibility);
+            IsVisibleProperty.OverrideMetadata(typeof(DefaultEdgePointer), newPmd);
+            IsSuppressedProperty.Changed.AddClassHandler<DefaultEdgePointer>(OnSuppressChanged);
+        }
 
-		#region Common part
-		internal Rect LastKnownRectSize;
+
+
+        #region Common part
+
+        internal Rect LastKnownRectSize;
 
 
         /*public static readonly StyledProperty OffsetProperty = AvaloniaProperty.Register("Offset",
@@ -44,14 +45,12 @@ namespace Westermo.GraphX.Controls.Avalonia
         /// </summary>
         public Point Offset
         {
-            get;// { return (Point)GetValue(OffsetProperty); }
-            set;// { SetValue(OffsetProperty, value); }
+            get; // { return (Point)GetValue(OffsetProperty); }
+            set; // { SetValue(OffsetProperty, value); }
         }
 
-        public static readonly StyledProperty<> NeedRotationProperty = AvaloniaProperty.Register(nameof(NeedRotation),
-                                                                                       typeof(bool),
-                                                                                       typeof(EdgeControl),
-                                                                                       new PropertyMetadata(true));
+        public static readonly StyledProperty<bool> NeedRotationProperty = AvaloniaProperty.Register<EdgeControl, bool>(nameof(NeedRotation), true);
+
         /// <inheritdoc />
         public bool NeedRotation
         {
@@ -60,126 +59,137 @@ namespace Westermo.GraphX.Controls.Avalonia
         }
 
         /// <inheritdoc />
-        public Point GetPosition()
+        public Measure.Point GetPosition()
         {
-            return LastKnownRectSize.IsEmpty ? new Point() : LastKnownRectSize.Center();
+            return LastKnownRectSize.IsEmpty() ? new Point().ToGraphX() : LastKnownRectSize.Center().ToGraphX();
         }
 
         public void Show()
         {
-            SetCurrentValue(VisibilityProperty, Visibility.Visible);
+            SetCurrentValue(IsVisibleProperty, true);
         }
 
         public void Hide()
         {
-            SetCurrentValue(VisibilityProperty, Visibility.Collapsed);
+            SetCurrentValue(IsVisibleProperty, false);
         }
 
-		/// <summary>
-		/// Suppresses the pointer from view, overriding the Visibility value until unsuppressed.
-		/// </summary>
-		public void Suppress()
-		{
-			IsSuppressed = true;
-		}
+        /// <summary>
+        /// Suppresses the pointer from view, overriding the Visibility value until unsuppressed.
+        /// </summary>
+        public void Suppress()
+        {
+            IsSuppressed = true;
+        }
 
-		/// <summary>
-		/// Removes the suppression constraint, returning to the base value of the Visibility property.
-		/// </summary>
-		public void UnSuppress()
-		{
-			IsSuppressed = false;
-		}
+        /// <summary>
+        /// Removes the suppression constraint, returning to the base value of the Visibility property.
+        /// </summary>
+        public void UnSuppress()
+        {
+            IsSuppressed = false;
+        }
 
-		private static readonly StyledPropertyKey IsSuppressedPropertyKey =
-			AvaloniaProperty.RegisterReadOnly("IsSuppressed", typeof(bool), typeof(DefaultEdgePointer), new PropertyMetadata(false, OnSuppressChanged));
-		public static readonly StyledProperty IsSuppressedProperty = IsSuppressedPropertyKey.StyledProperty;
 
-		/// <summary>
-		/// Gets a value indicating whether the pointer is suppressed. A suppressed pointer won't be displayed, but
-		/// suppressing does not alter the underlying Visibility property value.
-		/// </summary>
-		public bool IsSuppressed
-		{
-			get => (bool)GetValue(IsSuppressedProperty);
-			private set => SetValue(IsSuppressedPropertyKey, value);
-		}
+        public static readonly StyledProperty<bool> IsSuppressedProperty = AvaloniaProperty.Register<DefaultEdgePointer, bool>(nameof(IsSuppressed));
 
-		/// <summary>
-		/// When the IsSuppressed value changes, this callback triggers coercion of the Visibility property.
-		/// </summary>
-		private static void OnSuppressChanged(object source, StyledPropertyChangedEventArgs args)
-		{
-			var dep = source as DefaultEdgePointer;
-			dep?.CoerceValue(VisibilityProperty);
-		}
+        /// <summary>
+        /// Gets a value indicating whether the pointer is suppressed. A suppressed pointer won't be displayed, but
+        /// suppressing does not alter the underlying Visibility property value.
+        /// </summary>
+        public bool IsSuppressed
+        {
+            get => GetValue(IsSuppressedProperty);
+            private set => SetValue(IsSuppressedProperty, value);
+        }
 
-		/// <summary>
-		/// This coercion callback is used to alter the effective value of Visibility when pointer suppression is in effect.
-		/// When the suppression constraint is removed, the base value of Visibility becomes effective again.
-		/// </summary>
-		private static object CoerceVisibility(Control d, object baseValue)
-		{
-			if (d is not DefaultEdgePointer ecb || !ecb.IsSuppressed)
-				return baseValue;
+        /// <summary>
+        /// When the IsSuppressed value changes, this callback triggers coercion of the Visibility property.
+        /// </summary>
+        private static void OnSuppressChanged(DefaultEdgePointer pointer, AvaloniaPropertyChangedEventArgs args)
+        {
+            pointer?.CoerceValue(IsVisibleProperty);
+        }
 
-			return Visibility.Collapsed;
-		}
+        /// <summary>
+        /// This coercion callback is used to alter the effective value of Visibility when pointer suppression is in effect.
+        /// When the suppression constraint is removed, the base value of Visibility becomes effective again.
+        /// </summary>
+        private static bool CoerceVisibility(AvaloniaObject @object, bool baseValue)
+        {
+            if (@object is not DefaultEdgePointer ecb)
+                return baseValue;
 
-		private static EdgeControl? GetEdgeControl(Control? parent)
+            return ecb.IsSuppressed;
+        }
+
+        private static EdgeControl? GetEdgeControl(Control? parent)
         {
             while (parent != null)
             {
-	            if (parent is EdgeControl control) return control;
-                parent = VisualTreeHelper.GetParent(parent);
+                if (parent is EdgeControl control) return control;
+                parent = parent.GetVisualParent() as Control;
             }
+
             return null;
         }
 
         #endregion
+
 
         private EdgeControl? _edgeControl;
         protected EdgeControl? EdgeControl => _edgeControl ??= GetEdgeControl(GetParent());
 
         public DefaultEdgePointer()
         {
-            RenderTransformOrigin = new Point(.5, .5);
-            VerticalAlignment = VerticalAlignment.Center;
-            HorizontalAlignment = HorizontalAlignment.Center;
+            RenderTransformOrigin = new RelativePoint(.5, .5, RelativeUnit.Relative);
+            VerticalAlignment = global::Avalonia.Layout.VerticalAlignment.Center;
+            HorizontalAlignment = global::Avalonia.Layout.HorizontalAlignment.Center;
             LayoutUpdated += EdgePointer_LayoutUpdated;
         }
-
         /// <summary>
         /// Update edge pointer position and angle
         /// </summary>
-        public virtual Point Update(Point? position, Vector direction, double angle = 0d)
+
+        public virtual Measure.Point Update(Measure.Point? position, Measure.Vector direction, double angle = 0d)
         {
             //var vecOffset = new Vector(direction.X * Offset.X, direction.Y * Offset.Y);
-            if (DesiredSize.Width == 0 || DesiredSize.Height == 0 || !position.HasValue) return new Point();
-            var vecMove = new Vector(direction.X * DesiredSize.Width * .5, direction.Y * DesiredSize.Height * .5);
-            position = new Point(position.Value.X - vecMove.X, position.Value.Y - vecMove.Y);// + vecOffset;
-            if (!double.IsNaN(DesiredSize.Width) && DesiredSize.Width != 0  && !double.IsNaN(position.Value.X))
+            if (DesiredSize.Width == 0 || DesiredSize.Height == 0 || !position.HasValue) return new Measure.Point();
+            position = new Measure.Point(position.Value.X - direction.X, position.Value.Y - direction.Y); // + vecOffset;
+            if (!double.IsNaN(DesiredSize.Width) && DesiredSize.Width != 0 && !double.IsNaN(position.Value.X))
             {
-                LastKnownRectSize = new Rect(new Point(position.Value.X - DesiredSize.Width * .5, position.Value.Y - DesiredSize.Height * .5), DesiredSize);
-                Arrange(LastKnownRectSize);
+
+                if (!double.IsNaN(DesiredSize.Width) && DesiredSize.Width != 0 && !double.IsNaN(position.Value.X))
+                {
+                    LastKnownRectSize =
+                        new Rect(
+                            new Point(position.Value.X - DesiredSize.Width * .5,
+                                position.Value.Y - DesiredSize.Height * .5), DesiredSize);
+                    Arrange(LastKnownRectSize);
+                }
             }
 
+            RenderTransform = new RotateTransform { Angle = double.IsNaN(angle) ? 0 : angle, CenterX = 0, CenterY = 0 };
             try
             {
                 if (NeedRotation)
-                    RenderTransform = new RotateTransform {Angle = double.IsNaN(angle) ? 0 : angle, CenterX = 0, CenterY = 0};
+                    RenderTransform = new RotateTransform
+                    { Angle = double.IsNaN(angle) ? 0 : angle, CenterX = 0, CenterY = 0 };
+                return new Measure.Point(direction.X * Width, direction.Y * Width);
             }
             catch (Exception)
             {
                 //TODO ex handling and reason
             }
 
-            return new Point(direction.X * ActualWidth, direction.Y * ActualHeight);
+            return new Measure.Point(direction.X * Bounds.Width, direction.Y * Bounds.Height);
         }
 
-        public void SetManualPosition(Point position)
+        public void SetManualPosition(Measure.Point position)
         {
-            LastKnownRectSize = new Rect(new Point(position.X - DesiredSize.Width * .5, position.Y - DesiredSize.Height * .5), DesiredSize);
+            LastKnownRectSize =
+                new Rect(new Point(position.X - DesiredSize.Width * .5, position.Y - DesiredSize.Height * .5),
+                    DesiredSize);
             Arrange(LastKnownRectSize);
         }
 
@@ -188,16 +198,15 @@ namespace Westermo.GraphX.Controls.Avalonia
             _edgeControl = null;
         }
 
-        private void EdgePointer_LayoutUpdated(object? sender, DefaultEventArgs e)
+        private void EdgePointer_LayoutUpdated(object? sender, EventArgs e)
         {
-            if (LastKnownRectSize != Rect.Empty && !double.IsNaN(LastKnownRectSize.Width) && LastKnownRectSize.Width != 0
-                && EdgeControl != null)
+            if (LastKnownRectSize.Width != 0 && EdgeControl != null)
                 Arrange(LastKnownRectSize);
         }
 
-        private Control GetParent()
+        private Control? GetParent()
         {
-            return VisualParent;
+            return this.GetVisualParent() as Control;
         }
     }
 }

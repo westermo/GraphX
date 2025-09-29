@@ -82,11 +82,6 @@ namespace Westermo.GraphX.Controls.Avalonia
         /// </summary>
         public List<IVertexConnectionPoint> VertexConnectionPointsList { get; protected set; } = [];
 
-        /// <summary>
-        /// Provides settings for event calls within single vertex control
-        /// </summary>
-        public VertexEventOptions? EventOptions { get; protected set; }
-
         private double _labelAngle;
 
         /// <summary>
@@ -170,7 +165,7 @@ namespace Westermo.GraphX.Controls.Avalonia
         /// </summary>
         /// <param name="pt"></param>
         /// <param name="alsoFinal"></param>
-        public void SetPosition(Measure.Point pt, bool alsoFinal = true)
+        public void SetPosition(Point pt, bool alsoFinal = true)
         {
             GraphAreaBase.SetX(this, pt.X, alsoFinal);
             GraphAreaBase.SetY(this, pt.Y, alsoFinal);
@@ -189,26 +184,12 @@ namespace Westermo.GraphX.Controls.Avalonia
         /// </summary>
         /// <param name="final"></param>
         /// <param name="round"></param>
-        public Measure.Point GetPosition(bool final = false, bool round = false)
+        public Point GetPosition(bool final = false, bool round = false)
         {
             return round
-                ? new Measure.Point(final ? (int)GraphAreaBase.GetFinalX(this) : (int)GraphAreaBase.GetX(this),
+                ? new Point(final ? (int)GraphAreaBase.GetFinalX(this) : (int)GraphAreaBase.GetX(this),
                     final ? (int)GraphAreaBase.GetFinalY(this) : (int)GraphAreaBase.GetY(this))
-                : new Measure.Point(final ? GraphAreaBase.GetFinalX(this) : GraphAreaBase.GetX(this),
-                    final ? GraphAreaBase.GetFinalY(this) : GraphAreaBase.GetY(this));
-        }
-
-        /// <summary>
-        /// Get control position on the GraphArea panel in attached coords X and Y (GraphX type version)
-        /// </summary>
-        /// <param name="final"></param>
-        /// <param name="round"></param>
-        internal Measure.Point GetPositionGraphX(bool final = false, bool round = false)
-        {
-            return round
-                ? new Measure.Point(final ? (int)GraphAreaBase.GetFinalX(this) : (int)GraphAreaBase.GetX(this),
-                    final ? (int)GraphAreaBase.GetFinalY(this) : (int)GraphAreaBase.GetY(this))
-                : new Measure.Point(final ? GraphAreaBase.GetFinalX(this) : GraphAreaBase.GetX(this),
+                : new Point(final ? GraphAreaBase.GetFinalX(this) : GraphAreaBase.GetX(this),
                     final ? GraphAreaBase.GetFinalY(this) : GraphAreaBase.GetY(this));
         }
 
@@ -219,8 +200,9 @@ namespace Westermo.GraphX.Controls.Avalonia
         /// </summary>
         public Point GetCenterPosition(bool final = false)
         {
-            var pos = GetPosition();
-            return new Point(pos.X + Width * .5, pos.Y + Height * .5);
+            var pos = GetPosition(final);
+            return new Point(pos.X + (double.IsNaN(Width) ? 0 : Width) * .5,
+                pos.Y + (double.IsNaN(Height) ? 0 : Height) * .5);
         }
 
         /// <summary>

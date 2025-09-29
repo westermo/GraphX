@@ -1,5 +1,4 @@
-﻿using System.Windows;
-using Westermo.GraphX.Measure;
+﻿using Avalonia;
 
 namespace Westermo.GraphX.Controls.Avalonia
 {

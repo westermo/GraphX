@@ -9,13 +9,15 @@ namespace Westermo.GraphX.Controls.Avalonia
 {
     public static partial class CustomHelper
     {
-        public static bool IsIntegerInput(string text)
+        public static bool IsIntegerInput(string? text)
         {
+            if (string.IsNullOrEmpty(text)) return false;
             return text != "\r" && Integer().IsMatch(text);
         }
 
-        public static bool IsDoubleInput(string text)
+        public static bool IsDoubleInput(string? text)
         {
+            if (string.IsNullOrEmpty(text)) return false;
             return text != "\r" && Double().IsMatch(text);
         }
 

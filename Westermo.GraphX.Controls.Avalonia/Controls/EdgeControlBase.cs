@@ -282,8 +282,6 @@ namespace Westermo.GraphX.Controls.Avalonia
             return EdgePointerForTarget;
         }
 
-        public EdgeEventOptions? EventOptions { get; protected set; }
-
         /// <summary>
         /// Source visual vertex object
         /// </summary>
@@ -322,11 +320,9 @@ namespace Westermo.GraphX.Controls.Avalonia
                 RootArea.Children.Add((Control)ctrl);
             ctrl.Show();
             var r = ctrl.GetSize();
-            if (r == default)
-            {
-                ctrl.UpdateLayout();
-                ctrl.UpdatePosition();
-            }
+            if (!r.IsEmpty()) return;
+            ctrl.UpdateLayout();
+            ctrl.UpdatePosition();
         }
 
         /// <summary>
@@ -365,7 +361,7 @@ namespace Westermo.GraphX.Controls.Avalonia
         /// </summary>
         /// <param name="pt"></param>
         /// <param name="alsoFinal"></param>
-        public void SetPosition(Measure.Point pt, bool alsoFinal = true)
+        public void SetPosition(Point pt, bool alsoFinal = true)
         {
             GraphAreaBase.SetX(this, pt.X, alsoFinal);
             GraphAreaBase.SetY(this, pt.Y, alsoFinal);
@@ -382,9 +378,9 @@ namespace Westermo.GraphX.Controls.Avalonia
         /// </summary>
         /// <param name="final"></param>
         /// <param name="round"></param>
-        public Measure.Point GetPosition(bool final = false, bool round = false)
+        public Point GetPosition(bool final = false, bool round = false)
         {
-            return new Measure.Point(final ? GraphAreaBase.GetFinalX(this) : GraphAreaBase.GetX(this),
+            return new Point(final ? GraphAreaBase.GetFinalX(this) : GraphAreaBase.GetX(this),
                 final ? GraphAreaBase.GetFinalY(this) : GraphAreaBase.GetY(this));
         }
 
@@ -393,9 +389,9 @@ namespace Westermo.GraphX.Controls.Avalonia
         /// </summary>
         /// <param name="final"></param>
         /// <param name="round"></param>
-        internal Measure.Point GetPositionGraphX(bool final = false, bool round = false)
+        internal Point GetPositionGraphX(bool final = false, bool round = false)
         {
-            return new Measure.Point(final ? GraphAreaBase.GetFinalX(this) : GraphAreaBase.GetX(this),
+            return new Point(final ? GraphAreaBase.GetFinalX(this) : GraphAreaBase.GetX(this),
                 final ? GraphAreaBase.GetFinalY(this) : GraphAreaBase.GetY(this));
         }
 
@@ -697,14 +693,14 @@ namespace Westermo.GraphX.Controls.Avalonia
                 if (sourceCp.Shape == VertexShape.None) p1 = sourceCp.RectangularSize.Center();
                 else
                 {
-                    var targetCpPos = hasRouteInfo ? routeInformation![1].ToAvaloniaPoint() : targetPos;
+                    var targetCpPos = hasRouteInfo ? routeInformation![1].ToAvalonia() : targetPos;
                     p1 = GeometryHelper.GetEdgeEndpoint(sourceCp.RectangularSize.Center(), sourceCp.RectangularSize,
                         targetCpPos, sourceCp.Shape);
                 }
             }
             else
                 p1 = GeometryHelper.GetEdgeEndpoint(sourcePos, new Rect(sourcePos1, sourceSize),
-                    hasRouteInfo ? routeInformation![1].ToAvaloniaPoint() : targetPos, Source.VertexShape);
+                    hasRouteInfo ? routeInformation![1].ToAvalonia() : targetPos, Source.VertexShape);
 
             //if (gEdge?.TargetConnectionPointId != null)
             //{
@@ -721,7 +717,7 @@ namespace Westermo.GraphX.Controls.Avalonia
             //else
             var p2 = GeometryHelper.GetEdgeEndpoint(
                 targetPos, new Rect(targetPos, targetSize),
-                hasRouteInfo ? routeInformation![routeInformation.Length - 2].ToAvaloniaPoint() : sourcePos,
+                hasRouteInfo ? routeInformation![routeInformation.Length - 2].ToAvalonia() : sourcePos,
                 VertexShape.None);
 
             SourceConnectionPoint = p1;
@@ -734,7 +730,7 @@ namespace Westermo.GraphX.Controls.Avalonia
             if (hasRouteInfo)
             {
                 //replace start and end points with accurate ones
-                var routePoints = routeInformation.ToAvaloniaPoint()!.ToList();
+                var routePoints = routeInformation.ToAvalonia()!.ToList();
                 routePoints.Clear();
                 routePoints.Add(p1);
                 routePoints.Add(p2);
@@ -965,13 +961,13 @@ namespace Westermo.GraphX.Controls.Avalonia
                 }
                 else if (hasRouteInfo)
                 {
-                    targetCenter = routeInformation![1].ToAvaloniaPoint();
+                    targetCenter = routeInformation![1].ToAvalonia();
                 }
 
                 SourceConnectionPoint = GetCpEndPoint(sourceCp, sourceCpCenter, targetCenter);
                 TargetConnectionPoint = GeometryHelper.GetEdgeEndpoint(targetCenter,
                     new Rect(targetTopLeft, targetSize),
-                    hasRouteInfo ? routeInformation![routeInformation.Length - 2].ToAvaloniaPoint() : sourceCpCenter,
+                    hasRouteInfo ? routeInformation![routeInformation.Length - 2].ToAvalonia() : sourceCpCenter,
                     Target.VertexShape);
             }
             else if (gEdge?.TargetConnectionPointId != null)
@@ -988,12 +984,12 @@ namespace Westermo.GraphX.Controls.Avalonia
                 }
                 else if (hasRouteInfo)
                 {
-                    sourceCenter = routeInformation![routeInformation.Length - 2].ToAvaloniaPoint();
+                    sourceCenter = routeInformation![routeInformation.Length - 2].ToAvalonia();
                 }
 
                 SourceConnectionPoint = GeometryHelper.GetEdgeEndpoint(sourceCenter,
                     new Rect(sourceTopLeft, sourceSize),
-                    hasRouteInfo ? routeInformation![1].ToAvaloniaPoint() : targetCpCenter, Source!.VertexShape);
+                    hasRouteInfo ? routeInformation![1].ToAvalonia() : targetCpCenter, Source!.VertexShape);
                 TargetConnectionPoint = GetCpEndPoint(targetCp, targetCpCenter, sourceCenter);
             }
             else
@@ -1009,10 +1005,10 @@ namespace Westermo.GraphX.Controls.Avalonia
 
                 SourceConnectionPoint = GeometryHelper.GetEdgeEndpoint(sourceCenter,
                     new Rect(sourceTopLeft, sourceSize),
-                    hasRouteInfo ? routeInformation![1].ToAvaloniaPoint() : targetCenter, Source!.VertexShape);
+                    hasRouteInfo ? routeInformation![1].ToAvalonia() : targetCenter, Source!.VertexShape);
                 TargetConnectionPoint = GeometryHelper.GetEdgeEndpoint(targetCenter,
                     new Rect(targetTopLeft, targetSize),
-                    hasRouteInfo ? routeInformation![routeInformation.Length - 2].ToAvaloniaPoint() : sourceCenter,
+                    hasRouteInfo ? routeInformation![routeInformation.Length - 2].ToAvalonia() : sourceCenter,
                     Target.VertexShape);
             }
 
@@ -1030,7 +1026,7 @@ namespace Westermo.GraphX.Controls.Avalonia
             if (RootArea != null && hasRouteInfo)
             {
                 //replace start and end points with accurate ones
-                var routePoints = routeInformation.ToAvaloniaPoint()!.ToList();
+                var routePoints = routeInformation.ToAvalonia()!.ToList();
                 routePoints.Remove(routePoints.First());
                 routePoints.Remove(routePoints.Last());
                 routePoints.Insert(0, p1);
@@ -1141,7 +1137,7 @@ namespace Westermo.GraphX.Controls.Avalonia
                 EdgePointerForSource.NeedRotation
                     ? -MathHelper.GetAngleBetweenPoints(from.ToGraphX(), to.ToGraphX()).ToDegrees()
                     : 0);
-            return EdgePointerForSource.IsVisible == IsVisible ? result.ToAvaloniaPoint() : new Point();
+            return EdgePointerForSource.IsVisible == IsVisible ? result.ToAvalonia() : new Point();
         }
 
         private Point UpdateTargetEpData(Point from, Point to, bool allowUnsuppress = true)
@@ -1158,7 +1154,7 @@ namespace Westermo.GraphX.Controls.Avalonia
                 EdgePointerForTarget.NeedRotation
                     ? -MathHelper.GetAngleBetweenPoints(from.ToGraphX(), to.ToGraphX()).ToDegrees()
                     : 0);
-            return EdgePointerForTarget.IsVisible == IsVisible ? result.ToAvaloniaPoint() : new Point();
+            return EdgePointerForTarget.IsVisible == IsVisible ? result.ToAvalonia() : new Point();
         }
 
         #endregion public PrepareEdgePath()

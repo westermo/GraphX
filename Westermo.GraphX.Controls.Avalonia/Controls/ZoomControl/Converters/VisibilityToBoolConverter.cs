@@ -16,50 +16,37 @@
 
 using System;
 using System.Globalization;
-using System.Windows;
-using System.Windows.Data;
 using Avalonia.Data.Converters;
 
 namespace Westermo.GraphX.Controls.Avalonia
 {
     public class VisibilityToBoolConverter : IValueConverter
     {
-        #region Inverted Property
-
         public bool Inverted { get; set; }
-
-        #endregion
-
-        #region Not Property
-
         public bool Not { get; set; }
 
-        #endregion
-
-        public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
+        public object? Convert(object? value, Type targetType, object? parameter, CultureInfo culture)
         {
             return Inverted ? BoolToVisibility(value) : VisibilityToBool(value);
         }
 
-        public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
+        public object? ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture)
         {
             return Inverted ? VisibilityToBool(value) : BoolToVisibility(value);
         }
 
-        private object VisibilityToBool(object value)
+        private object VisibilityToBool(object? value)
         {
-            if (!(value is Visibility))
-                throw new InvalidOperationException("SuppliedValueWasNotVisibility");
-
-            return ((Visibility) value == Visibility.Visible) ^ Not;
+            if (value is not bool b)
+                return false;
+            return (b == true) ^ Not;
         }
 
-        private object BoolToVisibility(object value)
+        private object BoolToVisibility(object? value)
         {
-            if (!(value is bool))
-                throw new InvalidOperationException("SuppliedValueWasNotBool");
-
-            return (bool) value ^ Not ? Visibility.Visible : Visibility.Collapsed;
+            if (value is not bool b)
+                return false;
+            return (b ^ Not);
         }
     }
 }

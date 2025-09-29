@@ -16,22 +16,22 @@ namespace Westermo.GraphX.Controls.Avalonia
         }
 
 
-        public static Point ToAvaloniaPoint(this Measure.Point point)
+        public static Point ToAvalonia(this Measure.Point point)
         {
             return new Point(point.X, point.Y);
         }
 
-        public static Point ToAvaloniaPoint(this Measure.Vector point)
+        public static Point ToAvalonia(this Measure.Vector point)
         {
             return new Point(point.X, point.Y);
         }
 
-        public static Point[]? ToAvaloniaPoint(this Measure.Point[]? points)
+        public static Point[]? ToAvalonia(this Measure.Point[]? points)
         {
             if (points == null) return null;
             var list = new Point[points.Length];
             for (var i = 0; i < points.Length; i++)
-                list[i] = points[i].ToAvaloniaPoint();
+                list[i] = points[i].ToAvalonia();
             return list;
         }
 
@@ -64,7 +64,7 @@ namespace Westermo.GraphX.Controls.Avalonia
             return new Measure.Rect(rect.X, rect.Y, rect.Width, rect.Height);
         }
 
-        public static Rect ToAvaloniaPoint(this Measure.Rect rect)
+        public static Rect ToAvalonia(this Measure.Rect rect)
         {
             return new Rect(rect.Left, rect.Top, rect.Width, rect.Height);
         }

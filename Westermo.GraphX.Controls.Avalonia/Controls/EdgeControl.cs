@@ -4,7 +4,6 @@ using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Interactivity;
 using Westermo.GraphX.Common;
-using Westermo.GraphX.Common.Enums;
 using Westermo.GraphX.Common.Interfaces;
 using Westermo.GraphX.Controls.Avalonia.Models;
 
@@ -77,16 +76,12 @@ namespace Westermo.GraphX.Controls.Avalonia
                 EdgePointerForTarget.Dispose();
                 EdgePointerForTarget = null;
             }
-
-            EventOptions?.Clean();
         }
 
         #endregion
 
         #region Vertex position tracing
 
-        private bool _sourceTrace;
-        private bool _targetTrace;
         private VertexControl? _oldSource;
         private VertexControl? _oldTarget;
 
@@ -102,27 +97,15 @@ namespace Westermo.GraphX.Controls.Avalonia
 
         private void SourceChanged()
         {
-            // Only proceed if not in design mode
-            if (EventOptions == null)
-                return;
-
             if (_oldSource != null)
             {
                 _oldSource.PositionChanged -= source_PositionChanged;
                 _oldSource.SizeChanged -= Source_SizeChanged;
-                if (_oldSource.EventOptions != null)
-                    _oldSource.EventOptions.PositionChangeNotification = _sourceTrace;
             }
 
             _oldSource = Source;
             if (Source != null)
             {
-                if (Source.EventOptions != null)
-                {
-                    _sourceTrace = Source.EventOptions.PositionChangeNotification;
-                    Source.EventOptions.PositionChangeNotification = true;
-                }
-
                 Source.PositionChanged += source_PositionChanged;
                 Source.SizeChanged += Source_SizeChanged;
             }
@@ -133,27 +116,15 @@ namespace Westermo.GraphX.Controls.Avalonia
 
         private void TargetChanged()
         {
-            // Only proceed if not in design mode
-            if (EventOptions == null)
-                return;
-
             if (_oldTarget != null)
             {
                 _oldTarget.PositionChanged -= source_PositionChanged;
                 _oldTarget.SizeChanged -= Source_SizeChanged;
-                if (_oldTarget.EventOptions != null)
-                    _oldTarget.EventOptions.PositionChangeNotification = _targetTrace;
             }
 
             _oldTarget = Target;
             if (Target != null)
             {
-                if (Target.EventOptions != null)
-                {
-                    _targetTrace = Target.EventOptions.PositionChangeNotification;
-                    Target.EventOptions.PositionChangeNotification = true;
-                }
-
                 Target.PositionChanged += source_PositionChanged;
                 Target.SizeChanged += Source_SizeChanged;
             }
@@ -183,46 +154,6 @@ namespace Westermo.GraphX.Controls.Avalonia
         private bool _clickTrack;
         private Point _clickTrackPoint;
 
-        internal void UpdateEventhandling(EventType typ)
-        {
-            switch (typ)
-            {
-                case EventType.MouseClick:
-                    if (EventOptions is { MouseClickEnabled: true })
-                    {
-                        PointerPressed += EdgeControl_MouseDown;
-                        PointerMoved += EdgeControl_PreviewMouseMove;
-                    }
-                    else
-                    {
-                        PointerPressed -= EdgeControl_MouseDown;
-                        PointerMoved -= EdgeControl_PreviewMouseMove;
-                    }
-
-                    break;
-                case EventType.MouseDoubleClick:
-                    if (EventOptions is { MouseDoubleClickEnabled: true })
-                        DoubleTapped += EdgeControl_MouseDoubleClick;
-                    else DoubleTapped -= EdgeControl_MouseDoubleClick;
-                    break;
-                case EventType.MouseEnter:
-                    if (EventOptions is { MouseEnterEnabled: true }) PointerEntered += EdgeControl_MouseEnter;
-                    else PointerEntered -= EdgeControl_MouseEnter;
-                    break;
-                case EventType.MouseLeave:
-                    if (EventOptions is { MouseLeaveEnabled: true }) PointerExited += EdgeControl_MouseLeave;
-                    else PointerExited -= EdgeControl_MouseLeave;
-                    break;
-
-                case EventType.MouseMove:
-                    if (EventOptions is { MouseMoveEnabled: true }) PointerMoved += EdgeControl_MouseMove;
-                    else PointerMoved -= EdgeControl_MouseMove;
-                    break;
-            }
-
-            PointerReleased -= EdgeControl_MouseUp;
-            PointerReleased += EdgeControl_MouseUp;
-        }
 
         public EdgeControl()
             : this(null, null, null)
@@ -241,76 +172,75 @@ namespace Westermo.GraphX.Controls.Avalonia
 
             if (!CustomHelper.IsInDesignMode(this))
             {
-                EventOptions = new EdgeEventOptions(this);
-                foreach (var item in Enum.GetValues<EventType>())
-                    UpdateEventhandling(item);
-
                 // Trigger initial state
                 SourceChanged();
                 TargetChanged();
             }
 
+            DoubleTapped += EdgeControl_MouseDoubleClick;
             IsSelfLooped = IsSelfLoopedInternal;
+        }
+
+        ~EdgeControl()
+        {
+            DoubleTapped -= EdgeControl_MouseDoubleClick;
         }
 
         #region Event handlers
 
-        private void EdgeControl_PreviewMouseMove(object? sender, PointerEventArgs pointerEventArgs)
+        protected override void OnPointerReleased(PointerReleasedEventArgs e)
         {
-            if (!_clickTrack)
-                return;
+            base.OnPointerReleased(e);
 
-            var curPoint = pointerEventArgs.GetPosition(RootArea);
 
-            if (curPoint != _clickTrackPoint)
-                _clickTrack = false;
-        }
-
-        private void EdgeControl_MouseUp(object? sender, PointerReleasedEventArgs e)
-        {
-            if (IsVisible)
+            if (IsVisible && _clickTrack)
             {
-                if (_clickTrack)
-                {
-                    RaiseEvent(new RoutedEventArgs(ClickEvent, this));
-                    RootArea.OnEdgeClicked(this, e, e.KeyModifiers);
-                }
+                RaiseEvent(new RoutedEventArgs(ClickEvent, this));
+                RootArea.OnEdgeClicked(this, e, e.KeyModifiers);
             }
 
             _clickTrack = false;
             e.Handled = true;
         }
 
-        private void EdgeControl_MouseLeave(object? sender, PointerEventArgs e)
+        protected override void OnPointerExited(PointerEventArgs e)
         {
+            base.OnPointerExited(e);
             if (IsVisible)
                 RootArea.OnEdgeMouseLeave(this, e, e.KeyModifiers);
-            // e.Handled = true;
         }
 
-        private void EdgeControl_MouseEnter(object? sender, PointerEventArgs e)
+        protected override void OnPointerEntered(PointerEventArgs e)
         {
+            base.OnPointerEntered(e);
             if (IsVisible)
                 RootArea.OnEdgeMouseEnter(this, e, e.KeyModifiers);
-            // e.Handled = true;
         }
 
-        private void EdgeControl_MouseMove(object? sender, PointerEventArgs e)
+        protected override void OnPointerMoved(PointerEventArgs e)
         {
+            base.OnPointerMoved(e);
+            if (_clickTrack)
+            {
+                var curPoint = e.GetPosition(RootArea);
+
+                if (curPoint != _clickTrackPoint)
+                    _clickTrack = false;
+            }
+
             if (IsVisible)
                 RootArea.OnEdgeMouseMove(this, e, e.KeyModifiers);
-            // e.Handled = true;
         }
 
         private void EdgeControl_MouseDoubleClick(object? sender, TappedEventArgs e)
         {
             if (IsVisible)
                 RootArea.OnEdgeDoubleClick(this, e, e.KeyModifiers);
-            //e.Handled = true;
         }
 
-        private void EdgeControl_MouseDown(object? sender, PointerPressedEventArgs e)
+        protected override void OnPointerPressed(PointerPressedEventArgs e)
         {
+            base.OnPointerPressed(e);
             if (IsVisible)
                 RootArea.OnEdgeSelected(this, e, e.KeyModifiers);
             _clickTrack = true;

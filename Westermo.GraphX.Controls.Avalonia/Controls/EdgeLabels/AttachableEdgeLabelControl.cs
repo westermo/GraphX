@@ -1,76 +1,73 @@
-﻿using Westermo.GraphX.Controls.Models;
-using System.Windows;
-using Avalonia;
+﻿using Avalonia;
 using Avalonia.Controls;
 using Westermo.GraphX.Common.Exceptions;
 using Westermo.GraphX.Controls.Avalonia.Models;
 
-namespace Westermo.GraphX.Controls.Avalonia
+namespace Westermo.GraphX.Controls.Avalonia;
+
+public class AttachableEdgeLabelControl : EdgeLabelControl, IAttachableControl<EdgeControl>
 {
-    public class AttachableEdgeLabelControl : EdgeLabelControl, IAttachableControl<EdgeControl>
+    /// <summary>
+    /// Gets label attach node
+    /// </summary>
+    public EdgeControl? AttachNode
     {
-        /// <summary>
-        /// Gets label attach node
-        /// </summary>
-        public EdgeControl? AttachNode
-        {
-            get => (EdgeControl)GetValue(AttachNodeProperty);
-            private set => SetValue(AttachNodeProperty, value);
-        }
+        get => GetValue(AttachNodeProperty);
+        private set => SetValue(AttachNodeProperty, value);
+    }
 
-        public static readonly StyledProperty<> AttachNodeProperty = AvaloniaProperty.Register(nameof(AttachNode),
-            typeof(EdgeControl), typeof(AttachableEdgeLabelControl),
-            new PropertyMetadata(null));
+    public static readonly StyledProperty<EdgeControl?> AttachNodeProperty =
+        AvaloniaProperty.Register<AttachableEdgeLabelControl, EdgeControl?>(nameof(AttachNode));
 
-        static AttachableEdgeLabelControl()
-        {
-            DefaultStyleKeyProperty.OverrideMetadata(typeof(AttachableEdgeLabelControl),
-                new FrameworkPropertyMetadata(typeof(AttachableEdgeLabelControl)));
-        }
+    static AttachableEdgeLabelControl()
+    {
+        // No DefaultStyleKeyProperty in Avalonia, so remove this
+    }
 
-        public AttachableEdgeLabelControl()
-        {
-            DataContext = this;
-        }
+    public AttachableEdgeLabelControl()
+    {
+        DataContext = this;
+    }
 
-        /// <summary>
-        /// Attach label to VertexControl
-        /// </summary>
-        /// <param name="node">VertexControl node</param>
-        public virtual void Attach(EdgeControl node)
-        {
-            if (AttachNode != null)
-                AttachNode.IsVisibleChanged -= AttachNode_IsVisibleChanged;
-            AttachNode = node;
-            AttachNode.IsVisibleChanged += AttachNode_IsVisibleChanged;
-            node.AttachLabel(this);
-        }
+    /// <summary>
+    /// Attach label to EdgeControl
+    /// </summary>
+    /// <param name="node">EdgeControl node</param>
+    public virtual void Attach(EdgeControl node)
+    {
+        if (AttachNode != null)
+            AttachNode.PropertyChanged -= AttachNode_IsVisibleChanged;
+        AttachNode = node;
+        AttachNode.PropertyChanged += AttachNode_IsVisibleChanged;
+        node.AttachLabel(this);
+    }
 
-        /// <summary>
-        /// Detach label from control
-        /// </summary>
-        public virtual void Detach()
-        {
-            if (AttachNode != null)
-                AttachNode.IsVisibleChanged -= AttachNode_IsVisibleChanged;
-            AttachNode = null;
-        }
+    /// <summary>
+    /// Detach label from control
+    /// </summary>
+    public virtual void Detach()
+    {
+        if (AttachNode != null)
+            AttachNode.PropertyChanged -= AttachNode_IsVisibleChanged;
+        AttachNode = null;
+    }
 
-        private void AttachNode_IsVisibleChanged(object sender, StyledPropertyChangedEventArgs e)
+    private void AttachNode_IsVisibleChanged(object? sender, AvaloniaPropertyChangedEventArgs e)
+    {
+        if (e.Property == IsVisibleProperty)
         {
             if (AttachNode!.IsVisible && ShowLabel)
                 Show();
             else if (!AttachNode.IsVisible)
-            {
                 Hide();
-            }
         }
+    }
 
-        protected override EdgeControl GetEdgeControl(Control? parent)
-        {
-            if (AttachNode == null)
-                throw new GX_InvalidDataException("AttachableEdgeLabelControl node is not attached!");
-            return AttachNode;
-        }
+
+    protected override EdgeControl GetEdgeControl(Control? parent)
+    {
+        if (AttachNode == null)
+            throw new GX_InvalidDataException("AttachableEdgeLabelControl node is not attached!");
+        return AttachNode;
     }
 }

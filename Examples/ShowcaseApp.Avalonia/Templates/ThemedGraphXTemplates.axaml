@@ -1,0 +1,150 @@
+﻿<Styles
+    xmlns="https://github.com/avaloniaui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:avalonia="clr-namespace:Westermo.GraphX.Controls.Avalonia;assembly=Westermo.GraphX.Controls.Avalonia">
+
+    <!-- VERTEX CONTROL -->
+    <Style Selector="avalonia|VertexControl">
+        <!-- Set background color through attached property -->
+        <Setter Property="Background" Value="{StaticResource NormalBrush}" />
+        <Setter Property="Padding" Value="10,5,10,5" />
+        <Setter Property="BorderBrush" Value="{StaticResource NormalBorderBrush}" />
+        <Setter Property="BorderThickness" Value="3" />
+        <Setter Property="Opacity" Value="0.65" />
+        <Setter Property="Transitions">
+            <Transitions>
+                <DoubleTransition Property="Opacity" Duration="0:0:0.1" />
+            </Transitions>
+        </Setter>
+        <Style Selector="^:pointerover">
+            <Setter Property="Opacity" Value="1" />
+        </Style>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="{x:Type avalonia:VertexControl}">
+                    <Grid>
+                        <Border x:Name="BackgroundNorm" BorderThickness="{TemplateBinding BorderThickness}"
+                                CornerRadius="5" Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}" />
+                        <Border x:Name="BackgroundNorm_highlight" Margin="1"
+                                BorderBrush="{DynamicResource NormalHighlightBrush}" BorderThickness="1,0,1,1"
+                                CornerRadius="5" Opacity="0.65" />
+                        <Border x:Name="BackgroundOver" BorderThickness="{TemplateBinding BorderThickness}"
+                                CornerRadius="5" Opacity="0" Background="{DynamicResource MouseOverBrush}"
+                                BorderBrush="{DynamicResource MouseOverBorderBrush}" />
+                        <Border x:Name="BackgroundOver_Highlight" Margin="1" BorderThickness="1,0,1,1" CornerRadius="5"
+                                Opacity="0" BorderBrush="{DynamicResource MouseOverHighlightBrush}" />
+
+                        <Grid ColumnDefinitions="Auto,Auto" RowDefinitions="*,*">
+                            <Image Margin="3"
+                                   Width="60" Stretch="UniformToFill" Grid.RowSpan="2" />
+                            <Label Content="Binding Name" VerticalAlignment="Center" FontWeight="Bold"
+                                   Foreground="Black" Grid.Column="1" Grid.Row="0" Margin="3" MinWidth="120" />
+                            <TextBlock Text="Binding Profession" TextAlignment="Center" FontStyle="Italic"
+                                       FontSize="14" VerticalAlignment="Center" HorizontalAlignment="Center"
+                                       Foreground="White" Grid.Column="1" Grid.Row="1" Margin="3" />
+                        </Grid>
+                    </Grid>
+                </ControlTemplate>
+            </Setter.Value>
+
+        </Setter>
+
+        <Setter Property="ToolTip.Tip">
+            <Setter.Value>
+                <Template>
+                    <Border BorderBrush="Black" BorderThickness="2" CornerRadius="8"
+                            Background="{StaticResource NormalBrush}" UseLayoutRounding="True">
+                        <StackPanel Orientation="Vertical">
+                            <TextBlock Text="Additional person info:" Margin="4" HorizontalAlignment="Center"
+                                       VerticalAlignment="Center" FontSize="14" FontWeight="Bold" />
+                            <StackPanel Orientation="Horizontal" Margin="3">
+                                <TextBlock MinWidth="70" Text="Name: " VerticalAlignment="Center" />
+                                <TextBlock FontWeight="Bold" Text="Binding Name" Margin="3" VerticalAlignment="Center" />
+                            </StackPanel>
+                            <StackPanel Orientation="Horizontal" Margin="3">
+                                <TextBlock MinWidth="70" Text="Occupation: " VerticalAlignment="Center" />
+                                <TextBlock FontWeight="Bold" Text="Binding Profession" Margin="3"
+                                           VerticalAlignment="Center" />
+                            </StackPanel>
+                            <StackPanel Orientation="Horizontal" Margin="3">
+                                <TextBlock MinWidth="70" Text="Age: " VerticalAlignment="Center" />
+                                <TextBlock FontWeight="Bold" Text="Binding Age" Margin="3" VerticalAlignment="Center" />
+                            </StackPanel>
+                            <StackPanel Orientation="Horizontal" Margin="3">
+                                <TextBlock MinWidth="70" Text="Gender: " VerticalAlignment="Center" />
+                                <TextBlock FontWeight="Bold" Text="Binding Gender" Margin="3"
+                                           VerticalAlignment="Center" />
+                            </StackPanel>
+                        </StackPanel>
+                    </Border>
+                </Template>
+            </Setter.Value>
+        </Setter>
+
+        <!-- VERTEX DRAGGING CONTROL -->
+        <Setter Property="avalonia:DragBehaviour.IsDragEnabled"
+                Value="False" />
+        <Setter Property="avalonia:DragBehaviour.UpdateEdgesOnMove"
+                Value="True" />
+
+
+        <Style Selector="^[(avalonia|HighlightBehaviour.Highlighted)=True]">
+            <Setter Property="BorderBrush" Value="Gold" />
+            <Setter Property="BorderThickness" Value="7" />
+        </Style>
+
+    </Style>
+
+    <!-- EDGE CONTROL -->
+    <Style Selector="avalonia|EdgeControl">
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="{x:Type avalonia:EdgeControl}">
+                    <Grid>
+                        <Path Stroke="{TemplateBinding Foreground}"
+                              StrokeThickness="2" MinWidth="1" MinHeight="1"
+                              x:Name="PART_edgePath" />
+                        <avalonia:DefaultEdgePointer NeedRotation="true" x:Name="PART_EdgePointerForTarget">
+                            <Path Data="M0,0.5 L1,1 1,0" Fill="{TemplateBinding Foreground}" Stretch="Uniform"
+                                  Width="15" Height="15" />
+                        </avalonia:DefaultEdgePointer>
+                    </Grid>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+
+        <Setter Property="MinWidth"
+                Value="1" />
+        <Setter Property="MinHeight"
+                Value="1" />
+        <Setter Property="Background"
+                Value="Red" />
+        <Setter Property="Foreground"
+                Value="Black" />
+        <Setter Property="Opacity"
+                Value="1" />
+
+        <Setter Property="ToolTip.Tip">
+            <Setter.Value>
+                <Template>
+
+                    <Border BorderBrush="Black" BorderThickness="2" CornerRadius="2"
+                            Background="{StaticResource NormalBrush}" UseLayoutRounding="True">
+                        <StackPanel Orientation="Vertical" Margin="2">
+                            <TextBlock FontWeight="Bold" Text="Solid link: " Margin="3" />
+                            <TextBlock FontWeight="Bold" Foreground="LightGreen" Text="Binding ToolTipText" Margin="3" />
+                        </StackPanel>
+                    </Border>
+                </Template>
+            </Setter.Value>
+        </Setter>
+
+
+        <Style Selector="^[(avalonia|HighlightBehaviour.Highlighted)=True]">
+            <Setter Property="Foreground" Value="Gold" />
+            <Setter Property="StrokeThickness" Value="5" />
+        </Style>
+    </Style>
+
+</Styles>

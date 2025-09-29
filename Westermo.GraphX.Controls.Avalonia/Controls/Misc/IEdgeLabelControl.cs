@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Windows;
 using Avalonia;
 
 namespace Westermo.GraphX.Controls.Avalonia

@@ -1,67 +1,67 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
-  <PropertyGroup>
-    <OutputType>WinExe</OutputType>
-    <UseWPF>true</UseWPF>
-    <TargetFramework>net9.0-windows</TargetFramework>
-    <LangVersion>latest</LangVersion>
-    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
-    <IsPackable>false</IsPackable>
-  </PropertyGroup>
-  
-  <PropertyGroup>
-    <AssemblyTitle>Westermo GraphX ShowcaseApp.WPF</AssemblyTitle>
-  </PropertyGroup>
+    <PropertyGroup>
+        <OutputType>WinExe</OutputType>
+        <UseWPF>true</UseWPF>
+        <TargetFramework>net9.0-windows</TargetFramework>
+        <LangVersion>latest</LangVersion>
+        <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+        <IsPackable>false</IsPackable>
+    </PropertyGroup>
 
-  <ItemGroup>
-    <PackageReference Include="AvalonEdit" Version="6.3.0.90" />
-    <PackageReference Include="ModernUI.CoreWPF" Version="3.1.2" />
-    <PackageReference Include="YAXLib" Version="4.3.0" />
-  </ItemGroup>
+    <PropertyGroup>
+        <AssemblyTitle>Westermo GraphX ShowcaseApp.WPF</AssemblyTitle>
+    </PropertyGroup>
 
-  <ItemGroup>
-    <ProjectReference Include="..\..\Westermo.GraphX.Controls\Westermo.GraphX.Controls.csproj" />
-    <ProjectReference Include="..\..\Westermo.GraphX.Logic\Westermo.GraphX.Logic.csproj" />
-  </ItemGroup>
+    <ItemGroup>
+        <PackageReference Include="AvalonEdit"/>
+        <PackageReference Include="ModernUI.CoreWPF"/>
+        <PackageReference Include="YAXLib"/>
+    </ItemGroup>
 
-  <ItemGroup>
-    <None Remove="Assets\background.snowflakes.jpg" />
-    <Resource Include="Assets\background.snowflakes.jpg" />
-    <None Remove="Assets\blackCircle.png" />
-    <Resource Include="Assets\blackCircle.png" />
-    <None Remove="Assets\blackCircleFilled.png" />
-    <Resource Include="Assets\blackCircleFilled.png" />
-    <None Remove="Assets\board_hd.png" />
-    <Resource Include="Assets\board_hd.png" />
-    <None Remove="Assets\brick_16.png" />
-    <Resource Include="Assets\brick_16.png" />
-    <None Remove="Assets\carpet.png" />
-    <Resource Include="Assets\carpet.png" />
-    <None Remove="Assets\circle_blue.png" />
-    <Resource Include="Assets\circle_blue.png" />
-    <None Remove="Assets\circle_green.png" />
-    <Resource Include="Assets\circle_green.png" />
-    <None Remove="Assets\circle_red.png" />
-    <Resource Include="Assets\circle_red.png" />
-    <None Remove="Assets\dice.png" />
-    <Resource Include="Assets\dice.png" />
-    <None Remove="Assets\female.png" />
-    <Resource Include="Assets\female.png" />
-    <None Remove="Assets\grid_paper.png" />
-    <Resource Include="Assets\grid_paper.png" />
-    <None Remove="Assets\hand_comp.png" />
-    <Resource Include="Assets\hand_comp.png" />
-    <None Remove="Assets\hand_comp2.png" />
-    <Resource Include="Assets\hand_comp2.png" />
-    <None Remove="Assets\hand_comp3.png" />
-    <Resource Include="Assets\hand_comp3.png" />
-    <None Remove="Assets\male.png" />
-    <Resource Include="Assets\male.png" />
-    <None Remove="Assets\tr_grren.png" />
-    <Resource Include="Assets\tr_grren.png" />
-    <None Remove="Assets\tr_red.png" />
-    <Resource Include="Assets\tr_red.png" />
-  </ItemGroup>
+    <ItemGroup>
+        <ProjectReference Include="..\..\Westermo.GraphX.Controls\Westermo.GraphX.Controls.csproj"/>
+        <ProjectReference Include="..\..\Westermo.GraphX.Logic\Westermo.GraphX.Logic.csproj"/>
+    </ItemGroup>
+
+    <ItemGroup>
+        <None Remove="Assets\background.snowflakes.jpg"/>
+        <Resource Include="Assets\background.snowflakes.jpg"/>
+        <None Remove="Assets\blackCircle.png"/>
+        <Resource Include="Assets\blackCircle.png"/>
+        <None Remove="Assets\blackCircleFilled.png"/>
+        <Resource Include="Assets\blackCircleFilled.png"/>
+        <None Remove="Assets\board_hd.png"/>
+        <Resource Include="Assets\board_hd.png"/>
+        <None Remove="Assets\brick_16.png"/>
+        <Resource Include="Assets\brick_16.png"/>
+        <None Remove="Assets\carpet.png"/>
+        <Resource Include="Assets\carpet.png"/>
+        <None Remove="Assets\circle_blue.png"/>
+        <Resource Include="Assets\circle_blue.png"/>
+        <None Remove="Assets\circle_green.png"/>
+        <Resource Include="Assets\circle_green.png"/>
+        <None Remove="Assets\circle_red.png"/>
+        <Resource Include="Assets\circle_red.png"/>
+        <None Remove="Assets\dice.png"/>
+        <Resource Include="Assets\dice.png"/>
+        <None Remove="Assets\female.png"/>
+        <Resource Include="Assets\female.png"/>
+        <None Remove="Assets\grid_paper.png"/>
+        <Resource Include="Assets\grid_paper.png"/>
+        <None Remove="Assets\hand_comp.png"/>
+        <Resource Include="Assets\hand_comp.png"/>
+        <None Remove="Assets\hand_comp2.png"/>
+        <Resource Include="Assets\hand_comp2.png"/>
+        <None Remove="Assets\hand_comp3.png"/>
+        <Resource Include="Assets\hand_comp3.png"/>
+        <None Remove="Assets\male.png"/>
+        <Resource Include="Assets\male.png"/>
+        <None Remove="Assets\tr_grren.png"/>
+        <Resource Include="Assets\tr_grren.png"/>
+        <None Remove="Assets\tr_red.png"/>
+        <Resource Include="Assets\tr_red.png"/>
+    </ItemGroup>
 
 
 </Project>

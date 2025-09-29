@@ -10,12 +10,12 @@ using Avalonia.Controls;
 using Avalonia.Media;
 using Avalonia.Platform.Storage;
 using Avalonia.Threading;
+using QuikGraph;
+using Westermo.GraphX.Common;
 using Westermo.GraphX.Common.Enums;
 using Westermo.GraphX.Common.Exceptions;
 using Westermo.GraphX.Common.Interfaces;
 using Westermo.GraphX.Common.Models;
-using Westermo.GraphX.Common;
-using QuikGraph;
 using Westermo.GraphX.Controls.Avalonia.Models;
 
 namespace Westermo.GraphX.Controls.Avalonia
@@ -243,7 +243,7 @@ namespace Westermo.GraphX.Controls.Avalonia
             return VertexList.Values.FirstOrDefault(a =>
             {
                 var pos = a.GetPosition();
-                var rect = new Rect(pos.X, pos.Y, a.Width, a.Height);
+                var rect = new Rect(pos.X, pos.Y, a.Bounds.Width, a.Bounds.Height);
                 return rect.Contains(position);
             });
         }
@@ -334,8 +334,6 @@ namespace Westermo.GraphX.Controls.Avalonia
             if (vertexData == null || !_vertexList.TryGetValue(vertexData, out VertexControl? ctrl)) return;
             if (removeFromList)
                 _vertexList.Remove(vertexData);
-            if (DeleteAnimation != null)
-                DeleteAnimation.AnimateVertex(ctrl);
             else RemoveVertexInternal(ctrl, removeVertexFromDataGraph);
         }
 
@@ -372,8 +370,6 @@ namespace Westermo.GraphX.Controls.Avalonia
             if (edgeData == null || !_edgesList.TryGetValue(edgeData, out EdgeControl? ctrl)) return;
             if (removeFromList)
                 _edgesList.Remove(edgeData);
-            if (DeleteAnimation != null)
-                DeleteAnimation.AnimateEdge(ctrl);
             else RemoveEdgeInternal(ctrl, removeEdgeFromDataGraph);
         }
 
@@ -386,25 +382,6 @@ namespace Westermo.GraphX.Controls.Avalonia
                 LogicCore.Graph.ContainsEdge(edge))
                 LogicCore.Graph.RemoveEdge(edge);
             ctrl.Clean();
-        }
-
-        /// <summary>
-        /// Deletes vertices and edges correctly after delete animation
-        /// </summary>
-        /// <param name="ctrl">Control</param>
-        /// <param name="removeDataObject">Remove data object if possible</param>
-        protected override void RemoveAnimatedControl(IGraphControl ctrl, bool removeDataObject)
-        {
-            if (ctrl is VertexControl control)
-            {
-                RemoveVertexInternal(control, removeDataObject);
-                return;
-            }
-
-            if (ctrl is EdgeControl edgeControl)
-            {
-                RemoveEdgeInternal(edgeControl, removeDataObject);
-            }
         }
 
         #endregion
@@ -428,12 +405,10 @@ namespace Westermo.GraphX.Controls.Avalonia
                 GenerateVertexLabel(vertexControl!);
             var hasStorage = LogicCore?.AlgorithmStorage != null &&
                              vertexData.SkipProcessing != ProcessingOptionEnum.Exclude;
-            if (hasStorage)
-            {
-                var pos = vertexControl!.GetPositionGraphX(true).ToAvaloniaPoint();
-                LogicCore!.AlgorithmStorage.AddSingleVertex(vertexData, pos.ToGraphX(),
-                    new Rect(pos, new Size(vertexControl.Width, vertexControl.Width)).ToGraphX());
-            }
+            if (!hasStorage) return;
+            var pos = vertexControl!.GetPosition(true);
+            LogicCore!.AlgorithmStorage.AddSingleVertex(vertexData, pos.ToGraphX(),
+                new Rect(pos, new Size(vertexControl.Bounds.Width, vertexControl.Bounds.Width)).ToGraphX());
         }
 
 
@@ -457,10 +432,9 @@ namespace Westermo.GraphX.Controls.Avalonia
         {
             if (vertexControl == null || vertexData == null) return;
             vertexControl.RootArea = this;
-            if (_vertexList.ContainsKey(vertexData))
+            if (!_vertexList.TryAdd(vertexData, vertexControl))
                 throw new GX_InvalidDataException(
                     "AddVertex() -> Vertex with the same data has already been added to layout!");
-            _vertexList.Add(vertexData, vertexControl);
             Children.Add(vertexControl);
         }
 
@@ -671,21 +645,21 @@ namespace Westermo.GraphX.Controls.Avalonia
         }
 
 
-        public Dictionary<TVertex, Measure.Size> GetVertexSizesAndPositions(
-            out IDictionary<TVertex, Measure.Point> vertexPositions)
+        public Dictionary<TVertex, Size> GetVertexSizesAndPositions(
+            out IDictionary<TVertex, Point> vertexPositions)
         {
             //measure if needed and get all vertex sizes
             Measure(new Size(double.PositiveInfinity, double.PositiveInfinity));
             var count = _vertexList.Count(a =>
                 ((IGraphXVertex)a.Value.Vertex!).SkipProcessing != ProcessingOptionEnum.Exclude);
-            var vertexSizes = new Dictionary<TVertex, Measure.Size>(count);
-            vertexPositions = new Dictionary<TVertex, Measure.Point>(count);
+            var vertexSizes = new Dictionary<TVertex, Size>(count);
+            vertexPositions = new Dictionary<TVertex, Point>(count);
             //go through the vertex presenters and get the actual layoutpositions
             foreach (var vc in VertexList.Where(vc =>
                          ((IGraphXVertex)vc.Value.Vertex!).SkipProcessing != ProcessingOptionEnum.Exclude))
             {
-                vertexSizes[vc.Key] = new Measure.Size(vc.Value.DesiredSize.Width, vc.Value.DesiredSize.Height);
-                vertexPositions[vc.Key] = vc.Value.GetPositionGraphX();
+                vertexSizes[vc.Key] = new Size(vc.Value.DesiredSize.Width, vc.Value.DesiredSize.Height);
+                vertexPositions[vc.Key] = vc.Value.GetPosition();
             }
 
             return vertexSizes;
@@ -694,11 +668,11 @@ namespace Westermo.GraphX.Controls.Avalonia
         /// <summary>
         /// Returns all vertices positions list
         /// </summary>
-        public Dictionary<TVertex, Measure.Point> GetVertexPositions()
+        public Dictionary<TVertex, Point> GetVertexPositions()
         {
             return VertexList
                 .Where(a => ((IGraphXVertex)a.Value.Vertex!).SkipProcessing != ProcessingOptionEnum.Exclude)
-                .ToDictionary(vertex => vertex.Key, vertex => vertex.Value.GetPositionGraphX());
+                .ToDictionary(vertex => vertex.Key, vertex => vertex.Value.GetPosition());
         }
 
         #endregion
@@ -731,7 +705,7 @@ namespace Westermo.GraphX.Controls.Avalonia
                 foreach (var item in positions)
                 {
                     if (VertexList.TryGetValue(item.Key, out var value))
-                        value.SetPosition(item.Value.ToGraphX());
+                        value.SetPosition(item.Value);
                     VertexList[item.Key].SetCurrentValue(PositioningCompleteProperty, true);
                 }
             }
@@ -795,8 +769,8 @@ namespace Westermo.GraphX.Controls.Avalonia
 
         protected virtual void RelayoutGraph(CancellationToken cancellationToken)
         {
-            Dictionary<TVertex, Measure.Size>? vertexSizes = null;
-            IDictionary<TVertex, Measure.Point>? vertexPositions = null;
+            Dictionary<TVertex, Size>? vertexSizes = null;
+            IDictionary<TVertex, Point>? vertexPositions = null;
             IGXLogicCore<TVertex, TEdge, TGraph>? localLogicCore = null;
 
             RunOnDispatcherThread(() =>
@@ -846,7 +820,9 @@ namespace Westermo.GraphX.Controls.Avalonia
             if (localLogicCore == null)
                 throw new GX_InvalidDataException("LogicCore -> Not initialized!");
 
-            if (!localLogicCore.GenerateAlgorithmStorage(vertexSizes, vertexPositions))
+            if (vertexSizes is null || vertexPositions is null || !localLogicCore.GenerateAlgorithmStorage(
+                    vertexSizes.ToDictionary(s => s.Key, s => s.Value.ToGraphX()),
+                    vertexPositions.ToDictionary(s => s.Key, s => s.Value.ToGraphX())))
                 return;
 
             //clear routing info
@@ -856,12 +832,6 @@ namespace Westermo.GraphX.Controls.Avalonia
             var t = DateTime.Now;
             RunOnDispatcherThread(() =>
             {
-                if (MoveAnimation != null)
-                {
-                    MoveAnimation.CleanupBaseData();
-                    MoveAnimation.Cleanup();
-                }
-
                 //setup vertex positions from result data
                 foreach (var item in resultCoords)
                 {
@@ -870,22 +840,10 @@ namespace Westermo.GraphX.Controls.Avalonia
                     SetFinalX(vc, item.Value.X);
                     SetFinalY(vc, item.Value.Y);
 
-                    if (MoveAnimation == null || double.IsNaN(GetX(vc)))
+                    if (double.IsNaN(GetX(vc)))
                         vc.SetPosition(item.Value.X, item.Value.Y, false);
-                    else MoveAnimation.AddVertexData(vc, item.Value);
                     vc.SetCurrentValue(PositioningCompleteProperty,
                         true); // Style can show vertexes with layout positions assigned
-                }
-
-                if (MoveAnimation != null)
-                {
-                    if (MoveAnimation.VertexStorage.Count > 0)
-                        MoveAnimation.RunVertexAnimation();
-
-                    foreach (var item in _edgesList.Values)
-                        MoveAnimation.AddEdgeData(item);
-                    if (MoveAnimation.EdgeStorage.Count > 0)
-                        MoveAnimation.RunEdgeAnimation();
                 }
 
                 SetCurrentValue(LogicCoreProperty, localLogicCore);
@@ -1379,8 +1337,8 @@ namespace Westermo.GraphX.Controls.Avalonia
             if (LogicCore == null)
                 throw new GX_InvalidDataException("LogicCore is not initialized!");
             LogicCore.ComputeEdgeRoutesByVertex((TVertex)vc.Vertex!,
-                vertexDataNeedUpdate ? vc.GetPositionGraphX() : null,
-                vertexDataNeedUpdate ? new Size(vc.Width, vc.Height).ToGraphX() : null);
+                vertexDataNeedUpdate ? vc.GetPosition().ToGraphX() : null,
+                vertexDataNeedUpdate ? new Size(vc.Bounds.Width, vc.Bounds.Height).ToGraphX() : null);
         }
 
         #endregion
@@ -1420,7 +1378,7 @@ namespace Westermo.GraphX.Controls.Avalonia
         /// <summary>
         /// Generates all possible valid edges for Graph vertexes
         /// </summary>
-        /// <param name="defaultVisibility">Default edge visibility on layout</param>
+        /// <param name="isVisibleByDefault">true</param>
         /// <param name="updateLayout">Ensures that layout is properly updated before edges calculation. If you are sure that it is already updated you can set this param to False to increase performance. </param>
         public virtual void GenerateAllEdges(bool isVisibleByDefault = true,
             bool updateLayout = true)
@@ -1756,7 +1714,7 @@ namespace Westermo.GraphX.Controls.Avalonia
             {
                 dlist.Add(new GraphSerializationData
                 {
-                    Position = item.Value.GetPositionGraphX(),
+                    Position = item.Value.GetPosition().ToGraphX(),
                     Data = item.Key,
                     IsVisible = item.Value.IsVisible,
                     HasLabel = item.Value.VertexLabelControl != null
@@ -1853,8 +1811,9 @@ namespace Westermo.GraphX.Controls.Avalonia
 
         private void RestoreAlgorithmStorage()
         {
-            var vSizes = GetVertexSizesAndPositions(out IDictionary<TVertex, Measure.Point> vPositions);
-            LogicCore!.GenerateAlgorithmStorage(vSizes, vPositions);
+            var vSizes = GetVertexSizesAndPositions(out var vPositions);
+            LogicCore!.GenerateAlgorithmStorage(vSizes.ToDictionary(s => s.Key, s => s.Value.ToGraphX()),
+                vPositions.ToDictionary(s => s.Key, s => s.Value.ToGraphX()));
         }
 
         #endregion
@@ -2020,9 +1979,6 @@ namespace Westermo.GraphX.Controls.Avalonia
                 LogicCore = null;
             }
 
-            MoveAnimation = null;
-            DeleteAnimation = null;
-            MouseOverAnimation = null;
             OnDispose();
             GC.SuppressFinalize(this);
         }

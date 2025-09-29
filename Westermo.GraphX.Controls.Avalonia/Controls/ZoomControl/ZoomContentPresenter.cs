@@ -1,9 +1,9 @@
 ﻿using System.ComponentModel;
-using System.Windows;
-using System.Windows.Controls;
-using System.Windows.Media;
+using System.Linq;
+using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Controls.Presenters;
+using Avalonia.VisualTree;
 
 namespace Westermo.GraphX.Controls.Avalonia
 {
@@ -16,7 +16,8 @@ namespace Westermo.GraphX.Controls.Avalonia
         public Size ContentSize
         {
             get => _contentSize;
-            private set {
+            private set
+            {
                 if (value == _contentSize)
                     return;
 
@@ -36,10 +37,7 @@ namespace Westermo.GraphX.Controls.Avalonia
 
         protected override Size ArrangeOverride(Size arrangeBounds)
         {
-            var child = VisualChildrenCount > 0
-                                  ? VisualTreeHelper.GetChild(this, 0) as Control
-                                  : null;
-            if (child == null)
+            if (this.GetVisualChildren().FirstOrDefault() is not Control child)
                 return arrangeBounds;
 
             //set the ContentSize
@@ -47,12 +45,6 @@ namespace Westermo.GraphX.Controls.Avalonia
             child.Arrange(new Rect(child.DesiredSize));
 
             return arrangeBounds;
-        }
-
-        public event PropertyChangedEventHandler? PropertyChanged;
-        public void OnPropertyChanged(string name)
-        {
-            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
         }
     }
 }

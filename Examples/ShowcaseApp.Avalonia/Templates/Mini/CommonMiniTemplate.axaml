@@ -1,0 +1,65 @@
+﻿<Styles
+    xmlns="https://github.com/avaloniaui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:avalonia="clr-namespace:Westermo.GraphX.Controls.Avalonia;assembly=Westermo.GraphX.Controls.Avalonia">
+
+    <Style Selector="avalonia|VertexControl">
+        <Setter Property="Foreground" Value="{DynamicResource ButtonText}" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="{x:Type avalonia:VertexControl}">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <Border BorderThickness="1" BorderBrush="{TemplateBinding Foreground}"
+                                Background="{DynamicResource ButtonBackgroundPressed}" Grid.Column="1" CornerRadius="5"
+                                Width="80">
+                            <ContentPresenter Content="{TemplateBinding Vertex}" VerticalAlignment="Center"
+                                              HorizontalAlignment="Center" />
+                        </Border>
+                    </Grid>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <Style Selector="avalonia|EdgeControl">
+        <Setter Property="Foreground" Value="{DynamicResource ButtonText}" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="{x:Type avalonia:EdgeControl}">
+                    <Grid>
+                        <Path Stroke="{TemplateBinding Foreground}"
+                              StrokeThickness="2"
+                              x:Name="PART_edgePath" />
+                        <avalonia:DefaultEdgePointer NeedRotation="true" x:Name="PART_EdgePointerForTarget">
+                            <Path Data="M0,0.5 L1,1 1,0" Fill="{TemplateBinding Foreground}" Stretch="Uniform"
+                                  Width="10" Height="10" />
+                        </avalonia:DefaultEdgePointer>
+                    </Grid>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <!--EDGE LABLE CONTROL -->
+    <Style Selector="avalonia|AttachableEdgeLabelControl">
+        <Setter Property="LabelVerticalOffset" Value="0" />
+        <Setter Property="ShowLabel" Value="true" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="{x:Type avalonia:AttachableEdgeLabelControl}">
+                    <Border BorderBrush="Black" BorderThickness="1" Background="White" CornerRadius="5">
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock FontWeight="Bold" FontSize="8" Text="ToolTip: " Foreground="Black" Margin="1" />
+                        </StackPanel>
+                    </Border>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+        <Setter Property="DisplayForSelfLoopedEdges" Value="False" />
+    </Style>
+</Styles>

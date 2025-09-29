@@ -1,0 +1,68 @@
+﻿<UserControl x:Class="ShowcaseApp.Avalonia.Pages.Mini.LayoutVCP"
+             xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:avalonia="clr-namespace:Westermo.GraphX.Controls.Avalonia;assembly=Westermo.GraphX.Controls.Avalonia"
+             xmlns:exampleModels="clr-namespace:ShowcaseApp.Avalonia.ExampleModels"
+             xmlns:models1="clr-namespace:ShowcaseApp.Avalonia.Models"
+             d:DesignHeight="300"
+             d:DesignWidth="600"
+             mc:Ignorable="d">
+    <UserControl.Styles>
+        <StyleInclude Source="/Templates/MiniFeatures.axaml" />
+        <StyleInclude Source="/Templates/Mini/LayoutVCPTemplate.axaml" />
+    </UserControl.Styles>
+    <Grid>
+        <Grid.Resources>
+        </Grid.Resources>
+
+        <Border Margin="2"
+                BorderBrush="{DynamicResource ButtonBorder}"
+                BorderThickness="1">
+            <avalonia:ZoomControl x:Name="zoomControl"
+                                  VerticalAlignment="Center"
+                                  HorizontalContentAlignment="Center"
+                                  Background="{DynamicResource ButtonBackground}"
+                                  Foreground="{DynamicResource ButtonText}">
+                <exampleModels:GraphAreaExample x:Name="graphArea" />
+            </avalonia:ZoomControl>
+        </Border>
+
+        <Expander Margin="2"
+                  VerticalAlignment="Bottom"
+                  ExpandDirection="Down"
+                  Header="SETTINGS"
+                  IsExpanded="false"
+                  Padding="5"
+                  Template="{DynamicResource MiniExpander}">
+
+            <StackPanel MinHeight="50"
+                        Margin="10"
+                        VerticalAlignment="Center"
+                        Orientation="Vertical">
+                <CheckBox Name="cbMathShape"
+                          Height="25"
+                          Content="Use math shape for connector"
+                          IsChecked="True"
+                          ToolTip.Tip="If math shape is specified an edge will connect to the point around some &#10;math shape. If not it will simply point to connector center." />
+                <Button Name="butAddVcp"
+                        Margin="2"
+                        HorizontalAlignment="Left"
+                        Content="Add VCP from runtime" />
+            </StackPanel>
+        </Expander>
+
+        <Border Margin="0,2,2,0"
+                HorizontalAlignment="Right"
+                VerticalAlignment="Top"
+                Background="{DynamicResource WindowBackground}"
+                BorderBrush="{DynamicResource ButtonBorder}"
+                BorderThickness="1"
+                CornerRadius="0,0,0,15">
+            <StackPanel HorizontalAlignment="Center" Orientation="Horizontal">
+                <Button CommandParameter="{x:Static models1:MiniSpecialType.LayoutVCP}" />
+            </StackPanel>
+        </Border>
+    </Grid>
+</UserControl>

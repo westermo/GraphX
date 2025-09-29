@@ -1,159 +1,159 @@
 ﻿using System;
 using System.Diagnostics;
 using System.Linq;
-using Westermo.GraphX.Common.Interfaces;
-using System.Windows;
-using System.Windows.Controls;
-using System.Windows.Media;
-using System.ComponentModel;
 using Avalonia;
 using Avalonia.Controls;
+using Avalonia.Interactivity;
 using Avalonia.Media;
-using SysRect = System.Windows.Rect;
-using SysSize = System.Windows.Size;
-using RoutedOrCommonArgs = System.EventArgs;
-using DefaultEventArgs = System.EventArgs;
+using Avalonia.VisualTree;
+using Westermo.GraphX.Common.Interfaces;
 
 namespace Westermo.GraphX.Controls.Avalonia
 {
     public abstract class EdgeLabelControl : ContentControl, IEdgeLabelControl
     {
-        public static readonly StyledProperty<> AlignToEdgeProperty = AvaloniaProperty.Register(nameof(AlignToEdge),
-            typeof(bool),
-            typeof(EdgeLabelControl),
-            new PropertyMetadata(false, (o, e) =>
+        private EdgeControl? _edgeControl;
+
+        internal Rect LastKnownRectSize;
+
+        static EdgeLabelControl()
+        {
+            ShowLabelProperty.Changed.AddClassHandler<EdgeLabelControl>(ShowLabelChanged);
+            AngleProperty.Changed.AddClassHandler<EdgeLabelControl>(AngleChanged);
+        }
+
+        public EdgeLabelControl()
+        {
+            RenderTransformOrigin = new RelativePoint(.5, .5, RelativeUnit.Relative);
+            LayoutUpdated += EdgeLabelControl_LayoutUpdated;
+            HorizontalAlignment = global::Avalonia.Layout.HorizontalAlignment.Left;
+            VerticalAlignment = global::Avalonia.Layout.VerticalAlignment.Top;
+            SizeChanged += EdgeLabelControl_SizeChanged;
+            Loaded += EdgeLabelControl_Loaded;
+            UpdateLabelOnSizeChange = true;
+            UpdateLabelOnVisibilityChange = true;
+        }
+
+        protected EdgeControl? EdgeControl => _edgeControl ??= GetEdgeControl(GetParent());
+
+
+        private static void AngleChanged(EdgeLabelControl d, AvaloniaPropertyChangedEventArgs e)
+        {
+            if (e.NewValue is not double angle) return;
+            if (d.RenderTransform is TransformGroup tg)
             {
-                var ctrl = (EdgeLabelControl)o;
-                if ((bool)e.NewValue == false) ctrl.Angle = 0;
-                ctrl.UpdatePosition();
-            }));
+                if (tg.Children.OfType<RotateTransform>().FirstOrDefault() is { } rt)
+                {
+                    rt.Angle = angle;
+                    return;
+                }
+
+                tg.Children.Add(new RotateTransform { Angle = angle, CenterX = .5, CenterY = .5 });
+                return;
+            }
+
+            d.RenderTransform = new RotateTransform { Angle = angle, CenterX = .5, CenterY = .5 };
+        }
+
+        private static void ShowLabelChanged(EdgeLabelControl elc, AvaloniaPropertyChangedEventArgs e)
+        {
+            elc.EdgeControl?.UpdateEdge();
+        }
+
+        public static readonly StyledProperty<bool> AlignToEdgeProperty =
+            AvaloniaProperty.Register<EdgeLabelControl, bool>(nameof(AlignToEdge));
 
         /// <summary>
         /// Gets or sets if lables should be aligned to edges and be displayed under the same angle
         /// </summary>
         public bool AlignToEdge
         {
-            get => (bool)GetValue(AlignToEdgeProperty);
+            get => GetValue(AlignToEdgeProperty);
             set => SetValue(AlignToEdgeProperty, value);
         }
 
-
-        public static readonly StyledProperty LabelVerticalOffsetProperty = AvaloniaProperty.Register(
-            nameof(LabelVerticalOffset),
-            typeof(double),
-            typeof(EdgeLabelControl),
-            new PropertyMetadata(0d));
+        public static readonly StyledProperty<double> LabelVerticalOffsetProperty =
+            AvaloniaProperty.Register<EdgeLabelControl, double>(nameof(LabelVerticalOffset));
 
         /// <summary>
         /// Offset for label Y axis to display it above/below the edge
         /// </summary>
         public double LabelVerticalOffset
         {
-            get => (double)GetValue(LabelVerticalOffsetProperty);
+            get => GetValue(LabelVerticalOffsetProperty);
             set => SetValue(LabelVerticalOffsetProperty, value);
         }
 
-        public static readonly StyledProperty LabelHorizontalOffsetProperty = AvaloniaProperty.Register(
-            nameof(LabelHorizontalOffset),
-            typeof(double),
-            typeof(EdgeLabelControl),
-            new PropertyMetadata(0d));
+        public static readonly StyledProperty<double> LabelHorizontalOffsetProperty =
+            AvaloniaProperty.Register<EdgeLabelControl, double>(nameof(LabelHorizontalOffset));
+
 
         /// <summary>
         /// Offset for label X axis to display it along the edge
         /// </summary>
         public double LabelHorizontalOffset
         {
-            get => (double)GetValue(LabelHorizontalOffsetProperty);
+            get => GetValue(LabelHorizontalOffsetProperty);
             set => SetValue(LabelHorizontalOffsetProperty, value);
         }
 
-        public static readonly StyledProperty ShowLabelProperty = AvaloniaProperty.Register(nameof(ShowLabel),
-            typeof(bool),
-            typeof(EdgeLabelControl),
-            new PropertyMetadata(false, showlabel_changed));
-
-        private static void showlabel_changed(Control d, StyledPropertyChangedEventArgs e)
-        {
-            (d as EdgeLabelControl)?.EdgeControl?.UpdateEdge();
-        }
+        public static readonly StyledProperty<bool> ShowLabelProperty =
+            AvaloniaProperty.Register<EdgeLabelControl, bool>(nameof(ShowLabel));
 
         /// <summary>
-        /// Show edge label.Default value is False.
+        /// Show edge label. Default value is False.
         /// </summary>
         public bool ShowLabel
         {
-            get => (bool)GetValue(ShowLabelProperty);
+            get => GetValue(ShowLabelProperty);
             set => SetValue(ShowLabelProperty, value);
         }
 
-        public static readonly StyledProperty DisplayForSelfLoopedEdgesProperty = AvaloniaProperty.Register(
-            nameof(DisplayForSelfLoopedEdges),
-            typeof(bool),
-            typeof(EdgeLabelControl),
-            new PropertyMetadata(false));
+        public static readonly StyledProperty<bool> DisplayForSelfLoopedEdgesProperty =
+            AvaloniaProperty.Register<EdgeLabelControl, bool>(nameof(DisplayForSelfLoopedEdges));
+
 
         /// <summary>
-        /// Gets or sets if label should be visible for self looped edge
+        /// Gets or sets if label should be visible for self looped edge. Default value is false.
         /// </summary>
         public bool DisplayForSelfLoopedEdges
         {
-            get => (bool)GetValue(DisplayForSelfLoopedEdgesProperty);
+            get => GetValue(DisplayForSelfLoopedEdgesProperty);
             set => SetValue(DisplayForSelfLoopedEdgesProperty, value);
         }
 
-        public static readonly StyledProperty FlipOnRotationProperty = AvaloniaProperty.Register(
-            nameof(FlipOnRotation),
-            typeof(bool),
-            typeof(EdgeLabelControl),
-            new PropertyMetadata(true));
+        public static readonly StyledProperty<bool> FlipOnRotationProperty =
+            AvaloniaProperty.Register<EdgeLabelControl, bool>(nameof(FlipOnRotation), true);
 
         /// <summary>
-        /// Gets or sets if label should flip on rotation when axis changes
+        /// Gets or sets if label should flip on rotation when axis changes. Default value is true.
         /// </summary>
         public bool FlipOnRotation
         {
-            get => (bool)GetValue(FlipOnRotationProperty);
+            get => GetValue(FlipOnRotationProperty);
             set => SetValue(FlipOnRotationProperty, value);
         }
 
+        public static readonly StyledProperty<double> AngleProperty =
+            AvaloniaProperty.Register<EdgeLabelControl, double>(nameof(Angle));
 
-        public static readonly StyledProperty AngleProperty = AvaloniaProperty.Register(nameof(Angle),
-            typeof(double),
-            typeof(EdgeLabelControl),
-            new PropertyMetadata(0.0, AngleChanged));
-
-        private static void AngleChanged(Control d, StyledPropertyChangedEventArgs e)
-        {
-            if (d is not Control ctrl) return;
-            if (ctrl.RenderTransform is not TransformGroup tg)
-                ctrl.RenderTransform = new RotateTransform { Angle = (double)e.NewValue, CenterX = .5, CenterY = .5 };
-            else
-            {
-                var rt = (RotateTransform?)tg.Children.FirstOrDefault(a => a is RotateTransform);
-                if (rt == null)
-                    tg.Children.Add(new RotateTransform { Angle = (double)e.NewValue, CenterX = .5, CenterY = .5 });
-                else rt.Angle = (double)e.NewValue;
-            }
-        }
 
         /// <summary>
         /// Gets or sets label drawing angle in degrees
         /// </summary>
         public double Angle
         {
-            get => (double)GetValue(AngleProperty);
+            get => GetValue(AngleProperty);
             set => SetValue(AngleProperty, value);
         }
 
-        private EdgeControl? _edgeControl;
 
         protected virtual EdgeControl? GetEdgeControl(Control? parent)
         {
             while (parent != null)
             {
                 if (parent is EdgeControl control) return control;
-                parent = VisualTreeHelper.GetParent(parent);
+                parent = parent.Parent as Control;
             }
 
             return null;
@@ -161,15 +161,31 @@ namespace Westermo.GraphX.Controls.Avalonia
 
         public void Show()
         {
-            if (EdgeControl != null && EdgeControl.IsSelfLooped && !DisplayForSelfLoopedEdges) return;
-            SetCurrentValue(VisibilityProperty, Visibility.Visible);
+            if (EdgeControl is { IsSelfLooped: true } && !DisplayForSelfLoopedEdges) return;
+            IsVisible = true;
         }
 
         public void Hide()
         {
-            SetCurrentValue(VisibilityProperty, Visibility.Collapsed);
+            IsVisible = false;
         }
 
+
+        private void EdgeLabelControl_SizeChanged(object? sender, SizeChangedEventArgs sizeChangedEventArgs)
+        {
+            if (!UpdateLabelOnSizeChange) return;
+            UpdatePosition();
+        }
+
+        private Control? GetParent()
+        {
+            return this.GetVisualParent() as Control;
+        }
+
+        public void Dispose()
+        {
+            _edgeControl = null;
+        }
 
         private static double GetLabelDistance(double edgeLength)
         {
@@ -192,24 +208,24 @@ namespace Westermo.GraphX.Controls.Avalonia
             }
 
             //if hidden
-            if (Visibility != Visibility.Visible) return;
+            if (!IsVisible) return;
 
             if (EdgeControl.IsSelfLooped)
             {
                 var idesiredSize = DesiredSize;
                 var pt = EdgeControl.Source.GetCenterPosition();
-                SetSelfLoopedSize(pt, idesiredSize);
+                SetSelfLoopedSize(pt.ToGraphX(), idesiredSize);
                 Arrange(LastKnownRectSize);
                 return;
             }
 
-            var p1 = EdgeControl.SourceConnectionPoint.GetValueOrDefault();
-            var p2 = EdgeControl.TargetConnectionPoint.GetValueOrDefault();
+            var p1 = EdgeControl.SourceConnectionPoint.GetValueOrDefault().ToGraphX();
+            var p2 = EdgeControl.TargetConnectionPoint.GetValueOrDefault().ToGraphX();
 
             double edgeLength = 0;
             if (EdgeControl.Edge is IRoutingInfo routingInfo)
             {
-                var routePoints = routingInfo.RoutingPoints == null ? null : routingInfo.RoutingPoints.ToAvaloniaPoint();
+                var routePoints = routingInfo.RoutingPoints;
 
                 if (routePoints == null || routePoints.Length == 0)
                 {
@@ -260,10 +276,10 @@ namespace Westermo.GraphX.Controls.Avalonia
             var desiredSize = DesiredSize;
             var flipAxis = p1.X > p2.X; // Flip axis if source is "after" target
 
-            ApplyLabelHorizontalOffset(edgeLength, LabelHorizontalOffset);
+            edgeLength = ApplyLabelHorizontalOffset(edgeLength, LabelHorizontalOffset);
 
             // Calculate the center point of the edge
-            var centerPoint = new Point(p1.X + edgeLength * Math.Cos(angleBetweenPoints),
+            var centerPoint = new Measure.Point(p1.X + edgeLength * Math.Cos(angleBetweenPoints),
                 p1.Y - edgeLength * Math.Sin(angleBetweenPoints));
             if (AlignToEdge)
             {
@@ -277,7 +293,6 @@ namespace Westermo.GraphX.Controls.Avalonia
                 // Slap on 90 degrees to the angle between the points, to get the direction of the offset.
                 centerPoint.Y -= yEdgeOffset * Math.Sin(angleBetweenPoints + Math.PI / 2);
                 centerPoint.X += yEdgeOffset * Math.Cos(angleBetweenPoints + Math.PI / 2);
-
                 // Angle is in degrees
                 Angle = -angleBetweenPoints * 180 / Math.PI;
                 if (flipAxis)
@@ -285,7 +300,18 @@ namespace Westermo.GraphX.Controls.Avalonia
             }
 
             UpdateFinalPosition(centerPoint, desiredSize);
-
+            LastKnownRectSize = LastKnownRectSize.IsEmpty()
+                ? new Rect(
+                    double.IsNaN(LastKnownRectSize.X) ? 0 : LastKnownRectSize.X,
+                    double.IsNaN(LastKnownRectSize.Y) ? 0 : LastKnownRectSize.Y,
+                    double.IsNaN(LastKnownRectSize.Width) || LastKnownRectSize.Width == 0
+                        ? desiredSize.Width
+                        : LastKnownRectSize.Width,
+                    double.IsNaN(LastKnownRectSize.Height) || LastKnownRectSize.Height == 0
+                        ? desiredSize.Height
+                        : LastKnownRectSize.Height
+                )
+                : LastKnownRectSize;
             Arrange(LastKnownRectSize);
         }
 
@@ -306,27 +332,23 @@ namespace Westermo.GraphX.Controls.Avalonia
         /// </summary>
         public bool UpdateLabelOnVisibilityChange { get; set; }
 
-        internal SysRect LastKnownRectSize;
-
-        protected EdgeControl? EdgeControl => _edgeControl ??= GetEdgeControl(GetParent());
-
-        private void SetSelfLoopedSize(Point pt, SysSize idesiredSize)
+        private void SetSelfLoopedSize(Measure.Point pt, Size idesiredSize)
         {
             pt.Offset(-idesiredSize.Width / 2,
                 EdgeControl!.Source!.DesiredSize.Height * .5 + 2 + idesiredSize.Height * .5);
-            LastKnownRectSize = new SysRect(pt.X, pt.Y, idesiredSize.Width, idesiredSize.Height);
+            LastKnownRectSize = new Rect(pt.X, pt.Y, idesiredSize.Width, idesiredSize.Height);
         }
 
-        private void UpdateFinalPosition(Point centerPoint, SysSize desiredSize)
+        private void UpdateFinalPosition(Measure.Point centerPoint, Size desiredSize)
         {
-            LastKnownRectSize = new SysRect(centerPoint.X - desiredSize.Width / 2,
+            LastKnownRectSize = new Rect(centerPoint.X - desiredSize.Width / 2,
                 centerPoint.Y - desiredSize.Height / 2, desiredSize.Width, desiredSize.Height);
         }
 
         /// <summary>
         /// Get label rectangular size
         /// </summary>
-        public SysRect GetSize()
+        public Rect GetSize()
         {
             return LastKnownRectSize;
         }
@@ -334,59 +356,26 @@ namespace Westermo.GraphX.Controls.Avalonia
         /// <summary>
         /// Set label rectangular size
         /// </summary>
-        public void SetSize(SysRect size)
+        public void SetSize(Rect size)
         {
             LastKnownRectSize = size;
-            //TODO check if we can remove this in WPF
-            Arrange(LastKnownRectSize);
         }
 
-        private void EdgeLabelControl_Loaded(object? sender, RoutedOrCommonArgs e)
+        private void EdgeLabelControl_Loaded(object? sender, RoutedEventArgs e)
         {
             if (EdgeControl is { IsSelfLooped: true } && !DisplayForSelfLoopedEdges) Hide();
             else Show();
         }
 
-        private void EdgeLabelControl_LayoutUpdated(object? sender, DefaultEventArgs e)
+        private void EdgeLabelControl_LayoutUpdated(object? sender, EventArgs e)
         {
             if (EdgeControl == null || !ShowLabel) return;
-            if (LastKnownRectSize == SysRect.Empty || double.IsNaN(LastKnownRectSize.Width) ||
+            if (LastKnownRectSize.IsEmpty() || double.IsNaN(LastKnownRectSize.Width) ||
                 LastKnownRectSize.Width == 0)
             {
-                UpdateLayout();
                 UpdatePosition();
             }
             else Arrange(LastKnownRectSize);
-        }
-
-        public EdgeLabelControl()
-        {
-            if (DesignerProperties.GetIsInDesignMode(this)) return;
-            Initialized += EdgeLabelControl_Loaded;
-            RenderTransformOrigin = new Point(.5, .5);
-            LayoutUpdated += EdgeLabelControl_LayoutUpdated;
-            HorizontalAlignment = HorizontalAlignment.Left;
-            VerticalAlignment = VerticalAlignment.Top;
-            SizeChanged += EdgeLabelControl_SizeChanged;
-            UpdateLabelOnSizeChange = true;
-            UpdateLabelOnVisibilityChange = true;
-        }
-
-        private void EdgeLabelControl_SizeChanged(object sender, SizeChangedEventArgs e)
-        {
-            if (!UpdateLabelOnSizeChange) return;
-            UpdatePosition();
-            // Debug.WriteLine(EdgeControl.Edge.ToString());
-        }
-
-        private Control GetParent()
-        {
-            return VisualParent;
-        }
-
-        public void Dispose()
-        {
-            _edgeControl = null;
         }
     }
 }

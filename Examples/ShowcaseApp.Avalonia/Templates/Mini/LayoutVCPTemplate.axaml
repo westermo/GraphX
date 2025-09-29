@@ -1,0 +1,91 @@
+﻿<Styles xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:avalonia="clr-namespace:Westermo.GraphX.Controls.Avalonia;assembly=Westermo.GraphX.Controls.Avalonia">
+
+    <Style Selector="avalonia|StaticVertexConnectionPoint">
+        <Setter Property="Shape" Value="Circle" />
+
+        <Setter Property="Content">
+            <Setter.Value>
+                <Template>
+
+                    <Path Width="10"
+                          Height="10"
+                          HorizontalAlignment="Center"
+                          VerticalAlignment="Center"
+                          Data="M 38,0.791664C 58.5496,0.791664 75.2083,17.4504 75.2083,38C 75.2083,58.5496 58.5496,75.2083 38,75.2083C 17.4504,75.2083 0.791662,58.5496 0.791662,38C 0.791662,17.4504 17.4504,0.791664 38,0.791664 Z M 38,5.54166C 20.0738,5.54166 5.54167,20.0738 5.54167,38C 5.54167,55.9262 20.0738,70.4583 38,70.4583C 55.9262,70.4583 70.4583,55.9262 70.4583,38C 70.4583,20.0738 55.9262,5.54166 38,5.54166 Z "
+                          Stretch="Uniform"
+                          Stroke="{DynamicResource ButtonText}"
+                          StrokeThickness="1" />
+                </Template>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <Style Selector="avalonia|VertexControl">
+        <Setter Property="Foreground" Value="{DynamicResource ButtonText}" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="{x:Type avalonia:VertexControl}">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <StackPanel Name="PART_vcproot"
+                                    Grid.Column="0"
+                                    Orientation="Vertical">
+                            <Border Margin="2,2,0,2" Padding="0">
+                                <avalonia:StaticVertexConnectionPoint Id="1" />
+                            </Border>
+                            <Border Margin="2,2,0,2" Padding="0">
+                                <avalonia:StaticVertexConnectionPoint Id="2" />
+                            </Border>
+                        </StackPanel>
+                        <Border Grid.Column="1"
+                                Width="120"
+                                Background="{DynamicResource ButtonBackgroundPressed}"
+                                BorderBrush="{TemplateBinding Foreground}"
+                                BorderThickness="1"
+                                CornerRadius="5">
+                            <ContentPresenter HorizontalAlignment="Center"
+                                              VerticalAlignment="Center"
+                                              Content="{TemplateBinding Vertex}" />
+                        </Border>
+                        <StackPanel Grid.Column="2" Orientation="Vertical">
+                            <Border Margin="0,2,2,2" Padding="0">
+                                <avalonia:StaticVertexConnectionPoint Id="3" />
+                            </Border>
+                            <Border Margin="0,2,2,2" Padding="0">
+                                <avalonia:StaticVertexConnectionPoint Id="4" />
+                            </Border>
+                        </StackPanel>
+                    </Grid>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <Style Selector="avalonia|EdgeControl">
+        <Setter Property="Foreground" Value="{DynamicResource ButtonText}" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="{x:Type avalonia:EdgeControl}">
+                    <Grid>
+                        <Path x:Name="PART_edgePath"
+                              Stroke="{TemplateBinding Foreground}"
+                              StrokeThickness="2" />
+                        <avalonia:DefaultEdgePointer x:Name="PART_EdgePointerForTarget" NeedRotation="true">
+                            <Path Width="10"
+                                  Height="10"
+                                  Data="M0,0.5 L1,1 1,0"
+                                  Fill="{TemplateBinding Foreground}"
+                                  Stretch="Uniform" />
+                        </avalonia:DefaultEdgePointer>
+                    </Grid>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+</Styles>

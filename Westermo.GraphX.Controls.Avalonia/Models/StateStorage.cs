@@ -54,7 +54,7 @@ namespace Westermo.GraphX.Controls.Avalonia.Models
         {
             if (_area.LogicCore == null)
                 throw new GX_InvalidDataException("LogicCore -> Not initialized!");
-            var vposlist = _area.VertexList.ToDictionary(item => item.Key, item => item.Value.GetPositionGraphX());
+            var vposlist = _area.VertexList.ToDictionary(item => item.Key, item => item.Value.GetPosition().ToGraphX());
             var vedgelist = _area.EdgesList.Where(item => item.Value.IsVisible).Select(item => item.Key).ToList();
 
             return new GraphState<TVertex, TEdge, TGraph>(id, _area.LogicCore.Graph, _area.LogicCore.AlgorithmStorage,
@@ -128,8 +128,7 @@ namespace Westermo.GraphX.Controls.Avalonia.Models
         /// <param name="id">Unique state id</param>
         public virtual void RemoveState(string id)
         {
-            if (_states.ContainsKey(id))
-                _states.Remove(id);
+            _states.Remove(id);
         }
 
         /// <summary>

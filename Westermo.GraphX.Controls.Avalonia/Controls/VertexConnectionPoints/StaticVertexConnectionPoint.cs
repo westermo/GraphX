@@ -1,9 +1,8 @@
 ﻿using System;
-using System.Windows;
-using System.Windows.Controls;
-using System.Windows.Media;
 using Avalonia;
 using Avalonia.Controls;
+using Avalonia.Layout;
+using Avalonia.VisualTree;
 using Westermo.GraphX.Common.Enums;
 
 namespace Westermo.GraphX.Controls.Avalonia
@@ -17,18 +16,15 @@ namespace Westermo.GraphX.Controls.Avalonia
         /// </summary>
         public int Id { get; set; }
 
-        public static readonly StyledProperty<> ShapeProperty =
-            AvaloniaProperty.Register(nameof(Shape),
-                          typeof(VertexShape),
-                          typeof(StaticVertexConnectionPoint),
-                          new PropertyMetadata(VertexShape.Circle));
+        public static readonly StyledProperty<VertexShape> ShapeProperty =
+            AvaloniaProperty.Register<StaticVertexConnectionPoint, VertexShape>(nameof(Shape), VertexShape.Circle);
 
         /// <summary>
         /// Gets or sets shape form for connection point (affects math calculations for edge end placement)
         /// </summary>
         public VertexShape Shape
         {
-            get => (VertexShape)GetValue(ShapeProperty);
+            get => GetValue(ShapeProperty);
             set => SetValue(ShapeProperty, value);
         }
 
@@ -38,7 +34,7 @@ namespace Westermo.GraphX.Controls.Avalonia
         {
             get
             {
-                if (_rectangularSize == Rect.Empty)
+                if (_rectangularSize.IsEmpty())
                     UpdateLayout();
                 return _rectangularSize;
             }
@@ -47,21 +43,23 @@ namespace Westermo.GraphX.Controls.Avalonia
 
         public void Show()
         {
-            SetCurrentValue(VisibilityProperty, Visibility.Visible);
+            SetCurrentValue(IsVisibleProperty, true);
         }
 
         public void Hide()
         {
-            SetCurrentValue(VisibilityProperty, Visibility.Collapsed);
+            SetCurrentValue(IsVisibleProperty, false);
         }
 
         private static VertexControl? GetVertexControl(Control? parent)
         {
+
             while (parent != null)
             {
                 if (parent is VertexControl control) return control;
-                parent = VisualTreeHelper.GetParent(parent);
+                parent = parent.GetVisualParent() as Control;
             }
+
             return null;
         }
 
@@ -72,7 +70,7 @@ namespace Westermo.GraphX.Controls.Avalonia
 
         public StaticVertexConnectionPoint()
         {
-            RenderTransformOrigin = new Point(.5, .5);
+            RenderTransformOrigin = new RelativePoint(new Point(0.5, 0.5), RelativeUnit.Absolute);
             VerticalAlignment = VerticalAlignment.Center;
             HorizontalAlignment = HorizontalAlignment.Center;
             LayoutUpdated += OnLayoutUpdated;
@@ -88,17 +86,16 @@ namespace Westermo.GraphX.Controls.Avalonia
             _vertexControl = null;
         }
 
-        public Control GetParent()
+        public Control? GetParent()
         {
-            return VisualParent;
+            return this.GetVisualParent() as Control;
         }
 
         protected virtual void OnLayoutUpdated(object? sender, EventArgs e)
         {
-            var position = TranslatePoint(new Point(), VertexControl);
             var vPos = VertexControl!.GetPosition();
-            position = new Point(position.X + vPos.X, position.Y + vPos.Y);
-            RectangularSize = new Rect(position, new Size(ActualWidth, ActualHeight));
+            var position = new Point(vPos.X, vPos.Y);
+            RectangularSize = new Rect(position, new Size(Width, Height));
         }
     }
 }

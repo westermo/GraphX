@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Windows;
 using Avalonia.Controls;
 using Westermo.GraphX.Common.Enums;
 
@@ -20,9 +19,9 @@ namespace Westermo.GraphX.Controls.Avalonia
         void Hide();
         void Show();
 
-        Rect RectangularSize { get; }
+        global::Avalonia.Rect RectangularSize { get; }
 
         void Update();
-        Control GetParent();
+        Control? GetParent();
     }
 }

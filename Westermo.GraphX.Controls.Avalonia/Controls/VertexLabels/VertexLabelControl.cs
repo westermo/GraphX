@@ -1,40 +1,37 @@
-﻿using System.ComponentModel;
-using System.Windows;
-using System.Windows.Controls;
-using System.Windows.Media;
-using DefaultEventArgs = System.EventArgs;
+﻿using DefaultEventArgs = System.EventArgs;
 using System.Linq;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Media;
 using Westermo.GraphX.Common.Exceptions;
+using Avalonia.VisualTree;
 
 namespace Westermo.GraphX.Controls.Avalonia
 {
     public class VertexLabelControl : ContentControl, IVertexLabelControl
     {
         internal Rect LastKnownRectSize;
+        static VertexLabelControl()
+        {
+            AngleProperty.Changed.AddClassHandler<Control>(AngleChanged);
+        }
 
-
-        public static readonly StyledProperty<> AngleProperty = AvaloniaProperty.Register(nameof(Angle),
-                                                                                       typeof(double),
-                                                                                       typeof(VertexLabelControl),
-                                                                                       new PropertyMetadata(0.0, AngleChanged));
-
-        private static void AngleChanged(Control d, StyledPropertyChangedEventArgs e)
+        private static void AngleChanged(Control d, AvaloniaPropertyChangedEventArgs e)
         {
             if (d is not Control ctrl)
                 return;
-            if (ctrl.RenderTransform is not TransformGroup tg ) ctrl.RenderTransform = new RotateTransform {Angle = (double) e.NewValue, CenterX = .5, CenterY = .5};
+            if (ctrl.RenderTransform is not TransformGroup tg)
+                ctrl.RenderTransform = new RotateTransform { Angle = e.NewValue is double val ? val : 0.0, CenterX = .5, CenterY = .5 };
             else
             {
                 var rt = tg.Children.FirstOrDefault(a => a is RotateTransform);
                 if (rt == null)
-                    tg.Children.Add(new RotateTransform {Angle = (double) e.NewValue, CenterX = .5, CenterY = .5});
-                else (rt as RotateTransform)!.Angle = (double) e.NewValue;
+                    tg.Children.Add(new RotateTransform { Angle = e.NewValue is double val ? val : 0.0, CenterX = .5, CenterY = .5 });
+                else (rt as RotateTransform)!.Angle = e.NewValue is double val ? val : 0.0;
             }
         }
 
+        public static readonly StyledProperty<double> AngleProperty = AvaloniaProperty.Register<VertexLabelControl, double>(nameof(Angle));
         /// <summary>
         /// Gets or sets label drawing angle in degrees
         /// </summary>
@@ -44,42 +41,33 @@ namespace Westermo.GraphX.Controls.Avalonia
             set => SetValue(AngleProperty, value);
         }
 
-        public static readonly StyledProperty LabelPositionProperty = AvaloniaProperty.Register(nameof(LabelPosition),
-                                                                typeof(Point),
-                                                                typeof(VertexLabelControl),
-                                                                new PropertyMetadata(new Point()));
+        public static readonly StyledProperty<Point> LabelPositionProperty = AvaloniaProperty.Register<VertexLabelControl, Point>(nameof(LabelPosition));
         /// <summary>
         /// Gets or sets label position if LabelPositionMode is set to Coordinates
         /// Position is always measured from top left VERTEX corner.
         /// </summary>
         public Point LabelPosition
         {
-            get => (Point)GetValue(LabelPositionProperty);
+            get => GetValue(LabelPositionProperty);
             set => SetValue(LabelPositionProperty, value);
         }
 
-        public static readonly StyledProperty LabelPositionModeProperty = AvaloniaProperty.Register(nameof(LabelPositionMode),
-                                                                        typeof(VertexLabelPositionMode),
-                                                                        typeof(VertexLabelControl),
-                                                                        new PropertyMetadata(VertexLabelPositionMode.Sides));
+        public static readonly StyledProperty<VertexLabelPositionMode> LabelPositionModeProperty = AvaloniaProperty.Register<VertexLabelControl, VertexLabelPositionMode>(nameof(LabelPositionMode), VertexLabelPositionMode.Sides);
         /// <summary>
         /// Gets or set label positioning mode
         /// </summary>
         public VertexLabelPositionMode LabelPositionMode
         {
-            get => (VertexLabelPositionMode)GetValue(LabelPositionModeProperty);
+            get => GetValue(LabelPositionModeProperty);
             set => SetValue(LabelPositionModeProperty, value);
         }
 
 
-        public static readonly StyledProperty LabelPositionSideProperty = AvaloniaProperty.Register(nameof(LabelPositionSide),
-                                                                                typeof(VertexLabelPositionSide),
-                                                                                typeof(VertexLabelControl),
-                                                                                new PropertyMetadata(VertexLabelPositionSide.BottomRight));
+        public static readonly StyledProperty<VertexLabelPositionSide> LabelPositionSideProperty = AvaloniaProperty.Register<VertexLabelControl, VertexLabelPositionSide>(nameof(LabelPositionSide), VertexLabelPositionSide.BottomRight);
         /// <summary>
         /// Gets or sets label position side if LabelPositionMode is set to Sides
         /// </summary>
-        public VertexLabelPositionSide LabelPositionSide 
+        public VertexLabelPositionSide LabelPositionSide
         {
             get => (VertexLabelPositionSide)GetValue(LabelPositionSideProperty);
             set => SetValue(LabelPositionSideProperty, value);
@@ -87,11 +75,11 @@ namespace Westermo.GraphX.Controls.Avalonia
 
         public VertexLabelControl()
         {
-            if (DesignerProperties.GetIsInDesignMode(this)) return;
+            if (Design.IsDesignMode) return;
 
             LayoutUpdated += VertexLabelControl_LayoutUpdated;
-            HorizontalAlignment = HorizontalAlignment.Left;
-            VerticalAlignment = VerticalAlignment.Top;
+            HorizontalAlignment = global::Avalonia.Layout.HorizontalAlignment.Left;
+            VerticalAlignment = global::Avalonia.Layout.VerticalAlignment.Top;
         }
 
         protected virtual VertexControl? GetVertexControl(Control? parent)
@@ -99,7 +87,7 @@ namespace Westermo.GraphX.Controls.Avalonia
             while (parent != null)
             {
                 if (parent is VertexControl control) return control;
-                parent = VisualTreeHelper.GetParent(parent);
+                parent = parent.GetVisualParent() as Control;
             }
             return null;
         }
@@ -107,7 +95,7 @@ namespace Westermo.GraphX.Controls.Avalonia
 
         public virtual void UpdatePosition()
         {
-           if (double.IsNaN(DesiredSize.Width) || DesiredSize.Width == 0) return;
+            if (double.IsNaN(DesiredSize.Width) || DesiredSize.Width == 0) return;
 
             var vc = GetVertexControl(GetParent());
             if (vc == null) return;
@@ -127,7 +115,7 @@ namespace Westermo.GraphX.Controls.Avalonia
                     _ => throw new GX_InvalidDataException("UpdatePosition() -> Unknown vertex label side!"),
                 };
                 LastKnownRectSize = new Rect(pt, DesiredSize);
-            } 
+            }
             else LastKnownRectSize = new Rect(LabelPosition, DesiredSize);
 
             Arrange(LastKnownRectSize);
@@ -135,12 +123,12 @@ namespace Westermo.GraphX.Controls.Avalonia
 
         public void Hide()
         {
-            SetCurrentValue(VisibilityProperty, Visibility.Collapsed);
+            SetCurrentValue(IsVisibleProperty, false);
         }
 
         public void Show()
         {
-            SetCurrentValue(VisibilityProperty, Visibility.Visible);
+            SetCurrentValue(IsVisibleProperty, true);
         }
 
         private void VertexLabelControl_LayoutUpdated(object? sender, DefaultEventArgs e)
@@ -150,9 +138,9 @@ namespace Westermo.GraphX.Controls.Avalonia
             UpdatePosition();
         }
 
-        protected virtual Control GetParent()
+        protected virtual Control? GetParent()
         {
-            return VisualParent;
+            return this.GetVisualParent() as Control;
         }
     }
 

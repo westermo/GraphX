@@ -3,19 +3,57 @@
         xmlns:vm="using:ShowcaseApp.Avalonia.ViewModels"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:pages="clr-namespace:ShowcaseApp.Avalonia.Pages"
+        xmlns:mini="clr-namespace:ShowcaseApp.Avalonia.Pages.Mini"
+        xmlns:debug="clr-namespace:ShowcaseApp.Avalonia.Pages.Debug"
         mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
         x:Class="ShowcaseApp.Avalonia.Views.MainWindow"
         x:DataType="vm:MainWindowViewModel"
         Icon="/Assets/avalonia-logo.ico"
         Title="ShowcaseApp.Avalonia">
-
     <Design.DataContext>
         <!-- This only sets the DataContext for the previewer in an IDE,
              to set the actual DataContext for runtime, set the DataContext property in code (look at App.axaml.cs) -->
-        <vm:MainWindowViewModel/>
+        <vm:MainWindowViewModel />
     </Design.DataContext>
     <TabControl>
-        
+        <TabItem Header="General">
+            <pages:GeneralGraph />
+        </TabItem>
+        <TabItem Header="Dynamic">
+            <pages:DynamicGraph />
+        </TabItem>
+        <TabItem Header="Editor">
+            <pages:EditorGraph />
+        </TabItem>
+        <TabItem Header="Edgy">
+            <pages:EdgeRoutingGraph />
+        </TabItem>
+        <TabItem Header="NN">
+            <pages:NNGraph />
+        </TabItem>
+        <TabItem Header="Themed">
+            <pages:ThemedGraph />
+        </TabItem>
+        <TabItem Header="Mini">
+            <TabControl>
+                <TabItem Header="Filtering">
+                    <mini:DataFiltering />
+                </TabItem>
+                <TabItem Header="EdgesParallel">
+                    <mini:EdgesParallel />
+                </TabItem>
+                <TabItem Header="Grouped">
+                    <mini:LayoutGrouped />
+                </TabItem>
+                <TabItem Header="VCP">
+                    <mini:LayoutVCP />
+                </TabItem>
+            </TabControl>
+        </TabItem>
+        <TabItem Header="Debug">
+            <debug:DebugGraph />
+        </TabItem>
     </TabControl>
 
 </Window>

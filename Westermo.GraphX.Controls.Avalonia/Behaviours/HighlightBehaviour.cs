@@ -36,54 +36,54 @@ namespace Westermo.GraphX.Controls.Avalonia
                 typeof(HighlightBehaviour),
                 HighlightedEdgeType.None);
 
-        public static HighlightedEdgeType GetHighlightedEdgeType(Control obj)
+        public static HighlightedEdgeType GetHighlightedEdgeType(Control? obj)
         {
-            return obj.GetValue(HighlightedEdgeTypeProperty);
+            return obj?.GetValue(HighlightedEdgeTypeProperty) ?? HighlightedEdgeType.None;
         }
 
-        public static void SetHighlightedEdgeType(Control obj, HighlightedEdgeType value)
+        public static void SetHighlightedEdgeType(Control? obj, HighlightedEdgeType value)
         {
-            obj.SetValue(HighlightedEdgeTypeProperty, value);
+            obj?.SetValue(HighlightedEdgeTypeProperty, value);
         }
 
-        public static bool GetIsHighlightEnabled(Control obj)
+        public static bool GetIsHighlightEnabled(Control? obj)
         {
-            return obj.GetValue(IsHighlightEnabledProperty);
+            return obj?.GetValue(IsHighlightEnabledProperty) ?? false;
         }
 
-        public static void SetIsHighlightEnabled(Control obj, bool value)
+        public static void SetIsHighlightEnabled(Control? obj, bool value)
         {
-            obj.SetValue(IsHighlightEnabledProperty, value);
+            obj?.SetValue(IsHighlightEnabledProperty, value);
         }
 
-        public static bool GetHighlighted(Control obj)
+        public static bool GetHighlighted(Control? obj)
         {
-            return obj.GetValue(HighlightedProperty);
+            return obj?.GetValue(HighlightedProperty) ?? false;
         }
 
-        public static void SetHighlighted(Control obj, bool value)
+        public static void SetHighlighted(Control? obj, bool value)
         {
-            obj.SetValue(HighlightedProperty, value);
+            obj?.SetValue(HighlightedProperty, value);
         }
 
-        public static GraphControlType GetHighlightControl(Control obj)
+        public static GraphControlType GetHighlightControl(Control? obj)
         {
-            return obj.GetValue(HighlightControlProperty);
+            return obj?.GetValue(HighlightControlProperty) ?? GraphControlType.VertexAndEdge;
         }
 
-        public static void SetHighlightControl(Control obj, GraphControlType value)
+        public static void SetHighlightControl(Control? obj, GraphControlType value)
         {
-            obj.SetValue(HighlightControlProperty, value);
+            obj?.SetValue(HighlightControlProperty, value);
         }
 
-        public static EdgesType GetHighlightEdges(Control obj)
+        public static EdgesType GetHighlightEdges(Control? obj)
         {
-            return obj.GetValue(HighlightEdgesProperty);
+            return obj?.GetValue(HighlightEdgesProperty) ?? EdgesType.Out;
         }
 
-        public static void SetHighlightEdges(Control obj, EdgesType value)
+        public static void SetHighlightEdges(Control? obj, EdgesType value)
         {
-            obj.SetValue(HighlightEdgesProperty, value);
+            obj?.SetValue(HighlightEdgesProperty, value);
         }
 
         #endregion
@@ -116,6 +116,7 @@ namespace Westermo.GraphX.Controls.Avalonia
         {
             if (sender is Control == false) return;
             if (sender is not IGraphControl ctrl) return;
+            if (ctrl.RootArea is null) return;
 
             var type = GetHighlightControl((Control)sender);
             var edgesType = GetHighlightEdges((Control)sender);
@@ -144,7 +145,7 @@ namespace Westermo.GraphX.Controls.Avalonia
         {
             if (sender is Control == false) return;
             if (sender is not IGraphControl ctrl) return;
-
+            if (ctrl.RootArea is null) return;
             var type = GetHighlightControl((Control)sender);
             var edgesType = GetHighlightEdges((Control)sender);
             SetHighlighted((Control)sender, true);

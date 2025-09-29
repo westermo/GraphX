@@ -1,6 +1,6 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
     <PropertyGroup>
-        <OutputType>WinExe</OutputType>
+        <OutputType>exe</OutputType>
         <TargetFramework>net9.0</TargetFramework>
         <Nullable>enable</Nullable>
         <BuiltInComInteropSupport>true</BuiltInComInteropSupport>
@@ -9,32 +9,83 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <Folder Include="Models\"/>
         <AvaloniaResource Include="Assets\**"/>
     </ItemGroup>
 
     <ItemGroup>
-        <PackageReference Include="Avalonia" Version="11.2.1"/>
-        <PackageReference Include="Avalonia.Desktop" Version="11.2.1"/>
-        <PackageReference Include="Avalonia.Themes.Fluent" Version="11.2.1"/>
-        <PackageReference Include="Avalonia.Fonts.Inter" Version="11.2.1"/>
+        <PackageReference Include="Avalonia"/>
+        <PackageReference Include="Avalonia.Desktop"/>
+        <PackageReference Include="Avalonia.Themes.Fluent"/>
+        <PackageReference Include="Avalonia.Fonts.Inter"/>
         <!--Condition below is needed to remove Avalonia.Diagnostics package from build output in Release configuration.-->
-        <PackageReference Include="Avalonia.Diagnostics" Version="11.2.1">
+        <PackageReference Include="Avalonia.Diagnostics">
             <IncludeAssets Condition="'$(Configuration)' != 'Debug'">None</IncludeAssets>
             <PrivateAssets Condition="'$(Configuration)' != 'Debug'">All</PrivateAssets>
         </PackageReference>
-        <PackageReference Include="CommunityToolkit.Mvvm" Version="8.2.1"/>
+        <PackageReference Include="CommunityToolkit.Mvvm"/>
+        <PackageReference Include="YAXLib"/>
     </ItemGroup>
 
     <ItemGroup>
         <ProjectReference Include="..\..\Westermo.GraphX.Controls.Avalonia\Westermo.GraphX.Controls.Avalonia.csproj"/>
         <ProjectReference Include="..\..\Westermo.GraphX.Logic\Westermo.GraphX.Logic.csproj"/>
     </ItemGroup>
+
     <ItemGroup>
-        <AvaloniaXaml Include="Views\EdgeRoutingGraph.axaml">
+        <Page Include="Pages\Debug\DebugGraph.axaml">
             <Generator>MSBuild:Compile</Generator>
-            <XamlRuntime>Wpf</XamlRuntime>
+            <XamlRuntime>Avalonia</XamlRuntime>
             <SubType>Designer</SubType>
-        </AvaloniaXaml>
+        </Page>
+        <Page Include="Pages\DynamicGraph.axaml">
+            <Generator>MSBuild:Compile</Generator>
+            <XamlRuntime>Avalonia</XamlRuntime>
+            <SubType>Designer</SubType>
+        </Page>
+        <Page Include="Pages\EdgeRoutingGraph.axaml">
+            <Generator>MSBuild:Compile</Generator>
+            <XamlRuntime>Avalonia</XamlRuntime>
+            <SubType>Designer</SubType>
+        </Page>
+        <Page Include="Pages\EditorGraph.axaml">
+            <Generator>MSBuild:Compile</Generator>
+            <XamlRuntime>Avalonia</XamlRuntime>
+            <SubType>Designer</SubType>
+        </Page>
+        <Page Include="Pages\GeneralGraph.axaml">
+            <Generator>MSBuild:Compile</Generator>
+            <XamlRuntime>Avalonia</XamlRuntime>
+            <SubType>Designer</SubType>
+        </Page>
+        <Page Include="Pages\Mini\DataFiltering.axaml">
+            <Generator>MSBuild:Compile</Generator>
+            <XamlRuntime>Avalonia</XamlRuntime>
+            <SubType>Designer</SubType>
+        </Page>
+        <Page Include="Pages\Mini\EdgesParallel.axaml">
+            <Generator>MSBuild:Compile</Generator>
+            <XamlRuntime>Avalonia</XamlRuntime>
+            <SubType>Designer</SubType>
+        </Page>
+        <Page Include="Pages\Mini\LayoutGrouped.axaml">
+            <Generator>MSBuild:Compile</Generator>
+            <XamlRuntime>Avalonia</XamlRuntime>
+            <SubType>Designer</SubType>
+        </Page>
+        <Page Include="Pages\Mini\LayoutVCP.axaml">
+            <Generator>MSBuild:Compile</Generator>
+            <XamlRuntime>Avalonia</XamlRuntime>
+            <SubType>Designer</SubType>
+        </Page>
+        <Page Include="Pages\NNGraph.axaml">
+            <Generator>MSBuild:Compile</Generator>
+            <XamlRuntime>Avalonia</XamlRuntime>
+            <SubType>Designer</SubType>
+        </Page>
+        <Page Include="Pages\ThemedGraph.axaml">
+            <Generator>MSBuild:Compile</Generator>
+            <XamlRuntime>Avalonia</XamlRuntime>
+            <SubType>Designer</SubType>
+        </Page>
     </ItemGroup>
 </Project>

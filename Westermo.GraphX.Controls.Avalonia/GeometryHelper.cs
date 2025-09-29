@@ -206,7 +206,8 @@ namespace Westermo.GraphX.Controls.Avalonia
             {
                 VertexShape.Circle => GetEdgeEndpointOnCircle(source,
                     Math.Max(sourceSize.Height, sourceSize.Width) * .5, target, angle),
-                VertexShape.Ellipse => GetEdgeEndpointOnEllipse(source, sourceSize.Width * .5, sourceSize.Height * .5,
+                VertexShape.Ellipse => GetEdgeEndpointOnEllipse(source, sourceSize.Width * .5,
+                    sourceSize.Height * .5,
                     target, angle),
                 VertexShape.Diamond => GetEdgeEndpointOnDiamond(source, sourceSize.Width * .5, target),
                 VertexShape.Triangle => GetEdgeEndpointOnTriangle(source, sourceSize.Width * .5, target),
@@ -214,10 +215,10 @@ namespace Westermo.GraphX.Controls.Avalonia
             };
         }
 
-
         public static Point GetEdgeEndpointOnCircle(Point oVertexALocation, double dVertexARadius,
             Point oVertexBLocation, double angle = 0)
         {
+            if (double.IsNaN(dVertexARadius)) return oVertexALocation;
             Debug.Assert(dVertexARadius >= 0);
 
             var dEdgeAngle = MathHelper.GetAngleBetweenPoints(oVertexALocation.ToGraphX(), oVertexBLocation.ToGraphX());
@@ -246,7 +247,7 @@ namespace Westermo.GraphX.Controls.Avalonia
                 sourcePoint.Y - dVertexARadiusHeight * Math.Sin(dEdgeAngle)
             );
             if (angle != 0)
-                pt = MathHelper.RotatePoint(pt.ToGraphX(), oVertexALocation.ToGraphX(), angle).ToAvaloniaPoint();
+                pt = MathHelper.RotatePoint(pt.ToGraphX(), oVertexALocation.ToGraphX(), angle).ToAvalonia();
             return pt;
         }
 
@@ -380,7 +381,7 @@ namespace Westermo.GraphX.Controls.Avalonia
 
             Point Rotate(Point p, double a) => angle == 0.0
                 ? p
-                : MathHelper.RotatePoint(p.ToGraphX(), sourceBounds.Center().ToGraphX(), a).ToAvaloniaPoint();
+                : MathHelper.RotatePoint(p.ToGraphX(), sourceBounds.Center().ToGraphX(), a).ToAvalonia();
         }
 
         public static PathFigure GenerateOldArrow(Point ip1, Point ip2)

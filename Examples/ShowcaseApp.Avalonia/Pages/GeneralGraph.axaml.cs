@@ -1,0 +1,265 @@
+﻿using System;
+using System.Linq;
+using Avalonia.Controls;
+using Avalonia.Input;
+using Avalonia.Interactivity;
+using QuikGraph;
+using ShowcaseApp.Avalonia.ExampleModels;
+using ShowcaseApp.Avalonia.Models;
+using Westermo.GraphX.Common.Enums;
+using Westermo.GraphX.Controls.Avalonia;
+using Westermo.GraphX.Controls.Avalonia.Models;
+using Westermo.GraphX.Logic.Algorithms.EdgeRouting;
+using Westermo.GraphX.Logic.Algorithms.LayoutAlgorithms;
+using Rect = Westermo.GraphX.Measure.Rect;
+
+namespace ShowcaseApp.Avalonia.Pages
+{
+    /// <summary>
+    /// Interaction logic for GeneralGraph.xaml
+    /// </summary>
+    public partial class GeneralGraph : UserControl
+    {
+        public GeneralGraph()
+        {
+            InitializeComponent();
+            DataContext = this;
+
+            gg_vertexCount.Text = "30";
+            var ggLogic = new LogicCoreExample();
+            gg_Area.LogicCore = ggLogic;
+
+            gg_layalgo.SelectionChanged += gg_layalgo_SelectionChanged;
+            gg_oralgo.SelectionChanged += gg_oralgo_SelectionChanged;
+            gg_eralgo.SelectionChanged += gg_eralgo_SelectionChanged;
+
+            gg_layalgo.ItemsSource = Enum.GetValues<LayoutAlgorithmTypeEnum>();
+            gg_layalgo.SelectedItem = LayoutAlgorithmTypeEnum.KK;
+
+            gg_oralgo.ItemsSource = Enum.GetValues<OverlapRemovalAlgorithmTypeEnum>();
+            gg_oralgo.SelectedIndex = 0;
+
+            gg_eralgo.ItemsSource = Enum.GetValues<EdgeRoutingAlgorithmTypeEnum>();
+            gg_eralgo.SelectedItem = EdgeRoutingAlgorithmTypeEnum.SimpleER;
+
+            gg_but_randomgraph.Click += gg_but_randomgraph_Click;
+            gg_async.IsCheckedChanged += gg_async_Checked;
+            gg_Area.RelayoutFinished += gg_Area_RelayoutFinished;
+            gg_Area.GenerateGraphFinished += gg_Area_GenerateGraphFinished;
+            gg_Area.VertexLabelFactory = new DefaultVertexLabelFactory();
+            gg_Area.SetEdgesDrag(true);
+
+            ggLogic.DefaultEdgeRoutingAlgorithm = EdgeRoutingAlgorithmTypeEnum.SimpleER;
+            ggLogic.EdgeCurvingEnabled = true;
+            gg_Area.ShowAllEdgesArrows();
+
+            gg_zoomctrl.IsAnimationEnabled = true;
+            gg_zoomctrl.ZoomStep = 2;
+
+            Loaded += GG_Loaded;
+        }
+
+        private void GG_Loaded(object? sender, RoutedEventArgs e)
+        {
+            GG_RegisterCommands();
+        }
+
+        #region Commands
+
+        #region GGRelayoutCommand
+
+        private bool GGRelayoutCommandCanExecute(object? sender)
+        {
+            return true;
+        }
+
+        private void GgRelayoutCommandExecute(object? sender)
+        {
+            if (gg_Area.LogicCore!.AsyncAlgorithmCompute)
+                gg_loader.IsVisible = true;
+            gg_Area.RelayoutGraph(true);
+        }
+
+        #endregion
+
+        private void GG_RegisterCommands()
+        {
+            gg_but_relayout.Command = new SimpleCommand(GGRelayoutCommandCanExecute, GgRelayoutCommandExecute);
+        }
+
+        #endregion
+
+        private void gg_async_Checked(object? sender, RoutedEventArgs e)
+        {
+            gg_Area.LogicCore!.AsyncAlgorithmCompute = gg_async.IsChecked != null;
+        }
+
+        private void gg_saveAsPngImage_Click(object sender, RoutedEventArgs e)
+        {
+            _ = gg_Area.ExportAsImageDialog(ImageType.PNG, true);
+        }
+
+
+        private void gg_vertexCount_PreviewTextInput(object? sender, TextInputEventArgs e)
+        {
+            e.Handled = CustomHelper.IsIntegerInput(e.Text) &&
+                        Convert.ToInt32(e.Text) <= ShowcaseHelper.DATASOURCE_SIZE;
+        }
+
+        private void gg_layalgo_SelectionChanged(object? sender, SelectionChangedEventArgs e)
+        {
+            if (gg_layalgo.SelectedItem is not LayoutAlgorithmTypeEnum late) return;
+            if (gg_Area.LogicCore == null) return;
+            gg_Area.LogicCore.DefaultLayoutAlgorithm = late;
+            if (late == LayoutAlgorithmTypeEnum.EfficientSugiyama)
+            {
+                if (gg_Area.LogicCore.AlgorithmFactory.CreateLayoutParameters(LayoutAlgorithmTypeEnum
+                        .EfficientSugiyama)
+                    is EfficientSugiyamaLayoutParameters prms)
+                {
+                    prms.EdgeRouting = SugiyamaEdgeRoutings.Orthogonal;
+                    prms.LayerDistance = prms.VertexDistance = 100;
+                    gg_Area.LogicCore.EdgeCurvingEnabled = false;
+                    gg_Area.LogicCore.DefaultLayoutAlgorithmParams = prms;
+                }
+
+                gg_eralgo.SelectedItem = EdgeRoutingAlgorithmTypeEnum.None;
+            }
+            else
+            {
+                gg_Area.LogicCore.EdgeCurvingEnabled = true;
+            }
+
+            gg_Area.LogicCore.DefaultLayoutAlgorithmParams = late switch
+            {
+                LayoutAlgorithmTypeEnum.BoundedFR => gg_Area.LogicCore.AlgorithmFactory.CreateLayoutParameters(
+                    LayoutAlgorithmTypeEnum.BoundedFR),
+                LayoutAlgorithmTypeEnum.FR => gg_Area.LogicCore.AlgorithmFactory.CreateLayoutParameters(
+                    LayoutAlgorithmTypeEnum.FR),
+                _ => gg_Area.LogicCore.DefaultLayoutAlgorithmParams
+            };
+        }
+
+        private void gg_useExternalLayAlgo_Checked(object? sender, RoutedEventArgs routedEventArgs)
+        {
+            if (gg_useExternalLayAlgo.IsChecked == true)
+            {
+                var graph = gg_Area.LogicCore.Graph ??
+                            ShowcaseHelper.GenerateDataGraph(Convert.ToInt32(gg_vertexCount.Text));
+                gg_Area.LogicCore.Graph = graph;
+                AssignExternalLayoutAlgorithm(graph);
+            }
+            else gg_Area.LogicCore.ExternalLayoutAlgorithm = null;
+        }
+
+        private void AssignExternalLayoutAlgorithm(BidirectionalGraph<DataVertex, DataEdge> graph)
+        {
+            gg_Area.LogicCore.ExternalLayoutAlgorithm =
+                gg_Area.LogicCore.AlgorithmFactory.CreateLayoutAlgorithm(LayoutAlgorithmTypeEnum.ISOM, graph);
+        }
+
+        private void gg_oralgo_SelectionChanged(object? sender, SelectionChangedEventArgs e)
+        {
+            var core = gg_Area.LogicCore;
+            core.DefaultOverlapRemovalAlgorithm = (OverlapRemovalAlgorithmTypeEnum)gg_oralgo.SelectedItem;
+            if (core.DefaultOverlapRemovalAlgorithm == OverlapRemovalAlgorithmTypeEnum.FSA ||
+                core.DefaultOverlapRemovalAlgorithm == OverlapRemovalAlgorithmTypeEnum.OneWayFSA)
+            {
+                core.DefaultOverlapRemovalAlgorithmParams.HorizontalGap = 30;
+                core.DefaultOverlapRemovalAlgorithmParams.VerticalGap = 30;
+            }
+        }
+
+        private void gg_useExternalORAlgo_Checked(object sender, RoutedEventArgs e)
+        {
+            gg_Area.LogicCore.ExternalOverlapRemovalAlgorithm = gg_useExternalORAlgo.IsChecked == true
+                ? gg_Area.LogicCore.AlgorithmFactory.CreateOverlapRemovalAlgorithm(OverlapRemovalAlgorithmTypeEnum.FSA,
+                    null)
+                : null;
+        }
+
+        private void gg_eralgo_SelectionChanged(object? sender, SelectionChangedEventArgs e)
+        {
+            gg_Area.LogicCore.DefaultEdgeRoutingAlgorithm = (EdgeRoutingAlgorithmTypeEnum)gg_eralgo.SelectedItem;
+            if ((EdgeRoutingAlgorithmTypeEnum)gg_eralgo.SelectedItem == EdgeRoutingAlgorithmTypeEnum.Bundling)
+            {
+                var prm = new BundleEdgeRoutingParameters();
+                gg_Area.LogicCore.DefaultEdgeRoutingAlgorithmParams = prm;
+                prm.Iterations = 200;
+                prm.SpringConstant = 5;
+                prm.Threshold = .1f;
+                gg_Area.LogicCore.EdgeCurvingEnabled = true;
+            }
+            else
+                gg_Area.LogicCore.EdgeCurvingEnabled = false;
+        }
+
+        private void gg_useExternalERAlgo_Checked(object sender, RoutedEventArgs e)
+        {
+            if (gg_useExternalERAlgo.IsChecked == true)
+            {
+                var graph = gg_Area.LogicCore.Graph ??
+                            ShowcaseHelper.GenerateDataGraph(Convert.ToInt32(gg_vertexCount.Text));
+                gg_Area.LogicCore.Graph = graph;
+                gg_Area.GetLogicCore<LogicCoreExample>().ExternalEdgeRoutingAlgorithm =
+                    gg_Area.LogicCore.AlgorithmFactory.CreateEdgeRoutingAlgorithm(EdgeRoutingAlgorithmTypeEnum.SimpleER,
+                        new Rect(gg_Area.DesiredSize.ToGraphX()), graph, null, null);
+            }
+            else gg_Area.GetLogicCore<LogicCoreExample>().ExternalEdgeRoutingAlgorithm = null;
+        }
+
+        private void gg_Area_RelayoutFinished(object? sender, EventArgs e)
+        {
+            if (gg_Area.LogicCore.AsyncAlgorithmCompute)
+                gg_loader.IsVisible = false;
+            gg_zoomctrl.ZoomToFill();
+            gg_zoomctrl.Mode = ZoomControlModes.Custom;
+        }
+
+        /// <summary>
+        /// Use this event in case we have chosen async computation
+        /// </summary>
+        private void gg_Area_GenerateGraphFinished(object? sender, EventArgs e)
+        {
+            if (!gg_Area.EdgesList.Any())
+                gg_Area.GenerateAllEdges();
+            if (gg_Area.LogicCore.AsyncAlgorithmCompute)
+                gg_loader.IsVisible = false;
+
+            gg_zoomctrl.ZoomToFill();
+            gg_zoomctrl.Mode = ZoomControlModes.Custom;
+        }
+
+        private void gg_but_randomgraph_Click(object? sender, RoutedEventArgs e)
+        {
+            gg_Area.ClearLayout();
+            var mult = 25;
+            switch (gg_Area.LogicCore!.DefaultLayoutAlgorithm)
+            {
+                case LayoutAlgorithmTypeEnum.LinLog:
+                    mult = 45;
+                    break;
+                case LayoutAlgorithmTypeEnum.EfficientSugiyama:
+                case LayoutAlgorithmTypeEnum.Sugiyama:
+                    //graph = ShowcaseHelper.GenerateSugiDataGraph();
+                    break;
+            }
+
+            var graph = ShowcaseHelper.GenerateDataGraph(Convert.ToInt32(gg_vertexCount.Text), true, mult);
+
+            //add self loop
+            graph.AddEdge(new DataEdge(graph.Vertices.First(), graph.Vertices.First()));
+
+
+            //assign graph again as we need to update Graph param inside and i have no independent examples
+            if (gg_Area.LogicCore.ExternalLayoutAlgorithm != null)
+                AssignExternalLayoutAlgorithm(graph);
+
+            if (gg_Area.LogicCore.AsyncAlgorithmCompute)
+                gg_loader.IsVisible = true;
+
+            //supplied graph will be automaticaly be assigned to GraphArea::LogicCore.Graph property
+            gg_Area.GenerateGraph(graph);
+        }
+    }
+}

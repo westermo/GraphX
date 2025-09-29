@@ -6,6 +6,7 @@ using Avalonia.Controls.Metadata;
 using Avalonia.Controls.Primitives;
 using Avalonia.Input;
 using Avalonia.Interactivity;
+using Avalonia.VisualTree; // added for visual tree traversal without re-applying template on self
 using Westermo.GraphX.Common.Enums;
 using Westermo.GraphX.Common.Exceptions;
 using Westermo.GraphX.Common.Interfaces;
@@ -41,13 +42,16 @@ namespace Westermo.GraphX.Controls.Avalonia
         {
             if (bindToDataObject) DataContext = vertexData;
             Vertex = vertexData;
-
-            EventOptions = new VertexEventOptions(this) { PositionChangeNotification = tracePositionChange };
-            foreach (var item in Enum.GetValues<EventType>())
-                UpdateEventhandling(item);
+            DoubleTapped += OnDoubleTapped;
         }
 
-        public T? FindDescendant<T>(TemplateAppliedEventArgs templateAppliedEventArgs, string name) where T : class
+        ~VertexControl()
+        {
+            DoubleTapped -= OnDoubleTapped;
+        }
+
+        public static T? FindDescendant<T>(TemplateAppliedEventArgs templateAppliedEventArgs, string name)
+            where T : class
         {
             return templateAppliedEventArgs.NameScope.Find<T>(name);
         }
@@ -57,63 +61,23 @@ namespace Westermo.GraphX.Controls.Avalonia
         private bool _clickTrack;
         private Point _clickTrackPoint;
 
-        internal void UpdateEventhandling(EventType typ)
+        protected override void OnPointerMoved(PointerEventArgs e)
         {
-            switch (typ)
+            base.OnPointerMoved(e);
+            if (_clickTrack)
             {
-                case EventType.MouseClick:
-                    if (EventOptions is { MouseClickEnabled: true })
-                    {
-                        PointerPressed += VertexControl_Down;
-                        PointerMoved += VertexControl_PreviewMouseMove;
-                    }
-                    else
-                    {
-                        PointerPressed -= VertexControl_Down;
-                        PointerMoved -= VertexControl_PreviewMouseMove;
-                    }
+                var curPoint = RootArea != null ? e.GetPosition(RootArea) : new Point();
 
-                    break;
-
-                case EventType.MouseDoubleClick:
-                    if (EventOptions is { MouseDoubleClickEnabled: true })
-                        DoubleTapped += VertexControl_MouseDoubleClick;
-                    else DoubleTapped -= VertexControl_MouseDoubleClick;
-                    break;
-
-                case EventType.MouseMove:
-                    if (EventOptions is { MouseMoveEnabled: true }) PointerMoved += VertexControl_MouseMove;
-                    else PointerMoved -= VertexControl_MouseMove;
-                    break;
-
-                case EventType.MouseEnter:
-                    if (EventOptions is { MouseEnterEnabled: true }) PointerEntered += VertexControl_MouseEnter;
-                    else PointerEntered -= VertexControl_MouseEnter;
-                    break;
-
-                case EventType.MouseLeave:
-                    if (EventOptions is { MouseLeaveEnabled: true }) PointerExited += VertexControl_MouseLeave;
-                    else PointerExited -= VertexControl_MouseLeave;
-                    break;
+                if (curPoint != _clickTrackPoint)
+                    _clickTrack = false;
             }
 
-            PointerReleased -= VertexControl_MouseUp;
-            PointerReleased += VertexControl_MouseUp;
+            RootArea?.OnVertexMouseMove(this, e);
         }
 
-        private void VertexControl_PreviewMouseMove(object? sender, PointerEventArgs e)
+        protected override void OnPointerReleased(PointerReleasedEventArgs e)
         {
-            if (!_clickTrack)
-                return;
-
-            var curPoint = RootArea != null ? e.GetPosition(RootArea) : new Point();
-
-            if (curPoint != _clickTrackPoint)
-                _clickTrack = false;
-        }
-
-        private void VertexControl_MouseUp(object? sender, PointerReleasedEventArgs e)
-        {
+            base.OnPointerReleased(e);
             if (RootArea != null && IsVisible)
             {
                 RootArea.OnVertexMouseUp(this, e, e.KeyModifiers);
@@ -128,15 +92,15 @@ namespace Westermo.GraphX.Controls.Avalonia
             e.Handled = true;
         }
 
-        private void VertexControl_MouseDoubleClick(object? sender, TappedEventArgs e)
+        private void OnDoubleTapped(object? sender, TappedEventArgs e)
         {
-            if (RootArea != null && IsVisible)
-                RootArea.OnVertexDoubleClick(this, e);
-            //e.Handled = true;
+            if (!IsVisible) return;
+            RootArea?.OnVertexDoubleClick(this, e);
         }
 
-        private void VertexControl_Down(object? sender, PointerPressedEventArgs e)
+        protected override void OnPointerPressed(PointerPressedEventArgs e)
         {
+            base.OnPointerPressed(e);
             if (RootArea != null && IsVisible)
                 RootArea.OnVertexSelected(this, e, e.KeyModifiers);
             _clickTrack = true;
@@ -181,7 +145,29 @@ namespace Westermo.GraphX.Controls.Avalonia
                 VertexLabelControl.UpdatePosition();
             }
 
-            VertexConnectionPointsList = this.FindDescendantsOfType<IVertexConnectionPoint>().ToList();
+            // Avoid infinite recursion: the previous implementation called this.FindDescendantsOfType<>()
+            // which internally invoked ApplyTemplate() on the control itself while already inside OnApplyTemplate,
+            // leading to repeated OnApplyTemplate calls. We now start the search from VCPRoot if available, otherwise
+            // only traverse direct visual children of this control (without re-applying this template).
+            if (VCPRoot is Visual vcpVisual)
+            {
+                VertexConnectionPointsList = vcpVisual.FindDescendantsOfType<IVertexConnectionPoint>().ToList();
+            }
+            else
+            {
+                var result = new System.Collections.Generic.List<IVertexConnectionPoint>();
+                if (this is Visual selfVisual)
+                {
+                    foreach (var child in selfVisual.GetVisualChildren())
+                    {
+                        foreach (var item in child.FindDescendantsOfType<IVertexConnectionPoint>())
+                            result.Add(item);
+                    }
+                }
+
+                VertexConnectionPointsList = result;
+            }
+
             if (VertexConnectionPointsList.GroupBy(x => x.Id).Count(group => @group.Count() > 1) > 0)
                 throw new GX_InvalidDataException(
                     "Vertex connection points in VertexControl template must have unique Id!");
@@ -189,22 +175,18 @@ namespace Westermo.GraphX.Controls.Avalonia
 
         #region Events handling
 
-        private void VertexControl_MouseLeave(object? sender, PointerEventArgs e)
+        protected override void OnPointerEntered(PointerEventArgs e)
         {
-            if (RootArea != null && IsVisible)
-                RootArea.OnVertexMouseLeave(this, e);
+            base.OnPointerEntered(e);
+            if (!IsVisible) return;
+            RootArea?.OnVertexMouseEnter(this, e);
         }
 
-        private void VertexControl_MouseEnter(object? sender, PointerEventArgs e)
+        protected override void OnPointerExited(PointerEventArgs e)
         {
-            if (RootArea != null && IsVisible)
-                RootArea.OnVertexMouseEnter(this, e);
-        }
-
-        private void VertexControl_MouseMove(object? sender, PointerEventArgs e)
-        {
-            if (RootArea != null)
-                RootArea.OnVertexMouseMove(this, e);
+            base.OnPointerExited(e);
+            if (!IsVisible) return;
+            RootArea?.OnVertexMouseLeave(this, e);
         }
 
         #endregion Events handling
@@ -219,12 +201,6 @@ namespace Westermo.GraphX.Controls.Avalonia
             HighlightBehaviour.SetIsHighlightEnabled(this, false);
             DragBehaviour.SetIsDragEnabled(this, false);
             VertexLabelControl = null;
-
-            if (EventOptions != null)
-            {
-                EventOptions.PositionChangeNotification = false;
-                EventOptions.Clean();
-            }
         }
 
         /// <summary>
@@ -240,7 +216,7 @@ namespace Westermo.GraphX.Controls.Avalonia
         {
             if (ShowLabel)
                 VertexLabelControl?.UpdatePosition();
-            OnPositionChanged(new Point(), GetPosition().ToAvaloniaPoint());
+            OnPositionChanged(new Point(), GetPosition());
         }
     }
 }
