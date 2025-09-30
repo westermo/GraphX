@@ -82,7 +82,7 @@ public class EdgeGeometryTests
         var geom = ec.GetLineGeometry();
         var ellipse = geom as EllipseGeometry;
         await Assert.That(ellipse).IsNotNull();
-        await Verify(new EllipseDescriptor(ellipse));
+        await Verify(new EllipseDescriptor(ellipse!));
     }
 
     [Test]
