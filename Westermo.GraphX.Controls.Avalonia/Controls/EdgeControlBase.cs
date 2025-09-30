@@ -190,12 +190,10 @@ namespace Westermo.GraphX.Controls.Avalonia
             Loaded += EdgeControlBase_Loaded;
         }
 
-        private bool _isInDesignMode;
 
         private void EdgeControlBase_Loaded(object? sender, RoutedEventArgs e)
         {
             Loaded -= EdgeControlBase_Loaded;
-            _isInDesignMode = CustomHelper.IsInDesignMode(this);
         }
 
         private bool _updateLabelPosition;
@@ -531,7 +529,8 @@ namespace Westermo.GraphX.Controls.Avalonia
                 EdgePointerForTarget?.Hide();
             }
 
-            PrepareEdgePath(true, null, updateLabel);
+            //use final vertex coordinates (layout results) instead of current to avoid drawing collapsed edges before animation/position commit
+            PrepareEdgePath(false, null, updateLabel);
             if (LinePathObject == null) return;
             LinePathObject.Data = LineGeometry;
             LinePathObject.StrokeDashArray = StrokeDashArray;
@@ -621,11 +620,17 @@ namespace Westermo.GraphX.Controls.Avalonia
             //if we has no self looped edge template defined we'll use default built-in indicator
             if (hasNoTemplate)
             {
-                //var geometry = Linegeometry as EllipseGeometry;
-                //TODO
-                //geometry.Center = pt;
-                //geometry.RadiusX = SelfLoopIndicatorRadius;
-                //geometry.RadiusY = SelfLoopIndicatorRadius;
+                // Generate default ellipse geometry centered relative to calculated top-left point
+                if (LineGeometry is not EllipseGeometry ellipse)
+                {
+                    ellipse = new EllipseGeometry();
+                    LineGeometry = ellipse;
+                }
+
+                // Position ellipse so that (pt) represents its top-left corner
+                ellipse.Center = new Point(pt.X + SelfLoopIndicatorRadius, pt.Y + SelfLoopIndicatorRadius);
+                ellipse.RadiusX = SelfLoopIndicatorRadius;
+                ellipse.RadiusY = SelfLoopIndicatorRadius;
             }
             else _selfLoopedEdgeLastKnownRect = new Rect(pt, SelfLoopIndicator!.DesiredSize);
         }
@@ -843,26 +848,38 @@ namespace Westermo.GraphX.Controls.Avalonia
             Measure.Point[]? externalRoutingPoints = null, bool updateLabel = true)
         {
             //do not calculate invisible edges
-            if (!IsVisible && !IsHiddenEdgesUpdated && Source == null || Target == null ||
-                ManualDrawing || !IsTemplateLoaded) return;
+            if (Source is null) return;
+            if (Target is null) return;
 
             #region Get the inputs
 
+            var sx = useCurrentCoords ? GraphAreaBase.GetX(Source!) : GraphAreaBase.GetFinalX(Source!);
+            var sy = useCurrentCoords ? GraphAreaBase.GetY(Source!) : GraphAreaBase.GetFinalY(Source!);
+            var tx = useCurrentCoords ? GraphAreaBase.GetX(Target) : GraphAreaBase.GetFinalX(Target);
+            var ty = useCurrentCoords ? GraphAreaBase.GetY(Target) : GraphAreaBase.GetFinalY(Target);
+            // fallback to current if final not yet assigned
+            if (double.IsNaN(sx)) sx = GraphAreaBase.GetX(Source!);
+            if (double.IsNaN(sy)) sy = GraphAreaBase.GetY(Source!);
+            if (double.IsNaN(tx)) tx = GraphAreaBase.GetX(Target);
+            if (double.IsNaN(ty)) ty = GraphAreaBase.GetY(Target);
+            // if still NaN (no positions yet) postpone drawing
+            if (double.IsNaN(sx) || double.IsNaN(sy) || double.IsNaN(tx) || double.IsNaN(ty)) return;
+
             // Get the TopLeft position of the Source Vertex.
-            var sourceTopLeft = new Point(
-                useCurrentCoords ? GraphAreaBase.GetX(Source!) : GraphAreaBase.GetFinalX(Source!),
-                useCurrentCoords ? GraphAreaBase.GetY(Source!) : GraphAreaBase.GetFinalY(Source!));
+            var sourceTopLeft = new Point(sx, sy);
 
             // Get the TopLeft position of the Target Vertex.
-            var targetTopLeft = new Point(
-                useCurrentCoords ? GraphAreaBase.GetX(Target) : GraphAreaBase.GetFinalX(Target),
-                useCurrentCoords ? GraphAreaBase.GetY(Target) : GraphAreaBase.GetFinalY(Target));
+            var targetTopLeft = new Point(tx, ty);
 
             //get the size of the source
-            var sourceSize = _isInDesignMode ? new Size(80, 20) : new Size(Source!.Width, Source.Height);
+            var sourceSize = Design.IsDesignMode
+                ? new Size(80, 20)
+                : new Size(Source!.Bounds.Width, Source.Bounds.Height);
 
             //get the size of the target
-            var targetSize = _isInDesignMode ? new Size(80, 20) : new Size(Target.Width, Target.Height);
+            var targetSize = Design.IsDesignMode
+                ? new Size(80, 20)
+                : new Size(Target.Bounds.Width, Target.Bounds.Height);
 
             //get the position center of the source
             var sourceCenter = new Point(
@@ -1174,6 +1191,9 @@ namespace Westermo.GraphX.Controls.Avalonia
         {
             return EdgeLabelControls.Select(l => l.GetSize()).ToList();
         }
+
+        // Internal test accessor
+        internal Geometry? GetLineGeometry() => LineGeometry;
 
         /*  public void SetCustomLabelSize(SysRect rect)
           {

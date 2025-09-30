@@ -170,7 +170,7 @@ namespace Westermo.GraphX.Controls.Avalonia
             SetCurrentValue(ShowArrowsProperty, showArrows);
             IsHiddenEdgesUpdated = true;
 
-            if (!CustomHelper.IsInDesignMode(this))
+            if (!Design.IsDesignMode)
             {
                 // Trigger initial state
                 SourceChanged();

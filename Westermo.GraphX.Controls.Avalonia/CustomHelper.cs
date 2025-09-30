@@ -57,11 +57,6 @@ namespace Westermo.GraphX.Controls.Avalonia
             return null;
         }
 
-        public static bool IsInDesignMode(Control? ctrl = null)
-        {
-            return ctrl is not null && Application.Current?.ApplicationLifetime is null;
-        }
-
         [GeneratedRegex("[^0-9.]+")]
         private static partial Regex Double();
 

@@ -26,10 +26,8 @@
         <Border Grid.Row="1" Grid.Column="0" BorderBrush="{DynamicResource ButtonBorder}" BorderThickness="1"
                 Margin="2">
             <avalonia:ZoomControl x:Name="gg_zoomctrl"
-                                  Background="Blue"
-                                  BorderBrush="Red"
                                   Foreground="{DynamicResource ButtonText}">
-                <exampleModels:GraphAreaExample x:Name="gg_Area" Background="Green" />
+                <exampleModels:GraphAreaExample x:Name="gg_Area"/>
             </avalonia:ZoomControl>
         </Border>
 

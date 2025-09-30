@@ -378,14 +378,19 @@ internal class FunnyEdgeControl : EdgeControl
 
     protected override PathFigure TransformUnroutedPath(PathFigure original)
     {
-        var startPoint = original.StartPoint;
         if (original.Segments == null) return original;
+        var startPoint = original.StartPoint;
+        var figure = new PathFigure
+        {
+            StartPoint = startPoint,
+            Segments = [],
+            IsClosed = original.IsClosed
+        };
         var endPoint = original.Segments.OfType<LineSegment>().First().Point;
-        original.Segments.Clear();
         var poly = new PolyLineSegment();
-        var vector = endPoint - original.StartPoint;
+        var vector = endPoint - startPoint;
         var orthogonal = new Vector(-vector.Y, vector.X);
-        orthogonal.Normalize();
+        orthogonal = orthogonal.Normalize();
         for (double i = 1; i <= PointCount; i++)
         {
             var p = startPoint
@@ -395,8 +400,8 @@ internal class FunnyEdgeControl : EdgeControl
         }
 
         poly.IsStroked = true;
-        original.Segments.Add(poly);
+        figure.Segments.Add(poly);
 
-        return original;
+        return figure;
     }
 }

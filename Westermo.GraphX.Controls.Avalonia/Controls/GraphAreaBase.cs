@@ -506,7 +506,7 @@ namespace Westermo.GraphX
                 child.Arrange(new Rect(x, y, width, height));
             }
 
-            return CustomHelper.IsInDesignMode(this) ? DesignSize :
+            return Design.IsDesignMode ? DesignSize :
                 IsInPrintMode ? ContentSize.Size : new Size(10, 10);
         }
 
@@ -571,7 +571,7 @@ namespace Westermo.GraphX
             var newSize = ContentSize;
             if (oldSize != newSize)
                 OnContentSizeChanged(oldSize, newSize);
-            return CustomHelper.IsInDesignMode(this) ? DesignSize :
+            return Design.IsDesignMode ? DesignSize :
                 IsInPrintMode ? ContentSize.Size : new Size(10, 10);
         }
 

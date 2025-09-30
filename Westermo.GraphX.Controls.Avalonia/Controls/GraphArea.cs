@@ -25,8 +25,6 @@ namespace Westermo.GraphX.Controls.Avalonia
         where TEdge : class, IGraphXEdge<TVertex>
         where TGraph : class, IMutableBidirectionalGraph<TVertex, TEdge>
     {
-        private readonly TaskScheduler _uiTaskScheduler = null!;
-
         #region My properties
 
         static GraphArea()
@@ -218,16 +216,10 @@ namespace Westermo.GraphX.Controls.Avalonia
             EnableVisualPropsApply = true;
             EdgeLabelFactory = new DefaultEdgeLabelFactory();
             //VertexLabelFactory = new DefaultLabelFactory<AttachableVertexLabelControl, IVertexLabelControl>();
+            ControlFactory = new GraphControlFactory(this);
 
-            #region Designer Data
+            if (Design.IsDesignMode) return;
 
-            if (!CustomHelper.IsInDesignMode(this))
-            {
-                _uiTaskScheduler = TaskScheduler.FromCurrentSynchronizationContext();
-                ControlFactory = new GraphControlFactory(this);
-            }
-
-            #endregion
         }
 
         #region Edge & vertex controls operations
@@ -918,41 +910,9 @@ namespace Westermo.GraphX.Controls.Avalonia
             var dispatcher = Dispatcher.UIThread;
             if (dispatcher.CheckAccess())
                 action(); // On UI thread already, so make a direct call
-            else
-            {
-                try
-                {
-                    // Run through a task on the ui task scheduler. A dispatcher invoke will leave exceptions behind on the UI thread
-                    // and it will kill the application.
-                    Task.Factory.StartNew(action, CancellationToken.None, TaskCreationOptions.None, _uiTaskScheduler)
-                        .Wait();
-                }
-                catch (AggregateException ex)
-                {
-                    GraphArea<TVertex, TEdge, TGraph>.UnwrapAndRethrow(ex);
-                }
-            }
+            else dispatcher.Invoke(action);
         }
 
-        private T RunOnDispatcherThread<T>(Func<T> expr)
-        {
-            var dispatcher = Dispatcher.UIThread;
-            if (dispatcher.CheckAccess())
-                return expr();
-
-            try
-            {
-                // Run through a task on the ui task scheduler. A dispatcher invoke will leave exceptions behind on the UI thread
-                // and it will kill the application.
-                return Task.Factory.StartNew(expr, CancellationToken.None, TaskCreationOptions.None, _uiTaskScheduler)
-                    .Result;
-            }
-            catch (AggregateException ex)
-            {
-                GraphArea<TVertex, TEdge, TGraph>.UnwrapAndRethrow(ex);
-                throw; // Just to make the compiler shut up about not returning a value.
-            }
-        }
 
         private static void UnwrapAndRethrow(AggregateException ex)
         {

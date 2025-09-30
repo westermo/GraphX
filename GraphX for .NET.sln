@@ -39,6 +39,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ShowcaseApp.Avalonia", "Exa
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Westermo.GraphX.Controls.Avalonia", "Westermo.GraphX.Controls.Avalonia\Westermo.GraphX.Controls.Avalonia.csproj", "{70C7FEF7-F6DF-46C8-AEF1-AF6219544786}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Westermo.GraphX.Controls.Avalonia.Tests", "Westermo.GraphX.Controls.Avalonia.Tests\Westermo.GraphX.Controls.Avalonia.Tests.csproj", "{0A886D74-0214-475E-9228-B9B80D76E689}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -154,6 +156,22 @@ Global
 		{70C7FEF7-F6DF-46C8-AEF1-AF6219544786}.Release|x64.Build.0 = Release|Any CPU
 		{70C7FEF7-F6DF-46C8-AEF1-AF6219544786}.Release|x86.ActiveCfg = Release|Any CPU
 		{70C7FEF7-F6DF-46C8-AEF1-AF6219544786}.Release|x86.Build.0 = Release|Any CPU
+		{0A886D74-0214-475E-9228-B9B80D76E689}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{0A886D74-0214-475E-9228-B9B80D76E689}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{0A886D74-0214-475E-9228-B9B80D76E689}.Debug|ARM.ActiveCfg = Debug|Any CPU
+		{0A886D74-0214-475E-9228-B9B80D76E689}.Debug|ARM.Build.0 = Debug|Any CPU
+		{0A886D74-0214-475E-9228-B9B80D76E689}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{0A886D74-0214-475E-9228-B9B80D76E689}.Debug|x64.Build.0 = Debug|Any CPU
+		{0A886D74-0214-475E-9228-B9B80D76E689}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{0A886D74-0214-475E-9228-B9B80D76E689}.Debug|x86.Build.0 = Debug|Any CPU
+		{0A886D74-0214-475E-9228-B9B80D76E689}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{0A886D74-0214-475E-9228-B9B80D76E689}.Release|Any CPU.Build.0 = Release|Any CPU
+		{0A886D74-0214-475E-9228-B9B80D76E689}.Release|ARM.ActiveCfg = Release|Any CPU
+		{0A886D74-0214-475E-9228-B9B80D76E689}.Release|ARM.Build.0 = Release|Any CPU
+		{0A886D74-0214-475E-9228-B9B80D76E689}.Release|x64.ActiveCfg = Release|Any CPU
+		{0A886D74-0214-475E-9228-B9B80D76E689}.Release|x64.Build.0 = Release|Any CPU
+		{0A886D74-0214-475E-9228-B9B80D76E689}.Release|x86.ActiveCfg = Release|Any CPU
+		{0A886D74-0214-475E-9228-B9B80D76E689}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
