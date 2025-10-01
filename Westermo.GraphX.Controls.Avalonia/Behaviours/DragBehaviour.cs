@@ -1,11 +1,14 @@
 ﻿using System;
 using System.Diagnostics;
+using System.Linq;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Input;
+using Avalonia.Interactivity;
 using Avalonia.VisualTree;
 using Westermo.GraphX.Common.Exceptions;
 using Westermo.GraphX.Common.Interfaces;
+using Westermo.GraphX.Controls.Avalonia.Controls.Interfaces;
 
 namespace Westermo.GraphX.Controls.Avalonia
 {
@@ -45,7 +48,7 @@ namespace Westermo.GraphX.Controls.Avalonia
     /// </summary>
     public static class DragBehaviour
     {
-        public delegate double SnapModifierFunc(GraphAreaBase area, Control obj, double val);
+        public delegate double SnapModifierFunc(Visual container, Control obj, double val);
 
         #region Built-in snapping behavior
 
@@ -311,41 +314,111 @@ namespace Westermo.GraphX.Controls.Avalonia
 
         private static void OnIsDragEnabledPropertyChanged(Control obj, AvaloniaPropertyChangedEventArgs e)
         {
-            if (obj is not IInputElement element)
+            if (obj is not IDraggable draggable)
                 return;
 
-            if (e.NewValue is bool == false)
+            if (e.NewValue is not bool value)
                 return;
 
-            if ((bool)e.NewValue)
+            if (value)
             {
-                //register the event handlers
-                if (element is VertexControl)
-                {
-                    element.PointerReleased += OnVertexDragFinished;
-                    element.PointerPressed += OnVertexDragStarted;
-                }
-                else if (element is EdgeControl)
-                {
-                    element.PointerPressed += OnEdgeDragStarted;
-                    element.PointerReleased += OnEdgeDragFinished;
-                }
+                draggable.PointerReleased += PointerUp;
+                InputElement.PointerReleasedEvent.AddClassHandler<Control>(PointerUp,
+                    RoutingStrategies.Bubble | RoutingStrategies.Tunnel, true);
+                draggable.PointerPressed += PointerDown;
             }
             else
             {
-                switch (element)
-                {
-                    //unregister the event handlers
-                    case VertexControl:
-                        element.PointerPressed -= OnVertexDragStarted;
-                        element.PointerReleased -= OnVertexDragFinished;
-                        break;
-                    case EdgeControl:
-                        element.PointerPressed -= OnEdgeDragStarted;
-                        element.PointerReleased -= OnEdgeDragFinished;
-                        break;
-                }
+                draggable.PointerReleased -= PointerUp;
+                draggable.PointerPressed -= PointerDown;
             }
+        }
+
+        private static void PointerDown(object? sender, PointerPressedEventArgs e)
+        {
+            if (sender is not IDraggable draggable) return;
+            if (!draggable.StartDrag(e)) return;
+            draggable.PointerMoved += PointerMoved;
+            InputElement.PointerCaptureLostEvent.AddClassHandler<Control>(PointerCaptureLost,
+                RoutingStrategies.Bubble | RoutingStrategies.Tunnel);
+            e.Pointer.Capture(draggable);
+            var affected = GetTagged(draggable);
+            if (affected == null) return;
+            foreach (var control in affected)
+            {
+                if (control == draggable) continue;
+                control.StartDrag(e);
+            }
+
+            e.Handled = true;
+        }
+
+        private static IDraggable[]? GetTagged(IDraggable draggable)
+        {
+            var affected = draggable.Container?
+                .GetVisualDescendants()
+                .OfType<Control>().Where(GetIsTagged).OfType<IDraggable>().ToArray();
+            return affected;
+        }
+
+        private static void PointerUp(object? sender, PointerReleasedEventArgs e)
+        {
+            if (sender is not IDraggable draggable) return;
+            if (!draggable.EndDrag(e)) return;
+            draggable.PointerMoved -= PointerMoved;
+            if (e.Pointer.Captured == draggable)
+                e.Pointer.Capture(null);
+            var affected = GetTagged(draggable);
+            if (affected == null) return;
+            foreach (var control in affected)
+            {
+                if (control == draggable) continue;
+                control.EndDrag(e);
+            }
+        }
+
+        private static void PointerCaptureLost(object? sender, PointerCaptureLostEventArgs e)
+        {
+            if (sender is not IDraggable draggable) return;
+            if (!draggable.IsDragging) return;
+            draggable.EndDrag();
+            draggable.PointerMoved -= PointerMoved;
+            if (e.Pointer.Captured == draggable)
+                e.Pointer.Capture(null);
+            var affected = GetTagged(draggable);
+            if (affected == null) return;
+            foreach (var control in affected)
+            {
+                if (control == draggable) continue;
+                control.EndDrag();
+            }
+        }
+
+
+        private static void PointerMoved(object? sender, PointerEventArgs e)
+        {
+            if (sender is not IDraggable draggable) return;
+            draggable.Drag(e);
+
+            var affected = GetTagged(draggable);
+            if (affected == null) return;
+            foreach (var control in affected)
+            {
+                if (control == draggable) continue;
+                control.Drag(e);
+            }
+        }
+
+        public static Point Snap(IDraggable draggable, Point point)
+        {
+            if (draggable is not Control control) return point;
+            var root = draggable.Container;
+            if (root is null || !GetIsSnappingPredicate(control)(control)) return point;
+            var snapX = GetXSnapModifier(control);
+            var snapY = GetYSnapModifier(control);
+            var x = snapX(root, control, point.X);
+            var y = snapY(root, control, point.Y);
+            return new Point(x, y);
         }
 
         #endregion PropertyChanged callbacks
@@ -390,35 +463,33 @@ namespace Westermo.GraphX.Controls.Avalonia
 
             var vertexControl = graphAreaBase.GetVertexControlAt(e.GetPosition(graphAreaBase));
 
-            if (vertexControl != null)
+            if (vertexControl == null) return;
+            edgeControl.Target = vertexControl;
+
+            if (vertexControl.VertexConnectionPointsList.Count > 0)
             {
-                edgeControl.Target = vertexControl;
+                var vertexConnectionPoint = vertexControl.GetConnectionPointAt(e.GetPosition(graphAreaBase));
 
-                if (vertexControl.VertexConnectionPointsList.Count > 0)
+                var edge = (IGraphXCommonEdge)edgeControl.Edge!;
+
+                if (vertexConnectionPoint != null)
                 {
-                    var vertexConnectionPoint = vertexControl.GetConnectionPointAt(e.GetPosition(graphAreaBase));
-
-                    var edge = (IGraphXCommonEdge)edgeControl.Edge!;
-
-                    if (vertexConnectionPoint != null)
-                    {
-                        edge.TargetConnectionPointId = vertexConnectionPoint.Id;
-                    }
-                    else
-                    {
-                        edge.TargetConnectionPointId = null;
-                    }
+                    edge.TargetConnectionPointId = vertexConnectionPoint.Id;
                 }
-
-                edgeControl.UpdateEdge();
-
-                var obj = (Control)sender;
-                SetIsDragging(obj, false);
-
-                if (sender is IInputElement element)
+                else
                 {
-                    element.PointerMoved -= OnVertexDragging;
+                    edge.TargetConnectionPointId = null;
                 }
+            }
+
+            edgeControl.UpdateEdge();
+
+            var obj = (Control)sender;
+            SetIsDragging(obj, false);
+
+            if (sender is IInputElement element)
+            {
+                element.PointerMoved -= OnVertexDragging;
             }
         }
 
@@ -600,14 +671,11 @@ namespace Westermo.GraphX.Controls.Avalonia
 
         private static Point GetPositionInArea(GraphAreaBase? area, PointerEventArgs e)
         {
-            if (area != null)
-            {
-                var pos = e.GetPosition(area);
-                return pos;
-            }
-
-            throw new GX_InvalidDataException(
-                "DragBehavior.GetPositionInArea() - The input element must be a child of a GraphAreaBase.");
+            if (area == null)
+                throw new GX_InvalidDataException(
+                    "DragBehavior.GetPositionInArea() - The input element must be a child of a GraphAreaBase.");
+            var pos = e.GetPosition(area);
+            return pos;
         }
 
         private static GraphAreaBase? GetAreaFromObject(object obj)

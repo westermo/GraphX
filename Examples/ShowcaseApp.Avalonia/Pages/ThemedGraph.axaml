@@ -8,8 +8,122 @@
              mc:Ignorable="d"
              d:DesignHeight="300" d:DesignWidth="600">
     <UserControl.Styles>
-        <StyleInclude Source="/Templates/ThemedGraphXTemplates.axaml"></StyleInclude>
+
+        <!-- VERTEX CONTROL -->
+        <Style Selector="avalonia|VertexControl">
+            <!-- Set background color through attached property -->
+            <Setter Property="Background" Value="{StaticResource NormalBrush}" />
+            <Setter Property="Padding" Value="10,5,10,5" />
+            <Setter Property="BorderBrush" Value="{StaticResource NormalBorderBrush}" />
+            <Setter Property="BorderThickness" Value="3" />
+            <Setter Property="Opacity" Value="0.65" />
+            <Setter Property="Transitions">
+                <Transitions>
+                    <DoubleTransition Property="Opacity" Duration="0:0:0.1" />
+                </Transitions>
+            </Setter>
+            <Setter Property="avalonia:DragBehaviour.IsDragEnabled"
+                    Value="True" />
+            <Setter Property="avalonia:DragBehaviour.UpdateEdgesOnMove"
+                    Value="True" />
+
+
+            <Style Selector="^:pointerover">
+                <Setter Property="Opacity" Value="1" />
+                <Setter Property="Background" Value="{DynamicResource MouseOverBrush}" />
+                <Setter Property="BorderBrush" Value="{DynamicResource MouseOverBorderBrush}" />
+                <Style Selector="^[(avalonia|HighlightBehaviour.Highlighted)=True]">
+                    <Setter Property="BorderBrush" Value="{DynamicResource MouseOverHighlightBrush}" />
+                </Style>
+            </Style>
+            <Style Selector="^[(avalonia|HighlightBehaviour.Highlighted)=True]">
+                <Setter Property="BorderBrush" Value="{DynamicResource NormalHighlightBrush}" />
+            </Style>
+
+        </Style>
+
+        <!-- EDGE CONTROL -->
+        <Style Selector="avalonia|EdgeControl">
+            <Setter Property="MinWidth"
+                    Value="1" />
+            <Setter Property="MinHeight"
+                    Value="1" />
+            <Setter Property="Background"
+                    Value="Red" />
+            <Setter Property="Foreground"
+                    Value="Blue" />
+            <Setter Property="Opacity"
+                    Value="1" />
+
+            <Style Selector="^[(avalonia|HighlightBehaviour.Highlighted)=True]">
+                <Setter Property="Foreground" Value="Gold" />
+                <Setter Property="StrokeThickness" Value="5" />
+            </Style>
+        </Style>
+
     </UserControl.Styles>
+    <UserControl.DataTemplates>
+        <DataTemplate DataType="exampleModels:DataEdge">
+            <Ellipse Width="16" Height="16"
+                     Fill="{Binding RelativeSource={RelativeSource AncestorType=avalonia:EdgeControl}, Path=Foreground}">
+                <ToolTip.Tip>
+                    <Border BorderBrush="Black" BorderThickness="2" CornerRadius="2"
+                            Background="{StaticResource NormalBrush}" UseLayoutRounding="True">
+                        <StackPanel Orientation="Vertical" Margin="2">
+                            <TextBlock FontWeight="Bold" Text="Solid link: " Margin="3" />
+                            <TextBlock FontWeight="Bold" Foreground="LightGreen" Text="{Binding ToolTipText}"
+                                       Margin="3" />
+                        </StackPanel>
+                    </Border>
+                </ToolTip.Tip>
+            </Ellipse>
+        </DataTemplate>
+        <DataTemplate DataType="exampleModels:DataVertex">
+            <Grid>
+                <Grid ColumnDefinitions="Auto,Auto" RowDefinitions="*,*" ToolTip.ShowDelay="0"
+                      Background="{StaticResource NormalBrush}">
+                    <Image Margin="3" Source="{Binding ImageId, Converter={StaticResource PersonImageConverter}}"
+                           Width="60" Stretch="UniformToFill" Grid.RowSpan="2" />
+                    <Label Content="{Binding Name}" VerticalAlignment="Center" FontWeight="Bold"
+                           Foreground="Black" Grid.Column="1" Grid.Row="0" Margin="3" MinWidth="120" />
+                    <TextBlock Text="{Binding Profession}" TextAlignment="Center" FontStyle="Italic"
+                               FontSize="14" VerticalAlignment="Center" HorizontalAlignment="Center"
+                               Foreground="White" Grid.Column="1" Grid.Row="1" Margin="3" />
+                    <ToolTip.Tip>
+                        <Border BorderBrush="Black" BorderThickness="2" CornerRadius="8"
+                                Background="{StaticResource NormalBrush}" UseLayoutRounding="True">
+                            <StackPanel Orientation="Vertical">
+                                <TextBlock Text="Additional person info:" Margin="4"
+                                           HorizontalAlignment="Center"
+                                           VerticalAlignment="Center" FontSize="14" FontWeight="Bold" />
+                                <StackPanel Orientation="Horizontal" Margin="3">
+                                    <TextBlock MinWidth="70" Text="Name: " VerticalAlignment="Center" />
+                                    <TextBlock FontWeight="Bold" Text="{Binding Name}" Margin="3"
+                                               VerticalAlignment="Center" />
+                                </StackPanel>
+                                <StackPanel Orientation="Horizontal" Margin="3">
+                                    <TextBlock MinWidth="70" Text="Occupation: "
+                                               VerticalAlignment="Center" />
+                                    <TextBlock FontWeight="Bold" Text="{Binding Profession}" Margin="3"
+                                               VerticalAlignment="Center" />
+                                </StackPanel>
+                                <StackPanel Orientation="Horizontal" Margin="3">
+                                    <TextBlock MinWidth="70" Text="Age: " VerticalAlignment="Center" />
+                                    <TextBlock FontWeight="Bold" Text="{Binding Age}" Margin="3"
+                                               VerticalAlignment="Center" />
+                                </StackPanel>
+                                <StackPanel Orientation="Horizontal" Margin="3">
+                                    <TextBlock MinWidth="70" Text="Gender: " VerticalAlignment="Center" />
+                                    <TextBlock FontWeight="Bold" Text="{Binding Gender}" Margin="3"
+                                               VerticalAlignment="Center" />
+                                </StackPanel>
+                            </StackPanel>
+                        </Border>
+                    </ToolTip.Tip>
+                </Grid>
+            </Grid>
+        </DataTemplate>
+    </UserControl.DataTemplates>
     <Grid ColumnDefinitions="*,Auto,180" RowDefinitions="Auto,*">
         <GridSplitter VerticalAlignment="Stretch" Width="2" Grid.Row="0" Grid.RowSpan="2" Grid.Column="1" />
 

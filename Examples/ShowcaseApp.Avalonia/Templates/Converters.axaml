@@ -2,7 +2,9 @@
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
                     xmlns:models="clr-namespace:ShowcaseApp.Avalonia.Models"
                     xmlns:avalonia="clr-namespace:Westermo.GraphX.Controls.Avalonia;assembly=Westermo.GraphX.Controls.Avalonia">
-    <models:ValueToEditorImageConverter x:Key="ImageConverter" />
+    <models:ValueToEditorImageConverter x:Key="EditorImageConverter" />
+    <models:ValueToImageConverter x:Key="ImageConverter" />
+    <models:ValueToPersonImageConverter x:Key="PersonImageConverter" />
 
     <avalonia:VisibilityToBoolConverter
         x:Key="BooleanToVisibility"

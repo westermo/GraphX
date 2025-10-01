@@ -200,7 +200,6 @@ namespace Westermo.GraphX.Controls.Avalonia
             }
 
             _clickTrack = false;
-            e.Handled = true;
         }
 
         protected override void OnPointerExited(PointerEventArgs e)
@@ -245,7 +244,6 @@ namespace Westermo.GraphX.Controls.Avalonia
                 RootArea.OnEdgeSelected(this, e, e.KeyModifiers);
             _clickTrack = true;
             _clickTrackPoint = e.GetPosition(RootArea);
-            e.Handled = true;
         }
 
         #endregion

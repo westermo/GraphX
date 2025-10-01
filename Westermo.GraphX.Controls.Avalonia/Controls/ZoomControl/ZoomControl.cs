@@ -435,7 +435,6 @@ namespace Westermo.GraphX.Controls.Avalonia
             {
                 RaiseEvent(new RoutedEventArgs(ClickEvent));
                 _clickTrack = false;
-                e.Handled = true;
             }
 
             if (ModifierMode == ZoomViewModifierMode.ZoomBox)
@@ -450,6 +449,8 @@ namespace Westermo.GraphX.Controls.Avalonia
             }
 
             ModifierMode = ZoomViewModifierMode.None;
+            if (Equals(e.Pointer.Captured, this))
+                e.Pointer.Capture(null);
         }
 
         private void PanAction(Vector initialPoint, Vector diff)

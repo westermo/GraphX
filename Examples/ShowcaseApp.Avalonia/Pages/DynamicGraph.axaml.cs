@@ -399,7 +399,7 @@ public partial class DynamicGraph : UserControl
         return dg_snapIndividually.IsChecked ?? false;
     }
 
-    private double ExaggeratedSnappingXModifier(GraphAreaBase area, Control obj, double val)
+    private double ExaggeratedSnappingXModifier(Visual area, Control obj, double val)
     {
         if (dg_snapExaggerate.IsChecked ?? false)
         {
@@ -410,7 +410,7 @@ public partial class DynamicGraph : UserControl
         return DragBehaviour.GlobalXSnapModifier(area, obj, val);
     }
 
-    private double ExaggeratedSnappingYModifier(GraphAreaBase area, Control obj, double val)
+    private double ExaggeratedSnappingYModifier(Visual area, Control obj, double val)
     {
         if (dg_snapExaggerate.IsChecked ?? false)
         {

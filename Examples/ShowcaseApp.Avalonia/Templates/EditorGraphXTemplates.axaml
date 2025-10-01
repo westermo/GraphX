@@ -15,7 +15,7 @@
                     <Grid>
                         <Border CornerRadius="50" BorderBrush="{TemplateBinding BorderBrush}"
                                 BorderThickness="{TemplateBinding BorderThickness}" Name="hlBorder">
-                            <Image Source="{Binding ImageId, Converter={StaticResource ImageConverter}}"
+                            <Image Source="{Binding ImageId, Converter={StaticResource EditorImageConverter}}"
                                    Width="45"
                                    Stretch="Uniform" Margin="2" />
                         </Border>

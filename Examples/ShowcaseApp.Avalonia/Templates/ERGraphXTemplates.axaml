@@ -16,7 +16,7 @@
             <Setter.Value>
                 <ControlTemplate TargetType="{x:Type avalonia:VertexControl}" x:DataType="exampleModels:DataVertex">
                     <Image
-                        Source="{Binding ImageId, UpdateSourceTrigger=PropertyChanged, Converter={StaticResource ImageConverter}}"
+                        Source="{Binding ImageId, UpdateSourceTrigger=PropertyChanged, Converter={StaticResource EditorImageConverter}}"
                         Margin="0" Width="40" Stretch="UniformToFill" />
                 </ControlTemplate>
             </Setter.Value>

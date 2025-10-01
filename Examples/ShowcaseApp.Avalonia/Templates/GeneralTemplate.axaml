@@ -14,7 +14,7 @@
                 <ControlTemplate TargetType="{x:Type avalonia:VertexControl}"
                                  x:DataType="{x:Type exampleModels:DataVertex}">
                     <Grid>
-                        <Image Width="30"
+                        <Image Width="80"
                                Margin="0"
 
                                Source="{Binding ImageId,

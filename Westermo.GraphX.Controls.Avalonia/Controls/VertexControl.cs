@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics;
 using System.Linq;
 using Avalonia;
 using Avalonia.Controls;
@@ -10,6 +11,7 @@ using Avalonia.VisualTree; // added for visual tree traversal without re-applyin
 using Westermo.GraphX.Common.Enums;
 using Westermo.GraphX.Common.Exceptions;
 using Westermo.GraphX.Common.Interfaces;
+using Westermo.GraphX.Controls.Avalonia.Controls.Interfaces;
 using Westermo.GraphX.Controls.Avalonia.Models;
 
 namespace Westermo.GraphX.Controls.Avalonia
@@ -25,7 +27,7 @@ namespace Westermo.GraphX.Controls.Avalonia
     [Serializable]
     [TemplatePart(Name = "PART_vertexLabel", Type = typeof(IVertexLabelControl))]
     [TemplatePart(Name = "PART_vcproot", Type = typeof(Panel))]
-    public class VertexControl : VertexControlBase, IXYReactive
+    public class VertexControl : VertexControlBase, IXYReactive, IDraggable
     {
         static VertexControl()
         {
@@ -89,7 +91,6 @@ namespace Westermo.GraphX.Controls.Avalonia
             }
 
             _clickTrack = false;
-            e.Handled = true;
         }
 
         private void OnDoubleTapped(object? sender, TappedEventArgs e)
@@ -105,7 +106,6 @@ namespace Westermo.GraphX.Controls.Avalonia
                 RootArea.OnVertexSelected(this, e, e.KeyModifiers);
             _clickTrack = true;
             _clickTrackPoint = RootArea != null ? e.GetPosition(RootArea) : new Point();
-            e.Handled = true;
         }
 
         #endregion Event tracing
@@ -218,5 +218,56 @@ namespace Westermo.GraphX.Controls.Avalonia
                 VertexLabelControl?.UpdatePosition();
             OnPositionChanged(new Point(), GetPosition());
         }
+
+        private Point? m_dragOrigin;
+        private Point m_draggedFrom;
+
+        public bool StartDrag(PointerPressedEventArgs origin)
+        {
+            if (RootArea is null) return false;
+            if (!DragBehaviour.GetIsDragEnabled(this)) return false;
+            if (!IsVisible) return false;
+            if (!origin.Properties.IsLeftButtonPressed) return false;
+            m_dragOrigin = origin.GetPosition(RootArea);
+            m_draggedFrom = GetPosition();
+            IsDragging = true;
+            return true;
+        }
+
+        public bool IsDragging { get; private set; }
+
+        public void Drag(PointerEventArgs current)
+        {
+            if (RootArea is null) return;
+            if (!IsDragging) return;
+            if (!IsVisible) return;
+            if (m_dragOrigin == null) return;
+            var pos = current.GetPosition(RootArea);
+            var diff = pos - m_dragOrigin.Value;
+            var newPos = DragBehaviour.Snap(this, m_draggedFrom + diff);
+            SetPosition(newPos);
+        }
+
+        public bool EndDrag(PointerReleasedEventArgs pointerReleasedEventArgs)
+        {
+            if (m_dragOrigin is null) return false;
+            if (RootArea is null) return true;
+            var pos = pointerReleasedEventArgs.GetPosition(RootArea);
+            var diff = pos - m_dragOrigin.Value;
+            var newPos = DragBehaviour.Snap(this, m_draggedFrom + diff);
+
+            m_dragOrigin = null;
+            IsDragging = false;
+            SetPosition(newPos);
+            return true;
+        }
+
+        public void EndDrag()
+        {
+            m_dragOrigin = null;
+            IsDragging = false;
+        }
+
+        public Visual? Container => RootArea;
     }
 }
