@@ -5,6 +5,7 @@ using Avalonia.Input;
 using Avalonia.Interactivity;
 using Westermo.GraphX.Common;
 using Westermo.GraphX.Common.Interfaces;
+using Westermo.GraphX.Controls.Avalonia.Controls.Interfaces;
 using Westermo.GraphX.Controls.Avalonia.Models;
 
 namespace Westermo.GraphX.Controls.Avalonia
@@ -13,7 +14,7 @@ namespace Westermo.GraphX.Controls.Avalonia
     /// Visual edge control
     /// </summary>
     [Serializable]
-    public class EdgeControl : EdgeControlBase
+    public class EdgeControl : EdgeControlBase, IDraggable
     {
         #region Dependency Properties
 
@@ -274,5 +275,58 @@ namespace Westermo.GraphX.Controls.Avalonia
         {
             return (T?)Edge;
         }
+
+        public bool StartDrag(PointerPressedEventArgs origin)
+        {
+            if (!DragBehaviour.GetIsDragEnabled(this)) return false;
+            if (!IsVisible) return false;
+            if (!origin.Properties.IsLeftButtonPressed) return false;
+            IsDragging = true;
+            return true;
+        }
+
+        public bool IsDragging { get; private set; }
+
+        public void Drag(PointerEventArgs current)
+        {
+            if (IsDragging) PrepareEdgePathFromMousePointer(current);
+        }
+
+        public bool EndDrag(PointerReleasedEventArgs e)
+        {
+            if (!IsDragging) return true;
+            var graphAreaBase = RootArea;
+
+            var vertexControl = graphAreaBase.GetVertexControlAt(e.GetPosition(graphAreaBase));
+
+            if (vertexControl == null) return true;
+            Target = vertexControl;
+
+            if (vertexControl.VertexConnectionPointsList.Count > 0)
+            {
+                var vertexConnectionPoint = vertexControl.GetConnectionPointAt(e.GetPosition(graphAreaBase));
+
+                var edge = (IGraphXCommonEdge)Edge!;
+
+                if (vertexConnectionPoint != null)
+                {
+                    edge.TargetConnectionPointId = vertexConnectionPoint.Id;
+                }
+                else
+                {
+                    edge.TargetConnectionPointId = null;
+                }
+            }
+
+            UpdateEdge();
+            IsDragging = false;
+            return true;
+        }
+
+        public void EndDrag()
+        {
+        }
+
+        public Visual? Container => RootArea;
     }
 }

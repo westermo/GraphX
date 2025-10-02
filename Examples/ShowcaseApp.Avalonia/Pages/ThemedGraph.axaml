@@ -64,8 +64,7 @@
     </UserControl.Styles>
     <UserControl.DataTemplates>
         <DataTemplate DataType="exampleModels:DataEdge">
-            <Ellipse Width="16" Height="16"
-                     Fill="{Binding RelativeSource={RelativeSource AncestorType=avalonia:EdgeControl}, Path=Foreground}">
+            <TextBlock Text="{Binding}">
                 <ToolTip.Tip>
                     <Border BorderBrush="Black" BorderThickness="2" CornerRadius="2"
                             Background="{StaticResource NormalBrush}" UseLayoutRounding="True">
@@ -76,13 +75,13 @@
                         </StackPanel>
                     </Border>
                 </ToolTip.Tip>
-            </Ellipse>
+            </TextBlock>
         </DataTemplate>
         <DataTemplate DataType="exampleModels:DataVertex">
             <Grid>
-                <Grid ColumnDefinitions="Auto,Auto" RowDefinitions="*,*" ToolTip.ShowDelay="0"
-                      Background="{StaticResource NormalBrush}">
-                    <Image Margin="3" Source="{Binding ImageId, Converter={StaticResource PersonImageConverter}}"
+                <Grid ColumnDefinitions="Auto,Auto" RowDefinitions="*,*" ToolTip.ShowDelay="0">
+                    <Image Margin="3"
+                           Source="{Binding ImageId, Converter={StaticResource PersonImageConverter}}"
                            Width="60" Stretch="UniformToFill" Grid.RowSpan="2" />
                     <Label Content="{Binding Name}" VerticalAlignment="Center" FontWeight="Bold"
                            Foreground="Black" Grid.Column="1" Grid.Row="0" Margin="3" MinWidth="120" />
@@ -133,11 +132,11 @@
                        Text="This graph is designed for templating, animation and visual behaviours preview. See vertex and edge tooltips, templated highlights and animations." />
         </Border>
 
-        <Border Grid.Row="1" Grid.Column="0">
+        <Border Grid.Row="1" Grid.Column="0" BorderBrush="Red">
             <Border.Background>
-                <VisualBrush TileMode="Tile">
+                <VisualBrush TileMode="Tile" Stretch="Fill" DestinationRect="0,0,8,8">
                     <VisualBrush.Visual>
-                        <Image Source="/Assets/brick_16.png" Stretch="Uniform"></Image>
+                        <Image Source="/Assets/brick_16.png" Stretch="None" />
                     </VisualBrush.Visual>
                 </VisualBrush>
             </Border.Background>
@@ -145,17 +144,18 @@
         <Border Grid.Row="1" Margin="30" Grid.Column="0" BorderBrush="{DynamicResource ButtonBorder}"
                 BorderThickness="0" CornerRadius="60">
             <Border.Background>
-                <VisualBrush TileMode="Tile">
+                <VisualBrush TileMode="Tile" Stretch="None"
+                             DestinationRect="0,0,8,8">
                     <VisualBrush.Visual>
-                        <Image Source="/Assets/carpet.png"></Image>
+                        <Image Source="/Assets/carpet.png" Stretch="None" />
                     </VisualBrush.Visual>
                 </VisualBrush>
             </Border.Background>
             <Border Margin="0" BorderBrush="{DynamicResource ButtonBorder}" BorderThickness="0" CornerRadius="0">
                 <Border.Background>
-                    <VisualBrush TileMode="None">
+                    <VisualBrush TileMode="None" Stretch="Fill">
                         <VisualBrush.Visual>
-                            <Image Source="/Assets/board_hd.png"></Image>
+                            <Image Source="/Assets/board_hd.png" Stretch="Fill" />
                         </VisualBrush.Visual>
                     </VisualBrush>
                 </Border.Background>
