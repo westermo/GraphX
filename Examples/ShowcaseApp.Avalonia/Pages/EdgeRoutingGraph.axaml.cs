@@ -386,7 +386,7 @@ internal class FunnyEdgeControl : EdgeControl
             Segments = [],
             IsClosed = original.IsClosed
         };
-        var endPoint = original.Segments.OfType<LineSegment>().First().Point;
+        var endPoint = original.Segments.OfType<PolyLineSegment>().First().Points.Last();
         var poly = new PolyLineSegment();
         var vector = endPoint - startPoint;
         var orthogonal = new Vector(-vector.Y, vector.X);

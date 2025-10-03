@@ -134,7 +134,7 @@
 
         <Border Grid.Row="1" Grid.Column="0" BorderBrush="Red">
             <Border.Background>
-                <VisualBrush TileMode="Tile" Stretch="Fill" DestinationRect="0,0,8,8">
+                <VisualBrush TileMode="Tile" Stretch="Fill" DestinationRect="0,0,16,16">
                     <VisualBrush.Visual>
                         <Image Source="/Assets/brick_16.png" Stretch="None" />
                     </VisualBrush.Visual>
@@ -145,7 +145,7 @@
                 BorderThickness="0" CornerRadius="60">
             <Border.Background>
                 <VisualBrush TileMode="Tile" Stretch="None"
-                             DestinationRect="0,0,8,8">
+                             DestinationRect="0,0,32,32">
                     <VisualBrush.Visual>
                         <Image Source="/Assets/carpet.png" Stretch="None" />
                     </VisualBrush.Visual>

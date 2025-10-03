@@ -6,7 +6,6 @@ using Avalonia.Controls.Metadata;
 using Avalonia.Controls.Primitives;
 using Avalonia.Input;
 using Avalonia.Interactivity;
-using Avalonia.VisualTree; // added for visual tree traversal without re-applying template on self
 using Westermo.GraphX.Common.Exceptions;
 using Westermo.GraphX.Common.Interfaces;
 using Westermo.GraphX.Controls.Avalonia.Controls.Interfaces;
@@ -143,26 +142,22 @@ public class VertexControl : VertexControlBase, IXYReactive, IDraggable
         // only traverse direct visual children of this control (without re-applying this template).
         if (VCPRoot is Visual vcpVisual)
         {
-            VertexConnectionPointsList = vcpVisual.FindDescendantsOfType<IVertexConnectionPoint>().ToList();
+            if (vcpVisual.FindDescendantsOfType<IVertexConnectionPoint>().Any(descendant =>
+                    !VertexConnectionPointsList.TryAdd(descendant.Id, descendant)))
+            {
+                throw new GX_InvalidDataException(
+                    "Vertex connection points in VertexControl template must have unique Id!");
+            }
         }
         else
         {
-            var result = new System.Collections.Generic.List<IVertexConnectionPoint>();
-            if (this is Visual selfVisual)
+            if (VisualChildren.SelectMany(child => child.FindDescendantsOfType<IVertexConnectionPoint>())
+                .Any(item => !VertexConnectionPointsList.TryAdd(item.Id, item)))
             {
-                foreach (var child in selfVisual.GetVisualChildren())
-                {
-                    foreach (var item in child.FindDescendantsOfType<IVertexConnectionPoint>())
-                        result.Add(item);
-                }
+                throw new GX_InvalidDataException(
+                    "Vertex connection points in VertexControl template must have unique Id!");
             }
-
-            VertexConnectionPointsList = result;
         }
-
-        if (VertexConnectionPointsList.GroupBy(x => x.Id).Count(group => @group.Count() > 1) > 0)
-            throw new GX_InvalidDataException(
-                "Vertex connection points in VertexControl template must have unique Id!");
     }
 
     #region Events handling

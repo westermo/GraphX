@@ -18,6 +18,6 @@
 
     <Application.Styles>
         <FluentTheme />
-        <StyleInclude Source="avares://Westermo.GraphX.Controls.Avalonia/Themes/DefaultStyles.axaml"/>
+        <StyleInclude Source="avares://Westermo.GraphX.Controls.Avalonia/Themes/DefaultStyles.axaml" />
     </Application.Styles>
 </Application>

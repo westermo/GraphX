@@ -197,7 +197,7 @@ namespace Westermo.GraphX.Controls.Avalonia
             if (IsVisible && _clickTrack)
             {
                 RaiseEvent(new RoutedEventArgs(ClickEvent, this));
-                RootArea.OnEdgeClicked(this, e, e.KeyModifiers);
+                RootArea?.OnEdgeClicked(this, e, e.KeyModifiers);
             }
 
             _clickTrack = false;
@@ -207,14 +207,14 @@ namespace Westermo.GraphX.Controls.Avalonia
         {
             base.OnPointerExited(e);
             if (IsVisible)
-                RootArea.OnEdgeMouseLeave(this, e, e.KeyModifiers);
+                RootArea?.OnEdgeMouseLeave(this, e, e.KeyModifiers);
         }
 
         protected override void OnPointerEntered(PointerEventArgs e)
         {
             base.OnPointerEntered(e);
             if (IsVisible)
-                RootArea.OnEdgeMouseEnter(this, e, e.KeyModifiers);
+                RootArea?.OnEdgeMouseEnter(this, e, e.KeyModifiers);
         }
 
         protected override void OnPointerMoved(PointerEventArgs e)
@@ -229,20 +229,20 @@ namespace Westermo.GraphX.Controls.Avalonia
             }
 
             if (IsVisible)
-                RootArea.OnEdgeMouseMove(this, e, e.KeyModifiers);
+                RootArea?.OnEdgeMouseMove(this, e, e.KeyModifiers);
         }
 
         private void EdgeControl_MouseDoubleClick(object? sender, TappedEventArgs e)
         {
             if (IsVisible)
-                RootArea.OnEdgeDoubleClick(this, e, e.KeyModifiers);
+                RootArea?.OnEdgeDoubleClick(this, e, e.KeyModifiers);
         }
 
         protected override void OnPointerPressed(PointerPressedEventArgs e)
         {
             base.OnPointerPressed(e);
             if (IsVisible)
-                RootArea.OnEdgeSelected(this, e, e.KeyModifiers);
+                RootArea?.OnEdgeSelected(this, e, e.KeyModifiers);
             _clickTrack = true;
             _clickTrackPoint = e.GetPosition(RootArea);
         }
@@ -297,7 +297,7 @@ namespace Westermo.GraphX.Controls.Avalonia
             if (!IsDragging) return true;
             var graphAreaBase = RootArea;
 
-            var vertexControl = graphAreaBase.GetVertexControlAt(e.GetPosition(graphAreaBase));
+            var vertexControl = graphAreaBase?.GetVertexControlAt(e.GetPosition(graphAreaBase));
 
             if (vertexControl == null) return true;
             Target = vertexControl;

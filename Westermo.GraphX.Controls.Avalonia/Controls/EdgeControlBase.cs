@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using Avalonia;
 using Avalonia.Collections;
@@ -25,8 +26,6 @@ namespace Westermo.GraphX.Controls.Avalonia
     [TemplatePart(Name = "PART_EdgePointerForTarget", Type = typeof(IEdgePointer))]
     public abstract class EdgeControlBase : TemplatedControl, IGraphControl, IDisposable
     {
-        #region Properties & Fields
-
         /// <summary>
         /// Gets or sets if edge pointer should be hidden when source and target vertices are overlapped making the 0 length edge. Default value is True.
         /// </summary>
@@ -71,14 +70,14 @@ namespace Westermo.GraphX.Controls.Avalonia
         /// <summary>
         /// Gets or sets parent GraphArea visual
         /// </summary>
-        public GraphAreaBase RootArea
+        public GraphAreaBase? RootArea
         {
             get => GetValue(RootCanvasProperty);
             set => SetValue(RootCanvasProperty, value);
         }
 
-        public static readonly StyledProperty<GraphAreaBase> RootCanvasProperty =
-            AvaloniaProperty.Register<EdgeControlBase, GraphAreaBase>(nameof(RootArea));
+        public static readonly StyledProperty<GraphAreaBase?> RootCanvasProperty =
+            AvaloniaProperty.Register<EdgeControlBase, GraphAreaBase?>(nameof(RootArea));
 
         public static readonly StyledProperty<double> SelfLoopIndicatorRadiusProperty =
             AvaloniaProperty.Register<EdgeControlBase, double>(
@@ -148,8 +147,6 @@ namespace Westermo.GraphX.Controls.Avalonia
             AvaloniaProperty.Register<EdgeControlBase, object?>(nameof(Edge));
 
 
-        #region DashStyle
-
         public static readonly StyledProperty<EdgeDashStyle> DashStyleProperty =
             AvaloniaProperty.Register<EdgeControlBase, EdgeDashStyle>(nameof(DashStyle));
 
@@ -176,7 +173,6 @@ namespace Westermo.GraphX.Controls.Avalonia
             set => SetValue(DashStyleProperty, value);
         }
 
-        #endregion DashStyle
 
         /// <summary>
         /// Gets or sets if this edge can be paralellized if GraphArea.EnableParallelEdges is true.
@@ -313,6 +309,7 @@ namespace Westermo.GraphX.Controls.Avalonia
         /// <param name="ctrl"></param>
         public void AttachLabel(IEdgeLabelControl ctrl)
         {
+            if (RootArea is null) return;
             EdgeLabelControls.Add(ctrl);
             if (!RootArea.Children.Contains((Control)ctrl))
                 RootArea.Children.Add((Control)ctrl);
@@ -332,7 +329,7 @@ namespace Westermo.GraphX.Controls.Avalonia
                 .ForEach(label =>
                 {
                     label.Detach();
-                    RootArea.Children.Remove((Control)label);
+                    RootArea?.Children.Remove((Control)label);
                 });
             EdgeLabelControls.Clear();
         }
@@ -350,9 +347,6 @@ namespace Westermo.GraphX.Controls.Avalonia
             });
         }
 
-        #endregion Properties & Fields
-
-        #region Position methods
 
         /// <summary>
         /// Set attached coordinates X and Y
@@ -393,9 +387,6 @@ namespace Westermo.GraphX.Controls.Avalonia
                 final ? GraphAreaBase.GetFinalY(this) : GraphAreaBase.GetY(this));
         }
 
-        #endregion Position methods
-
-        #region Manual path controls
 
         /// <summary>
         /// Gets current edge path geometry object
@@ -416,7 +407,6 @@ namespace Westermo.GraphX.Controls.Avalonia
             UpdateEdge();
         }
 
-        #endregion Manual path controls
 
         internal void SetVisibility(bool value)
         {
@@ -486,8 +476,6 @@ namespace Westermo.GraphX.Controls.Avalonia
         {
             child?.Measure(new Size(double.PositiveInfinity, double.PositiveInfinity));
         }
-
-        #region public PrepareEdgePath()
 
         /// <summary>
         /// Complete edge update pass. Don't needed to be run manualy until some edge related modifications are done requiring full edge update.
@@ -565,6 +553,10 @@ namespace Westermo.GraphX.Controls.Avalonia
         /// </summary>
         protected internal Point? TargetConnectionPoint;
 
+        // Added for testing & diagnostics: public read-only accessors for connection points
+        public Point? SourceEndpoint => SourceConnectionPoint;
+        public Point? TargetEndpoint => TargetConnectionPoint;
+
         /// <summary>
         ///Gets is looped edge indicator template available. Used to pass some heavy cycle checks.
         /// </summary>
@@ -599,6 +591,45 @@ namespace Westermo.GraphX.Controls.Avalonia
                     SelfLoopIndicator!.SetCurrentValue(IsVisibleProperty, false);
             }
         }
+
+        private PathFigure BuildNormalizedLineFigure(Point p1, Point p2, Span<Point> extraPoints, bool reverse)
+        {
+            var pts = new List<Point>();
+            pts.AddRange(extraPoints is { Length: > 0 } ? extraPoints : [p1, p2]);
+
+            // Collect all points we will actually use
+            if (!pts.Contains(p1)) pts.Insert(0, p1);
+            if (!pts.Contains(p2)) pts.Add(p2);
+
+            var minX = pts.Min(p => p.X);
+            var minY = pts.Min(p => p.Y);
+            var maxX = pts.Max(p => p.X);
+            var maxY = pts.Max(p => p.Y);
+
+            // Reposition the EdgeControl itself
+            SetPosition(minX, minY);
+
+            // Shift points into local space
+            for (var i = 0; i < pts.Count; i++)
+                pts[i] = new Point(pts[i].X - minX, pts[i].Y - minY);
+
+            Width = Math.Max(1, maxX - minX);
+            Height = Math.Max(1, maxY - minY);
+
+            // Build figure
+            if (reverse) pts.Reverse();
+            var start = pts[0];
+            var segPoints = new Points();
+            for (var i = 1; i < pts.Count; i++) segPoints.Add(pts[i]);
+
+            return new PathFigure
+            {
+                StartPoint = start,
+                Segments = [new PolyLineSegment { Points = segPoints }],
+                IsClosed = false
+            };
+        }
+
 
         /// <summary>
         /// Process self looped edge positioning
@@ -638,6 +669,7 @@ namespace Westermo.GraphX.Controls.Avalonia
         public virtual void PrepareEdgePathFromMousePointer(PointerEventArgs pointerEventArgs,
             bool useCurrentCoords = false)
         {
+            if (RootArea is null) return;
             //do not calculate invisible edges
             if (!IsVisible && !IsHiddenEdgesUpdated && ManualDrawing || !IsTemplateLoaded) return;
 
@@ -687,14 +719,10 @@ namespace Westermo.GraphX.Controls.Avalonia
             //calculate edge source (p1) and target (p2) endpoints based on different settings
             if (gEdge?.SourceConnectionPointId != null)
             {
-                var sourceCp = Source.GetConnectionPointById(gEdge.SourceConnectionPointId.Value, true);
-                if (sourceCp == null)
-                {
-                    throw new GX_ObjectNotFoundException(string.Format(
-                        "Can't find source vertex VCP by edge source connection point Id({1}) : {0}", Source,
-                        gEdge.SourceConnectionPointId));
-                }
-
+                var sourceCp = Source.GetConnectionPointById(gEdge.SourceConnectionPointId.Value, true) ??
+                               throw new GX_ObjectNotFoundException(string.Format(
+                                   "Can't find source vertex VCP by edge source connection point Id({1}) : {0}", Source,
+                                   gEdge.SourceConnectionPointId));
                 if (sourceCp.Shape == VertexShape.None) p1 = sourceCp.RectangularSize.Center();
                 else
                 {
@@ -707,22 +735,9 @@ namespace Westermo.GraphX.Controls.Avalonia
                 p1 = GeometryHelper.GetEdgeEndpoint(sourcePos, new Rect(sourcePos1, sourceSize),
                     hasRouteInfo ? routeInformation![1].ToAvalonia() : targetPos, Source.VertexShape);
 
-            //if (gEdge?.TargetConnectionPointId != null)
-            //{
-            //    //var targetCp = this.Target.GetConnectionPointById(gEdge.TargetConnectionPointId.Value, true);
-            //    //if (targetCp == null)
-            //    //    throw new GX_ObjectNotFoundException(string.Format("Can't find target vertex VCP by edge target connection point Id({1}) : {0}", this.Target, gEdge.TargetConnectionPointId));
-            //    //if (targetCp.Shape == VertexShape.None) p2 = targetCp.RectangularSize.Center();
-            //    //else
-            //    //{
-            //    //    var sourceCpPos = gEdge.SourceConnectionPointId.HasValue ? this.Source.GetConnectionPointById(gEdge.SourceConnectionPointId.Value, true).RectangularSize.Center() : hasRouteInfo ? routeInformation[routeInformation.Length - 2].ToWindows() : (sourcePos);
-            //    //    p2 = GeometryHelper.GetEdgeEndpoint(targetCp.RectangularSize.Center(), targetCp.RectangularSize, sourceCpPos, targetCp.Shape);
-            //    //}
-            //}
-            //else
             var p2 = GeometryHelper.GetEdgeEndpoint(
                 targetPos, new Rect(targetPos, targetSize),
-                hasRouteInfo ? routeInformation![routeInformation.Length - 2].ToAvalonia() : sourcePos,
+                hasRouteInfo ? routeInformation![^2].ToAvalonia() : sourcePos,
                 VertexShape.None);
 
             SourceConnectionPoint = p1;
@@ -735,10 +750,7 @@ namespace Westermo.GraphX.Controls.Avalonia
             if (hasRouteInfo)
             {
                 //replace start and end points with accurate ones
-                var routePoints = routeInformation.ToAvalonia()!.ToList();
-                routePoints.Clear();
-                routePoints.Add(p1);
-                routePoints.Add(p2);
+                Span<Point> routePoints = [p1, p2];
 
                 if (routedEdge.RoutingPoints != null)
                     routedEdge.RoutingPoints = routePoints.ToArray().ToGraphX();
@@ -768,20 +780,13 @@ namespace Westermo.GraphX.Controls.Avalonia
                 {
                     if (hasEpSource)
                         routePoints[0] =
-                            routePoints[0].Subtract(UpdateSourceEpData(routePoints.First(), routePoints[1]));
+                            routePoints[0].Subtract(UpdateSourceEpData(routePoints[0], routePoints[1]));
                     if (hasEpTarget)
                         routePoints[^1] = routePoints[^1]
                             .Subtract(UpdateTargetEpData(p2, routePoints[^2]));
 
-                    // Reverse the path if specified.
-                    if (gEdge!.ReversePath)
-                        routePoints.Reverse();
 
-                    var pcol = new Points();
-                    routePoints.ForEach(a => pcol.Add(a));
-
-                    lineFigure = new PathFigure
-                        { StartPoint = p1, Segments = [new PolyLineSegment { Points = pcol }], IsClosed = false };
+                    lineFigure = BuildNormalizedLineFigure(p1, p2, routePoints, gEdge?.ReversePath ?? false);
                 }
             }
             else // no route defined
@@ -809,13 +814,7 @@ namespace Westermo.GraphX.Controls.Avalonia
                 if (hasEpTarget)
                     p2 = p2.Subtract(UpdateTargetEpData(p2, p1, remainHidden));
 
-                lineFigure = new PathFigure
-                {
-                    StartPoint = gEdge!.ReversePath ? p2 : p1,
-                    Segments =
-                        [new LineSegment { Point = gEdge.ReversePath ? p1 : p2 }],
-                    IsClosed = false
-                };
+                lineFigure = BuildNormalizedLineFigure(p1, p2, null, gEdge!.ReversePath);
             }
 
             ((PathGeometry)LineGeometry).Figures!.Add(lineFigure);
@@ -836,7 +835,9 @@ namespace Westermo.GraphX.Controls.Avalonia
             if (LinePathObject == null) return;
             LinePathObject.Data = LineGeometry;
             LinePathObject.StrokeDashArray = StrokeDashArray;
+            InvalidateMeasure();
         }
+
 
         /// <summary>
         /// Create and apply edge path using calculated ER parameters stored in edge
@@ -847,12 +848,146 @@ namespace Westermo.GraphX.Controls.Avalonia
         public virtual void PrepareEdgePath(bool useCurrentCoords = false,
             Measure.Point[]? externalRoutingPoints = null, bool updateLabel = true)
         {
-            //do not calculate invisible edges
-            if (Source is null) return;
-            if (Target is null) return;
+            if (!TryGetPoints(useCurrentCoords,
+                    out var sourceTopLeft,
+                    out var targetTopLeft,
+                    out var sourceSize,
+                    out var targetSize))
+                return;
 
-            #region Get the inputs
+            if (Edge is not IRoutingInfo routedEdge)
+                throw new GX_InvalidDataException("Edge must implement IRoutingInfo interface");
 
+            //get the route informations
+            var routeInformation = externalRoutingPoints ?? routedEdge.RoutingPoints;
+
+
+            //if self looped edge
+            if (IsSelfLooped)
+            {
+                PrepareSelfLoopedEdge(sourceTopLeft);
+                return;
+            }
+
+            //check if we have some edge route data
+            var hasRouteInfo = routeInformation is { Length: > 1 };
+            var gEdge = Edge as IGraphXCommonEdge;
+            UpdateConnectionPoints(gEdge, hasRouteInfo, routeInformation, targetTopLeft,
+                targetSize, sourceTopLeft, sourceSize);
+
+            // If the logic above is working correctly, both the source and target connection points will exist.
+            if (!SourceConnectionPoint.HasValue || !TargetConnectionPoint.HasValue)
+                throw new GX_GeneralException("One or both connection points was not found due to an internal error.");
+
+            var p1 = SourceConnectionPoint.Value;
+            var p2 = TargetConnectionPoint.Value;
+
+            LineGeometry = new PathGeometry();
+            var lineFigure = CreateFigure(externalRoutingPoints, hasRouteInfo, routeInformation, p1, p2, routedEdge,
+                gEdge);
+
+            ((PathGeometry)LineGeometry).Figures!.Add(lineFigure);
+            if (_updateLabelPosition && updateLabel)
+                EdgeLabelControls.Where(l => l.ShowLabel).ForEach(l => l.UpdatePosition());
+            InvalidateMeasure();
+        }
+
+        private PathFigure CreateFigure(Measure.Point[]? externalRoutingPoints, bool hasRouteInfo,
+            Measure.Point[] routeInformation, Point p1,
+            Point p2, IRoutingInfo routedEdge, IGraphXCommonEdge? gEdge)
+        {
+            var hasEpSource = EdgePointerForSource != null;
+            var hasEpTarget = EdgePointerForTarget != null;
+            //if we have route and route consist of 2 or more points
+            if (RootArea != null && hasRouteInfo)
+            {
+                //replace start and end points with accurate ones
+                Span<Point> routePoints = stackalloc Point[routeInformation.Length < 2 ? 2 : routeInformation.Length];
+                for (var i = 0; i < routeInformation.Length; i++)
+                {
+                    routePoints[i] = routeInformation[i].ToAvalonia();
+                }
+
+                routePoints[0] = p1;
+                routePoints[^1] = p2;
+                if (externalRoutingPoints == null && routedEdge.RoutingPoints != null)
+                    routedEdge.RoutingPoints = routePoints.ToArray().ToGraphX();
+
+                if (!RootArea.EdgeCurvingEnabled)
+                {
+                    routePoints[0] = hasEpSource switch
+                    {
+                        true => routePoints[0].Subtract(UpdateSourceEpData(routePoints[0], routePoints[1])),
+                        _ => routePoints[0]
+                    };
+                    routePoints[^1] = hasEpTarget switch
+                    {
+                        true => routePoints[^1].Subtract(UpdateTargetEpData(p2, routePoints[^2])),
+                        _ => routePoints[^1]
+                    };
+
+                    return BuildNormalizedLineFigure(p1, p2, routePoints, gEdge?.ReversePath ?? false);
+                }
+
+                var oPolyLineSegment =
+                    GeometryHelper.GetCurveThroughPoints([.. routePoints], 0.5, RootArea.EdgeCurvingTolerance);
+
+                if (hasEpTarget)
+                {
+                    UpdateTargetEpData(oPolyLineSegment.Points[^1],
+                        oPolyLineSegment.Points[^2]);
+                    oPolyLineSegment.Points.RemoveAt(oPolyLineSegment.Points.Count - 1);
+                }
+
+                if (hasEpSource)
+                {
+                    UpdateSourceEpData(oPolyLineSegment.Points.First(), oPolyLineSegment.Points[1]);
+                    oPolyLineSegment.Points.RemoveAt(0);
+                }
+
+                return GeometryHelper.GetPathFigureFromPathSegments(routePoints[0], true, oPolyLineSegment);
+            }
+
+            // no route defined
+            var allowUpdateEpDataToUnsuppress = true;
+            //check for hide only if prop is not 0
+            if (HideEdgePointerByEdgeLength != 0d)
+            {
+                if (MathHelper.GetDistanceBetweenPoints(p1.ToGraphX(), p2.ToGraphX()) <=
+                    HideEdgePointerByEdgeLength)
+                {
+                    EdgePointerForSource?.Suppress();
+                    EdgePointerForTarget?.Suppress();
+                    allowUpdateEpDataToUnsuppress = false;
+                }
+                else
+                {
+                    EdgePointerForSource?.UnSuppress();
+                    EdgePointerForTarget?.UnSuppress();
+                }
+            }
+
+            if (hasEpSource)
+                p1 = p1.Subtract(UpdateSourceEpData(p1, p2, allowUpdateEpDataToUnsuppress));
+            if (hasEpTarget)
+                p2 = p2.Subtract(UpdateTargetEpData(p2, p1, allowUpdateEpDataToUnsuppress));
+
+            return TransformUnroutedPath(BuildNormalizedLineFigure(p1, p2, null, gEdge!.ReversePath));
+        }
+
+        [MemberNotNullWhen(true, nameof(Target), nameof(Source))]
+        private bool TryGetPoints(bool useCurrentCoords,
+            out Point sourceTopLeft,
+            out Point targetTopLeft,
+            out Size sourceSize,
+            out Size targetSize)
+        {
+            sourceTopLeft = default;
+            targetTopLeft = default;
+            sourceSize = default;
+            targetSize = default;
+            if (Source is null) return false;
+            if (Target is null) return false;
             var sx = useCurrentCoords ? GraphAreaBase.GetX(Source!) : GraphAreaBase.GetFinalX(Source!);
             var sy = useCurrentCoords ? GraphAreaBase.GetY(Source!) : GraphAreaBase.GetFinalY(Source!);
             var tx = useCurrentCoords ? GraphAreaBase.GetX(Target) : GraphAreaBase.GetFinalX(Target);
@@ -863,24 +998,30 @@ namespace Westermo.GraphX.Controls.Avalonia
             if (double.IsNaN(tx)) tx = GraphAreaBase.GetX(Target);
             if (double.IsNaN(ty)) ty = GraphAreaBase.GetY(Target);
             // if still NaN (no positions yet) postpone drawing
-            if (double.IsNaN(sx) || double.IsNaN(sy) || double.IsNaN(tx) || double.IsNaN(ty)) return;
-
-            // Get the TopLeft position of the Source Vertex.
-            var sourceTopLeft = new Point(sx, sy);
-
-            // Get the TopLeft position of the Target Vertex.
-            var targetTopLeft = new Point(tx, ty);
-
+            if (double.IsNaN(sourceTopLeft.X) ||
+                double.IsNaN(sourceTopLeft.Y) ||
+                double.IsNaN(targetTopLeft.X) ||
+                double.IsNaN(targetTopLeft.Y)) return false;
+            sourceTopLeft = new Point(sx, sy);
+            targetTopLeft = new Point(tx, ty);
             //get the size of the source
-            var sourceSize = Design.IsDesignMode
+            sourceSize = Design.IsDesignMode
                 ? new Size(80, 20)
                 : new Size(Source!.Bounds.Width, Source.Bounds.Height);
 
             //get the size of the target
-            var targetSize = Design.IsDesignMode
+            targetSize = Design.IsDesignMode
                 ? new Size(80, 20)
                 : new Size(Target.Bounds.Width, Target.Bounds.Height);
+            return true;
+        }
 
+        private void UpdateConnectionPoints(IGraphXCommonEdge? gEdge, bool hasRouteInfo,
+            Measure.Point[] routeInformation, Point targetTopLeft, Size targetSize, Point sourceTopLeft,
+            Size sourceSize)
+        {
+            if (Target is null) return;
+            if (Source is null) return;
             //get the position center of the source
             var sourceCenter = new Point(
                 sourceTopLeft.X + sourceSize.Width * .5,
@@ -893,246 +1034,117 @@ namespace Westermo.GraphX.Controls.Avalonia
                 targetTopLeft.Y + targetSize.Height * .5);
 
 
-            if (Edge is not IRoutingInfo routedEdge)
-                throw new GX_InvalidDataException("Edge must implement IRoutingInfo interface");
-
-            //get the route informations
-            var routeInformation = externalRoutingPoints ?? routedEdge.RoutingPoints;
-
-            var hasEpSource = EdgePointerForSource != null;
-            var hasEpTarget = EdgePointerForTarget != null;
-
-            #endregion Get the inputs
-
-            //if self looped edge
-            if (IsSelfLooped)
-            {
-                PrepareSelfLoopedEdge(sourceTopLeft);
-                return;
-            }
-
-            //check if we have some edge route data
-            var hasRouteInfo = routeInformation is { Length: > 1 };
-
-            var gEdge = Edge as IGraphXCommonEdge;
-
-            #region Helper lambda expressions
-
-            IVertexConnectionPoint GetSourceCpOrThrow()
-            {
-                var cp = Source!.GetConnectionPointById(gEdge.SourceConnectionPointId!.Value, true);
-                if (cp == null)
-                    throw new GX_ObjectNotFoundException(string.Format(
-                        "Can't find source vertex VCP by edge source connection point Id({1}) : {0}", Source,
-                        gEdge.SourceConnectionPointId));
-                return cp;
-            }
-
-            IVertexConnectionPoint GetTargetCpOrThrow()
-            {
-                var cp = Target.GetConnectionPointById(gEdge.TargetConnectionPointId!.Value, true);
-                if (cp == null)
-                    throw new GX_ObjectNotFoundException(string.Format(
-                        "Can't find target vertex VCP by edge target connection point Id({1}) : {0}", Target,
-                        gEdge.TargetConnectionPointId));
-                return cp;
-            }
-
-            Point GetCpEndPoint(IVertexConnectionPoint cp, Point cpCenter, Point distantEnd)
-            {
-                // If the connection point (cp) doesn't have any shape, the edge comes from its center, otherwise find the location
-                // on its perimeter that the edge should come from.
-                var calculatedCp = cp.Shape == VertexShape.None
-                    ? cpCenter
-                    : GeometryHelper.GetEdgeEndpoint(cpCenter, cp.RectangularSize, distantEnd, cp.Shape);
-                return calculatedCp;
-            }
-
-            bool NeedParallelCalc() => !hasRouteInfo && RootArea.EnableParallelEdges && IsParallel;
-
-            #endregion
-
             //calculate edge source (p1) and target (p2) endpoints based on different settings
-            if (gEdge is { SourceConnectionPointId: not null, TargetConnectionPointId: not null })
+            switch (gEdge)
             {
-                // Get the connection points and their centers
-                var sourceCp = GetSourceCpOrThrow();
-                var targetCp = GetTargetCpOrThrow();
-                var sourceCpCenter = sourceCp.RectangularSize.Center();
-                var targetCpCenter = targetCp.RectangularSize.Center();
-
-                SourceConnectionPoint = GetCpEndPoint(sourceCp, sourceCpCenter, targetCpCenter);
-                TargetConnectionPoint = GetCpEndPoint(targetCp, targetCpCenter, sourceCpCenter);
-            }
-            else if (gEdge?.SourceConnectionPointId != null)
-            {
-                var sourceCp = GetSourceCpOrThrow();
-                var sourceCpCenter = sourceCp.RectangularSize.Center();
-
-                // In the case of parallel edges, the target direction needs to be found and the correct offset calculated. Otherwise, fall back
-                // to route information or simply the center of the target vertex.
-                if (NeedParallelCalc())
+                case { SourceConnectionPointId: { } sourceId, TargetConnectionPointId: { } targetId }:
                 {
-                    var m = new Point(targetCenter.X - sourceCenter.X, targetCenter.Y - sourceCenter.Y);
-                    targetCenter = new Point(sourceCpCenter.X + m.X, sourceCpCenter.Y + m.Y);
+                    // Get the connection points and their centers
+                    var sourceCp = GetSourceCpOrThrow(sourceId);
+                    var targetCp = GetTargetCpOrThrow(targetId);
+                    var sourceCpCenter = sourceCp.RectangularSize.Center();
+                    var targetCpCenter = targetCp.RectangularSize.Center();
+
+                    SourceConnectionPoint = GetCpEndPoint(sourceCp, sourceCpCenter, targetCpCenter);
+                    TargetConnectionPoint = GetCpEndPoint(targetCp, targetCpCenter, sourceCpCenter);
+                    break;
                 }
-                else if (hasRouteInfo)
+                case { SourceConnectionPointId: { } id }:
                 {
-                    targetCenter = routeInformation![1].ToAvalonia();
-                }
+                    var sourceCp = GetSourceCpOrThrow(id);
+                    var sourceCpCenter = sourceCp.RectangularSize.Center();
 
-                SourceConnectionPoint = GetCpEndPoint(sourceCp, sourceCpCenter, targetCenter);
-                TargetConnectionPoint = GeometryHelper.GetEdgeEndpoint(targetCenter,
-                    new Rect(targetTopLeft, targetSize),
-                    hasRouteInfo ? routeInformation![routeInformation.Length - 2].ToAvalonia() : sourceCpCenter,
-                    Target.VertexShape);
-            }
-            else if (gEdge?.TargetConnectionPointId != null)
-            {
-                var targetCp = GetTargetCpOrThrow();
-                var targetCpCenter = targetCp.RectangularSize.Center();
-
-                // In the case of parallel edges, the source direction needs to be found and the correct offset calculated. Otherwise, fall back
-                // to route information or simply the center of the source vertex.
-                if (NeedParallelCalc())
-                {
-                    var m = new Point(sourceCenter.X - targetCenter.X, sourceCenter.Y - targetCenter.Y);
-                    sourceCenter = new Point(targetCpCenter.X + m.X, targetCpCenter.Y + m.Y);
-                }
-                else if (hasRouteInfo)
-                {
-                    sourceCenter = routeInformation![routeInformation.Length - 2].ToAvalonia();
-                }
-
-                SourceConnectionPoint = GeometryHelper.GetEdgeEndpoint(sourceCenter,
-                    new Rect(sourceTopLeft, sourceSize),
-                    hasRouteInfo ? routeInformation![1].ToAvalonia() : targetCpCenter, Source!.VertexShape);
-                TargetConnectionPoint = GetCpEndPoint(targetCp, targetCpCenter, sourceCenter);
-            }
-            else
-            {
-                //calculate source and target edge attach points
-                if (NeedParallelCalc())
-                {
-                    var origSC = sourceCenter;
-                    var origTC = targetCenter;
-                    sourceCenter = GetParallelOffset(origSC, origTC, ParallelEdgeOffset);
-                    targetCenter = GetParallelOffset(origTC, origSC, -ParallelEdgeOffset);
-                }
-
-                SourceConnectionPoint = GeometryHelper.GetEdgeEndpoint(sourceCenter,
-                    new Rect(sourceTopLeft, sourceSize),
-                    hasRouteInfo ? routeInformation![1].ToAvalonia() : targetCenter, Source!.VertexShape);
-                TargetConnectionPoint = GeometryHelper.GetEdgeEndpoint(targetCenter,
-                    new Rect(targetTopLeft, targetSize),
-                    hasRouteInfo ? routeInformation![routeInformation.Length - 2].ToAvalonia() : sourceCenter,
-                    Target.VertexShape);
-            }
-
-            // If the logic above is working correctly, both the source and target connection points will exist.
-            if (!SourceConnectionPoint.HasValue || !TargetConnectionPoint.HasValue)
-                throw new GX_GeneralException("One or both connection points was not found due to an internal error.");
-
-            var p1 = SourceConnectionPoint.Value;
-            var p2 = TargetConnectionPoint.Value;
-
-            LineGeometry = new PathGeometry();
-            PathFigure lineFigure;
-
-            //if we have route and route consist of 2 or more points
-            if (RootArea != null && hasRouteInfo)
-            {
-                //replace start and end points with accurate ones
-                var routePoints = routeInformation.ToAvalonia()!.ToList();
-                routePoints.Remove(routePoints.First());
-                routePoints.Remove(routePoints.Last());
-                routePoints.Insert(0, p1);
-                routePoints.Add(p2);
-
-                if (externalRoutingPoints == null && routedEdge.RoutingPoints != null)
-                    routedEdge.RoutingPoints = routePoints.ToArray().ToGraphX();
-
-                if (RootArea.EdgeCurvingEnabled)
-                {
-                    var oPolyLineSegment =
-                        GeometryHelper.GetCurveThroughPoints([.. routePoints], 0.5, RootArea.EdgeCurvingTolerance);
-
-                    if (hasEpTarget)
+                    // In the case of parallel edges, the target direction needs to be found and the correct offset calculated. Otherwise, fall back
+                    // to route information or simply the center of the target vertex.
+                    if (NeedParallelCalc(hasRouteInfo))
                     {
-                        UpdateTargetEpData(oPolyLineSegment.Points[^1],
-                            oPolyLineSegment.Points[^2]);
-                        oPolyLineSegment.Points.RemoveAt(oPolyLineSegment.Points.Count - 1);
+                        var m = new Point(targetCenter.X - sourceCenter.X, targetCenter.Y - sourceCenter.Y);
+                        targetCenter = new Point(sourceCpCenter.X + m.X, sourceCpCenter.Y + m.Y);
+                    }
+                    else if (hasRouteInfo)
+                    {
+                        targetCenter = routeInformation[1].ToAvalonia();
                     }
 
-                    if (hasEpSource)
+                    SourceConnectionPoint = GetCpEndPoint(sourceCp, sourceCpCenter, targetCenter);
+                    TargetConnectionPoint = GeometryHelper.GetEdgeEndpoint(targetCenter,
+                        new Rect(targetTopLeft, targetSize),
+                        hasRouteInfo ? routeInformation[^2].ToAvalonia() : sourceCpCenter,
+                        Target.VertexShape);
+                    break;
+                }
+                case { TargetConnectionPointId: { } id }:
+                {
+                    var targetCp = GetTargetCpOrThrow(id);
+                    var targetCpCenter = targetCp.RectangularSize.Center();
+
+                    // In the case of parallel edges, the source direction needs to be found and the correct offset calculated. Otherwise, fall back
+                    // to route information or simply the center of the source vertex.
+                    if (NeedParallelCalc(hasRouteInfo))
                     {
-                        UpdateSourceEpData(oPolyLineSegment.Points.First(), oPolyLineSegment.Points[1]);
-                        oPolyLineSegment.Points.RemoveAt(0);
+                        var m = new Point(sourceCenter.X - targetCenter.X, sourceCenter.Y - targetCenter.Y);
+                        sourceCenter = new Point(targetCpCenter.X + m.X, targetCpCenter.Y + m.Y);
+                    }
+                    else if (hasRouteInfo)
+                    {
+                        sourceCenter = routeInformation[^2].ToAvalonia();
                     }
 
-                    lineFigure =
-                        GeometryHelper.GetPathFigureFromPathSegments(routePoints[0], true, oPolyLineSegment);
+                    SourceConnectionPoint = GeometryHelper.GetEdgeEndpoint(sourceCenter,
+                        new Rect(sourceTopLeft, sourceSize),
+                        hasRouteInfo ? routeInformation[1].ToAvalonia() : targetCpCenter, Source!.VertexShape);
+                    TargetConnectionPoint = GetCpEndPoint(targetCp, targetCpCenter, sourceCenter);
+                    break;
                 }
-                else
+                default:
                 {
-                    if (hasEpSource)
-                        routePoints[0] =
-                            routePoints[0].Subtract(UpdateSourceEpData(routePoints.First(), routePoints[1]));
-                    if (hasEpTarget)
-                        routePoints[^1] = routePoints[^1]
-                            .Subtract(UpdateTargetEpData(p2, routePoints[^2]));
-
-                    // Reverse the path if specified.
-                    if (gEdge!.ReversePath)
-                        routePoints.Reverse();
-
-                    var pcol = new Points();
-                    routePoints.ForEach(a => pcol.Add(a));
-
-                    lineFigure = new PathFigure
+                    //calculate source and target edge attach points
+                    if (NeedParallelCalc(hasRouteInfo))
                     {
-                        StartPoint = p1,
-                        Segments = [new PolyLineSegment { Points = pcol }],
-                        IsClosed = false
-                    };
+                        var origSC = sourceCenter;
+                        var origTC = targetCenter;
+                        sourceCenter = GetParallelOffset(origSC, origTC, ParallelEdgeOffset);
+                        targetCenter = GetParallelOffset(origTC, origSC, -ParallelEdgeOffset);
+                    }
+
+                    SourceConnectionPoint = GeometryHelper.GetEdgeEndpoint(sourceCenter,
+                        new Rect(sourceTopLeft, sourceSize),
+                        hasRouteInfo ? routeInformation[1].ToAvalonia() : targetCenter, Source!.VertexShape);
+                    TargetConnectionPoint = GeometryHelper.GetEdgeEndpoint(targetCenter,
+                        new Rect(targetTopLeft, targetSize),
+                        hasRouteInfo ? routeInformation[^2].ToAvalonia() : sourceCenter,
+                        Target.VertexShape);
+                    break;
                 }
             }
-            else // no route defined
-            {
-                var allowUpdateEpDataToUnsuppress = true;
-                //check for hide only if prop is not 0
-                if (HideEdgePointerByEdgeLength != 0d)
-                {
-                    if (MathHelper.GetDistanceBetweenPoints(p1.ToGraphX(), p2.ToGraphX()) <=
-                        HideEdgePointerByEdgeLength)
-                    {
-                        EdgePointerForSource?.Suppress();
-                        EdgePointerForTarget?.Suppress();
-                        allowUpdateEpDataToUnsuppress = false;
-                    }
-                    else
-                    {
-                        EdgePointerForSource?.UnSuppress();
-                        EdgePointerForTarget?.UnSuppress();
-                    }
-                }
+        }
 
-                if (hasEpSource)
-                    p1 = p1.Subtract(UpdateSourceEpData(p1, p2, allowUpdateEpDataToUnsuppress));
-                if (hasEpTarget)
-                    p2 = p2.Subtract(UpdateTargetEpData(p2, p1, allowUpdateEpDataToUnsuppress));
+        private bool NeedParallelCalc(bool hasRouteInfo)
+        {
+            if (RootArea is null) return false;
+            return !hasRouteInfo && RootArea.EnableParallelEdges && IsParallel;
+        }
 
-                lineFigure = TransformUnroutedPath(new PathFigure
-                {
-                    StartPoint = gEdge!.ReversePath ? p2 : p1,
-                    Segments = [new LineSegment { Point = gEdge.ReversePath ? p1 : p2 }],
-                    IsClosed = false
-                });
-            }
+        private static Point GetCpEndPoint(IVertexConnectionPoint cp, Point cpCenter, Point distantEnd)
+        {
+            // If the connection point (cp) doesn't have any shape, the edge comes from its center, otherwise find the location
+            // on its perimeter that the edge should come from.
+            var calculatedCp = cp.Shape == VertexShape.None
+                ? cpCenter
+                : GeometryHelper.GetEdgeEndpoint(cpCenter, cp.RectangularSize, distantEnd, cp.Shape);
+            return calculatedCp;
+        }
 
-            ((PathGeometry)LineGeometry).Figures!.Add(lineFigure);
-            if (_updateLabelPosition && updateLabel)
-                EdgeLabelControls.Where(l => l.ShowLabel).ForEach(l => l.UpdatePosition());
+        private IVertexConnectionPoint GetTargetCpOrThrow(int id)
+        {
+            return Target?.GetConnectionPointById(id, true) ?? throw new GX_ObjectNotFoundException(string.Format(
+                "Can't find target vertex VCP by edge target connection point Id({1}) : {0}", Target, id));
+        }
+
+        private IVertexConnectionPoint GetSourceCpOrThrow(int id)
+        {
+            return Source!.GetConnectionPointById(id, true) ?? throw new GX_ObjectNotFoundException(string.Format(
+                "Can't find source vertex VCP by edge source connection point Id({1}) : {0}", Source, id));
         }
 
         protected virtual PathFigure TransformUnroutedPath(PathFigure original)
@@ -1174,7 +1186,6 @@ namespace Westermo.GraphX.Controls.Avalonia
             return EdgePointerForTarget.IsVisible == IsVisible ? result.ToAvalonia() : new Point();
         }
 
-        #endregion public PrepareEdgePath()
 
         /// <summary>
         /// Searches and returns template part by name if found

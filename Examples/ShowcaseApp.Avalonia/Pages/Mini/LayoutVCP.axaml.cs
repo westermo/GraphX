@@ -5,6 +5,7 @@ using Avalonia.Controls;
 using Avalonia.Interactivity;
 using ShowcaseApp.Avalonia.ExampleModels;
 using ShowcaseApp.Avalonia.Models;
+using Westermo.GraphX.Common;
 using Westermo.GraphX.Common.Enums;
 using Westermo.GraphX.Controls.Avalonia;
 
@@ -29,13 +30,13 @@ namespace ShowcaseApp.Avalonia.Pages.Mini
             var rdNum = ShowcaseHelper.Rand.Next(0, 6);
             var vc = graphArea.VertexList.Values.ToList()[rdNum];
             //create new VCP with container
-            var newId = vc.VertexConnectionPointsList.Last().Id + 1;
+            var newId = vc.VertexConnectionPointsList.Values.Max(x => x.Id) + 1;
             var vcp = new StaticVertexConnectionPoint { Id = newId };
             var ctrl = new Border { Margin = new Thickness(2, 2, 0, 2), Padding = new Thickness(0), Child = vcp };
             //add vcp to the root container
             //in order to  be able to use VCPRoot property we must specify container in the XAML template through PART_vcproot name
             vc.VCPRoot?.Children.Add(ctrl);
-            vc.VertexConnectionPointsList.Add(vcp);
+            vc.VertexConnectionPointsList[vcp.Id] = vcp;
             //update edge to use new connection point
             if (graphArea.GetRelatedEdgeControls(vc, EdgesType.Out).First() is not EdgeControl ec)
             {
@@ -54,7 +55,7 @@ namespace ShowcaseApp.Avalonia.Pages.Mini
         private void CbMathShapeOnChecked(object? sender, RoutedEventArgs routedEventArgs)
         {
             foreach (var item in graphArea.VertexList.Values)
-                item.VertexConnectionPointsList.ForEach(a =>
+                item.VertexConnectionPointsList.Values.ForEach(a =>
                     a.Shape = cbMathShape.IsChecked == true ? VertexShape.Circle : VertexShape.None);
             graphArea.UpdateAllEdges(true);
         }

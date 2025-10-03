@@ -25,7 +25,7 @@
                                   HorizontalContentAlignment="Center"
                                   Background="{DynamicResource ButtonBackground}"
                                   Foreground="{DynamicResource ButtonText}">
-                <exampleModels:GraphAreaExample x:Name="graphArea" />
+                <exampleModels:GraphAreaExample x:Name="graphArea"/>
             </avalonia:ZoomControl>
         </Border>
 
@@ -34,8 +34,7 @@
                   ExpandDirection="Down"
                   Header="SETTINGS"
                   IsExpanded="false"
-                  Padding="5"
-                  Template="{DynamicResource MiniExpander}">
+                  Padding="5">
 
             <StackPanel MinHeight="50"
                         Margin="10"

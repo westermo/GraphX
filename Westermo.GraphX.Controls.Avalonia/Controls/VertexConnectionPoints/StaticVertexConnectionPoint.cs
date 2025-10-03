@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Layout;
@@ -10,6 +11,11 @@ namespace Westermo.GraphX.Controls.Avalonia
     public class StaticVertexConnectionPoint : ContentControl, IVertexConnectionPoint
     {
         #region Common part
+
+        public override string ToString()
+        {
+            return $"{RectangularSize}, {Shape}";
+        }
 
         /// <summary>
         /// Connector identifier
@@ -34,11 +40,24 @@ namespace Westermo.GraphX.Controls.Avalonia
         {
             get
             {
-                if (_rectangularSize.IsEmpty())
-                    UpdateLayout();
+                if (!_rectangularSize.IsEmpty()) return _rectangularSize;
+                UpdateLayout();
+                CalculateRectangularSize();
+
                 return _rectangularSize;
             }
             private set => _rectangularSize = value;
+        }
+
+        private void CalculateRectangularSize()
+        {
+            if (VertexControl is null) return;
+            var vertexPosition = VertexControl.GetPosition();
+            var myPosition = this.TranslatePoint(new Point(), VertexControl);
+            if (myPosition is null) return;
+            var position = new Point(myPosition.Value.X + vertexPosition.X, myPosition.Value.Y + vertexPosition.Y);
+            _rectangularSize = new Rect(position,
+                new Size(double.IsNaN(Width) ? Bounds.Width : Width, double.IsNaN(Height) ? Bounds.Height : Height));
         }
 
         public void Show()
@@ -53,14 +72,7 @@ namespace Westermo.GraphX.Controls.Avalonia
 
         private static VertexControl? GetVertexControl(Control? parent)
         {
-
-            while (parent != null)
-            {
-                if (parent is VertexControl control) return control;
-                parent = parent.GetVisualParent() as Control;
-            }
-
-            return null;
+            return parent?.FindAncestorOfType<VertexControl>();
         }
 
         #endregion Common part
@@ -79,6 +91,7 @@ namespace Westermo.GraphX.Controls.Avalonia
         public void Update()
         {
             UpdateLayout();
+            CalculateRectangularSize();
         }
 
         public void Dispose()
@@ -93,9 +106,7 @@ namespace Westermo.GraphX.Controls.Avalonia
 
         protected virtual void OnLayoutUpdated(object? sender, EventArgs e)
         {
-            var vPos = VertexControl!.GetPosition();
-            var position = new Point(vPos.X, vPos.Y);
-            RectangularSize = new Rect(position, new Size(Width, Height));
+            CalculateRectangularSize();
         }
     }
 }

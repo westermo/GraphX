@@ -225,18 +225,19 @@
         <Setter Property="BorderThickness" Value="5,3,5,3" />
         <Setter Property="Padding" Value="10,5,10,5" />
         <Setter Property="BorderBrush" Value="#FF393939" />
+        <Setter Property="CornerRadius" Value="10" />
 
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="{x:Type avalonia:VertexControl}">
                     <Border Background="{TemplateBinding Background}"
                             BorderBrush="{TemplateBinding BorderBrush}"
-                            CornerRadius="10,10,10,10"
+                            CornerRadius="{TemplateBinding CornerRadius}"
                             Padding="{TemplateBinding Padding}">
                         <Grid>
                             <ContentPresenter Content="{TemplateBinding Vertex}" />
                             <avalonia:VertexLabelControl x:Name="PART_vertexLabel"
-                                                         Content="{Binding Vertex, RelativeSource={RelativeSource TemplatedParent}}" />
+                                                         Content="{TemplateBinding Vertex}" />
                         </Grid>
                     </Border>
                 </ControlTemplate>

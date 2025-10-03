@@ -11,7 +11,6 @@
              d:DesignHeight="300" d:DesignWidth="600">
     <UserControl.Styles>
         <StyleInclude Source="/Templates/MiniFeatures.axaml" />
-        <StyleInclude Source="/Templates/Mini/LayoutGroupedTemplate.axaml" />
     </UserControl.Styles>
     <Grid>
         <Border BorderBrush="{DynamicResource ButtonBorder}" BorderThickness="1" Margin="2">
@@ -27,7 +26,6 @@
                   IsExpanded="false"
                   ExpandDirection="Down"
                   Header="SETTINGS"
-                  Template="{DynamicResource MiniExpander}"
                   Padding="5">
 
             <StackPanel Orientation="Vertical" MinHeight="50" VerticalAlignment="Center"

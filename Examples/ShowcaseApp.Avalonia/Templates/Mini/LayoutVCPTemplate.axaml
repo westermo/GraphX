@@ -1,6 +1,14 @@
 ﻿<Styles xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        xmlns:avalonia="clr-namespace:Westermo.GraphX.Controls.Avalonia;assembly=Westermo.GraphX.Controls.Avalonia">
+        xmlns:avalonia="using:Westermo.GraphX.Controls.Avalonia"
+        xmlns:examplemodels="using:ShowcaseApp.Avalonia.ExampleModels">
+    <Design.PreviewWith>
+        <Border Padding="20">
+            <StackPanel>
+                <examplemodels:GraphAreaExample />
+            </StackPanel>
+        </Border>
+    </Design.PreviewWith>
 
     <Style Selector="avalonia|StaticVertexConnectionPoint">
         <Setter Property="Shape" Value="Circle" />
@@ -8,7 +16,6 @@
         <Setter Property="Content">
             <Setter.Value>
                 <Template>
-
                     <Path Width="10"
                           Height="10"
                           HorizontalAlignment="Center"
@@ -27,14 +34,8 @@
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="{x:Type avalonia:VertexControl}">
-                    <Grid>
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="Auto" />
-                            <ColumnDefinition Width="*" />
-                            <ColumnDefinition Width="Auto" />
-                        </Grid.ColumnDefinitions>
-                        <StackPanel Name="PART_vcproot"
-                                    Grid.Column="0"
+                    <Grid ColumnDefinitions="Auto,*,Auto">
+                        <StackPanel Grid.Column="0"
                                     Orientation="Vertical">
                             <Border Margin="2,2,0,2" Padding="0">
                                 <avalonia:StaticVertexConnectionPoint Id="1" />
@@ -49,9 +50,15 @@
                                 BorderBrush="{TemplateBinding Foreground}"
                                 BorderThickness="1"
                                 CornerRadius="5">
-                            <ContentPresenter HorizontalAlignment="Center"
-                                              VerticalAlignment="Center"
-                                              Content="{TemplateBinding Vertex}" />
+                            <Grid>
+
+                                <ContentPresenter HorizontalAlignment="Center"
+                                                  VerticalAlignment="Center"
+                                                  Content="{TemplateBinding Vertex}" />
+
+                                <avalonia:VertexLabelControl x:Name="PART_vertexLabel"
+                                                             Content="{TemplateBinding Vertex}" />
+                            </Grid>
                         </Border>
                         <StackPanel Grid.Column="2" Orientation="Vertical">
                             <Border Margin="0,2,2,2" Padding="0">
@@ -68,24 +75,21 @@
     </Style>
 
     <Style Selector="avalonia|EdgeControl">
-        <Setter Property="Foreground" Value="{DynamicResource ButtonText}" />
-        <Setter Property="Template">
-            <Setter.Value>
-                <ControlTemplate TargetType="{x:Type avalonia:EdgeControl}">
-                    <Grid>
-                        <Path x:Name="PART_edgePath"
-                              Stroke="{TemplateBinding Foreground}"
-                              StrokeThickness="2" />
-                        <avalonia:DefaultEdgePointer x:Name="PART_EdgePointerForTarget" NeedRotation="true">
-                            <Path Width="10"
-                                  Height="10"
-                                  Data="M0,0.5 L1,1 1,0"
-                                  Fill="{TemplateBinding Foreground}"
-                                  Stretch="Uniform" />
-                        </avalonia:DefaultEdgePointer>
-                    </Grid>
-                </ControlTemplate>
-            </Setter.Value>
-        </Setter>
+        <Setter Property="MinWidth"
+                Value="1" />
+        <Setter Property="MinHeight"
+                Value="1" />
+        <Setter Property="Background"
+                Value="Red" />
+        <Setter Property="Foreground"
+                Value="Blue" />
+        <Setter Property="Opacity"
+                Value="1" />
+
+        <Style Selector="^[(avalonia|HighlightBehaviour.Highlighted)=True]">
+            <Setter Property="Foreground" Value="Gold" />
+            <Setter Property="StrokeThickness" Value="5" />
+        </Style>
+
     </Style>
 </Styles>

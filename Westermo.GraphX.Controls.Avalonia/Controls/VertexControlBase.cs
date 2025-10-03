@@ -80,7 +80,7 @@ namespace Westermo.GraphX.Controls.Avalonia
         /// <summary>
         /// List of found vertex connection points
         /// </summary>
-        public List<IVertexConnectionPoint> VertexConnectionPointsList { get; protected set; } = [];
+        public Dictionary<int, IVertexConnectionPoint> VertexConnectionPointsList { get; } = [];
 
         private double _labelAngle;
 
@@ -212,8 +212,9 @@ namespace Westermo.GraphX.Controls.Avalonia
         /// <param name="runUpdate">Update connection point if found</param>
         public IVertexConnectionPoint? GetConnectionPointById(int id, bool runUpdate = false)
         {
-            var result = VertexConnectionPointsList.FirstOrDefault(a => a.Id == id);
-            result?.Update();
+            if (!VertexConnectionPointsList.TryGetValue(id, out var result)) return null;
+            if (runUpdate)
+                result.Update();
             return result;
         }
 
@@ -221,9 +222,11 @@ namespace Westermo.GraphX.Controls.Avalonia
         {
             Measure(new Size(double.PositiveInfinity, double.PositiveInfinity));
 
-            return VertexConnectionPointsList.FirstOrDefault(a =>
+            return VertexConnectionPointsList.Values.FirstOrDefault(a =>
             {
-                var rect = new Rect(a.RectangularSize.X, a.RectangularSize.Y, a.RectangularSize.Width,
+                var rect = new Rect(a.RectangularSize.X,
+                    a.RectangularSize.Y,
+                    a.RectangularSize.Width,
                     a.RectangularSize.Height);
                 return rect.Contains(position.ToGraphX());
             });
@@ -255,7 +258,7 @@ namespace Westermo.GraphX.Controls.Avalonia
         /// <param name="isVisible"></param>
         public void SetConnectionPointsVisibility(bool isVisible)
         {
-            foreach (var item in VertexConnectionPointsList)
+            foreach (var item in VertexConnectionPointsList.Values)
             {
                 if (isVisible) item.Show();
                 else item.Hide();
