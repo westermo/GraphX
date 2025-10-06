@@ -41,14 +41,14 @@ namespace ShowcaseApp.Avalonia.Pages.Mini
             if (graphArea.GetRelatedEdgeControls(vc, EdgesType.Out).First() is not EdgeControl ec)
             {
                 ec = (graphArea.GetRelatedEdgeControls(vc, EdgesType.In).First() as EdgeControl)!;
-                (ec.Edge as DataEdge).TargetConnectionPointId = newId;
+                (ec.Edge as DataEdge)!.TargetConnectionPointId = newId;
             }
             else
             {
-                (ec.Edge as DataEdge).SourceConnectionPointId = newId;
+                (ec.Edge as DataEdge)!.SourceConnectionPointId = newId;
             }
 
-            graphArea.EdgesList[ec.Edge as DataEdge].UpdateEdge();
+            graphArea.EdgesList[(ec.Edge as DataEdge)!].UpdateEdge();
             //graphArea.UpdateAllEdges(true);
         }
 

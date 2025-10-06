@@ -132,7 +132,8 @@ public partial class EdgeRoutingGraph : UserControl
 
     private void erg_dashstyle_SelectionChanged(object? sender, SelectionChangedEventArgs e)
     {
-        erg_Area.SetEdgesDashStyle((EdgeDashStyle)erg_dashstyle.SelectedItem);
+        if (erg_dashstyle.SelectedItem is not EdgeDashStyle eds) return;
+        erg_Area.SetEdgesDashStyle(eds);
     }
 
     private void erg_PreviewTextInput(object? sender, TextInputEventArgs e)
@@ -201,7 +202,8 @@ public partial class EdgeRoutingGraph : UserControl
     {
         if (erg_useExternalERAlgo.IsChecked == true)
         {
-            if (erg_Area.LogicCore!.Graph == null) erg_but_randomgraph_Click(null, null);
+            if (erg_Area.LogicCore is { Graph: null }) erg_but_randomgraph_Click(null, new RoutedEventArgs());
+            if (erg_Area.LogicCore?.Graph == null) return;
             erg_Area.GetLogicCore<LogicCoreExample>().ExternalEdgeRoutingAlgorithm =
                 erg_Area.LogicCore.AlgorithmFactory.CreateEdgeRoutingAlgorithm(
                     EdgeRoutingAlgorithmTypeEnum.SimpleER,

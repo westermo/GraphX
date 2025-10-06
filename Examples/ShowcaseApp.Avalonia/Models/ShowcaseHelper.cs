@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using QuikGraph;
 using ShowcaseApp.Avalonia.ExampleModels;
@@ -21,6 +22,7 @@ namespace ShowcaseApp.Avalonia.Models
         public const int DATASOURCE_SIZE = 5000;
         public static readonly Random Rand = new(Guid.NewGuid().GetHashCode());
 
+        [MemberNotNull(nameof(DataSource))]
         private static void GenerateData(int count)
         {
             var list = new List<DataItem>();

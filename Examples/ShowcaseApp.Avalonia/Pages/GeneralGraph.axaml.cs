@@ -142,6 +142,7 @@ namespace ShowcaseApp.Avalonia.Pages
 
         private void gg_useExternalLayAlgo_Checked(object? sender, RoutedEventArgs routedEventArgs)
         {
+            if (gg_Area.LogicCore is null) return;
             if (gg_useExternalLayAlgo.IsChecked == true)
             {
                 var graph = gg_Area.LogicCore.Graph ??
@@ -154,6 +155,7 @@ namespace ShowcaseApp.Avalonia.Pages
 
         private void AssignExternalLayoutAlgorithm(BidirectionalGraph<DataVertex, DataEdge> graph)
         {
+            if (gg_Area.LogicCore is null) return;
             gg_Area.LogicCore.ExternalLayoutAlgorithm =
                 gg_Area.LogicCore.AlgorithmFactory.CreateLayoutAlgorithm(LayoutAlgorithmTypeEnum.ISOM, graph);
         }
@@ -161,17 +163,22 @@ namespace ShowcaseApp.Avalonia.Pages
         private void gg_oralgo_SelectionChanged(object? sender, SelectionChangedEventArgs e)
         {
             var core = gg_Area.LogicCore;
-            core.DefaultOverlapRemovalAlgorithm = (OverlapRemovalAlgorithmTypeEnum)gg_oralgo.SelectedItem;
-            if (core.DefaultOverlapRemovalAlgorithm == OverlapRemovalAlgorithmTypeEnum.FSA ||
-                core.DefaultOverlapRemovalAlgorithm == OverlapRemovalAlgorithmTypeEnum.OneWayFSA)
+            if (core == null) return;
+            if (gg_oralgo.SelectedItem is not OverlapRemovalAlgorithmTypeEnum oralgo) return;
+            core.DefaultOverlapRemovalAlgorithm = oralgo;
+            switch (oralgo)
             {
-                core.DefaultOverlapRemovalAlgorithmParams.HorizontalGap = 30;
-                core.DefaultOverlapRemovalAlgorithmParams.VerticalGap = 30;
+                case OverlapRemovalAlgorithmTypeEnum.FSA:
+                case OverlapRemovalAlgorithmTypeEnum.OneWayFSA:
+                    core.DefaultOverlapRemovalAlgorithmParams.HorizontalGap = 30;
+                    core.DefaultOverlapRemovalAlgorithmParams.VerticalGap = 30;
+                    break;
             }
         }
 
         private void gg_useExternalORAlgo_Checked(object sender, RoutedEventArgs e)
         {
+            if (gg_Area.LogicCore is null) return;
             gg_Area.LogicCore.ExternalOverlapRemovalAlgorithm = gg_useExternalORAlgo.IsChecked == true
                 ? gg_Area.LogicCore.AlgorithmFactory.CreateOverlapRemovalAlgorithm(OverlapRemovalAlgorithmTypeEnum.FSA,
                     null)
@@ -180,8 +187,10 @@ namespace ShowcaseApp.Avalonia.Pages
 
         private void gg_eralgo_SelectionChanged(object? sender, SelectionChangedEventArgs e)
         {
-            gg_Area.LogicCore.DefaultEdgeRoutingAlgorithm = (EdgeRoutingAlgorithmTypeEnum)gg_eralgo.SelectedItem;
-            if ((EdgeRoutingAlgorithmTypeEnum)gg_eralgo.SelectedItem == EdgeRoutingAlgorithmTypeEnum.Bundling)
+            if (gg_Area.LogicCore is null) return;
+            if (gg_eralgo.SelectedItem is not EdgeRoutingAlgorithmTypeEnum eralgo) return;
+            gg_Area.LogicCore.DefaultEdgeRoutingAlgorithm = eralgo;
+            if (eralgo == EdgeRoutingAlgorithmTypeEnum.Bundling)
             {
                 var prm = new BundleEdgeRoutingParameters();
                 gg_Area.LogicCore.DefaultEdgeRoutingAlgorithmParams = prm;
@@ -198,9 +207,9 @@ namespace ShowcaseApp.Avalonia.Pages
         {
             if (gg_useExternalERAlgo.IsChecked == true)
             {
-                var graph = gg_Area.LogicCore.Graph ??
+                var graph = gg_Area.LogicCore?.Graph ??
                             ShowcaseHelper.GenerateDataGraph(Convert.ToInt32(gg_vertexCount.Text));
-                gg_Area.LogicCore.Graph = graph;
+                gg_Area.LogicCore!.Graph = graph;
                 gg_Area.GetLogicCore<LogicCoreExample>().ExternalEdgeRoutingAlgorithm =
                     gg_Area.LogicCore.AlgorithmFactory.CreateEdgeRoutingAlgorithm(EdgeRoutingAlgorithmTypeEnum.SimpleER,
                         new Rect(gg_Area.DesiredSize.ToGraphX()), graph, null, null);
@@ -210,7 +219,7 @@ namespace ShowcaseApp.Avalonia.Pages
 
         private void gg_Area_RelayoutFinished(object? sender, EventArgs e)
         {
-            if (gg_Area.LogicCore.AsyncAlgorithmCompute)
+            if (gg_Area.LogicCore!.AsyncAlgorithmCompute)
                 gg_loader.IsVisible = false;
             gg_zoomctrl.ZoomToFill();
             gg_zoomctrl.Mode = ZoomControlModes.Custom;
@@ -223,7 +232,7 @@ namespace ShowcaseApp.Avalonia.Pages
         {
             if (!gg_Area.EdgesList.Any())
                 gg_Area.GenerateAllEdges();
-            if (gg_Area.LogicCore.AsyncAlgorithmCompute)
+            if (gg_Area.LogicCore!.AsyncAlgorithmCompute)
                 gg_loader.IsVisible = false;
 
             gg_zoomctrl.ZoomToFill();

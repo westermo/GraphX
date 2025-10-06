@@ -1,7 +1,6 @@
 <Application xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              x:Class="ShowcaseApp.Avalonia.App"
-             xmlns:local="using:ShowcaseApp.Avalonia"
              RequestedThemeVariant="Light">
     <!-- "Default" ThemeVariant follows system theme variant. "Dark" or "Light" are other available options. -->
     <Application.Resources>
@@ -12,9 +11,6 @@
             </ResourceDictionary.MergedDictionaries>
         </ResourceDictionary>
     </Application.Resources>
-    <Application.DataTemplates>
-        <local:ViewLocator />
-    </Application.DataTemplates>
 
     <Application.Styles>
         <FluentTheme />

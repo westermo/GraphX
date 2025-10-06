@@ -41,6 +41,7 @@ namespace ShowcaseApp.Avalonia.Models
         private void _zoomControl_MouseMove(object? sender, PointerEventArgs e)
         {
             if (_edgeBp == null) return;
+            if (_graphArea is null) return;
             var pt = _zoomControl!.TranslatePoint(e.GetPosition(_zoomControl), _graphArea);
             if (pt == null) return;
             var pos = pt.Value + new Vector(2, 2);
@@ -50,7 +51,7 @@ namespace ShowcaseApp.Avalonia.Models
         private void ClearEdgeBp()
         {
             if (_edgeBp == null) return;
-            _graphArea.RemoveCustomChildControl(_edgeBp.EdgePath);
+            _graphArea?.RemoveCustomChildControl(_edgeBp.EdgePath);
             _edgeBp.Dispose();
             _edgeBp = null;
         }
@@ -72,7 +73,7 @@ namespace ShowcaseApp.Avalonia.Models
 
     public class EdgeBlueprint : IDisposable
     {
-        public VertexControl Source { get; set; }
+        public VertexControl? Source { get; set; }
         public Point TargetPos { get; set; }
         public Path EdgePath { get; set; }
 
@@ -89,12 +90,14 @@ namespace ShowcaseApp.Avalonia.Models
 
         private void Source_PositionChanged(object sender, VertexPositionEventArgs args)
         {
+            if (Source == null) return;
             UpdateGeometry(Source.GetCenterPosition(), TargetPos);
         }
 
         internal void UpdateTargetPosition(Point point)
         {
             TargetPos = point;
+            if (Source == null) return;
             UpdateGeometry(Source.GetCenterPosition(), point);
         }
 
@@ -102,13 +105,14 @@ namespace ShowcaseApp.Avalonia.Models
         {
             var pg = new PathGeometry();
             var fig = new PathFigure { StartPoint = start, IsClosed = false, IsFilled = false };
-            fig.Segments.Add(new LineSegment { Point = end });
-            pg.Figures.Add(fig);
+            fig.Segments?.Add(new LineSegment { Point = end });
+            pg.Figures?.Add(fig);
             EdgePath.Data = pg;
         }
 
         public void Dispose()
         {
+            if (Source is null) return;
             Source.PositionChanged -= Source_PositionChanged;
             Source = null;
         }

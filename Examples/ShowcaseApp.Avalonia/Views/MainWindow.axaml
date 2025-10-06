@@ -5,7 +5,6 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:pages="clr-namespace:ShowcaseApp.Avalonia.Pages"
         xmlns:mini="clr-namespace:ShowcaseApp.Avalonia.Pages.Mini"
-        xmlns:debug="clr-namespace:ShowcaseApp.Avalonia.Pages.Debug"
         mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
         x:Class="ShowcaseApp.Avalonia.Views.MainWindow"
         x:DataType="vm:MainWindowViewModel"
@@ -50,9 +49,6 @@
                     <mini:LayoutVCP />
                 </TabItem>
             </TabControl>
-        </TabItem>
-        <TabItem Header="Debug">
-            <debug:DebugGraph />
         </TabItem>
     </TabControl>
 

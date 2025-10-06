@@ -20,7 +20,7 @@ namespace ShowcaseApp.Avalonia.ExampleModels
 
         public void ResetGraph(IEnumerable<DataVertex> vertices, IEnumerable<DataEdge> edges)
         {
-            _graph = default(IMutableBidirectionalGraph<DataVertex, DataEdge>);
+            _graph = new BidirectionalGraph<DataVertex, DataEdge>();
             _graph.AddVertexRange(vertices);
             _graph.AddEdgeRange(edges);
         }
@@ -30,19 +30,18 @@ namespace ShowcaseApp.Avalonia.ExampleModels
         public void Compute(CancellationToken cancellationToken)
         {
             var pars = new EfficientSugiyamaLayoutParameters { LayerDistance = 200 };
-            var algo = new EfficientSugiyamaLayoutAlgorithm<DataVertex, DataEdge, IMutableBidirectionalGraph<DataVertex, DataEdge>>(_graph, pars, _vertexPositions, VertexSizes);
+            var algo = new EfficientSugiyamaLayoutAlgorithm<DataVertex, DataEdge, IMutableBidirectionalGraph<DataVertex, DataEdge>>(_graph, pars, VertexPositions, VertexSizes);
             algo.Compute(cancellationToken);
 
             // now you can use = algo.VertexPositions for custom manipulations
 
             //set this algo calculation results 
-            _vertexPositions = algo.VertexPositions;
+            VertexPositions = algo.VertexPositions;
         }
 
-        private IDictionary<DataVertex, Point> _vertexPositions = new Dictionary<DataVertex, Point>();
-        public IDictionary<DataVertex, Point> VertexPositions => _vertexPositions;
+        public IDictionary<DataVertex, Point> VertexPositions { get; private set; } = new Dictionary<DataVertex, Point>();
 
-        public IDictionary<DataVertex, Size> VertexSizes { get; set; }
+        public IDictionary<DataVertex, Size> VertexSizes { get; set; } = new Dictionary<DataVertex, Size>();
 
         public bool NeedVertexSizes => true;
     }

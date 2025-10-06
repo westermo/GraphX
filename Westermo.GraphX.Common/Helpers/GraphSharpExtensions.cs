@@ -192,12 +192,6 @@ namespace Westermo.GraphX.Common
             }
 
             var undirected = new UndirectedBidirectionalGraph<TVertex, TEdge>(g);
-            //minden йlet egy hosszal veszьnk figyelembe - unweighted
-            var weights = new Dictionary<TEdge, double>();
-            foreach (var edge in undirected.Edges)
-            {
-                weights[edge] = 1;
-            }
 
             //compute the distances from every vertex: O(n(n^2 + e)) complexity
             var i = 0;
@@ -205,7 +199,7 @@ namespace Westermo.GraphX.Common
             {
                 //compute the distances from the 'source'
                 var spaDijkstra =
-                    new UndirectedDijkstraShortestPathAlgorithm<TVertex, TEdge>(undirected, edge => weights[edge],
+                    new UndirectedDijkstraShortestPathAlgorithm<TVertex, TEdge>(undirected, _ => 1,
                         QuikGraph.Algorithms.DistanceRelaxers.ShortestDistance);
                 spaDijkstra.Compute(source);
 
