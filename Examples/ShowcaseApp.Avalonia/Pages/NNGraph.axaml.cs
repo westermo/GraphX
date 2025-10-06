@@ -60,10 +60,11 @@ namespace ShowcaseApp.Avalonia.Pages
         private void graphArea_EdgeSelected(object sender, EdgeSelectedEventArgs args)
         {
             if (args.MouseArgs is not PointerEventArgs pea) return;
+            if (args.EdgeControl.Edge is not DataEdge dataEdge) return;
 
             if (!pea.Properties.IsLeftButtonPressed || _opMode != EditorOperationMode.Delete) return;
-            graphArea.LogicCore?.Graph.RemoveEdge(args.EdgeControl.Edge as DataEdge);
-            graphArea.RemoveEdge(args.EdgeControl.Edge as DataEdge);
+            graphArea.LogicCore?.Graph.RemoveEdge(dataEdge);
+            graphArea.RemoveEdge(dataEdge);
         }
 
         private void graphArea_VertexSelected(object sender, VertexSelectedEventArgs args)
@@ -90,13 +91,11 @@ namespace ShowcaseApp.Avalonia.Pages
             if (_selectedVertices.Contains(vc))
             {
                 _selectedVertices.Remove(vc);
-                HighlightBehaviour.SetHighlighted(vc, false);
                 DragBehaviour.SetIsTagged(vc, false);
             }
             else
             {
                 _selectedVertices.Add(vc);
-                HighlightBehaviour.SetHighlighted(vc, true);
                 DragBehaviour.SetIsTagged(vc, true);
             }
         }
@@ -161,11 +160,7 @@ namespace ShowcaseApp.Avalonia.Pages
         {
             if (_selectedVertices.Count != 0)
             {
-                _selectedVertices.ForEach(a =>
-                {
-                    HighlightBehaviour.SetHighlighted(a, false);
-                    DragBehaviour.SetIsTagged(a, false);
-                });
+                _selectedVertices.ForEach(a => { DragBehaviour.SetIsTagged(a, false); });
                 _selectedVertices.Clear();
             }
 
@@ -177,7 +172,6 @@ namespace ShowcaseApp.Avalonia.Pages
 
         private void ClearEditMode()
         {
-            HighlightBehaviour.SetHighlighted(_ecFrom, false);
             _editorManager.DestroyVirtualEdge();
             _ecFrom = null;
         }
@@ -186,7 +180,7 @@ namespace ShowcaseApp.Avalonia.Pages
         {
             var data = new DataVertex("Vertex " + (graphArea.VertexList.Count + 1))
                 { ImageId = ShowcaseHelper.Rand.Next(0, ThemedDataStorage.EditorImages.Count) };
-            graphArea.LogicCore.Graph.AddVertex(data);
+            graphArea.LogicCore?.Graph.AddVertex(data);
             var vc = new VertexControl(data);
             graphArea.AddVertex(data, vc);
             GraphAreaBase.SetX(vc, position.X);
@@ -200,18 +194,18 @@ namespace ShowcaseApp.Avalonia.Pages
             {
                 _editorManager.CreateVirtualEdge(vc, vc.GetPosition());
                 _ecFrom = vc;
-                HighlightBehaviour.SetHighlighted(_ecFrom, true);
                 return;
             }
 
             if (_ecFrom == vc) return;
+            if (_ecFrom.Vertex is not DataVertex from) return;
+            if (vc.Vertex is not DataVertex to) return;
+            if (graphArea.LogicCore == null) return;
 
-            var data = new DataEdge((DataVertex)_ecFrom.Vertex, (DataVertex)vc.Vertex);
+            var data = new DataEdge(from, to);
             graphArea.LogicCore!.Graph.AddEdge(data);
             var ec = new EdgeControl(_ecFrom, vc, data);
             graphArea.InsertEdge(data, ec);
-
-            HighlightBehaviour.SetHighlighted(_ecFrom, false);
             _ecFrom = null;
             _editorManager.DestroyVirtualEdge();
         }
@@ -236,8 +230,7 @@ namespace ShowcaseApp.Avalonia.Pages
 
         public void Dispose()
         {
-            if (_editorManager != null)
-                _editorManager.Dispose();
+            _editorManager.Dispose();
             if (graphArea != null)
                 graphArea.Dispose();
         }

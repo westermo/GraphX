@@ -185,7 +185,6 @@ public class VertexControl : VertexControlBase, IXYReactive, IDraggable
     {
         Vertex = null;
         RootArea = null!;
-        HighlightBehaviour.SetIsHighlightEnabled(this, false);
         DragBehaviour.SetIsDragEnabled(this, false);
         VertexLabelControl = null;
     }

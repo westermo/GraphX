@@ -18,7 +18,7 @@ namespace ShowcaseApp.Avalonia.Pages;
 public partial class EditorGraph : UserControl, IDisposable
 {
     private EditorOperationMode _opMode = EditorOperationMode.Select;
-    private VertexControl _ecFrom;
+    private VertexControl? _ecFrom;
     private readonly EditorObjectManager _editorManager;
 
     public EditorGraph()
@@ -54,8 +54,9 @@ public partial class EditorGraph : UserControl, IDisposable
     private void graphArea_EdgeSelected(object sender, EdgeSelectedEventArgs args)
     {
         if (args.MouseArgs is not PointerEventArgs pea) return;
+        if (args.EdgeControl.Edge is not DataEdge dataEdge) return;
         if (pea.Properties.IsLeftButtonPressed && _opMode == EditorOperationMode.Delete)
-            graphArea.RemoveEdge(args.EdgeControl.Edge as DataEdge, true);
+            graphArea.RemoveEdge(dataEdge, true);
     }
 
     private void graphArea_VertexSelected(object sender, VertexSelectedEventArgs args)
@@ -80,16 +81,7 @@ public partial class EditorGraph : UserControl, IDisposable
 
     private static void SelectVertex(Control vc)
     {
-        if (DragBehaviour.GetIsTagged(vc))
-        {
-            HighlightBehaviour.SetHighlighted(vc, false);
-            DragBehaviour.SetIsTagged(vc, false);
-        }
-        else
-        {
-            HighlightBehaviour.SetHighlighted(vc, true);
-            DragBehaviour.SetIsTagged(vc, true);
-        }
+        DragBehaviour.SetIsTagged(vc, !DragBehaviour.GetIsTagged(vc));
     }
 
     private void zoomCtrl_MouseDown(object? sender, PointerPressedEventArgs e)
@@ -157,11 +149,7 @@ public partial class EditorGraph : UserControl, IDisposable
         graphArea.VertexList.Values
             .Where(DragBehaviour.GetIsTagged)
             .ToList()
-            .ForEach(a =>
-            {
-                HighlightBehaviour.SetHighlighted(a, false);
-                DragBehaviour.SetIsTagged(a, false);
-            });
+            .ForEach(a => { DragBehaviour.SetIsTagged(a, false); });
 
         if (!soft)
             graphArea.SetVerticesDrag(false);
@@ -169,7 +157,6 @@ public partial class EditorGraph : UserControl, IDisposable
 
     private void ClearEditMode()
     {
-        if (_ecFrom != null) HighlightBehaviour.SetHighlighted(_ecFrom, false);
         _editorManager.DestroyVirtualEdge();
         _ecFrom = null;
     }
@@ -190,32 +177,29 @@ public partial class EditorGraph : UserControl, IDisposable
         {
             _editorManager.CreateVirtualEdge(vc, vc.GetPosition());
             _ecFrom = vc;
-            HighlightBehaviour.SetHighlighted(_ecFrom, true);
             return;
         }
 
         if (_ecFrom == vc) return;
-
-        var data = new DataEdge((DataVertex)_ecFrom.Vertex, (DataVertex)vc.Vertex);
+        if (_ecFrom.Vertex is not DataVertex from || vc.Vertex is not DataVertex to) return;
+        var data = new DataEdge(from, to);
         var ec = new EdgeControl(_ecFrom, vc, data);
         graphArea.InsertEdgeAndData(data, ec, 0, true);
 
-        HighlightBehaviour.SetHighlighted(_ecFrom, false);
         _ecFrom = null;
         _editorManager.DestroyVirtualEdge();
     }
 
     private void SafeRemoveVertex(VertexControl vc)
     {
+        if (vc.Vertex is not DataVertex dv) return;
         //remove vertex and all adjacent edges from layout and data graph
-        graphArea.RemoveVertexAndEdges(vc.Vertex as DataVertex);
+        graphArea.RemoveVertexAndEdges(dv);
     }
 
     public void Dispose()
     {
-        if (_editorManager != null)
-            _editorManager.Dispose();
-        if (graphArea != null)
-            graphArea.Dispose();
+        _editorManager.Dispose();
+        graphArea?.Dispose();
     }
 }

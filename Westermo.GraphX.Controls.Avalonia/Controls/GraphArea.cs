@@ -217,9 +217,6 @@ namespace Westermo.GraphX.Controls.Avalonia
             EdgeLabelFactory = new DefaultEdgeLabelFactory();
             //VertexLabelFactory = new DefaultLabelFactory<AttachableVertexLabelControl, IVertexLabelControl>();
             ControlFactory = new GraphControlFactory(this);
-
-            if (Design.IsDesignMode) return;
-
         }
 
         #region Edge & vertex controls operations
@@ -436,7 +433,7 @@ namespace Westermo.GraphX.Controls.Avalonia
         /// <param name="edgeData">Edge data object</param>
         /// <param name="edgeControl">Edge visual control</param>
         /// <param name="generateLabel">Generate edge label for this control using EdgeLabelFactory</param>
-        public void AddEdge(TEdge edgeData, EdgeControl edgeControl, bool generateLabel = false)
+        public void AddEdge(TEdge edgeData, EdgeControl? edgeControl, bool generateLabel = false)
         {
             if (AutoAssignMissingDataId && edgeData.ID == -1)
                 edgeData.ID = GetNextUniqueId(false);
@@ -1073,10 +1070,6 @@ namespace Westermo.GraphX.Controls.Avalonia
                 DragBehaviour.SetUpdateEdgesOnMove(item, _svVerticesDragUpdateEdges.Value);
             if (_svVertexShape != null) item.VertexShape = _svVertexShape.Value;
             if (_svVertexLabelShow != null) item.ShowLabel = _svVertexLabelShow.Value;
-            if (_svVertexHlEnabled != null) HighlightBehaviour.SetIsHighlightEnabled(item, _svVertexHlEnabled.Value);
-            if (_svVertexHlObjectType != null)
-                HighlightBehaviour.SetHighlightControl(item, _svVertexHlObjectType.Value);
-            if (_svVertexHlEdgesType != null) HighlightBehaviour.SetHighlightEdges(item, _svVertexHlEdgesType.Value);
             CustomReapplySingleVertexVisualProperties(item);
         }
 
@@ -1103,9 +1096,6 @@ namespace Westermo.GraphX.Controls.Avalonia
             //if (_svShowEdgeLabels != null) item.ShowLabel = _svShowEdgeLabels.Value;
             //if (_svAlignEdgeLabels != null) item.AlignLabelsToEdges = _svAlignEdgeLabels.Value;
             if (_svUpdateLabelPosition != null) item.UpdateLabelPosition = _svUpdateLabelPosition.Value;
-            if (_svEdgeHlEnabled != null) HighlightBehaviour.SetIsHighlightEnabled(item, _svEdgeHlEnabled.Value);
-            if (_svEdgeHlObjectType != null) HighlightBehaviour.SetHighlightControl(item, _svEdgeHlObjectType.Value);
-            HighlightBehaviour.SetHighlightEdges(item, EdgesType.All);
             CustomReapplySingleEdgeVisualProperties(item);
         }
 
@@ -1232,53 +1222,6 @@ namespace Westermo.GraphX.Controls.Avalonia
             _svVertexShape = shape;
             foreach (var item in VertexList)
                 item.Value.SetCurrentValue(VertexControlBase.VertexShapeProperty, shape);
-        }
-
-        private bool? _svVertexHlEnabled;
-        private GraphControlType? _svVertexHlObjectType; // = GraphControlType.VertexAndEdge;
-        private EdgesType? _svVertexHlEdgesType; // = EdgesType.All;
-
-        /// <summary>
-        /// Sets vertices highlight logic
-        /// </summary>
-        /// <param name="isEnabled">Is highlight enabled</param>
-        /// <param name="hlObjectsOfType">Highlight connected objects if specified type</param>
-        /// <param name="hlEdgesOfType">Highlight edges of specified type (according to previous property set)</param>
-        public void SetVerticesHighlight(bool isEnabled, GraphControlType hlObjectsOfType,
-            EdgesType hlEdgesOfType = EdgesType.All)
-        {
-            _svVertexHlEnabled = isEnabled;
-            _svVertexHlObjectType = hlObjectsOfType;
-            _svVertexHlEdgesType = hlEdgesOfType;
-            foreach (var item in VertexList)
-            {
-                HighlightBehaviour.SetHighlighted(item.Value, false);
-                HighlightBehaviour.SetIsHighlightEnabled(item.Value, isEnabled);
-                HighlightBehaviour.SetHighlightControl(item.Value, hlObjectsOfType);
-                HighlightBehaviour.SetHighlightEdges(item.Value, hlEdgesOfType);
-            }
-        }
-
-        private bool? _svEdgeHlEnabled;
-        private GraphControlType? _svEdgeHlObjectType; // = GraphControlType.VertexAndEdge;
-
-        /// <summary>
-        /// Sets edges highlight logic
-        /// </summary>
-        /// <param name="isEnabled">Is highlight enabled</param>
-        /// <param name="hlObjectsOfType">Highlight connected objects if specified type</param>
-        public void SetEdgesHighlight(bool isEnabled, GraphControlType hlObjectsOfType)
-        {
-            _svEdgeHlEnabled = isEnabled;
-            _svEdgeHlObjectType = hlObjectsOfType;
-
-            foreach (var item in VertexList)
-            {
-                HighlightBehaviour.SetHighlighted(item.Value, false);
-                HighlightBehaviour.SetIsHighlightEnabled(item.Value, isEnabled);
-                HighlightBehaviour.SetHighlightControl(item.Value, hlObjectsOfType);
-                HighlightBehaviour.SetHighlightEdges(item.Value, EdgesType.All);
-            }
         }
 
         #endregion

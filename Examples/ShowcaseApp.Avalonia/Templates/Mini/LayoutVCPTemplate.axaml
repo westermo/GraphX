@@ -85,11 +85,5 @@
                 Value="Blue" />
         <Setter Property="Opacity"
                 Value="1" />
-
-        <Style Selector="^[(avalonia|HighlightBehaviour.Highlighted)=True]">
-            <Setter Property="Foreground" Value="Gold" />
-            <Setter Property="StrokeThickness" Value="5" />
-        </Style>
-
     </Style>
 </Styles>

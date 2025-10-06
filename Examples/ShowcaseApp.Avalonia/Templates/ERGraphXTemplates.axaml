@@ -62,12 +62,6 @@
         <Setter Property="Background" Value="Red" />
         <Setter Property="Foreground" Value="Black" />
         <Setter Property="Opacity" Value="1" />
-
-        <Setter Property="avalonia:HighlightBehaviour.IsHighlightEnabled" Value="False" />
-        <Style Selector="^[(avalonia|HighlightBehaviour.IsHighlightEnabled)=True]">
-            <Setter Property="Foreground" Value="Gold" />
-            <Setter Property="StrokeThickness" Value="5" />
-        </Style>
     </Style>
 
 

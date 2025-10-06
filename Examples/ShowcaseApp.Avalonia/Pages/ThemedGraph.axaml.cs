@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Linq;
 using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Interactivity;
@@ -38,11 +37,6 @@ namespace ShowcaseApp.Avalonia.Pages
             tg_edgeMode.SelectedIndex = 0;
             tg_edgeType.ItemsSource = Enum.GetValues<EdgesType>();
             tg_edgeType.SelectedItem = EdgesType.All;
-            tg_highlightType.ItemsSource = Enum.GetValues<GraphControlType>();
-            tg_highlightType.SelectedItem = GraphControlType.VertexAndEdge;
-            tg_highlightEdgeType.ItemsSource = Enum.GetValues<EdgesType>();
-            tg_highlightEdgeType.SelectedItem = EdgesType.All;
-            HighlightEnabledSelectionChanged(null, null);
             DragMoveEdgesChecked(null, null);
             DragEnabledChanged(null, null);
 
@@ -60,12 +54,12 @@ namespace ShowcaseApp.Avalonia.Pages
 
         #region TGRelayoutCommand
 
-        private static bool TgRelayoutCommandCanExecute(object sender)
+        private static bool TgRelayoutCommandCanExecute(object? sender)
         {
             return true;
         }
 
-        private void TgRelayoutCommandExecute(object sender)
+        private void TgRelayoutCommandExecute(object? sender)
         {
             if (tg_Area.LogicCore!.AsyncAlgorithmCompute)
                 tg_loader.IsVisible = true;
@@ -87,7 +81,7 @@ namespace ShowcaseApp.Avalonia.Pages
             if (args.MouseArgs is not PointerEventArgs pea) return;
             if (pea.Properties.IsLeftButtonPressed && tg_edgeMode.SelectedIndex == 1)
             {
-                tg_Area.GenerateEdgesForVertex(args.VertexControl, (EdgesType)tg_edgeType.SelectedItem);
+                tg_Area.GenerateEdgesForVertex(args.VertexControl, (EdgesType)(tg_edgeType.SelectedItem ?? EdgesType.All));
             }
 
             if (!pea.Properties.IsRightButtonPressed) return;
@@ -135,10 +129,6 @@ namespace ShowcaseApp.Avalonia.Pages
         {
             if (tg_Area.LogicCore!.AsyncAlgorithmCompute)
                 tg_loader.IsVisible = false;
-
-            HighlightTypeSelectionChanged(null, null);
-            HighlightEnabledSelectionChanged(null, null);
-            HighlightEdgeTypeSelectionChanged(null, null);
             DragMoveEdgesChecked(null, null);
             DragEnabledChanged(null, null);
 
@@ -174,38 +164,6 @@ namespace ShowcaseApp.Avalonia.Pages
                 DragBehaviour.SetUpdateEdgesOnMove(item.Value, true);
             }
         }
-
-
-        private void MoveAnimation_Completed(object sender, EventArgs e)
-        {
-            tg_zoomctrl.ZoomToFill();
-        }
-
-
-        private void HighlightTypeSelectionChanged(object sender, SelectionChangedEventArgs e)
-        {
-            foreach (var item in tg_Area.VertexList)
-                HighlightBehaviour.SetHighlightControl(item.Value, (GraphControlType)tg_highlightType.SelectedItem);
-            foreach (var item in tg_Area.EdgesList)
-                HighlightBehaviour.SetHighlightControl(item.Value, (GraphControlType)tg_highlightType.SelectedItem);
-        }
-
-        private void HighlightEnabledSelectionChanged(object? sender, RoutedEventArgs? e)
-        {
-            foreach (var item in tg_Area.VertexList)
-                HighlightBehaviour.SetIsHighlightEnabled(item.Value,
-                    tg_highlightEnabled.IsChecked != null && tg_highlightEnabled.IsChecked.Value);
-            foreach (var item in tg_Area.EdgesList)
-                HighlightBehaviour.SetIsHighlightEnabled(item.Value,
-                    tg_highlightEnabled.IsChecked != null && tg_highlightEnabled.IsChecked.Value);
-        }
-
-        private void HighlightEdgeTypeSelectionChanged(object sender, SelectionChangedEventArgs e)
-        {
-            foreach (var item in tg_Area.VertexList)
-                HighlightBehaviour.SetHighlightEdges(item.Value, (EdgesType)tg_highlightEdgeType.SelectedItem);
-            foreach (var item in tg_Area.EdgesList)
-                HighlightBehaviour.SetHighlightEdges(item.Value, (EdgesType)tg_highlightEdgeType.SelectedItem);
-        }
+        
     }
 }

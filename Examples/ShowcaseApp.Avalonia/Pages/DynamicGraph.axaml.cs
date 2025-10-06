@@ -375,14 +375,12 @@ public partial class DynamicGraph : UserControl
     {
         if (DragBehaviour.GetIsTagged(vc))
         {
-            HighlightBehaviour.SetHighlighted(vc, false);
             DragBehaviour.SetIsTagged(vc, false);
             vc.ClearValue(DragBehaviour.XSnapModifierProperty);
             vc.ClearValue(DragBehaviour.YSnapModifierProperty);
         }
         else
         {
-            HighlightBehaviour.SetHighlighted(vc, true);
             DragBehaviour.SetIsTagged(vc, true);
             DragBehaviour.SetXSnapModifier(vc, ExaggeratedSnappingXModifier);
             DragBehaviour.SetYSnapModifier(vc, ExaggeratedSnappingYModifier);

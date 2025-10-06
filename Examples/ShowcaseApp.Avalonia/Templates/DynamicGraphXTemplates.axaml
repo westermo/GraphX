@@ -27,12 +27,6 @@
         <Setter Property="avalonia:DragBehaviour.UpdateEdgesOnMove"
                 Value="True" />
 
-
-        <Style Selector="^[(avalonia|HighlightBehaviour.IsHighlightEnabled)=True]">
-            <Setter Property="BorderBrush" Value="Gold" />
-            <Setter Property="BorderThickness" Value="7" />
-        </Style>
-
     </Style>
 
 
@@ -49,18 +43,6 @@
                 Value="Silver" />
         <Setter Property="Opacity"
                 Value="1" />
-
-        <Setter Property="avalonia:HighlightBehaviour.IsHighlightEnabled" Value="False" />
-
-
-        <Style Selector="^[(avalonia|HighlightBehaviour.IsHighlightEnabled)=True]">
-            <Setter Property="Foreground" Value="Gold" />
-            <Setter Property="StrokeThickness" Value="5" />
-        </Style>
-        <Style Selector="^[(avalonia|HighlightBehaviour.IsHighlightEnabled)=False]">
-            <Setter Property="Foreground" Value="Silver" />
-            <Setter Property="StrokeThickness" Value="2" />
-        </Style>
     </Style>
 
 </Styles>

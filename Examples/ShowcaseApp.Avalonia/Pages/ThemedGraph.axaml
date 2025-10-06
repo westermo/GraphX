@@ -32,12 +32,6 @@
                 <Setter Property="Opacity" Value="1" />
                 <Setter Property="Background" Value="{DynamicResource MouseOverBrush}" />
                 <Setter Property="BorderBrush" Value="{DynamicResource MouseOverBorderBrush}" />
-                <Style Selector="^[(avalonia|HighlightBehaviour.Highlighted)=True]">
-                    <Setter Property="BorderBrush" Value="{DynamicResource MouseOverHighlightBrush}" />
-                </Style>
-            </Style>
-            <Style Selector="^[(avalonia|HighlightBehaviour.Highlighted)=True]">
-                <Setter Property="BorderBrush" Value="{DynamicResource NormalHighlightBrush}" />
             </Style>
 
         </Style>
@@ -54,11 +48,6 @@
                     Value="Blue" />
             <Setter Property="Opacity"
                     Value="1" />
-
-            <Style Selector="^[(avalonia|HighlightBehaviour.Highlighted)=True]">
-                <Setter Property="Foreground" Value="Gold" />
-                <Setter Property="StrokeThickness" Value="5" />
-            </Style>
         </Style>
 
     </UserControl.Styles>
@@ -206,15 +195,6 @@
                                       DockPanel.Dock="Top" IsCheckedChanged="DragEnabledChanged" />
                             <CheckBox Name="tg_dragMoveEdges" Content="Update edges on move" Margin="3"
                                       DockPanel.Dock="Top" />
-
-                            <CheckBox Name="tg_highlightEnabled" Content="Highlight enabled" Margin="3"
-                                      DockPanel.Dock="Top" IsCheckedChanged="HighlightEnabledSelectionChanged" />
-                            <TextBlock DockPanel.Dock="Top" Text="Affected control type" HorizontalAlignment="Center" />
-                            <ComboBox x:Name="tg_highlightType" Margin="3"
-                                      SelectionChanged="HighlightTypeSelectionChanged" DockPanel.Dock="Top" />
-                            <TextBlock DockPanel.Dock="Top" Text="Edge directions" HorizontalAlignment="Center" />
-                            <ComboBox x:Name="tg_highlightEdgeType" Margin="3"
-                                      SelectionChanged="HighlightEdgeTypeSelectionChanged" DockPanel.Dock="Top" />
                         </DockPanel>
                     </Expander>
                     <Expander Header="Animation">

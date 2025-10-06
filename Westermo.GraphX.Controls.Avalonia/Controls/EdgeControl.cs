@@ -58,7 +58,6 @@ namespace Westermo.GraphX.Controls.Avalonia
             Target = null;
             Edge = null;
             RootArea = null!;
-            HighlightBehaviour.SetIsHighlightEnabled(this, false);
             DragBehaviour.SetIsDragEnabled(this, false);
             LineGeometry = null;
             LinePathObject = null;
