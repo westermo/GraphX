@@ -236,8 +236,8 @@ public partial class DynamicGraph : UserControl
     private void DragSourcePressed(object? sender,
         PointerPressedEventArgs pointerPressedEventArgs)
     {
-        var data = new DataObject();
-        DragDrop.DoDragDrop(pointerPressedEventArgs, data, DragDropEffects.Link);
+        var data = new DataTransfer();
+        DragDrop.DoDragDropAsync(pointerPressedEventArgs, data, DragDropEffects.Link);
     }
 
     private static void dg_Area_DragEnter(object? sender, DragEventArgs e)
