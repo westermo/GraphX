@@ -1,33 +1,13 @@
 ﻿<Styles
     xmlns="https://github.com/avaloniaui"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-    xmlns:avalonia="clr-namespace:Westermo.GraphX.Controls.Avalonia;assembly=Westermo.GraphX.Controls.Avalonia"
-    xmlns:exampleModels="clr-namespace:ShowcaseApp.Avalonia.ExampleModels">
+    xmlns:avalonia="clr-namespace:Westermo.GraphX.Controls.Avalonia;assembly=Westermo.GraphX.Controls.Avalonia">
 
     <!-- VERTEX CONTROL -->
     <Style Selector="avalonia|VertexControl">
         <!-- Set background color through attached property -->
         <Setter Property="BorderThickness" Value="0" />
         <Setter Property="ShowLabel" Value="True" />
-        <Setter Property="Template">
-            <Setter.Value>
-                <ControlTemplate TargetType="{x:Type avalonia:VertexControl}" x:DataType="exampleModels:DataVertex">
-                    <Grid>
-                        <Border CornerRadius="50" BorderBrush="{TemplateBinding BorderBrush}"
-                                BorderThickness="{TemplateBinding BorderThickness}" Name="hlBorder">
-                            <Image Source="{Binding ImageId, Converter={StaticResource EditorImageConverter}}"
-                                   Width="45"
-                                   Stretch="Uniform" Margin="2" />
-                        </Border>
-
-                        <!--<controls:VertexLabelControl x:Name="PART_vertexLabel" Content="{Binding Vertex.Text, RelativeSource={RelativeSource TemplatedParent}}" LabelPositionSide="Bottom" FontFamily="Comic Sans MS" />-->
-
-                    </Grid>
-                </ControlTemplate>
-            </Setter.Value>
-
-        </Setter>
-
         <!-- VERTEX DRAGGING CONTROL -->
         <Setter Property="avalonia:DragBehaviour.IsDragEnabled"
                 Value="False" />
@@ -48,40 +28,10 @@
         <Setter Property="Foreground" Value="Black" />
         <Setter Property="LabelPositionMode" Value="Sides" />
         <Setter Property="LabelPositionSide" Value="Bottom" />
-
-        <!-- Custom label template body -->
-        <Setter Property="Template">
-            <Setter.Value>
-                <ControlTemplate TargetType="avalonia:AttachableVertexLabelControl"
-                                 x:DataType="avalonia:AttachableVertexLabelControl">
-                    <Grid>
-                        <TextBlock VerticalAlignment="Center"
-                                   HorizontalAlignment="Center"
-                                   Text="{Binding AttachNode.Vertex, UpdateSourceTrigger=PropertyChanged}"
-                                   FontFamily="Comic Sans MS" />
-                    </Grid>
-                </ControlTemplate>
-            </Setter.Value>
-        </Setter>
     </Style>
 
     <!-- EDGE CONTROL -->
     <Style Selector="avalonia|EdgeControl">
-        <Setter Property="Template">
-            <Setter.Value>
-                <ControlTemplate TargetType="{x:Type avalonia:EdgeControl}">
-                    <Grid>
-                        <Path Stroke="{StaticResource EdgeBrush}"
-                              StrokeThickness="2" MinWidth="1" MinHeight="1"
-                              x:Name="PART_edgePath" />
-                        <avalonia:DefaultEdgePointer NeedRotation="true" x:Name="PART_EdgePointerForTarget">
-                            <Path Data="M0,0.5 L1,1 1,0" Fill="Black" Stretch="Uniform" Width="15" Height="15" />
-                        </avalonia:DefaultEdgePointer>
-                    </Grid>
-                </ControlTemplate>
-            </Setter.Value>
-        </Setter>
-
         <Setter Property="MinWidth"
                 Value="1" />
         <Setter Property="MinHeight"
@@ -89,7 +39,7 @@
         <Setter Property="Background"
                 Value="Red" />
         <Setter Property="Foreground"
-                Value="Silver" />
+                Value="Blue" />
         <Setter Property="Opacity"
                 Value="1" />
 

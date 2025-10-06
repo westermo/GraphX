@@ -22,9 +22,10 @@
         <Border Grid.Row="1" Grid.Column="0" BorderBrush="{DynamicResource ButtonBorder}" BorderThickness="1"
                 Margin="2">
             <Border.Background>
-                <VisualBrush TileMode="Tile">
+                <VisualBrush TileMode="Tile" Stretch="None"
+                             DestinationRect="0,0,32,32">
                     <VisualBrush.Visual>
-                        <Image Source="/Assets/grid_paper.png" Stretch="Uniform" UseLayoutRounding="True">
+                        <Image Source="/Assets/grid_paper.png">
                         </Image>
                     </VisualBrush.Visual>
                 </VisualBrush>

@@ -10,6 +10,15 @@
     <UserControl.Styles>
         <StyleInclude Source="/Templates/GeneralTemplate.axaml" />
     </UserControl.Styles>
+    <UserControl.DataTemplates>
+        <DataTemplate DataType="exampleModels:DataVertex">
+            <Image Width="80"
+                   Margin="0"
+                   Source="{Binding ImageId,
+                                                Converter={StaticResource ImageConverter}}"
+                   Stretch="UniformToFill" />
+        </DataTemplate>
+    </UserControl.DataTemplates>
     <Grid RowDefinitions=" Auto,*">
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="*" MinWidth="100" />
@@ -27,7 +36,7 @@
                 Margin="2">
             <avalonia:ZoomControl x:Name="gg_zoomctrl"
                                   Foreground="{DynamicResource ButtonText}">
-                <exampleModels:GraphAreaExample x:Name="gg_Area"/>
+                <exampleModels:GraphAreaExample x:Name="gg_Area" />
             </avalonia:ZoomControl>
         </Border>
 

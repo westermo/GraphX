@@ -82,8 +82,6 @@ namespace ShowcaseApp.Avalonia.Pages
                 case EditorOperationMode.Select when args.Modifiers.HasFlag(KeyModifiers.Control):
                     SelectVertex(args.VertexControl);
                     break;
-                default:
-                    throw new ArgumentOutOfRangeException();
             }
         }
 

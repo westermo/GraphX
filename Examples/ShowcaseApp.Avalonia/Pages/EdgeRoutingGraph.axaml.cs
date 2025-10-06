@@ -4,9 +4,9 @@ using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Interactivity;
-using Avalonia.Media;
 using ShowcaseApp.Avalonia.ExampleModels;
 using ShowcaseApp.Avalonia.Models;
+using ShowcaseApp.Avalonia.Views;
 using Westermo.GraphX;
 using Westermo.GraphX.Common.Enums;
 using Westermo.GraphX.Controls.Avalonia;
@@ -22,29 +22,11 @@ namespace ShowcaseApp.Avalonia.Pages;
 /// </summary>
 public partial class EdgeRoutingGraph : UserControl
 {
-    private PathFinderEdgeRoutingParameters _pfPrms;
+    public PathFinderEdgeRoutingParameters PfErParameters { get; set; }
 
-    public PathFinderEdgeRoutingParameters PfErParameters
-    {
-        get => _pfPrms;
-        set => _pfPrms = value;
-    }
+    public SimpleERParameters SimpleErParameters { get; set; }
 
-    private SimpleERParameters _simplePrms;
-
-    public SimpleERParameters SimpleErParameters
-    {
-        get => _simplePrms;
-        set { _simplePrms = value; }
-    }
-
-    private BundleEdgeRoutingParameters _bundlePrms;
-
-    public BundleEdgeRoutingParameters BundleEdgeRoutingParameters
-    {
-        get => _bundlePrms;
-        set { _bundlePrms = value; }
-    }
+    public BundleEdgeRoutingParameters BundleEdgeRoutingParameters { get; set; }
 
     private readonly LogicCoreExample _logicCore;
 
@@ -56,7 +38,7 @@ public partial class EdgeRoutingGraph : UserControl
         erg_Area.LogicCore = _logicCore;
         erg_Area.LogicCore.ParallelEdgeDistance = 20;
         erg_Area.EdgeLabelFactory = new DefaultEdgeLabelFactory();
-        erg_Area.ControlFactory = new ExampleFactory();
+        erg_Area.ControlFactory = new FunnyExampleFactory();
 
         erg_showEdgeArrows.IsChecked = true;
         BundleEdgeRoutingParameters =
@@ -237,6 +219,7 @@ public partial class EdgeRoutingGraph : UserControl
             case EdgeRoutingAlgorithmTypeEnum.PathFinder:
             case EdgeRoutingAlgorithmTypeEnum.Bundling:
                 erg_Area.RelayoutGraph();
+                erg_Area.UpdateAllEdges(true); // update edges after relayout for routing algorithms
                 break;
             case EdgeRoutingAlgorithmTypeEnum.None:
             case EdgeRoutingAlgorithmTypeEnum.SimpleER:
@@ -263,8 +246,8 @@ public partial class EdgeRoutingGraph : UserControl
 
     private void erg_but_randomgraph_Click(object? sender, RoutedEventArgs e)
     {
-        if (erg_eralgo.SelectedItem is not EdgeRoutingAlgorithmTypeEnum eralgo) return;
-        if (eralgo != EdgeRoutingAlgorithmTypeEnum.Bundling)
+        if (erg_eralgo.SelectedItem is not EdgeRoutingAlgorithmTypeEnum algorithm) return;
+        if (algorithm != EdgeRoutingAlgorithmTypeEnum.Bundling)
         {
             var gr = ShowcaseHelper.GenerateDataGraph(30);
             var logicCore = erg_Area.GetLogicCore<LogicCoreExample>();
@@ -289,8 +272,8 @@ public partial class EdgeRoutingGraph : UserControl
                 }
             }
 
-            logicCore.DefaultEdgeRoutingAlgorithm = eralgo;
-            logicCore.DefaultEdgeRoutingAlgorithmParams = eralgo switch
+            logicCore.DefaultEdgeRoutingAlgorithm = algorithm;
+            logicCore.DefaultEdgeRoutingAlgorithmParams = algorithm switch
             {
                 EdgeRoutingAlgorithmTypeEnum.SimpleER => SimpleErParameters,
                 EdgeRoutingAlgorithmTypeEnum.PathFinder => PfErParameters,
@@ -306,6 +289,7 @@ public partial class EdgeRoutingGraph : UserControl
                     .FSA);
 
             erg_Area.GenerateGraph(gr);
+            erg_Area.UpdateAllEdges(true); // ensure edges get their geometry built
             erg_Area.SetVerticesDrag(true, true);
             erg_Area.SetEdgesDrag(true);
             erg_zoomctrl.ZoomToFill();
@@ -342,24 +326,21 @@ public partial class EdgeRoutingGraph : UserControl
         _logicCore.DefaultEdgeRoutingAlgorithm = EdgeRoutingAlgorithmTypeEnum.Bundling;
         _logicCore.DefaultEdgeRoutingAlgorithmParams = BundleEdgeRoutingParameters;
         erg_Area.GenerateGraph();
+        erg_Area.UpdateAllEdges(true); // ensure edges updated after bundling generation
 
         erg_zoomctrl.ZoomToFill();
     }
 }
 
-internal class ExampleFactory : IGraphControlFactory
+internal class FunnyExampleFactory : IGraphControlFactory
 {
     public GraphAreaBase FactoryRootArea => throw new NotImplementedException();
 
     public EdgeControl CreateEdgeControl(VertexControl source, VertexControl target, object edge,
         bool showArrows = true, bool isVisible = true)
     {
-        return new FunnyEdgeControl
+        return new FunnyEdgeControl(source, target, edge, showArrows)
         {
-            Source = source,
-            Target = target,
-            Edge = edge,
-            ShowArrows = showArrows,
             IsVisible = isVisible
         };
     }
@@ -370,38 +351,35 @@ internal class ExampleFactory : IGraphControlFactory
     }
 }
 
-internal class FunnyEdgeControl : EdgeControl
+internal class FunnyEdgeControl(VertexControl? source, VertexControl target, object? edge, bool showArrows)
+    : EdgeControl(source, target, edge, showArrows)
 {
     internal int Frequency = 10;
     internal int Amplitude = 20;
     internal int PointCount = 90;
 
-    protected override PathFigure TransformUnroutedPath(PathFigure original)
+    protected override Span<Point> TransformFinalPath(Span<Point> original)
+
     {
-        if (original.Segments == null) return original;
-        var startPoint = original.StartPoint;
-        var figure = new PathFigure
-        {
-            StartPoint = startPoint,
-            Segments = [],
-            IsClosed = original.IsClosed
-        };
-        var endPoint = original.Segments.OfType<PolyLineSegment>().First().Points.Last();
-        var poly = new PolyLineSegment();
+        if (original.Length < 2)
+            return original;
+        var startPoint = original[0];
+        var endPoint = original[^1];
+        var points = new Point[PointCount];
+        points[0] = startPoint;
         var vector = endPoint - startPoint;
         var orthogonal = new Vector(-vector.Y, vector.X);
         orthogonal = orthogonal.Normalize();
-        for (double i = 1; i <= PointCount; i++)
+        for (var i = 0; i < PointCount; i++)
         {
             var p = startPoint
-                    + vector * (i / PointCount)
+                    + vector * ((double)i / PointCount)
                     + orthogonal * (Math.Sin(i * 2 * Math.PI * Frequency / PointCount) * Amplitude);
-            poly.Points.Add(p);
+            points[i] = p;
         }
 
-        poly.IsStroked = true;
-        figure.Segments.Add(poly);
+        points[^1] = endPoint;
 
-        return figure;
+        return points;
     }
 }

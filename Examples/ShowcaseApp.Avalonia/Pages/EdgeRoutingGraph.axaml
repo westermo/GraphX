@@ -9,10 +9,20 @@
              mc:Ignorable="d"
              d:DesignHeight="300" d:DesignWidth="600"
              x:DataType="pages1:EdgeRoutingGraph">
+    
+    <UserControl.Styles>
+        <StyleInclude Source="/Templates/ERGraphXTemplates.axaml" />
+    </UserControl.Styles>
+    
+    <UserControl.DataTemplates>
+        <DataTemplate DataType="exampleModels:DataVertex">
+            <Image
+                Source="{Binding ImageId, UpdateSourceTrigger=PropertyChanged, Converter={StaticResource ImageConverter}}"
+                Margin="0" Width="40" Stretch="UniformToFill" />
+        </DataTemplate>
+    </UserControl.DataTemplates>
+    
     <Grid ColumnDefinitions="*,Auto,Auto" RowDefinitions="Auto,*">
-        <Grid.Styles>
-            <StyleInclude Source="/Templates/ERGraphXTemplates.axaml" />
-        </Grid.Styles>
 
         <GridSplitter VerticalAlignment="Stretch" Width="2" Grid.Row="0" Grid.RowSpan="2" Grid.Column="1" />
 

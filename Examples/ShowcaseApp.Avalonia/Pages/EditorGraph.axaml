@@ -10,6 +10,13 @@
     <UserControl.Styles>
         <StyleInclude Source="/Templates/EditorGraphXTemplates.axaml" />
     </UserControl.Styles>
+    <UserControl.DataTemplates>
+        <DataTemplate DataType="exampleModels:DataVertex">
+            <Image Source="{Binding ImageId, Converter={StaticResource EditorImageConverter}}"
+                   Width="45"
+                   Stretch="Uniform" Margin="2" />
+        </DataTemplate>
+    </UserControl.DataTemplates>
     <Grid RowDefinitions="Auto,*" ColumnDefinitions="*,Auto">
 
         <Border CornerRadius="2" BorderBrush="{DynamicResource ButtonBorder}"
@@ -22,10 +29,10 @@
         <Border Grid.Row="1" Grid.Column="0" BorderBrush="{DynamicResource ButtonBorder}" BorderThickness="1"
                 Margin="2">
             <Border.Background>
-                <VisualBrush TileMode="Tile">
+                <VisualBrush TileMode="Tile" Stretch="None"
+                             DestinationRect="0,0,32,32">
                     <VisualBrush.Visual>
-                        <Image Source="/Assets/grid_paper.png" Stretch="Uniform" UseLayoutRounding="True">
-                        </Image>
+                        <Image Source="/Assets/grid_paper.png"/>
                     </VisualBrush.Visual>
                 </VisualBrush>
             </Border.Background>

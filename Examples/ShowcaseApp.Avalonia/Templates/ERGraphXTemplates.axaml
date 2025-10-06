@@ -2,89 +2,77 @@
     xmlns="https://github.com/avaloniaui"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:avalonia="clr-namespace:Westermo.GraphX.Controls.Avalonia;assembly=Westermo.GraphX.Controls.Avalonia"
-    xmlns:exampleModels="clr-namespace:ShowcaseApp.Avalonia.ExampleModels">
+    xmlns:pages="clr-namespace:ShowcaseApp.Avalonia.Pages">
+    <Styles.Resources>
+        <!-- Provide a control theme for FunnyEdgeControl (EdgeControl subclass) so it has a template -->
+        <ControlTheme x:Key="{x:Type pages:FunnyEdgeControl}" TargetType="pages:FunnyEdgeControl">
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="pages:FunnyEdgeControl">
+                        <Grid>
+                            <Path Stroke="{TemplateBinding Foreground}"
+                                  StrokeThickness="{TemplateBinding StrokeThickness}"
+                                  x:Name="PART_edgePath" />
+                            <avalonia:DefaultEdgePointer NeedRotation="true" x:Name="PART_EdgePointerForTarget">
+                                <Path Data="M0,0.5 L1,1 1,0"
+                                      Fill="{TemplateBinding Foreground}"
+                                      Stretch="Uniform"
+                                      Width="10"
+                                      Height="10" />
+                            </avalonia:DefaultEdgePointer>
+                            <avalonia:DefaultEdgePointer NeedRotation="true" x:Name="PART_EdgePointerForSource">
+                                <Path Data="M0,0.5 L1,1 1,0"
+                                      Fill="{TemplateBinding Foreground}"
+                                      Stretch="Uniform"
+                                      Width="10"
+                                      Height="10" />
+                            </avalonia:DefaultEdgePointer>
+                            <Path x:Name="PART_SelfLoopedEdge"
+                                  Width="10"
+                                  Height="10"
+                                  Stretch="Uniform"
+                                  Fill="{TemplateBinding Foreground}"
+                                  Data="F1 M 17.4167,32.25L 32.9107,32.25L 38,18L 43.0893,32.25L 58.5833,32.25L 45.6798,41.4944L 51.4583,56L 38,48.0833L 26.125,56L 30.5979,41.7104L 17.4167,32.25 Z " />
+                        </Grid>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+            <Setter Property="Foreground" Value="Black" />
+            <Setter Property="StrokeThickness" Value="5" />
+            <Setter Property="Opacity" Value="1" />
+            <Setter Property="MinWidth" Value="1" />
+            <Setter Property="MinHeight" Value="1" />
+        </ControlTheme>
+    </Styles.Resources>
 
     <!-- VERTEX CONTROL -->
     <Style Selector="avalonia|VertexControl">
-        <Setter Property="Background" Value="#FFE3E3E3" />
-        <Setter Property="BorderThickness" Value="5,3,5,3" />
-        <Setter Property="Padding" Value="10,5,10,5" />
-        <Setter Property="BorderBrush" Value="#FF393939" />
+        <Setter Property="Background" Value="Transparent" />
         <Setter Property="VertexShape" Value="Circle" />
-
-        <Setter Property="Template">
-            <Setter.Value>
-                <ControlTemplate TargetType="{x:Type avalonia:VertexControl}" x:DataType="exampleModels:DataVertex">
-                    <Image
-                        Source="{Binding ImageId, UpdateSourceTrigger=PropertyChanged, Converter={StaticResource EditorImageConverter}}"
-                        Margin="0" Width="40" Stretch="UniformToFill" />
-                </ControlTemplate>
-            </Setter.Value>
-        </Setter>
-
         <!-- VERTEX DRAGGING CONTROL -->
-        <Setter Property="avalonia:DragBehaviour.IsDragEnabled"
-                Value="True" />
-
-        <Setter Property="avalonia:HighlightBehaviour.IsHighlightEnabled" Value="False" />
-
-        <Style Selector="^[(avalonia|HighlightBehaviour.IsHighlightEnabled)=True]">
-            <Setter Property="Background" Value="Gold" />
-            <Setter Property="BorderThickness" Value="7" />
-        </Style>
+        <Setter Property="avalonia:DragBehaviour.IsDragEnabled" Value="True" />
+        <Setter Property="avalonia:DragBehaviour.UpdateEdgesOnMove" Value="True" />
     </Style>
 
     <!-- EDGE CONTROL -->
-    <Style Selector="avalonia|EdgeControl">
-        <Setter Property="Template">
-            <Setter.Value>
-                <ControlTemplate TargetType="{x:Type avalonia:EdgeControl}">
-                    <Grid>
-                        <Path Stroke="{TemplateBinding Foreground}"
-                              StrokeThickness="2" MinWidth="1" MinHeight="1"
-                              x:Name="PART_edgePath" />
-                        <avalonia:DefaultEdgePointer NeedRotation="true" x:Name="PART_EdgePointerForTarget">
-                            <Path Data="M0,0.5 L1,1 1,0" Fill="Black" Stretch="Uniform" Width="15" Height="15" />
-                        </avalonia:DefaultEdgePointer>
-                        <!--<controls:EdgeLabelControl x:Name="PART_edgeLabel" Content="{Binding Edge.ToolTipText, RelativeSource={RelativeSource TemplatedParent}}" />-->
-
-                    </Grid>
-                </ControlTemplate>
-            </Setter.Value>
-        </Setter>
-
-        <Setter Property="MinWidth"
-                Value="1" />
-        <Setter Property="MinHeight"
-                Value="1" />
-        <Setter Property="Background"
-                Value="Red" />
-        <Setter Property="Foreground"
-                Value="Black" />
-        <Setter Property="Opacity"
-                Value="1" />
+    <Style Selector=":is(avalonia|EdgeControl)">
+        <Setter Property="MinWidth" Value="1" />
+        <Setter Property="MinHeight" Value="1" />
+        <Setter Property="StrokeThickness" Value="5" />
+        <Setter Property="Background" Value="Red" />
+        <Setter Property="Foreground" Value="Black" />
+        <Setter Property="Opacity" Value="1" />
 
         <Setter Property="avalonia:HighlightBehaviour.IsHighlightEnabled" Value="False" />
-
-
         <Style Selector="^[(avalonia|HighlightBehaviour.IsHighlightEnabled)=True]">
             <Setter Property="Foreground" Value="Gold" />
             <Setter Property="StrokeThickness" Value="5" />
         </Style>
     </Style>
 
+
     <!--EDGE LABLE CONTROL -->
     <Style Selector="avalonia|AttachableEdgeLabelControl">
-        <Setter Property="Template">
-            <Setter.Value>
-                <ControlTemplate TargetType="{x:Type avalonia:AttachableEdgeLabelControl}" x:DataType="{x:Type avalonia:AttachableEdgeLabelControl}">
-                    <Border BorderBrush="Black" BorderThickness="1" Background="White" CornerRadius="4">
-                        <ContentPresenter Margin="3"
-                                          Content="{Binding AttachNode.Edge, UpdateSourceTrigger=PropertyChanged}" />
-                    </Border>
-                </ControlTemplate>
-            </Setter.Value>
-        </Setter>
         <Setter Property="DisplayForSelfLoopedEdges" Value="False" />
     </Style>
 </Styles>

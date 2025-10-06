@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
+using System.Runtime.InteropServices;
 using Avalonia;
 using Avalonia.Collections;
 using Avalonia.Controls;
@@ -124,8 +125,21 @@ namespace Westermo.GraphX.Controls.Avalonia
         {
             SourceProperty.Changed.AddClassHandler<EdgeControlBase>(OnSourceChangedInternal);
             TargetProperty.Changed.AddClassHandler<EdgeControlBase>(OnTargetChangedInternal);
-            DashStyleProperty.Changed.AddClassHandler<EdgeControlBase>(dashstyle_changed);
-            ShowArrowsProperty.Changed.AddClassHandler<EdgeControlBase>(showarrows_changed);
+            DashStyleProperty.Changed.AddClassHandler<EdgeControlBase>(DashStyleChanged);
+            ShowArrowsProperty.Changed.AddClassHandler<EdgeControlBase>(ShowArrowsChanged);
+            ShowSelfLoopIndicatorProperty.Changed.AddClassHandler<EdgeControlBase>(ShowSelfLoopIndicatorChanged);
+            SelfLoopIndicatorOffsetProperty.Changed.AddClassHandler<EdgeControlBase>(SelfLoopDataChanged);
+            SelfLoopIndicatorRadiusProperty.Changed.AddClassHandler<EdgeControlBase>(SelfLoopDataChanged);
+        }
+
+        private static void SelfLoopDataChanged(EdgeControlBase arg1, AvaloniaPropertyChangedEventArgs arg2)
+        {
+            arg1.UpdateEdgeRendering();
+        }
+
+        private static void ShowSelfLoopIndicatorChanged(EdgeControlBase arg1, AvaloniaPropertyChangedEventArgs arg2)
+        {
+            arg1.UpdateSelfLoopedEdgeData();
         }
 
         private static void OnSourceChangedInternal(EdgeControlBase control,
@@ -150,7 +164,7 @@ namespace Westermo.GraphX.Controls.Avalonia
         public static readonly StyledProperty<EdgeDashStyle> DashStyleProperty =
             AvaloniaProperty.Register<EdgeControlBase, EdgeDashStyle>(nameof(DashStyle));
 
-        private static void dashstyle_changed(EdgeControlBase edgeControlBase, AvaloniaPropertyChangedEventArgs e)
+        private static void DashStyleChanged(EdgeControlBase edgeControlBase, AvaloniaPropertyChangedEventArgs e)
         {
             edgeControlBase.StrokeDashArray = (EdgeDashStyle?)e.NewValue switch
             {
@@ -212,7 +226,7 @@ namespace Westermo.GraphX.Controls.Avalonia
         public static readonly StyledProperty<bool> ShowArrowsProperty =
             AvaloniaProperty.Register<EdgeControlBase, bool>(nameof(ShowArrows), true);
 
-        private static void showarrows_changed(EdgeControlBase edgeControlBase,
+        private static void ShowArrowsChanged(EdgeControlBase edgeControlBase,
             AvaloniaPropertyChangedEventArgs avaloniaPropertyChangedEventArgs)
         {
             edgeControlBase.UpdateEdge(false);
@@ -468,13 +482,34 @@ namespace Westermo.GraphX.Controls.Avalonia
             UpdateEdge();
         }
 
-        /// <summary>
-        /// Measure child objects such as template parts which are not updated automaticaly on first pass.
-        /// </summary>
-        /// <param name="child">Child Control</param>
+        // Re-added after edit: measure template child once with unlimited size so DesiredSize is initialized
         protected void MeasureChild(Control? child)
         {
             child?.Measure(new Size(double.PositiveInfinity, double.PositiveInfinity));
+        }
+
+        // Provide a desired size for layout based on current geometry bounds so edge is not collapsed to 0x0.
+        protected override Size MeasureOverride(Size availableSize)
+        {
+            // If we have geometry use its bounds; otherwise fall back to explicitly set Width/Height (may be NaN).
+            if (LineGeometry != null)
+            {
+                var b = LineGeometry.Bounds;
+                var w = double.IsNaN(b.Width) || b.Width <= 0 ? 1 : b.Width;
+                var h = double.IsNaN(b.Height) || b.Height <= 0 ? 1 : b.Height;
+                // Respect MinWidth/MinHeight from styles.
+                w = Math.Max(w, MinWidth);
+                h = Math.Max(h, MinHeight);
+                return new Size(w, h);
+            }
+
+            var fw = double.IsNaN(Width) ? 0 : Width;
+            var fh = double.IsNaN(Height) ? 0 : Height;
+            fw = Math.Max(fw, MinWidth);
+            fh = Math.Max(fh, MinHeight);
+            if (fw <= 0) fw = 1; // never let it be 0 so Path can render
+            if (fh <= 0) fh = 1;
+            return new Size(fw, fh);
         }
 
         /// <summary>
@@ -522,6 +557,7 @@ namespace Westermo.GraphX.Controls.Avalonia
             if (LinePathObject == null) return;
             LinePathObject.Data = LineGeometry;
             LinePathObject.StrokeDashArray = StrokeDashArray;
+            InvalidateMeasure(); // ensure layout re-queries our desired size after geometry change
         }
 
         internal int ParallelEdgeOffset;
@@ -592,35 +628,39 @@ namespace Westermo.GraphX.Controls.Avalonia
             }
         }
 
-        private PathFigure BuildNormalizedLineFigure(Point p1, Point p2, Span<Point> extraPoints, bool reverse)
+        private PathFigure BuildNormalizedLineFigure(Span<Point> points, bool reverse)
         {
-            var pts = new List<Point>();
-            pts.AddRange(extraPoints is { Length: > 0 } ? extraPoints : [p1, p2]);
+            if (points.Length < 2)
+                throw new GX_InvalidDataException("At least two points required to build edge path!");
 
             // Collect all points we will actually use
-            if (!pts.Contains(p1)) pts.Insert(0, p1);
-            if (!pts.Contains(p2)) pts.Add(p2);
-
-            var minX = pts.Min(p => p.X);
-            var minY = pts.Min(p => p.Y);
-            var maxX = pts.Max(p => p.X);
-            var maxY = pts.Max(p => p.Y);
+            var minX = double.MaxValue;
+            var minY = double.MaxValue;
+            var maxX = double.MinValue;
+            var maxY = double.MinValue;
+            foreach (var point in points)
+            {
+                if (point.X < minX) minX = point.X;
+                if (point.Y < minY) minY = point.Y;
+                if (point.X > maxX) maxX = point.X;
+                if (point.Y > maxY) maxY = point.Y;
+            }
 
             // Reposition the EdgeControl itself
             SetPosition(minX, minY);
 
             // Shift points into local space
-            for (var i = 0; i < pts.Count; i++)
-                pts[i] = new Point(pts[i].X - minX, pts[i].Y - minY);
+            for (var i = 0; i < points.Length; i++)
+                points[i] = new Point(points[i].X - minX, points[i].Y - minY);
 
             Width = Math.Max(1, maxX - minX);
             Height = Math.Max(1, maxY - minY);
 
             // Build figure
-            if (reverse) pts.Reverse();
-            var start = pts[0];
+            if (reverse) points.Reverse();
+            var start = points[0];
             var segPoints = new Points();
-            for (var i = 1; i < pts.Count; i++) segPoints.Add(pts[i]);
+            for (var i = 1; i < points.Length; i++) segPoints.Add(points[i]);
 
             return new PathFigure
             {
@@ -670,18 +710,14 @@ namespace Westermo.GraphX.Controls.Avalonia
             bool useCurrentCoords = false)
         {
             if (RootArea is null) return;
-            //do not calculate invisible edges
-            if (!IsVisible && !IsHiddenEdgesUpdated && ManualDrawing || !IsTemplateLoaded) return;
+            if (!TryGetSourcePoints(useCurrentCoords, out var sourceRect)) return;
+
 
             //get the size of the source
-            var sourceSize = new Size(Source!.Width, Source!.Height);
+            var sourceSize = sourceRect.Size;
 
             //get the position center of the source
-            var sourcePos = new Point(
-                (useCurrentCoords ? GraphAreaBase.GetX(Source) : GraphAreaBase.GetFinalX(Source)) +
-                sourceSize.Width * 0.5,
-                (useCurrentCoords ? GraphAreaBase.GetY(Source) : GraphAreaBase.GetFinalY(Source)) +
-                sourceSize.Height * 0.5);
+            var sourcePos = sourceRect.Center;
 
             //get the size of the target
             var targetSize = new Size(1, 1);
@@ -762,19 +798,18 @@ namespace Westermo.GraphX.Controls.Avalonia
 
                     if (hasEpTarget)
                     {
-                        UpdateTargetEpData(oPolyLineSegment.Points[^1],
-                            oPolyLineSegment.Points[^2]);
-                        oPolyLineSegment.Points.RemoveAt(oPolyLineSegment.Points.Count - 1);
+                        UpdateTargetEpData(oPolyLineSegment[^1], oPolyLineSegment[^2]);
+                        oPolyLineSegment.RemoveAt(oPolyLineSegment.Count - 1);
                     }
 
                     if (hasEpSource)
                     {
-                        UpdateSourceEpData(oPolyLineSegment.Points.First(), oPolyLineSegment.Points[1]);
-                        oPolyLineSegment.Points.RemoveAt(0);
+                        UpdateSourceEpData(oPolyLineSegment[0], oPolyLineSegment[1]);
+                        oPolyLineSegment.RemoveAt(0);
                     }
 
-                    lineFigure =
-                        GeometryHelper.GetPathFigureFromPathSegments(routePoints[0], true, oPolyLineSegment);
+                    lineFigure = BuildNormalizedLineFigure(CollectionsMarshal.AsSpan(oPolyLineSegment),
+                        gEdge?.ReversePath ?? false);
                 }
                 else
                 {
@@ -786,7 +821,7 @@ namespace Westermo.GraphX.Controls.Avalonia
                             .Subtract(UpdateTargetEpData(p2, routePoints[^2]));
 
 
-                    lineFigure = BuildNormalizedLineFigure(p1, p2, routePoints, gEdge?.ReversePath ?? false);
+                    lineFigure = BuildNormalizedLineFigure(routePoints, gEdge?.ReversePath ?? false);
                 }
             }
             else // no route defined
@@ -814,7 +849,7 @@ namespace Westermo.GraphX.Controls.Avalonia
                 if (hasEpTarget)
                     p2 = p2.Subtract(UpdateTargetEpData(p2, p1, remainHidden));
 
-                lineFigure = BuildNormalizedLineFigure(p1, p2, null, gEdge!.ReversePath);
+                lineFigure = BuildNormalizedLineFigure(TransformFinalPath([p1, p2]), gEdge?.ReversePath ?? false);
             }
 
             ((PathGeometry)LineGeometry).Figures!.Add(lineFigure);
@@ -848,11 +883,9 @@ namespace Westermo.GraphX.Controls.Avalonia
         public virtual void PrepareEdgePath(bool useCurrentCoords = false,
             Measure.Point[]? externalRoutingPoints = null, bool updateLabel = true)
         {
-            if (!TryGetPoints(useCurrentCoords,
-                    out var sourceTopLeft,
-                    out var targetTopLeft,
-                    out var sourceSize,
-                    out var targetSize))
+            if (!TryGetSourcePoints(useCurrentCoords, out var sourceRect))
+                return;
+            if (!TryGetTargetPoints(useCurrentCoords, out var targetRect))
                 return;
 
             if (Edge is not IRoutingInfo routedEdge)
@@ -865,15 +898,14 @@ namespace Westermo.GraphX.Controls.Avalonia
             //if self looped edge
             if (IsSelfLooped)
             {
-                PrepareSelfLoopedEdge(sourceTopLeft);
+                PrepareSelfLoopedEdge(sourceRect.TopLeft);
                 return;
             }
 
             //check if we have some edge route data
             var hasRouteInfo = routeInformation is { Length: > 1 };
             var gEdge = Edge as IGraphXCommonEdge;
-            UpdateConnectionPoints(gEdge, hasRouteInfo, routeInformation, targetTopLeft,
-                targetSize, sourceTopLeft, sourceSize);
+            UpdateConnectionPoints(gEdge, hasRouteInfo, routeInformation, sourceRect, targetRect);
 
             // If the logic above is working correctly, both the source and target connection points will exist.
             if (!SourceConnectionPoint.HasValue || !TargetConnectionPoint.HasValue)
@@ -926,26 +958,27 @@ namespace Westermo.GraphX.Controls.Avalonia
                         _ => routePoints[^1]
                     };
 
-                    return BuildNormalizedLineFigure(p1, p2, routePoints, gEdge?.ReversePath ?? false);
+                    return BuildNormalizedLineFigure(routePoints, gEdge?.ReversePath ?? false);
                 }
 
                 var oPolyLineSegment =
-                    GeometryHelper.GetCurveThroughPoints([.. routePoints], 0.5, RootArea.EdgeCurvingTolerance);
+                    GeometryHelper.GetCurveThroughPoints(routePoints, 0.5, RootArea.EdgeCurvingTolerance);
 
                 if (hasEpTarget)
                 {
-                    UpdateTargetEpData(oPolyLineSegment.Points[^1],
-                        oPolyLineSegment.Points[^2]);
-                    oPolyLineSegment.Points.RemoveAt(oPolyLineSegment.Points.Count - 1);
+                    UpdateTargetEpData(oPolyLineSegment[^1],
+                        oPolyLineSegment[^2]);
+                    oPolyLineSegment.RemoveAt(oPolyLineSegment.Count - 1);
                 }
 
                 if (hasEpSource)
                 {
-                    UpdateSourceEpData(oPolyLineSegment.Points.First(), oPolyLineSegment.Points[1]);
-                    oPolyLineSegment.Points.RemoveAt(0);
+                    UpdateSourceEpData(oPolyLineSegment[0], oPolyLineSegment[1]);
+                    oPolyLineSegment.RemoveAt(0);
                 }
 
-                return GeometryHelper.GetPathFigureFromPathSegments(routePoints[0], true, oPolyLineSegment);
+                return BuildNormalizedLineFigure(CollectionsMarshal.AsSpan(oPolyLineSegment),
+                    gEdge?.ReversePath ?? false);
             }
 
             // no route defined
@@ -972,66 +1005,42 @@ namespace Westermo.GraphX.Controls.Avalonia
             if (hasEpTarget)
                 p2 = p2.Subtract(UpdateTargetEpData(p2, p1, allowUpdateEpDataToUnsuppress));
 
-            return TransformUnroutedPath(BuildNormalizedLineFigure(p1, p2, null, gEdge!.ReversePath));
+            return BuildNormalizedLineFigure(TransformFinalPath([p1, p2]), gEdge?.ReversePath ?? false);
         }
 
-        [MemberNotNullWhen(true, nameof(Target), nameof(Source))]
-        private bool TryGetPoints(bool useCurrentCoords,
-            out Point sourceTopLeft,
-            out Point targetTopLeft,
-            out Size sourceSize,
-            out Size targetSize)
-        {
-            sourceTopLeft = default;
-            targetTopLeft = default;
-            sourceSize = default;
-            targetSize = default;
-            if (Source is null) return false;
-            if (Target is null) return false;
-            var sx = useCurrentCoords ? GraphAreaBase.GetX(Source!) : GraphAreaBase.GetFinalX(Source!);
-            var sy = useCurrentCoords ? GraphAreaBase.GetY(Source!) : GraphAreaBase.GetFinalY(Source!);
-            var tx = useCurrentCoords ? GraphAreaBase.GetX(Target) : GraphAreaBase.GetFinalX(Target);
-            var ty = useCurrentCoords ? GraphAreaBase.GetY(Target) : GraphAreaBase.GetFinalY(Target);
-            // fallback to current if final not yet assigned
-            if (double.IsNaN(sx)) sx = GraphAreaBase.GetX(Source!);
-            if (double.IsNaN(sy)) sy = GraphAreaBase.GetY(Source!);
-            if (double.IsNaN(tx)) tx = GraphAreaBase.GetX(Target);
-            if (double.IsNaN(ty)) ty = GraphAreaBase.GetY(Target);
-            // if still NaN (no positions yet) postpone drawing
-            if (double.IsNaN(sourceTopLeft.X) ||
-                double.IsNaN(sourceTopLeft.Y) ||
-                double.IsNaN(targetTopLeft.X) ||
-                double.IsNaN(targetTopLeft.Y)) return false;
-            sourceTopLeft = new Point(sx, sy);
-            targetTopLeft = new Point(tx, ty);
-            //get the size of the source
-            sourceSize = Design.IsDesignMode
-                ? new Size(80, 20)
-                : new Size(Source!.Bounds.Width, Source.Bounds.Height);
+        [MemberNotNullWhen(true, nameof(Source))]
+        private bool TryGetSourcePoints(bool useCurrentCoords, out Rect result) =>
+            TryGetPoints(useCurrentCoords, Source, out result);
 
-            //get the size of the target
-            targetSize = Design.IsDesignMode
+        [MemberNotNullWhen(true, nameof(Target))]
+        private bool TryGetTargetPoints(bool useCurrentCoords, out Rect result) =>
+            TryGetPoints(useCurrentCoords, Target, out result);
+
+        private static bool TryGetPoints(bool useCurrentCoords, VertexControl? control, out Rect result)
+        {
+            result = default;
+            if (control is null) return false;
+            var x = useCurrentCoords ? GraphAreaBase.GetX(control) : GraphAreaBase.GetFinalX(control);
+            var y = useCurrentCoords ? GraphAreaBase.GetY(control) : GraphAreaBase.GetFinalY(control);
+            if (double.IsNaN(x)) x = GraphAreaBase.GetX(control);
+            if (double.IsNaN(y)) y = GraphAreaBase.GetY(control);
+            if (double.IsNaN(x) ||
+                double.IsNaN(y)) return false;
+            var size = Design.IsDesignMode
                 ? new Size(80, 20)
-                : new Size(Target.Bounds.Width, Target.Bounds.Height);
+                : new Size(control.Bounds.Width, control.Bounds.Height);
+            result = new Rect(new Point(x, y), size);
             return true;
         }
 
+
         private void UpdateConnectionPoints(IGraphXCommonEdge? gEdge, bool hasRouteInfo,
-            Measure.Point[] routeInformation, Point targetTopLeft, Size targetSize, Point sourceTopLeft,
-            Size sourceSize)
+            Measure.Point[] routeInformation, Rect sourceRect, Rect targetRect)
         {
             if (Target is null) return;
             if (Source is null) return;
-            //get the position center of the source
-            var sourceCenter = new Point(
-                sourceTopLeft.X + sourceSize.Width * .5,
-                sourceTopLeft.Y + sourceSize.Height * .5);
-
-            //get the position center of the target
-
-            var targetCenter = new Point(
-                targetTopLeft.X + targetSize.Width * .5,
-                targetTopLeft.Y + targetSize.Height * .5);
+            var sourceCenter = sourceRect.Center;
+            var targetCenter = targetRect.Center;
 
 
             //calculate edge source (p1) and target (p2) endpoints based on different settings
@@ -1067,8 +1076,7 @@ namespace Westermo.GraphX.Controls.Avalonia
                     }
 
                     SourceConnectionPoint = GetCpEndPoint(sourceCp, sourceCpCenter, targetCenter);
-                    TargetConnectionPoint = GeometryHelper.GetEdgeEndpoint(targetCenter,
-                        new Rect(targetTopLeft, targetSize),
+                    TargetConnectionPoint = GeometryHelper.GetEdgeEndpoint(targetCenter, targetRect,
                         hasRouteInfo ? routeInformation[^2].ToAvalonia() : sourceCpCenter,
                         Target.VertexShape);
                     break;
@@ -1090,8 +1098,7 @@ namespace Westermo.GraphX.Controls.Avalonia
                         sourceCenter = routeInformation[^2].ToAvalonia();
                     }
 
-                    SourceConnectionPoint = GeometryHelper.GetEdgeEndpoint(sourceCenter,
-                        new Rect(sourceTopLeft, sourceSize),
+                    SourceConnectionPoint = GeometryHelper.GetEdgeEndpoint(sourceCenter, sourceRect,
                         hasRouteInfo ? routeInformation[1].ToAvalonia() : targetCpCenter, Source!.VertexShape);
                     TargetConnectionPoint = GetCpEndPoint(targetCp, targetCpCenter, sourceCenter);
                     break;
@@ -1108,10 +1115,10 @@ namespace Westermo.GraphX.Controls.Avalonia
                     }
 
                     SourceConnectionPoint = GeometryHelper.GetEdgeEndpoint(sourceCenter,
-                        new Rect(sourceTopLeft, sourceSize),
+                        sourceRect,
                         hasRouteInfo ? routeInformation[1].ToAvalonia() : targetCenter, Source!.VertexShape);
                     TargetConnectionPoint = GeometryHelper.GetEdgeEndpoint(targetCenter,
-                        new Rect(targetTopLeft, targetSize),
+                        targetRect,
                         hasRouteInfo ? routeInformation[^2].ToAvalonia() : sourceCenter,
                         Target.VertexShape);
                     break;
@@ -1147,7 +1154,7 @@ namespace Westermo.GraphX.Controls.Avalonia
                 "Can't find source vertex VCP by edge source connection point Id({1}) : {0}", Source, id));
         }
 
-        protected virtual PathFigure TransformUnroutedPath(PathFigure original)
+        protected virtual Span<Point> TransformFinalPath(Span<Point> original)
         {
             return original;
         }

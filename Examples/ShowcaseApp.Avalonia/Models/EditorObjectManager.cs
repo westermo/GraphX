@@ -22,7 +22,6 @@ namespace ShowcaseApp.Avalonia.Models
             _graphArea = graphArea;
             _zoomControl = zc;
             _zoomControl.PointerMoved += _zoomControl_MouseMove;
-            // Replaced WPF ResourceDictionary template brush with a simple gradient brush for Avalonia
             _edgeBrush = new LinearGradientBrush
             {
                 GradientStops = new GradientStops

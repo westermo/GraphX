@@ -57,13 +57,12 @@ namespace Westermo.GraphX.Controls.Avalonia
         /// <param name="tension"></param>
         /// <param name="tolerance"></param>
         /// <returns></returns>
-        public static PolyLineSegment GetCurveThroughPoints(Point[] points, double tension, double tolerance)
+        public static List<Point> GetCurveThroughPoints(Span<Point> points, double tension, double tolerance)
         {
-            Debug.Assert(points != null);
             Debug.Assert(points.Length >= 2);
             Debug.Assert(tolerance > 0);
 
-            var oPolyLineSegment = new PolyLineSegment();
+            var oPolyLineSegment = new List<Point>();
 
             if (points.Length == 2)
             {
@@ -96,7 +95,7 @@ namespace Westermo.GraphX.Controls.Avalonia
                     }
                 }
 
-                oPolyLineSegment.Points.Insert(0, points[0]);
+                oPolyLineSegment.Insert(0, points[0]);
             }
 
             return oPolyLineSegment;
@@ -104,11 +103,11 @@ namespace Westermo.GraphX.Controls.Avalonia
 
         public static IList<Point> GetCurvePointsThroughPoints(Point[] points, double tension, double tolerance)
         {
-            return GetCurveThroughPoints(points, tension, tolerance).Points;
+            return GetCurveThroughPoints(points, tension, tolerance);
         }
 
 
-        private static void AddPointsToPolyLineSegment(PolyLineSegment oPolyLineSegment, Point oPoint0, Point oPoint1,
+        private static void AddPointsToPolyLineSegment(List<Point> oPolyLineSegment, Point oPoint0, Point oPoint1,
             Point oPoint2, Point oPoint3, double dTension, double dTolerance)
         {
             Debug.Assert(oPolyLineSegment != null);
@@ -117,11 +116,10 @@ namespace Westermo.GraphX.Controls.Avalonia
             var iPoints = (int)((Math.Abs(oPoint1.X - oPoint2.X) +
                                  Math.Abs(oPoint1.Y - oPoint2.Y)) / dTolerance);
 
-            var oPolyLineSegmentPoints = oPolyLineSegment.Points;
 
             if (iPoints <= 2)
             {
-                oPolyLineSegmentPoints.Add(oPoint2);
+                oPolyLineSegment.Add(oPoint2);
             }
             else
             {
@@ -151,7 +149,7 @@ namespace Westermo.GraphX.Controls.Avalonia
                         dAy * t * t * t + dBy * t * t + dCy * t + dDy
                     );
 
-                    oPolyLineSegmentPoints.Add(oPoint);
+                    oPolyLineSegment.Add(oPoint);
                 }
             }
         }

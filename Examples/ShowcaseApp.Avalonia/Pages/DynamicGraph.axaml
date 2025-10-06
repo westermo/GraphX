@@ -10,6 +10,18 @@
     <UserControl.Styles>
         <StyleInclude Source="/Templates/DynamicGraphXTemplates.axaml" />
     </UserControl.Styles>
+    <UserControl.DataTemplates>
+        <DataTemplate DataType="exampleModels:DataVertex">
+            <Grid UseLayoutRounding="True" RowDefinitions="*,*" ColumnDefinitions="Auto,Auto">
+                <TextBlock Text="{Binding Name}" VerticalAlignment="Center" TextAlignment="Center"
+                           HorizontalAlignment="Center" FontWeight="Bold" Foreground="Black"
+                           Grid.Column="1" Grid.Row="0" Margin="3" MinWidth="120" />
+                <TextBlock Text="{Binding Profession}" TextAlignment="Center" FontStyle="Italic"
+                           FontSize="14" VerticalAlignment="Center" HorizontalAlignment="Center"
+                           Foreground="White" Grid.Column="1" Grid.Row="1" Margin="3" />
+            </Grid>
+        </DataTemplate>
+    </UserControl.DataTemplates>
     <Grid ColumnDefinitions="*,Auto" RowDefinitions="Auto,*">
 
         <Border CornerRadius="2" BorderBrush="{DynamicResource ButtonBorder}"
