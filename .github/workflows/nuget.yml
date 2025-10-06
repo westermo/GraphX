@@ -30,7 +30,7 @@ jobs:
     env:
       COMMIT_SHA: ${{ github.sha || github.event.pull_request.head.sha }}
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: Setup dotnet ${{ matrix.dotnet-version }}
         uses: actions/setup-dotnet@v4
         with:
@@ -48,7 +48,7 @@ jobs:
         name: "Set package version meta data"
       - run: |
           dotnet pack --configuration Release --output "${{ env.NuGetDirectory }}" --property:RepositoryCommit="${{ env.COMMIT_SHA }}" --property:InformationalVersion="${{ env.INFORMAL_VERSION }}" --property:AssemblyVersion="${{ env.VERSION }}" --property:FileVersion="${{ env.VERSION }}" --property:Version="${{ env.VERSION }}"
-      - uses: actions/upload-artifact@v3
+      - uses: actions/upload-artifact@v4
         with:
           name: nuget
           if-no-files-found: error
@@ -63,7 +63,7 @@ jobs:
         uses: actions/setup-dotnet@v4
         with:
           dotnet-version: "9.0.x"
-      - uses: actions/download-artifact@v3
+      - uses: actions/download-artifact@v4
         with:
           name: nuget
           path: ${{ env.NuGetDirectory }}
@@ -82,12 +82,12 @@ jobs:
     runs-on: windows-latest
     needs: [ validate_nuget ]
     steps:
-      - uses: actions/download-artifact@v3
+      - uses: actions/download-artifact@v4
         with:
           name: nuget
           path: ${{ env.NuGetDirectory }}
       - name: Setup .NET Core
-        uses: actions/setup-dotnet@v3
+        uses: actions/setup-dotnet@v4
       - name: Publish NuGet package
         run: |
           foreach($file in (Get-ChildItem "${{ env.NuGetDirectory }}" -Recurse -Include *.nupkg)) {
