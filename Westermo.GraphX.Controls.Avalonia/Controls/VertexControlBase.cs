@@ -201,8 +201,11 @@ namespace Westermo.GraphX.Controls.Avalonia
         public Point GetCenterPosition(bool final = false)
         {
             var pos = GetPosition(final);
-            return new Point(pos.X + (double.IsNaN(Width) ? 0 : Width) * .5,
-                pos.Y + (double.IsNaN(Height) ? 0 : Height) * .5);
+            var width = double.IsNaN(Width) ? Bounds.Width : Width;
+            var height = double.IsNaN(Height) ? Bounds.Height : Height;
+            var x = double.IsNaN(pos.X) ? 0 : pos.X;
+            var y = double.IsNaN(pos.Y) ? 0 : pos.Y;
+            return new Point(x + width / 2, y + height / 2);
         }
 
         /// <summary>

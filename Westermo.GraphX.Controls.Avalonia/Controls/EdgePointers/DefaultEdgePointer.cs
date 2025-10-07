@@ -30,26 +30,25 @@ namespace Westermo.GraphX.Controls.Avalonia
         }
 
 
-
         #region Common part
 
         internal Rect LastKnownRectSize;
 
 
-        /*public static readonly StyledProperty OffsetProperty = AvaloniaProperty.Register("Offset",
-                                                                               typeof(Point),
-                                                                               typeof(EdgeControl),
-                                                                               new UIPropertyMetadata());*/
+        public static readonly StyledProperty<Point> OffsetProperty =
+            AvaloniaProperty.Register<EdgeControl, Point>(nameof(Offset));
+
         /// <summary>
         /// Gets or sets offset for the image position
         /// </summary>
         public Point Offset
         {
-            get; // { return (Point)GetValue(OffsetProperty); }
-            set; // { SetValue(OffsetProperty, value); }
+            get => GetValue(OffsetProperty);
+            set => SetValue(OffsetProperty, value);
         }
 
-        public static readonly StyledProperty<bool> NeedRotationProperty = AvaloniaProperty.Register<EdgeControl, bool>(nameof(NeedRotation), true);
+        public static readonly StyledProperty<bool> NeedRotationProperty =
+            AvaloniaProperty.Register<EdgeControl, bool>(nameof(NeedRotation), true);
 
         /// <inheritdoc />
         public bool NeedRotation
@@ -91,7 +90,8 @@ namespace Westermo.GraphX.Controls.Avalonia
         }
 
 
-        public static readonly StyledProperty<bool> IsSuppressedProperty = AvaloniaProperty.Register<DefaultEdgePointer, bool>(nameof(IsSuppressed));
+        public static readonly StyledProperty<bool> IsSuppressedProperty =
+            AvaloniaProperty.Register<DefaultEdgePointer, bool>(nameof(IsSuppressed));
 
         /// <summary>
         /// Gets a value indicating whether the pointer is suppressed. A suppressed pointer won't be displayed, but
@@ -117,10 +117,7 @@ namespace Westermo.GraphX.Controls.Avalonia
         /// </summary>
         private static bool CoerceVisibility(AvaloniaObject @object, bool baseValue)
         {
-            if (@object is not DefaultEdgePointer ecb)
-                return baseValue;
-
-            return ecb.IsSuppressed;
+            return @object is not DefaultEdgePointer ecb ? baseValue : ecb.IsSuppressed;
         }
 
         private static EdgeControl? GetEdgeControl(Control? parent)
@@ -147,18 +144,17 @@ namespace Westermo.GraphX.Controls.Avalonia
             HorizontalAlignment = global::Avalonia.Layout.HorizontalAlignment.Center;
             LayoutUpdated += EdgePointer_LayoutUpdated;
         }
+
         /// <summary>
         /// Update edge pointer position and angle
         /// </summary>
-
         public virtual Measure.Point Update(Measure.Point? position, Measure.Vector direction, double angle = 0d)
         {
-            //var vecOffset = new Vector(direction.X * Offset.X, direction.Y * Offset.Y);
             if (DesiredSize.Width == 0 || DesiredSize.Height == 0 || !position.HasValue) return new Measure.Point();
-            position = new Measure.Point(position.Value.X - direction.X, position.Value.Y - direction.Y); // + vecOffset;
+            position = new Measure.Point(position.Value.X - direction.X,
+                position.Value.Y - direction.Y);
             if (!double.IsNaN(DesiredSize.Width) && DesiredSize.Width != 0 && !double.IsNaN(position.Value.X))
             {
-
                 if (!double.IsNaN(DesiredSize.Width) && DesiredSize.Width != 0 && !double.IsNaN(position.Value.X))
                 {
                     LastKnownRectSize =
@@ -170,19 +166,9 @@ namespace Westermo.GraphX.Controls.Avalonia
             }
 
             RenderTransform = new RotateTransform { Angle = double.IsNaN(angle) ? 0 : angle, CenterX = 0, CenterY = 0 };
-            try
-            {
-                if (NeedRotation)
-                    RenderTransform = new RotateTransform
-                    { Angle = double.IsNaN(angle) ? 0 : angle, CenterX = 0, CenterY = 0 };
-                return new Measure.Point(direction.X * Width, direction.Y * Width);
-            }
-            catch (Exception)
-            {
-                //TODO ex handling and reason
-            }
-
-            return new Measure.Point(direction.X * Bounds.Width, direction.Y * Bounds.Height);
+            var width = double.IsNaN(Width) ? Bounds.Width : Width;
+            var height = double.IsNaN(Height) ? Bounds.Height : Height;
+            return new Measure.Point(direction.X * width, direction.Y * height);
         }
 
         public void SetManualPosition(Measure.Point position)

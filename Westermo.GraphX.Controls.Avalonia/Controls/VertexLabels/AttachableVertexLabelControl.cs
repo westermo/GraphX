@@ -1,14 +1,11 @@
-﻿using System;
-using System.ComponentModel;
-using Avalonia;
+﻿using Avalonia;
 using Avalonia.Controls;
 using Westermo.GraphX.Common.Exceptions;
 using Westermo.GraphX.Controls.Avalonia.Models;
 
 namespace Westermo.GraphX.Controls.Avalonia
 {
-    public class AttachableVertexLabelControl : VertexLabelControl, IAttachableControl<VertexControl>,
-        INotifyPropertyChanged
+    public class AttachableVertexLabelControl : VertexLabelControl, IAttachableControl<VertexControl>
     {
         /// <summary>
         /// Gets label attach node
@@ -16,7 +13,7 @@ namespace Westermo.GraphX.Controls.Avalonia
         public VertexControl? AttachNode
         {
             get => GetValue(AttachNodeProperty);
-            private set { SetValue(AttachNodeProperty, value); }
+            private set => SetValue(AttachNodeProperty, value);
         }
 
         public static readonly StyledProperty<VertexControl?> AttachNodeProperty =
@@ -45,22 +42,9 @@ namespace Westermo.GraphX.Controls.Avalonia
         {
             AttachNode = null;
         }
-        /*
-        private void AttachNode_IsVisibleChanged(object sender, StyledPropertyChangedEventArgs e)
-        {
-            if (AttachNode!.IsVisible && AttachNode.ShowLabel)
-                Show();
-            else if (!AttachNode.IsVisible)
-            {
-                Hide();
-            }
-        }
-        */
 
         protected override VertexControl? GetVertexControl(Control? parent)
         {
-            //if(AttachNode == null)
-            //    throw new GX_InvalidDataException("AttachableVertexLabelControl node is not attached!");
             return AttachNode;
         }
 

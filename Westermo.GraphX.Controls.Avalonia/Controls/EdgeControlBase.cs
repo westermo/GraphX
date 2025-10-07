@@ -561,7 +561,6 @@ namespace Westermo.GraphX.Controls.Avalonia
         }
 
         internal int ParallelEdgeOffset;
-        //internal int TargetOffset;
 
         /// <summary>
         /// Gets the offset point for edge parallelization
@@ -620,9 +619,6 @@ namespace Westermo.GraphX.Controls.Avalonia
             }
             else
             {
-                //if (_edgePointerForSource != null && ShowArrows) _edgePointerForSource.Show();
-                //if (_edgePointerForTarget != null && ShowArrows) _edgePointerForTarget.Show();
-
                 if (HasSelfLoopedEdgeTemplate)
                     SelfLoopIndicator!.SetCurrentValue(IsVisibleProperty, false);
             }
@@ -1212,11 +1208,6 @@ namespace Westermo.GraphX.Controls.Avalonia
 
         // Internal test accessor
         internal Geometry? GetLineGeometry() => LineGeometry;
-
-        /*  public void SetCustomLabelSize(SysRect rect)
-          {
-              EdgeLabelControl.SetSize(rect);
-          }*/
 
         /// <summary>
         /// Returns all edge controls attached to this entity

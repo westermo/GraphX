@@ -37,7 +37,7 @@ namespace Westermo.GraphX.Controls.Avalonia
 
             // The intersection must fall within the line segment defined by the b1 and b2 endpoints.
             var u = (c.X * a.Y - c.Y * a.X) / aDotBPerpendicular;
-            if (u < 0 || u > 1)
+            if (u is < 0 or > 1)
             {
                 return null;
             }
@@ -407,12 +407,9 @@ namespace Westermo.GraphX.Controls.Avalonia
         public static PathFigure GenerateArrow(Point oArrowTipLocation, Point start, Point end,
             double customAngle = 0.1, double arrowWidth = 3.0)
         {
-            //Debug.Assert(dEdgeWidth > 0);
-
             // Compute the arrow's dimensions.  The width factor is arbitrary and
             // was determined experimentally.
 
-            //const Double WidthFactor = 1.5;
             var dArrowAngle = Math.Abs(customAngle - 0.1) < 1e-9
                 ? MathHelper.GetAngleBetweenPoints(start.ToGraphX(), end.ToGraphX())
                 : customAngle;
@@ -474,10 +471,10 @@ namespace Westermo.GraphX.Controls.Avalonia
 
         private static Matrix CreateRotationRadians(double angle, double centerX, double centerY)
         {
-            double sin = Math.Sin(angle);
-            double cos = Math.Cos(angle);
-            double dx = (centerX * (1.0 - cos)) + (centerY * sin);
-            double dy = (centerY * (1.0 - cos)) - (centerX * sin);
+            var sin = Math.Sin(angle);
+            var cos = Math.Cos(angle);
+            var dx = centerX * (1.0 - cos) + centerY * sin;
+            var dy = centerY * (1.0 - cos) - centerX * sin;
 
             return new Matrix(cos, sin, -sin, cos, dx, dy);
         }
@@ -508,7 +505,10 @@ namespace Westermo.GraphX.Controls.Avalonia
 
             Debug.Assert(iOtherPoints > 0);
 
-            var oPathFigure = new PathFigure() { StartPoint = startPoint };
+            var oPathFigure = new PathFigure
+            {
+                StartPoint = startPoint
+            };
 
             var oPathSegmentCollection = new PathSegments();
             foreach (var item in otherPoints)

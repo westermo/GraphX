@@ -20,10 +20,6 @@ namespace Westermo.GraphX.Controls.Avalonia;
 [TemplatePart(Name = "PART_vcproot", Type = typeof(Panel))]
 public class VertexControl : VertexControlBase, IXYReactive, IDraggable
 {
-    static VertexControl()
-    {
-        //override the StyleKey Property
-    }
 
     /// <summary>
     /// Create vertex visual control

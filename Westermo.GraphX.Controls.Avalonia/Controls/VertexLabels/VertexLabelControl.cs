@@ -1,10 +1,10 @@
-﻿using DefaultEventArgs = System.EventArgs;
-using System.Linq;
+﻿using System.Linq;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Media;
-using Westermo.GraphX.Common.Exceptions;
 using Avalonia.VisualTree;
+using Westermo.GraphX.Common.Exceptions;
+using DefaultEventArgs = System.EventArgs;
 
 namespace Westermo.GraphX.Controls.Avalonia
 {

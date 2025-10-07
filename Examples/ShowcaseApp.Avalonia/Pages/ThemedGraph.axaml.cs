@@ -15,8 +15,6 @@ namespace ShowcaseApp.Avalonia.Pages
     /// </summary>
     public partial class ThemedGraph : UserControl
     {
-        // private ZoomControl tg_zoomctrl = new ZoomControl();
-
         public ThemedGraph()
         {
             InitializeComponent();
@@ -81,7 +79,8 @@ namespace ShowcaseApp.Avalonia.Pages
             if (args.MouseArgs is not PointerEventArgs pea) return;
             if (pea.Properties.IsLeftButtonPressed && tg_edgeMode.SelectedIndex == 1)
             {
-                tg_Area.GenerateEdgesForVertex(args.VertexControl, (EdgesType)(tg_edgeType.SelectedItem ?? EdgesType.All));
+                tg_Area.GenerateEdgesForVertex(args.VertexControl,
+                    (EdgesType)(tg_edgeType.SelectedItem ?? EdgesType.All));
             }
 
             if (!pea.Properties.IsRightButtonPressed) return;
@@ -111,7 +110,6 @@ namespace ShowcaseApp.Avalonia.Pages
 
             //TIP: trick to disable zoomcontrol behaviour when it is performing fill animation from top left zoomed corner
             //instead we will fill-animate from maximum zoom distance            
-            //tg_zoomctrl.Zoom = 0.01; //disable zoom control auto fill animation by setting this value
             tg_Area.GenerateGraph(graph, tg_edgeMode.SelectedIndex == 0);
 
             if (tg_Area.LogicCore!.AsyncAlgorithmCompute)
@@ -133,7 +131,7 @@ namespace ShowcaseApp.Avalonia.Pages
             DragEnabledChanged(null, null);
 
             tg_Area.SetEdgesDashStyle(EdgeDashStyle.Dash);
-            tg_zoomctrl.ZoomToFill(); // ZoomToFill(); //manually update zoom control to fill the area
+            tg_zoomctrl.ZoomToFill(); //manually update zoom control to fill the area
         }
 
         private void EdgeModeSelectionChanged(object? sender, SelectionChangedEventArgs selectionChangedEventArgs)
@@ -164,6 +162,5 @@ namespace ShowcaseApp.Avalonia.Pages
                 DragBehaviour.SetUpdateEdgesOnMove(item.Value, true);
             }
         }
-        
     }
 }

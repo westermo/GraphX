@@ -19,11 +19,6 @@ public class AttachableEdgeLabelControl : EdgeLabelControl, IAttachableControl<E
     public static readonly StyledProperty<EdgeControl?> AttachNodeProperty =
         AvaloniaProperty.Register<AttachableEdgeLabelControl, EdgeControl?>(nameof(AttachNode));
 
-    static AttachableEdgeLabelControl()
-    {
-        // No DefaultStyleKeyProperty in Avalonia, so remove this
-    }
-
     public AttachableEdgeLabelControl()
     {
         DataContext = this;
@@ -54,20 +49,16 @@ public class AttachableEdgeLabelControl : EdgeLabelControl, IAttachableControl<E
 
     private void AttachNode_IsVisibleChanged(object? sender, AvaloniaPropertyChangedEventArgs e)
     {
-        if (e.Property == IsVisibleProperty)
-        {
-            if (AttachNode!.IsVisible && ShowLabel)
-                Show();
-            else if (!AttachNode.IsVisible)
-                Hide();
-        }
+        if (e.Property != IsVisibleProperty) return;
+        if (AttachNode!.IsVisible && ShowLabel)
+            Show();
+        else if (!AttachNode.IsVisible)
+            Hide();
     }
 
 
     protected override EdgeControl GetEdgeControl(Control? parent)
     {
-        if (AttachNode == null)
-            throw new GX_InvalidDataException("AttachableEdgeLabelControl node is not attached!");
-        return AttachNode;
+        return AttachNode ?? throw new GX_InvalidDataException("AttachableEdgeLabelControl node is not attached!");
     }
 }
