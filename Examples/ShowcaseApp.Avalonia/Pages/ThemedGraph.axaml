@@ -1,0 +1,214 @@
+﻿<UserControl x:Class="ShowcaseApp.Avalonia.Pages.ThemedGraph"
+             xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:avalonia="clr-namespace:Westermo.GraphX.Controls.Avalonia;assembly=Westermo.GraphX.Controls.Avalonia"
+             xmlns:exampleModels="clr-namespace:ShowcaseApp.Avalonia.ExampleModels"
+             mc:Ignorable="d"
+             d:DesignHeight="300" d:DesignWidth="600">
+    <UserControl.Styles>
+
+        <!-- VERTEX CONTROL -->
+        <Style Selector="avalonia|VertexControl">
+            <!-- Set background color through attached property -->
+            <Setter Property="Background" Value="{StaticResource NormalBrush}" />
+            <Setter Property="Padding" Value="10,5,10,5" />
+            <Setter Property="BorderBrush" Value="{StaticResource NormalBorderBrush}" />
+            <Setter Property="BorderThickness" Value="3" />
+            <Setter Property="Opacity" Value="0.65" />
+            <Setter Property="Transitions">
+                <Transitions>
+                    <DoubleTransition Property="Opacity" Duration="0:0:0.1" />
+                </Transitions>
+            </Setter>
+            <Setter Property="avalonia:DragBehaviour.IsDragEnabled"
+                    Value="True" />
+            <Setter Property="avalonia:DragBehaviour.UpdateEdgesOnMove"
+                    Value="True" />
+
+
+            <Style Selector="^:pointerover">
+                <Setter Property="Opacity" Value="1" />
+                <Setter Property="Background" Value="{DynamicResource MouseOverBrush}" />
+                <Setter Property="BorderBrush" Value="{DynamicResource MouseOverBorderBrush}" />
+            </Style>
+
+        </Style>
+
+        <!-- EDGE CONTROL -->
+        <Style Selector="avalonia|EdgeControl">
+            <Setter Property="MinWidth"
+                    Value="1" />
+            <Setter Property="MinHeight"
+                    Value="1" />
+            <Setter Property="Background"
+                    Value="Red" />
+            <Setter Property="Foreground"
+                    Value="Blue" />
+            <Setter Property="Opacity"
+                    Value="1" />
+        </Style>
+
+    </UserControl.Styles>
+    <UserControl.DataTemplates>
+        <DataTemplate DataType="exampleModels:DataEdge">
+            <TextBlock Text="{Binding}">
+                <ToolTip.Tip>
+                    <Border BorderBrush="Black" BorderThickness="2" CornerRadius="2"
+                            Background="{StaticResource NormalBrush}" UseLayoutRounding="True">
+                        <StackPanel Orientation="Vertical" Margin="2">
+                            <TextBlock FontWeight="Bold" Text="Solid link: " Margin="3" />
+                            <TextBlock FontWeight="Bold" Foreground="LightGreen" Text="{Binding ToolTipText}"
+                                       Margin="3" />
+                        </StackPanel>
+                    </Border>
+                </ToolTip.Tip>
+            </TextBlock>
+        </DataTemplate>
+        <DataTemplate DataType="exampleModels:DataVertex">
+            <Grid>
+                <Grid ColumnDefinitions="Auto,Auto" RowDefinitions="*,*" ToolTip.ShowDelay="0">
+                    <Image Margin="3"
+                           Source="{Binding ImageId, Converter={StaticResource PersonImageConverter}}"
+                           Width="60" Stretch="UniformToFill" Grid.RowSpan="2" />
+                    <Label Content="{Binding Name}" VerticalAlignment="Center" FontWeight="Bold"
+                           Foreground="Black" Grid.Column="1" Grid.Row="0" Margin="3" MinWidth="120" />
+                    <TextBlock Text="{Binding Profession}" TextAlignment="Center" FontStyle="Italic"
+                               FontSize="14" VerticalAlignment="Center" HorizontalAlignment="Center"
+                               Foreground="White" Grid.Column="1" Grid.Row="1" Margin="3" />
+                    <ToolTip.Tip>
+                        <Border BorderBrush="Black" BorderThickness="2" CornerRadius="8"
+                                Background="{StaticResource NormalBrush}" UseLayoutRounding="True">
+                            <StackPanel Orientation="Vertical">
+                                <TextBlock Text="Additional person info:" Margin="4"
+                                           HorizontalAlignment="Center"
+                                           VerticalAlignment="Center" FontSize="14" FontWeight="Bold" />
+                                <StackPanel Orientation="Horizontal" Margin="3">
+                                    <TextBlock MinWidth="70" Text="Name: " VerticalAlignment="Center" />
+                                    <TextBlock FontWeight="Bold" Text="{Binding Name}" Margin="3"
+                                               VerticalAlignment="Center" />
+                                </StackPanel>
+                                <StackPanel Orientation="Horizontal" Margin="3">
+                                    <TextBlock MinWidth="70" Text="Occupation: "
+                                               VerticalAlignment="Center" />
+                                    <TextBlock FontWeight="Bold" Text="{Binding Profession}" Margin="3"
+                                               VerticalAlignment="Center" />
+                                </StackPanel>
+                                <StackPanel Orientation="Horizontal" Margin="3">
+                                    <TextBlock MinWidth="70" Text="Age: " VerticalAlignment="Center" />
+                                    <TextBlock FontWeight="Bold" Text="{Binding Age}" Margin="3"
+                                               VerticalAlignment="Center" />
+                                </StackPanel>
+                                <StackPanel Orientation="Horizontal" Margin="3">
+                                    <TextBlock MinWidth="70" Text="Gender: " VerticalAlignment="Center" />
+                                    <TextBlock FontWeight="Bold" Text="{Binding Gender}" Margin="3"
+                                               VerticalAlignment="Center" />
+                                </StackPanel>
+                            </StackPanel>
+                        </Border>
+                    </ToolTip.Tip>
+                </Grid>
+            </Grid>
+        </DataTemplate>
+    </UserControl.DataTemplates>
+    <Grid ColumnDefinitions="*,Auto,180" RowDefinitions="Auto,*">
+        <GridSplitter VerticalAlignment="Stretch" Width="2" Grid.Row="0" Grid.RowSpan="2" Grid.Column="1" />
+
+        <Border Grid.Row="0" Grid.Column="0" CornerRadius="2" BorderBrush="{DynamicResource ButtonBorder}"
+                Background="{DynamicResource ButtonBackground}" Margin="2" BorderThickness="1">
+            <TextBlock Margin="1" TextWrapping="Wrap" TextAlignment="Center"
+                       Text="This graph is designed for templating, animation and visual behaviours preview. See vertex and edge tooltips, templated highlights and animations." />
+        </Border>
+
+        <Border Grid.Row="1" Grid.Column="0" BorderBrush="Red">
+            <Border.Background>
+                <VisualBrush TileMode="Tile" Stretch="Fill" DestinationRect="0,0,16,16">
+                    <VisualBrush.Visual>
+                        <Image Source="/Assets/brick_16.png" Stretch="None" />
+                    </VisualBrush.Visual>
+                </VisualBrush>
+            </Border.Background>
+        </Border>
+        <Border Grid.Row="1" Margin="30" Grid.Column="0" BorderBrush="{DynamicResource ButtonBorder}"
+                BorderThickness="0" CornerRadius="60">
+            <Border.Background>
+                <VisualBrush TileMode="Tile" Stretch="None"
+                             DestinationRect="0,0,32,32">
+                    <VisualBrush.Visual>
+                        <Image Source="/Assets/carpet.png" Stretch="None" />
+                    </VisualBrush.Visual>
+                </VisualBrush>
+            </Border.Background>
+            <Border Margin="0" BorderBrush="{DynamicResource ButtonBorder}" BorderThickness="0" CornerRadius="0">
+                <Border.Background>
+                    <VisualBrush TileMode="None" Stretch="Fill">
+                        <VisualBrush.Visual>
+                            <Image Source="/Assets/board_hd.png" Stretch="Fill" />
+                        </VisualBrush.Visual>
+                    </VisualBrush>
+                </Border.Background>
+                <avalonia:ZoomControl Margin="20" x:Name="tg_zoomctrl" Background="Transparent">
+                    <exampleModels:GraphAreaExample x:Name="tg_Area">
+                        <exampleModels:GraphAreaExample.Styles>
+                            <StyleInclude Source="/Templates/TransparentTooltips.axaml" />
+                        </exampleModels:GraphAreaExample.Styles>
+                    </exampleModels:GraphAreaExample>
+                </avalonia:ZoomControl>
+            </Border>
+        </Border>
+        <Border Name="tg_loader" IsVisible="False" CornerRadius="4" BorderBrush="{DynamicResource ButtonBorder}"
+                BorderThickness="1" HorizontalAlignment="Center" VerticalAlignment="Center"
+                Background="{DynamicResource ButtonBackground}" Grid.Row="1" Grid.Column="0">
+            <Label VerticalAlignment="Center" Content="Async loading graph..." Margin="10" />
+        </Border>
+
+        <DockPanel Grid.Column="2" Grid.Row="0" Grid.RowSpan="2">
+            <StackPanel Orientation="Horizontal" DockPanel.Dock="Top" HorizontalAlignment="Center">
+                <Button Height="50" Margin="3" Name="tg_but_randomgraph" Click="ButRandomGraphClick"
+                        DockPanel.Dock="Top" UseLayoutRounding="True"
+                        BorderBrush="{DynamicResource ModernButtonBorder}">
+                    <Image Width="44" Height="41.1667" Source="/Assets/dice.png" Stretch="Uniform" />
+                </Button>
+                <Button Height="50" Margin="3" Name="tg_but_relayout" DockPanel.Dock="Top" UseLayoutRounding="True"
+                        BorderBrush="{DynamicResource ModernButtonBorder}">
+                    <Path Width="43" Height="41.1667" Stretch="Fill" Fill="{DynamicResource ButtonText}"
+                          Data="F1 M 38,20.5833C 42.9908,20.5833 47.4912,22.6825 50.6667,26.046L 50.6667,17.4167L 55.4166,22.1667L 55.4167,34.8333L 42.75,34.8333L 38,30.0833L 46.8512,30.0833C 44.6768,27.6539 41.517,26.125 38,26.125C 31.9785,26.125 27.0037,30.6068 26.2296,36.4167L 20.6543,36.4167C 21.4543,27.5397 28.9148,20.5833 38,20.5833 Z M 38,49.875C 44.0215,49.875 48.9963,45.3932 49.7703,39.5833L 55.3457,39.5833C 54.5457,48.4603 47.0852,55.4167 38,55.4167C 33.0092,55.4167 28.5088,53.3175 25.3333,49.954L 25.3333,58.5833L 20.5833,53.8333L 20.5833,41.1667L 33.25,41.1667L 38,45.9167L 29.1487,45.9167C 31.3231,48.3461 34.483,49.875 38,49.875 Z " />
+                </Button>
+            </StackPanel>
+            <TextBlock DockPanel.Dock="Top" TextAlignment="Center" Text="SETTINGS" FontWeight="Bold" />
+            <ScrollViewer DockPanel.Dock="Top">
+                <ItemsControl>
+                    <Expander IsExpanded="True" Header="Edge options">
+                        <DockPanel LastChildFill="False" HorizontalAlignment="Stretch">
+                            <TextBlock DockPanel.Dock="Top" Text="Edge display mode" HorizontalAlignment="Center" />
+                            <ComboBox x:Name="tg_edgeMode" Margin="3" SelectionChanged="EdgeModeSelectionChanged"
+                                      DockPanel.Dock="Top" />
+                            <TextBlock DockPanel.Dock="Top" Text="Edge display type" HorizontalAlignment="Center" />
+                            <ComboBox x:Name="tg_edgeType" Margin="3" SelectionChanged="EdgeTypeSelectionChanged"
+                                      DockPanel.Dock="Top" />
+                        </DockPanel>
+                    </Expander>
+                    <Expander Header="Behaviours">
+                        <DockPanel LastChildFill="False" HorizontalAlignment="Stretch">
+                            <CheckBox Name="tg_dragEnabled" Content="Vertex drag enabled" Margin="3"
+                                      DockPanel.Dock="Top" IsCheckedChanged="DragEnabledChanged" />
+                            <CheckBox Name="tg_dragMoveEdges" Content="Update edges on move" Margin="3"
+                                      DockPanel.Dock="Top" />
+                        </DockPanel>
+                    </Expander>
+                    <Expander Header="Animation">
+                        <DockPanel LastChildFill="False" HorizontalAlignment="Stretch">
+                            <TextBlock DockPanel.Dock="Top" Text="Move animation" HorizontalAlignment="Center" />
+                            <ComboBox x:Name="tg_moveAnimation" Margin="3" DockPanel.Dock="Top" />
+                            <TextBlock DockPanel.Dock="Top" Text="Delete animation" HorizontalAlignment="Center" />
+                            <ComboBox x:Name="tg_deleteAnimation" Margin="3" DockPanel.Dock="Top" />
+                            <TextBlock DockPanel.Dock="Top" Text="MouseOver animation" HorizontalAlignment="Center" />
+                            <ComboBox x:Name="tg_mouseoverAnimation" Margin="3" DockPanel.Dock="Top" />
+                        </DockPanel>
+                    </Expander>
+                </ItemsControl>
+            </ScrollViewer>
+        </DockPanel>
+    </Grid>
+</UserControl>

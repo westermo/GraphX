@@ -1,0 +1,23 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+        <OutputType>Exe</OutputType>
+        <TargetFramework>net9.0</TargetFramework>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <PackageReference Include="TUnit"/>
+        <PackageReference Include="QuikGraph"/>
+        <PackageReference Include="Verify.TUnit"/>
+        <PackageReference Include="Verify"/>
+    </ItemGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\Westermo.GraphX.Common\Westermo.GraphX.Common.csproj"/>
+        <ProjectReference Include="..\Westermo.GraphX.Logic\Westermo.GraphX.Logic.csproj"/>
+        <ProjectReference Include="..\Westermo.GraphX.Controls.Avalonia\Westermo.GraphX.Controls.Avalonia.csproj"/>
+    </ItemGroup>
+
+</Project>

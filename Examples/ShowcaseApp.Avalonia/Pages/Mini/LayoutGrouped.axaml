@@ -1,0 +1,55 @@
+﻿<UserControl x:Class="ShowcaseApp.Avalonia.Pages.Mini.LayoutGrouped"
+
+             xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:avalonia="clr-namespace:Westermo.GraphX.Controls.Avalonia;assembly=Westermo.GraphX.Controls.Avalonia"
+             xmlns:exampleModels="clr-namespace:ShowcaseApp.Avalonia.ExampleModels"
+             xmlns:models="clr-namespace:ShowcaseApp.Avalonia.Models"
+             mc:Ignorable="d"
+             d:DesignHeight="300" d:DesignWidth="600">
+    <UserControl.Styles>
+        <StyleInclude Source="/Templates/MiniFeatures.axaml" />
+    </UserControl.Styles>
+    <Grid>
+        <Border BorderBrush="{DynamicResource ButtonBorder}" BorderThickness="1" Margin="2">
+            <avalonia:ZoomControl x:Name="zoomControl" Background="{DynamicResource ButtonBackground}"
+                                  Foreground="{DynamicResource ButtonText}" HorizontalContentAlignment="Center"
+                                  VerticalAlignment="Center">
+                <exampleModels:GraphAreaExample x:Name="graphArea" />
+            </avalonia:ZoomControl>
+        </Border>
+
+        <Expander VerticalAlignment="Bottom"
+                  Margin="2"
+                  IsExpanded="false"
+                  ExpandDirection="Down"
+                  Header="SETTINGS"
+                  Padding="5">
+
+            <StackPanel Orientation="Vertical" MinHeight="50" VerticalAlignment="Center"
+                        Margin="10">
+                <CheckBox Height="25"
+                          Name="cbArrangeGroups"
+                          IsChecked="True"
+                          Content="Arrange groups"
+                          ToolTip.Tip="If not checked then no overlap removal between vertex groups will occur though each vertex group will still be calculated independently from others" />
+            </StackPanel>
+        </Expander>
+
+        <Border HorizontalAlignment="Right"
+                VerticalAlignment="Top"
+                Background="{DynamicResource WindowBackground}"
+                BorderBrush="{DynamicResource ButtonBorder}"
+                BorderThickness="1"
+                CornerRadius="0,0,0,15"
+                Margin="0,2,2,0">
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                <Button CommandParameter="{x:Static models:MiniSpecialType.LayoutGrouped}" />
+                <Button Click="GraphRefresh_OnClick" />
+
+            </StackPanel>
+        </Border>
+    </Grid>
+</UserControl>

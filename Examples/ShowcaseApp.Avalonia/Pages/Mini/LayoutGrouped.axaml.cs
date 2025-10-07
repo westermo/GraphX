@@ -1,0 +1,132 @@
+﻿using System.Collections.Generic;
+using System.Linq;
+using Avalonia;
+using Avalonia.Controls;
+using Avalonia.Interactivity;
+using Avalonia.Media;
+using QuikGraph;
+using ShowcaseApp.Avalonia.ExampleModels;
+using ShowcaseApp.Avalonia.Models;
+using Westermo.GraphX;
+using Westermo.GraphX.Common;
+using Westermo.GraphX.Common.Enums;
+using Westermo.GraphX.Logic.Algorithms.LayoutAlgorithms;
+using Westermo.GraphX.Logic.Algorithms.LayoutAlgorithms.Grouped;
+using Rect = Westermo.GraphX.Measure.Rect;
+
+namespace ShowcaseApp.Avalonia.Pages.Mini
+{
+    /// <summary>
+    /// Interaction logic for LayoutVCP.xaml
+    /// </summary>
+    public partial class LayoutGrouped : UserControl
+    {
+        public LayoutGrouped()
+        {
+            InitializeComponent();
+            DataContext = this;
+            Loaded += ControlLoaded;
+            graphArea.SideExpansionSize = new Size(80, 80);
+        }
+
+        private void ControlLoaded(object? sender, RoutedEventArgs e)
+        {
+            GenerateGraph();
+        }
+
+        private void GenerateGraph()
+        {
+            graphArea.ClearLayout();
+            var logicCore = new LogicCoreExample()
+            {
+                Graph = ShowcaseHelper.GenerateDataGraph(10)
+            };
+            logicCore.Graph.Vertices.Take(5).ForEach(a => a.GroupId = 1);
+            logicCore.Graph.Vertices.Where(a => a.GroupId == 0).ForEach(a => a.GroupId = 2);
+            logicCore.DefaultOverlapRemovalAlgorithm = OverlapRemovalAlgorithmTypeEnum.None;
+            //generate group params
+            var prms = new List<AlgorithmGroupParameters<DataVertex, DataEdge>>
+            {
+                new()
+                {
+                    GroupId = 1,
+                    LayoutAlgorithm =
+                        new RandomLayoutAlgorithm<DataVertex, DataEdge, GraphExample>(
+                            new RandomLayoutAlgorithmParams { Bounds = new Rect(10, 10, 490, 490) }),
+                },
+                new()
+                {
+                    GroupId = 2,
+                    LayoutAlgorithm =
+                        new RandomLayoutAlgorithm<DataVertex, DataEdge, GraphExample>(
+                            new RandomLayoutAlgorithmParams { Bounds = new Rect(10, 10, 490, 490) }),
+                }
+            };
+
+            var gParams = new GroupingLayoutAlgorithmParameters<DataVertex, DataEdge>(prms, true)
+            {
+                OverlapRemovalAlgorithm = logicCore.AlgorithmFactory.CreateFSAA<object>(100, 100),
+                ArrangeGroups = cbArrangeGroups.IsChecked ?? false,
+            };
+            //generate grouping algo
+            logicCore.ExternalLayoutAlgorithm =
+                new GroupingLayoutAlgorithm<DataVertex, DataEdge, BidirectionalGraph<DataVertex, DataEdge>>(
+                    logicCore.Graph, null, gParams);
+
+            graphArea.LogicCore = logicCore;
+            //generate graphs
+            graphArea.GenerateGraph();
+
+            //generate group visuals
+            foreach (var item in prms)
+            {
+                if (!item.ZoneRectangle.HasValue) continue;
+                var rect = GenerateGroupBorder(item);
+                graphArea.InsertCustomChildControl(0, rect);
+                GraphAreaBase.SetX(rect, item.ZoneRectangle.Value.X - _groupInnerPadding * .5);
+                GraphAreaBase.SetY(rect, item.ZoneRectangle.Value.Y - _groupInnerPadding * .5 - _headerHeight);
+            }
+
+            zoomControl.ZoomToFill();
+        }
+
+        private readonly double _headerHeight = 30;
+        private readonly double _groupInnerPadding = 20;
+
+        private Border GenerateGroupBorder(AlgorithmGroupParameters<DataVertex, DataEdge> prms)
+        {
+            System.Diagnostics.Debug.Assert(prms.ZoneRectangle != null);
+            return new Border
+            {
+                Width = prms.ZoneRectangle.Value.Width + _groupInnerPadding,
+                Height = prms.ZoneRectangle.Value.Height + _groupInnerPadding + _headerHeight,
+                Background = prms.GroupId == 1 ? Brushes.LightSkyBlue : Brushes.Gray,
+                Opacity = 1,
+                CornerRadius = new CornerRadius(8),
+                BorderBrush = Brushes.Black,
+                BorderThickness = new Thickness(2),
+                Child = new Border
+                {
+                    VerticalAlignment = global::Avalonia.Layout.VerticalAlignment.Top,
+                    CornerRadius = new CornerRadius(8, 8, 0, 0),
+                    Background = Brushes.Black,
+                    Height = _headerHeight,
+                    Child = new TextBlock
+                    {
+                        Text = $"Group {prms.GroupId}",
+                        VerticalAlignment = global::Avalonia.Layout.VerticalAlignment.Center,
+                        HorizontalAlignment = global::Avalonia.Layout.HorizontalAlignment.Center,
+                        Foreground = Brushes.White,
+                        FontWeight = FontWeight.Bold,
+                        FontSize = 12
+                    }
+                }
+            };
+        }
+
+        private void GraphRefresh_OnClick(object? sender, RoutedEventArgs routedEventArgs)
+        {
+            GenerateGraph();
+        }
+    }
+}

@@ -1,0 +1,48 @@
+﻿<Styles xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:avalonia="clr-namespace:Westermo.GraphX.Controls.Avalonia;assembly=Westermo.GraphX.Controls.Avalonia"
+        xmlns:exampleModels="clr-namespace:ShowcaseApp.Avalonia.ExampleModels">
+
+
+    <!-- VERTEX CONTROL -->
+    <Style Selector="avalonia|VertexControl">
+        <!-- Set background color through attached property -->
+        <Setter Property="Background" Value="{StaticResource NormalBrush}" />
+        <Setter Property="Padding" Value="10,5,10,5" />
+        <Setter Property="BorderBrush" Value="{StaticResource NormalBorderBrush}" />
+        <Setter Property="BorderThickness" Value="3" />
+        <Setter Property="Opacity" Value="0.65" />
+        <Setter Property="Transitions">
+            <Transitions>
+                <DoubleTransition Property="Opacity" Duration="0:0:0.1" />
+            </Transitions>
+        </Setter>
+        <Style Selector="^:pointerover">
+            <Setter Property="Opacity" Value="1" />
+        </Style>
+
+        <!-- VERTEX DRAGGING CONTROL -->
+        <Setter Property="avalonia:DragBehaviour.IsDragEnabled"
+                Value="False" />
+        <Setter Property="avalonia:DragBehaviour.UpdateEdgesOnMove"
+                Value="True" />
+
+    </Style>
+
+
+    <!-- EDGE CONTROL -->
+    <Style Selector="avalonia|EdgeControl">
+
+        <Setter Property="MinWidth"
+                Value="1" />
+        <Setter Property="MinHeight"
+                Value="1" />
+        <Setter Property="Background"
+                Value="Red" />
+        <Setter Property="Foreground"
+                Value="Silver" />
+        <Setter Property="Opacity"
+                Value="1" />
+    </Style>
+
+</Styles>

@@ -78,8 +78,6 @@ namespace Westermo.GraphX.Logic.Algorithms.LayoutAlgorithms
 
         public override void ResetGraph(IEnumerable<TVertex> vertices, IEnumerable<TEdge> edges)
         {
-            if (VisitedGraph == null && !TryCreateNewGraph())
-                throw new GX_GeneralException("Can't create new graph through reflection. Make sure it support default constructor.");
             VisitedGraph.Clear();
             VisitedGraph.AddVertexRange(vertices);
             VisitedGraph.AddEdgeRange(edges);

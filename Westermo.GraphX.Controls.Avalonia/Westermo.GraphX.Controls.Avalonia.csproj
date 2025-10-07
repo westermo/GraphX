@@ -1,0 +1,25 @@
+<Project Sdk="Microsoft.NET.Sdk">
+    <PropertyGroup>
+        <TargetFramework>net9.0</TargetFramework>
+        <LangVersion>latest</LangVersion>
+        <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+        <Nullable>enable</Nullable>
+        <BuiltInComInteropSupport>true</BuiltInComInteropSupport>
+        <RootNamespace>Westermo.GraphX.Controls.Avalonia</RootNamespace>
+        <AvaloniaUseCompiledBindingsByDefault>true</AvaloniaUseCompiledBindingsByDefault>
+    </PropertyGroup>
+    <ItemGroup>
+        <PackageReference Include="Avalonia"/>
+        <ProjectReference Include="..\Westermo.GraphX.Common\Westermo.GraphX.Common.csproj"/>
+    </ItemGroup>
+
+    <ItemGroup>
+        <Resource Include="Images\help_black.png"/>
+    </ItemGroup>
+
+    <PropertyGroup>
+        <AssemblyTitle>Westermo GraphX Avalonia Controls Library</AssemblyTitle>
+        <Description>Avalonia Controls Library</Description>
+    </PropertyGroup>
+
+</Project>

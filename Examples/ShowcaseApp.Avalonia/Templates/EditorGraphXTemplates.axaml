@@ -1,0 +1,40 @@
+﻿<Styles
+    xmlns="https://github.com/avaloniaui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:avalonia="clr-namespace:Westermo.GraphX.Controls.Avalonia;assembly=Westermo.GraphX.Controls.Avalonia">
+
+    <!-- VERTEX CONTROL -->
+    <Style Selector="avalonia|VertexControl">
+        <!-- Set background color through attached property -->
+        <Setter Property="BorderThickness" Value="0" />
+        <Setter Property="ShowLabel" Value="True" />
+        <!-- VERTEX DRAGGING CONTROL -->
+        <Setter Property="avalonia:DragBehaviour.IsDragEnabled"
+                Value="False" />
+        <Setter Property="avalonia:DragBehaviour.UpdateEdgesOnMove"
+                Value="True" />
+    </Style>
+
+
+    <Style Selector="avalonia|AttachableVertexLabelControl">
+        <Setter Property="Background" Value="Transparent" />
+        <Setter Property="Foreground" Value="Black" />
+        <Setter Property="LabelPositionMode" Value="Sides" />
+        <Setter Property="LabelPositionSide" Value="Bottom" />
+    </Style>
+
+    <!-- EDGE CONTROL -->
+    <Style Selector="avalonia|EdgeControl">
+        <Setter Property="MinWidth"
+                Value="1" />
+        <Setter Property="MinHeight"
+                Value="1" />
+        <Setter Property="Background"
+                Value="Red" />
+        <Setter Property="Foreground"
+                Value="Blue" />
+        <Setter Property="Opacity"
+                Value="1" />
+    </Style>
+
+</Styles>
