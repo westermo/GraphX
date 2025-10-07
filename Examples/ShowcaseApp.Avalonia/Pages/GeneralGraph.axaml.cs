@@ -250,7 +250,6 @@ namespace ShowcaseApp.Avalonia.Pages
                     break;
                 case LayoutAlgorithmTypeEnum.EfficientSugiyama:
                 case LayoutAlgorithmTypeEnum.Sugiyama:
-                    //graph = ShowcaseHelper.GenerateSugiDataGraph();
                     break;
             }
 

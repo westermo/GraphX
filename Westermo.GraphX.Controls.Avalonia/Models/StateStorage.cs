@@ -70,9 +70,6 @@ namespace Westermo.GraphX.Controls.Avalonia.Models
         {
             if (ContainsState(key))
                 throw new GX_ConsistencyException($"Graph state {key} already exist in state storage");
-
-            //if(!unsafeImport && (_area.LogicCore == null || _area.LogicCore.Graph == null || _area.LogicCore.Graph != state.Graph))
-            //     throw new GX_ConsistencyException("Can't validate that imported graph state belong to the target area Graph! You can try to import the state with unsafeImport parameter set to True.");
             _states.Add(key, state);
         }
 
@@ -91,8 +88,6 @@ namespace Westermo.GraphX.Controls.Avalonia.Models
                 return;
             }
 
-            // _area.RemoveAllVertices();
-            // _area.RemoveAllEdges();
             //One action: clear all, preload vertices, assign Graph property
             _area.PreloadVertexes(value.Graph, true, true);
             _area.LogicCore.Graph = value.Graph;
@@ -112,7 +107,6 @@ namespace Westermo.GraphX.Controls.Avalonia.Models
                     _area.VertexList[item.Target],
                     item);
                 _area.InsertEdge(item, edgectrl);
-                //edgectrl.UpdateEdge();
             }
 
             _area.UpdateLayout();

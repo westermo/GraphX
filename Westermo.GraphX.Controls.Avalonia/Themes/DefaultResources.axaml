@@ -279,12 +279,6 @@
                 </ControlTemplate>
             </Setter.Value>
         </Setter>
-
-        <!-- AVAILABLE CUSTOM PROPERTIES -->
-        <!-- 
-        <Setter Property="DashStyle" Value="Solid"/>
-        -->
-
         <Setter Property="Foreground"
                 Value="Black" />
         <Setter Property="Opacity"

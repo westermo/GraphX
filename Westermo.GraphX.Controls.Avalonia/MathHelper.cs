@@ -87,7 +87,6 @@ namespace Westermo.GraphX.Controls.Avalonia
         /// <param name="b">Line target point</param>
         public static bool IsIntersected(Rect r, Point a, Point b)
         {
-           // var start = new Point(a.X, a.Y);
             /* line endpoints */
             var codeA = GetIntersectionData(r, a);
             var codeB = GetIntersectionData(r, b);

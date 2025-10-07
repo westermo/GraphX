@@ -49,7 +49,6 @@ namespace ShowcaseApp.Avalonia.Pages.Mini
             }
 
             graphArea.EdgesList[(ec.Edge as DataEdge)!].UpdateEdge();
-            //graphArea.UpdateAllEdges(true);
         }
 
         private void CbMathShapeOnChecked(object? sender, RoutedEventArgs routedEventArgs)

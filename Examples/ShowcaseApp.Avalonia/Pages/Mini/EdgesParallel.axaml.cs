@@ -96,9 +96,6 @@ namespace ShowcaseApp.Avalonia.Pages.Mini
             eList[1].GetLabelControls().First().LabelVerticalOffset = 12;
 
             eList[2].GetLabelControls().First().ShowLabel = false;
-            // eList[3].GetLabelControls().FirstOrDefault().LabelVerticalOffset = 12;
-            // eList[4].GetLabelControls().FirstOrDefault().LabelVerticalOffset = -12;
-
             //PS: to see how parallel edges logic works go to GraphArea::UpdateParallelEdgesData() method
 
             zoomControl.ZoomToFill();

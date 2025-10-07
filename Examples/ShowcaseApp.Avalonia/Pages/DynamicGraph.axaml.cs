@@ -46,9 +46,6 @@ public partial class DynamicGraph : UserControl
         SetupDrop();
 
         dg_zoomctrl.IsAnimationEnabled = false;
-        /* dg_Area.VertexSelected += dg_Area_VertexSelectedForED;
-         dg_zoomctrl.PreviewMouseMove += dg_Area_MouseMove;
-         dg_zoomctrl.MouseDown += dg_zoomctrl_MouseDown;*/
         dg_Area.SetVerticesDrag(true, true);
 
         Loaded += DynamicGraph_Loaded;
@@ -86,124 +83,6 @@ public partial class DynamicGraph : UserControl
         DragBehaviour.GlobalIsSnappingPredicate = _originalGlobalIsSnapping;
         DragBehaviour.GlobalIsIndividualSnappingPredicate = _originalGlobalIsSnappingIndividually;
     }
-
-    #region Manual edge drawing
-
-    /*  private bool _isInEdMode;
-      private PathGeometry _edGeo;
-      private VertexControl _edVertex;
-      private EdgeControl _edEdge;
-      private DataVertex _edFakeDv;
-
-      void dg_zoomctrl_MouseDown(object sender, MouseButtonEventArgs e)
-      {
-          if (!_isInEdMode || _edGeo == null || _edEdge == null || _edVertex == null || e.LeftButton != MouseButtonState.Pressed) return;
-          //place point
-          var pos = dg_zoomctrl.TranslatePoint(e.GetPosition(dg_zoomctrl), dg_Area);
-          var lastseg = _edGeo.Figures[0].Segments[_edGeo.Figures[0].Segments.Count - 1] as PolyLineSegment;
-          if (lastseg != null) lastseg.Points.Add(pos);
-          _edEdge.SetEdgePathManually(_edGeo);
-      }
-
-      void dg_Area_MouseMove(object sender, MouseEventArgs e)
-      {
-          if (!_isInEdMode || _edGeo == null || _edEdge == null || _edVertex == null) return;
-          var pos = dg_zoomctrl.TranslatePoint(e.GetPosition(dg_zoomctrl), dg_Area);
-          var lastseg = _edGeo.Figures[0].Segments[_edGeo.Figures[0].Segments.Count - 1] as PolyLineSegment;
-          if (lastseg != null) lastseg.Points[lastseg.Points.Count - 1] = pos;
-          _edEdge.SetEdgePathManually(_edGeo);
-      }
-
-      void dg_Area_VertexSelectedForED(object sender, VertexSelectedEventArgs args)
-      {
-          if (!_isInEdMode) return;
-          if (_edVertex == null) //select starting vertex
-          {
-              _edVertex = args.VertexControl;
-              _edFakeDv = new DataVertex { ID = -666 };
-              _edGeo = new PathGeometry(new PathFigureCollection { new PathFigure { IsClosed = false, StartPoint = _edVertex.GetPosition(), Segments = new PathSegmentCollection { new PolyLineSegment(new List<Point> { new Point() }, true) } } });
-              var dedge = new DataEdge(_edVertex.Vertex as DataVertex, _edFakeDv);
-              _edEdge = new EdgeControl(_edVertex, null, dedge) { ManualDrawing = true };
-              dg_Area.AddEdge(dedge, _edEdge);
-              dg_Area.LogicCore.Graph.AddVertex(_edFakeDv);
-              dg_Area.LogicCore.Graph.AddEdge(dedge);
-              _edEdge.SetEdgePathManually(_edGeo);
-          }
-          else if (!Equals(_edVertex, args.VertexControl)) //finish draw
-          {
-              _edEdge.Target = args.VertexControl;
-              var dedge = _edEdge.Edge as DataEdge;
-              if (dedge != null) dedge.Target = args.VertexControl.Vertex as DataVertex;
-              var fig = _edGeo.Figures[0];
-              var seg = fig.Segments[_edGeo.Figures[0].Segments.Count - 1] as PolyLineSegment;
-
-              if (seg != null && seg.Points.Count > 0)
-              {
-                  var targetPos = _edEdge.Target.GetPosition();
-                  var sourcePos = _edEdge.Source.GetPosition();
-                  //get the size of the source
-                  var sourceSize = new Size
-                  {
-                      Width = _edEdge.Source.ActualWidth,
-                      Height = _edEdge.Source.ActualHeight
-                  };
-                  var targetSize = new Size
-                  {
-                      Width = _edEdge.Target.ActualWidth,
-                      Height = _edEdge.Target.ActualHeight
-                  };
-
-                  var srcStart = seg.Points.Count == 0 ? fig.StartPoint : seg.Points[0];
-                  var srcEnd = seg.Points.Count > 1 ? (seg.Points[seg.Points.Count - 1] == targetPos ? seg.Points[seg.Points.Count - 2] : seg.Points[seg.Points.Count - 1]) : fig.StartPoint;
-                  var p1 = GeometryHelper.GetEdgeEndpoint(sourcePos, new Rect(sourceSize), srcStart, _edEdge.Source.VertexShape);
-                  var p2 = GeometryHelper.GetEdgeEndpoint(targetPos, new Rect(targetSize), srcEnd, _edEdge.Target.VertexShape);
-
-
-                  fig.StartPoint = p1;
-                  if (seg.Points.Count > 1)
-                      seg.Points[seg.Points.Count - 1] = p2;
-              }
-              GeometryHelper.TryFreeze(_edGeo);
-              _edEdge.SetEdgePathManually(new PathGeometry(_edGeo.Figures));
-              _isInEdMode = false;
-              ClearEdgeDrawing();
-          }
-      }
-
-
-      void ClearEdgeDrawing()
-      {
-          _edGeo = null;
-          if (_edFakeDv != null)
-              dg_Area.LogicCore.Graph.RemoveVertex(_edFakeDv);
-          _edFakeDv = null;
-          _edVertex = null;
-          _edEdge = null;
-      }
-
-      private void dg_butdraw_Click(object sender, RoutedEventArgs e)
-      {
-          if (!_isInEdMode)
-          {
-              if (dg_Area.VertexList.Count() < 2)
-              {
-                  MessageBox.Show("Please add more vertices before proceed with this action!", "Starting to draw custom edge...", MessageBoxButton.OK, MessageBoxImage.Information);
-                  return;
-              }
-              MessageBox.Show("Please select any vertex to define edge starting point!", "Starting to draw custom edge...", MessageBoxButton.OK, MessageBoxImage.Information);
-          }
-          else
-          {
-              MessageBox.Show("Edge drawing mode has been canceled!");
-              if (_edEdge != null)
-                  _edEdge.SetEdgePathManually(null);
-              ClearEdgeDrawing();
-          }
-          _isInEdMode = !_isInEdMode;
-      }
-      */
-
-    #endregion
 
     private void FindRandom(object? sender, RoutedEventArgs routedEventArgs)
     {
