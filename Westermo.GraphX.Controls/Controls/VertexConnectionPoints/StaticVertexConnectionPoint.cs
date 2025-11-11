@@ -2,7 +2,6 @@
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
-
 using Westermo.GraphX.Common.Enums;
 
 namespace Westermo.GraphX.Controls;
@@ -14,7 +13,14 @@ public class StaticVertexConnectionPoint : ContentControl, IVertexConnectionPoin
     /// <summary>
     /// Connector identifier
     /// </summary>
-    public int Id { get; set; }
+    public int Id
+    {
+        get => (int)GetValue(IdProperty);
+        set => SetValue(IdProperty, value);
+    }
+
+    public static readonly DependencyProperty IdProperty = DependencyProperty.Register(nameof(Id), typeof(int),
+        typeof(StaticVertexConnectionPoint), new PropertyMetadata(0));
 
     public static readonly DependencyProperty ShapeProperty =
         DependencyProperty.Register(nameof(Shape),
@@ -61,6 +67,7 @@ public class StaticVertexConnectionPoint : ContentControl, IVertexConnectionPoin
             if (parent is VertexControl control) return control;
             parent = VisualTreeHelper.GetParent(parent);
         }
+
         return null;
     }
 

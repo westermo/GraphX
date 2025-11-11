@@ -1,0 +1,24 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+        <OutputType>Exe</OutputType>
+        <TargetFramework>net10.0-windows</TargetFramework>
+        <UseWpf>true</UseWpf>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <PackageReference Include="TUnit"/>
+        <PackageReference Include="QuikGraph"/>
+        <PackageReference Include="Verify.TUnit"/>
+        <PackageReference Include="Verify"/>
+    </ItemGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\Westermo.GraphX.Common\Westermo.GraphX.Common.csproj"/>
+        <ProjectReference Include="..\Westermo.GraphX.Logic\Westermo.GraphX.Logic.csproj"/>
+        <ProjectReference Include="..\Westermo.GraphX.Controls\Westermo.GraphX.Controls.csproj"/>
+    </ItemGroup>
+
+</Project>

@@ -2,6 +2,7 @@
 using System.Linq;
 using System.Windows;
 using System.Windows.Input;
+using System.Windows.Media;
 using Westermo.GraphX.Controls.Models;
 using Westermo.GraphX.Common;
 using Westermo.GraphX.Common.Enums;
@@ -15,6 +16,10 @@ namespace Westermo.GraphX.Controls;
 [Serializable]
 public class EdgeControl : EdgeControlBase
 {
+    // Added for testing & diagnostics: public read-only accessors for connection points
+    public Point? SourceEndpoint => SourceConnectionPoint;
+    public Point? TargetEndpoint => TargetConnectionPoint;
+    public Geometry? GetLineGeometry() => Linegeometry;
     #region Dependency Properties
 
     public static readonly DependencyProperty StrokeThicknessProperty = DependencyProperty.Register(

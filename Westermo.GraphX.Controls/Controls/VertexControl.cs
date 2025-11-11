@@ -27,7 +27,8 @@ public class VertexControl : VertexControlBase
     static VertexControl()
     {
         //override the StyleKey Property
-        DefaultStyleKeyProperty.OverrideMetadata(typeof(VertexControl), new FrameworkPropertyMetadata(typeof(VertexControl)));
+        DefaultStyleKeyProperty.OverrideMetadata(typeof(VertexControl),
+            new FrameworkPropertyMetadata(typeof(VertexControl)));
     }
 
     /// <summary>
@@ -53,7 +54,7 @@ public class VertexControl : VertexControlBase
 
     internal void UpdatePositionTraceState()
     {
-        if (EventOptions is {PositionChangeNotification: true})
+        if (EventOptions is { PositionChangeNotification: true })
         {
             if (_xChangeMonitor == null)
             {
@@ -61,6 +62,7 @@ public class VertexControl : VertexControlBase
                 _xChangeMonitor.Bind(this, GraphAreaBase.XProperty);
                 _xChangeMonitor.ChangeDetected += changeMonitor_ChangeDetected;
             }
+
             if (_yChangeMonitor == null)
             {
                 _yChangeMonitor = new ChangeMonitor();
@@ -76,6 +78,7 @@ public class VertexControl : VertexControlBase
                 _xChangeMonitor.Unbind();
                 _xChangeMonitor = null;
             }
+
             if (_yChangeMonitor != null)
             {
                 _yChangeMonitor.ChangeDetected -= changeMonitor_ChangeDetected;
@@ -109,7 +112,7 @@ public class VertexControl : VertexControlBase
         switch (typ)
         {
             case EventType.MouseClick:
-                if (EventOptions is {MouseClickEnabled: true})
+                if (EventOptions is { MouseClickEnabled: true })
                 {
                     MouseDown += VertexControl_Down;
                     PreviewMouseMove += VertexControl_PreviewMouseMove;
@@ -119,25 +122,27 @@ public class VertexControl : VertexControlBase
                     MouseDown -= VertexControl_Down;
                     PreviewMouseMove -= VertexControl_PreviewMouseMove;
                 }
+
                 break;
 
             case EventType.MouseDoubleClick:
-                if (EventOptions is {MouseDoubleClickEnabled: true}) MouseDoubleClick += VertexControl_MouseDoubleClick;
+                if (EventOptions is { MouseDoubleClickEnabled: true })
+                    MouseDoubleClick += VertexControl_MouseDoubleClick;
                 else MouseDoubleClick -= VertexControl_MouseDoubleClick;
                 break;
 
             case EventType.MouseMove:
-                if (EventOptions is {MouseMoveEnabled: true}) MouseMove += VertexControl_MouseMove;
+                if (EventOptions is { MouseMoveEnabled: true }) MouseMove += VertexControl_MouseMove;
                 else MouseMove -= VertexControl_MouseMove;
                 break;
 
             case EventType.MouseEnter:
-                if (EventOptions is {MouseEnterEnabled: true}) MouseEnter += VertexControl_MouseEnter;
+                if (EventOptions is { MouseEnterEnabled: true }) MouseEnter += VertexControl_MouseEnter;
                 else MouseEnter -= VertexControl_MouseEnter;
                 break;
 
             case EventType.MouseLeave:
-                if (EventOptions is {MouseLeaveEnabled: true}) MouseLeave += VertexControl_MouseLeave;
+                if (EventOptions is { MouseLeaveEnabled: true }) MouseLeave += VertexControl_MouseLeave;
                 else MouseLeave -= VertexControl_MouseLeave;
                 break;
 
@@ -145,6 +150,7 @@ public class VertexControl : VertexControlBase
                 UpdatePositionTraceState();
                 break;
         }
+
         MouseUp -= VertexControl_MouseUp;
         MouseUp += VertexControl_MouseUp;
     }
@@ -171,6 +177,7 @@ public class VertexControl : VertexControlBase
                 RootArea.OnVertexClicked(this, e, Keyboard.Modifiers);
             }
         }
+
         _clickTrack = false;
         e.Handled = true;
     }
@@ -195,7 +202,8 @@ public class VertexControl : VertexControlBase
 
     #region Click Event
 
-    public static readonly RoutedEvent ClickEvent = EventManager.RegisterRoutedEvent(nameof(Click), RoutingStrategy.Bubble, typeof(RoutedEventHandler), typeof(VertexControl));
+    public static readonly RoutedEvent ClickEvent = EventManager.RegisterRoutedEvent(nameof(Click),
+        RoutingStrategy.Bubble, typeof(RoutedEventHandler), typeof(VertexControl));
 
     public event RoutedEventHandler Click
     {
@@ -232,7 +240,8 @@ public class VertexControl : VertexControlBase
         public event Changed? ChangeDetected;
 
         public static readonly DependencyProperty MonitorForChangeProperty =
-            DependencyProperty.Register(nameof(MonitorForChange), typeof(object), typeof(ChangeMonitor), new PropertyMetadata(null, MonitoredPropertyChanged));
+            DependencyProperty.Register(nameof(MonitorForChange), typeof(object), typeof(ChangeMonitor),
+                new PropertyMetadata(null, MonitoredPropertyChanged));
 
         public object MonitorForChange
         {
@@ -270,14 +279,16 @@ public class VertexControl : VertexControlBase
 
         if (VertexLabelControl != null)
         {
-            if (ShowLabel) VertexLabelControl.Show(); else VertexLabelControl.Hide();
+            if (ShowLabel) VertexLabelControl.Show();
+            else VertexLabelControl.Hide();
             UpdateLayout();
             VertexLabelControl.UpdatePosition();
         }
 
         VertexConnectionPointsList = this.FindDescendantsOfType<IVertexConnectionPoint>().ToList();
         if (VertexConnectionPointsList.GroupBy(x => x.Id).Count(group => @group.Count() > 1) > 0)
-            throw new GX_InvalidDataException("Vertex connection points in VertexControl template must have unique Id!");
+            throw new GX_InvalidDataException(
+                "Vertex connection points in VertexControl template must have unique Id!");
     }
 
     #region Events handling

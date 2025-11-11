@@ -497,10 +497,7 @@ public abstract class EdgeControlBase : Control, IGraphControl, IDisposable
 
         SelfLoopIndicator = GetTemplatePart("PART_SelfLoopedEdge") as FrameworkElement;
         if (SelfLoopIndicator != null)
-            SelfLoopIndicator.LayoutUpdated += (_, _) =>
-            {
-                SelfLoopIndicator?.Arrange(_selfLoopedEdgeLastKnownRect);
-            };
+            SelfLoopIndicator.LayoutUpdated += (_, _) => { SelfLoopIndicator?.Arrange(_selfLoopedEdgeLastKnownRect); };
         // var x = ShowLabel;
         MeasureChild(EdgePointerForSource as UIElement);
         MeasureChild(EdgePointerForTarget as UIElement);
@@ -655,11 +652,17 @@ public abstract class EdgeControlBase : Control, IGraphControl, IDisposable
         //if we has no self looped edge template defined we'll use default built-in indicator
         if (hasNoTemplate)
         {
-            //var geometry = Linegeometry as EllipseGeometry;
-            //TODO
-            //geometry.Center = pt;
-            //geometry.RadiusX = SelfLoopIndicatorRadius;
-            //geometry.RadiusY = SelfLoopIndicatorRadius;
+            // Generate default ellipse geometry centered relative to calculated top-left point
+            if (Linegeometry is not EllipseGeometry ellipse)
+            {
+                ellipse = new EllipseGeometry();
+                Linegeometry = ellipse;
+            }
+
+            // Position ellipse so that (pt) represents its top-left corner
+            ellipse.Center = new Point(pt.X + SelfLoopIndicatorRadius, pt.Y + SelfLoopIndicatorRadius);
+            ellipse.RadiusX = SelfLoopIndicatorRadius;
+            ellipse.RadiusY = SelfLoopIndicatorRadius;
         }
         else _selfLoopedEdgeLastKnownRect = new SysRect(pt, SelfLoopIndicator!.DesiredSize);
     }
@@ -996,7 +999,7 @@ public abstract class EdgeControlBase : Control, IGraphControl, IDisposable
             return calculatedCp;
         }
 
-        bool NeedParallelCalc() => !hasRouteInfo && RootArea.EnableParallelEdges && IsParallel;
+        bool NeedParallelCalc() => !hasRouteInfo && RootArea?.EnableParallelEdges == true && IsParallel;
 
         #endregion
 
