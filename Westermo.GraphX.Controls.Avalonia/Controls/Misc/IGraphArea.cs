@@ -1,9 +1,8 @@
 ﻿using System.Collections.Generic;
 
-namespace Westermo.GraphX.Controls.Avalonia
+namespace Westermo.GraphX.Controls.Controls.Misc;
+
+public interface IGraphArea<TVertex>
 {
-    public interface IGraphArea<TVertex>
-    {
-        IDictionary<TVertex, VertexControl> VertexList { get; set; }
-    }
+    IDictionary<TVertex, VertexControl> VertexList { get; set; }
 }

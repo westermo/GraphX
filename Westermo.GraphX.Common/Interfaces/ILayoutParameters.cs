@@ -1,11 +1,10 @@
-﻿namespace Westermo.GraphX.Common.Interfaces
+﻿namespace Westermo.GraphX.Common.Interfaces;
+
+public interface ILayoutParameters : IAlgorithmParameters
 {
-	public interface ILayoutParameters : IAlgorithmParameters
-	{
-        /// <summary>
-        /// Seed to be used to initialize any random number generators in order to construct
-        /// more deterministic output.
-        /// </summary>
-        int Seed { get; set; }
-	}
+	/// <summary>
+	/// Seed to be used to initialize any random number generators in order to construct
+	/// more deterministic output.
+	/// </summary>
+	int Seed { get; set; }
 }

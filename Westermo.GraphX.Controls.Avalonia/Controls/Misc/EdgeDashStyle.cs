@@ -1,11 +1,10 @@
-﻿namespace Westermo.GraphX.Controls.Avalonia
+﻿namespace Westermo.GraphX.Controls.Controls.Misc;
+
+public enum EdgeDashStyle
 {
-    public enum EdgeDashStyle
-    {
-        Solid,
-        Dash,
-        Dot,
-        DashDot,
-        DashDotDot
-    }
+    Solid,
+    Dash,
+    Dot,
+    DashDot,
+    DashDotDot
 }

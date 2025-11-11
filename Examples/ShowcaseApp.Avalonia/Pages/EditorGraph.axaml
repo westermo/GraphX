@@ -3,8 +3,9 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
-             xmlns:avalonia="clr-namespace:Westermo.GraphX.Controls.Avalonia;assembly=Westermo.GraphX.Controls.Avalonia"
+             
              xmlns:exampleModels="clr-namespace:ShowcaseApp.Avalonia.ExampleModels"
+             xmlns:zoomControl="clr-namespace:Westermo.GraphX.Controls.Controls.ZoomControl;assembly=Westermo.GraphX.Controls.Avalonia"
              mc:Ignorable="d"
              d:DesignHeight="380" d:DesignWidth="600">
     <UserControl.Styles>
@@ -36,10 +37,10 @@
                     </VisualBrush.Visual>
                 </VisualBrush>
             </Border.Background>
-            <avalonia:ZoomControl x:Name="zoomCtrl" Background="Transparent" VerticalContentAlignment="Center"
+            <zoomControl:ZoomControl x:Name="zoomCtrl" Background="Transparent" VerticalContentAlignment="Center"
                                   VerticalAlignment="Center">
                 <exampleModels:GraphAreaExample x:Name="graphArea" />
-            </avalonia:ZoomControl>
+            </zoomControl:ZoomControl>
         </Border>
 
 

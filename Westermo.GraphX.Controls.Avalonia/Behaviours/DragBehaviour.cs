@@ -5,9 +5,9 @@ using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Interactivity;
 using Avalonia.VisualTree;
-using Westermo.GraphX.Controls.Avalonia.Controls.Interfaces;
+using Westermo.GraphX.Controls.Controls.Interfaces;
 
-namespace Westermo.GraphX.Controls.Avalonia;
+namespace Westermo.GraphX.Controls.Behaviours;
 
 /// <summary>
 /// Dragging behavior of objects in a GraphX graph area is influenced using the attached properties of this class.

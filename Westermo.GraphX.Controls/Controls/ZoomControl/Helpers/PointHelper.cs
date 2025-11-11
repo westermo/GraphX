@@ -17,20 +17,19 @@
 using System;
 using System.Windows;
 
-namespace Westermo.GraphX.Controls
+namespace Westermo.GraphX.Controls;
+
+internal static class PointHelper
 {
-  internal static class PointHelper
+  public static double DistanceBetween( Point p1, Point p2 )
   {
-    public static double DistanceBetween( Point p1, Point p2 )
-    {
-      return Math.Sqrt( Math.Pow( p1.X - p2.X, 2 ) + Math.Pow( p1.Y - p2.Y, 2 ) );
-    }
+    return Math.Sqrt( Math.Pow( p1.X - p2.X, 2 ) + Math.Pow( p1.Y - p2.Y, 2 ) );
+  }
 
-    public static Point Empty => new( double.NaN, double.NaN );
+  public static Point Empty => new( double.NaN, double.NaN );
 
-    public static bool IsEmpty( Point point )
-    {
-      return DoubleHelper.IsNaN( point.X ) && DoubleHelper.IsNaN( point.Y );
-    }
+  public static bool IsEmpty( Point point )
+  {
+    return DoubleHelper.IsNaN( point.X ) && DoubleHelper.IsNaN( point.Y );
   }
 }

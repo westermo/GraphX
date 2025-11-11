@@ -1,10 +1,9 @@
-﻿namespace Westermo.GraphX.Logic.Algorithms.LayoutAlgorithms
+﻿namespace Westermo.GraphX.Logic.Algorithms.LayoutAlgorithms;
+
+public enum CompoundVertexInnerLayoutType
 {
-    public enum CompoundVertexInnerLayoutType
-    {
-        Automatic,
-        ContextFree,
-        Contextual,
-        Fixed
-    }
+    Automatic,
+    ContextFree,
+    Contextual,
+    Fixed
 }

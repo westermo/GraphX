@@ -19,139 +19,138 @@ using System.Collections.Generic;
 using System.Windows;
 using System.Windows.Media;
 
-namespace Westermo.GraphX.Controls
+namespace Westermo.GraphX.Controls;
+
+public static class VisualTreeHelperEx
 {
-    public static class VisualTreeHelperEx
+    public static DependencyObject? FindAncestorByType(DependencyObject? element, Type type, bool specificTypeOnly)
     {
-        public static DependencyObject? FindAncestorByType(DependencyObject? element, Type type, bool specificTypeOnly)
-        {
-            if (element == null)
-                return null;
+        if (element == null)
+            return null;
 
-            if (specificTypeOnly ? element.GetType() == type
+        if (specificTypeOnly ? element.GetType() == type
                 : element.GetType() == type || element.GetType().IsSubclassOf(type))
-                return element;
+            return element;
 
-            return FindAncestorByType(VisualTreeHelper.GetParent(element), type, specificTypeOnly);
+        return FindAncestorByType(VisualTreeHelper.GetParent(element), type, specificTypeOnly);
+    }
+
+    public static T? FindAncestorByType<T>(DependencyObject? depObj) where T : DependencyObject
+    {
+        if (depObj == null)
+        {
+            return default(T);
+        }
+        if (depObj is T)
+        {
+            return (T) depObj;
         }
 
-        public static T? FindAncestorByType<T>(DependencyObject? depObj) where T : DependencyObject
+        var parent = default(T);
+
+        parent = FindAncestorByType<T>(VisualTreeHelper.GetParent(depObj));
+
+        return parent;
+    }
+
+    public static Visual? FindDescendantByName(Visual? element, string name)
+    {
+        if (element is FrameworkElement frameworkElement && frameworkElement.Name == name)
+            return element;
+
+        Visual? foundElement = null;
+        if (element is FrameworkElement frameworkElementWithTemplate)
+            frameworkElementWithTemplate.ApplyTemplate();
+
+        for (var i = 0; i < VisualTreeHelper.GetChildrenCount(element); i++)
         {
-            if (depObj == null)
-            {
-                return default(T);
-            }
-            if (depObj is T)
-            {
-                return (T) depObj;
-            }
-
-            var parent = default(T);
-
-            parent = FindAncestorByType<T>(VisualTreeHelper.GetParent(depObj));
-
-            return parent;
+            var visual = VisualTreeHelper.GetChild(element, i) as Visual;
+            foundElement = FindDescendantByName(visual, name);
+            if (foundElement != null)
+                break;
         }
 
-        public static Visual? FindDescendantByName(Visual? element, string name)
-        {
-            if (element is FrameworkElement frameworkElement && frameworkElement.Name == name)
-                return element;
+        return foundElement;
+    }
 
-            Visual? foundElement = null;
-            if (element is FrameworkElement frameworkElementWithTemplate)
-                frameworkElementWithTemplate.ApplyTemplate();
+    public static Visual? FindDescendantByType(Visual element, Type type)
+    {
+        return FindDescendantByType(element, type, true);
+    }
 
-            for (var i = 0; i < VisualTreeHelper.GetChildrenCount(element); i++)
-            {
-                var visual = VisualTreeHelper.GetChild(element, i) as Visual;
-                foundElement = FindDescendantByName(visual, name);
-                if (foundElement != null)
-                    break;
-            }
+    public static Visual? FindDescendantByType(Visual? element, Type type, bool specificTypeOnly)
+    {
+        if (element == null)
+            return null;
 
-            return foundElement;
-        }
-
-        public static Visual? FindDescendantByType(Visual element, Type type)
-        {
-            return FindDescendantByType(element, type, true);
-        }
-
-        public static Visual? FindDescendantByType(Visual? element, Type type, bool specificTypeOnly)
-        {
-            if (element == null)
-                return null;
-
-            if (specificTypeOnly ? element.GetType() == type
+        if (specificTypeOnly ? element.GetType() == type
                 : element.GetType() == type || element.GetType().IsSubclassOf(type))
-                return element;
+            return element;
 
-            Visual? foundElement = null;
-            if (element is FrameworkElement frameworkElement)
-                frameworkElement.ApplyTemplate();
+        Visual? foundElement = null;
+        if (element is FrameworkElement frameworkElement)
+            frameworkElement.ApplyTemplate();
 
-            for (var i = 0; i < VisualTreeHelper.GetChildrenCount(element); i++)
-            {
-                var visual = VisualTreeHelper.GetChild(element, i) as Visual;
-                foundElement = FindDescendantByType(visual, type, specificTypeOnly);
-                if (foundElement != null)
-                    break;
-            }
-
-            return foundElement;
-        }
-
-        #region Find descendants of type
-
-        public static IEnumerable<T> FindDescendantsOfType<T>(this Visual? element) where T: class
+        for (var i = 0; i < VisualTreeHelper.GetChildrenCount(element); i++)
         {
-            if (element == null)  yield break;
-            if (element is T)
-                yield return (T)(object)element;
-
-            if (element is FrameworkElement frameworkElement)
-                frameworkElement.ApplyTemplate();
-
-            for (var i = 0; i < VisualTreeHelper.GetChildrenCount(element); i++)
-            {
-                var visual = VisualTreeHelper.GetChild(element, i) as Visual;
-                if(visual == null) continue;
-                foreach (var item in visual.FindDescendantsOfType<T>())
-                    yield return item;
-            }
+            var visual = VisualTreeHelper.GetChild(element, i) as Visual;
+            foundElement = FindDescendantByType(visual, type, specificTypeOnly);
+            if (foundElement != null)
+                break;
         }
 
-        #endregion
+        return foundElement;
+    }
 
-        public static T? FindDescendantByType<T>(Visual element) where T : Visual
+    #region Find descendants of type
+
+    public static IEnumerable<T> FindDescendantsOfType<T>(this Visual? element) where T: class
+    {
+        if (element == null)  yield break;
+        if (element is T)
+            yield return (T)(object)element;
+
+        if (element is FrameworkElement frameworkElement)
+            frameworkElement.ApplyTemplate();
+
+        for (var i = 0; i < VisualTreeHelper.GetChildrenCount(element); i++)
         {
-            var temp = FindDescendantByType(element, typeof (T));
-
-            return (T?) temp;
+            var visual = VisualTreeHelper.GetChild(element, i) as Visual;
+            if(visual == null) continue;
+            foreach (var item in visual.FindDescendantsOfType<T>())
+                yield return item;
         }
+    }
 
-        public static Visual? FindDescendantWithPropertyValue(Visual? element, DependencyProperty dp, object value)
+    #endregion
+
+    public static T? FindDescendantByType<T>(Visual element) where T : Visual
+    {
+        var temp = FindDescendantByType(element, typeof (T));
+
+        return (T?) temp;
+    }
+
+    public static Visual? FindDescendantWithPropertyValue(Visual? element, DependencyProperty dp, object value)
+    {
+        if (element == null)
+            return null;
+
+        if (element.GetValue(dp).Equals(value))
+            return element;
+
+        Visual? foundElement = null;
+        if (element is FrameworkElement frameworkElement)
+            frameworkElement.ApplyTemplate();
+
+        for (var i = 0; i < VisualTreeHelper.GetChildrenCount(element); i++)
         {
-            if (element == null)
-                return null;
-
-            if (element.GetValue(dp).Equals(value))
-                return element;
-
-            Visual? foundElement = null;
-            if (element is FrameworkElement frameworkElement)
-                frameworkElement.ApplyTemplate();
-
-            for (var i = 0; i < VisualTreeHelper.GetChildrenCount(element); i++)
-            {
-                var visual = VisualTreeHelper.GetChild(element, i) as Visual;
-                foundElement = FindDescendantWithPropertyValue(visual, dp, value);
-                if (foundElement != null)
-                    break;
-            }
-
-            return foundElement;
+            var visual = VisualTreeHelper.GetChild(element, i) as Visual;
+            foundElement = FindDescendantWithPropertyValue(visual, dp, value);
+            if (foundElement != null)
+                break;
         }
+
+        return foundElement;
     }
 }

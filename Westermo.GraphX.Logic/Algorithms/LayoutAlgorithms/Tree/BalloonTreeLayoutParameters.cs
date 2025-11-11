@@ -1,31 +1,30 @@
-﻿namespace Westermo.GraphX.Logic.Algorithms.LayoutAlgorithms
+﻿namespace Westermo.GraphX.Logic.Algorithms.LayoutAlgorithms;
+
+public class BalloonTreeLayoutParameters : LayoutParametersBase
 {
-	public class BalloonTreeLayoutParameters : LayoutParametersBase
+	internal int minRadius = 2;
+	internal float border = 20.0f;
+
+	public int MinRadius
 	{
-		internal int minRadius = 2;
-		internal float border = 20.0f;
-
-		public int MinRadius
+		get => minRadius;
+		set
 		{
-			get => minRadius;
-			set
-			{
-			    if (value == minRadius) return;
-			    minRadius = value;
-			    NotifyPropertyChanged( "MinRadius" );
-			}
+			if (value == minRadius) return;
+			minRadius = value;
+			NotifyPropertyChanged( "MinRadius" );
 		}
+	}
 
 
-		public float Border
+	public float Border
+	{
+		get => border;
+		set
 		{
-			get => border;
-			set
-			{
-			    if (value == border) return;
-			    border = value;
-			    NotifyPropertyChanged( "Border" );
-			}
+			if (value == border) return;
+			border = value;
+			NotifyPropertyChanged( "Border" );
 		}
 	}
 }

@@ -1,11 +1,10 @@
-﻿namespace ShowcaseApp.WPF.Models
+﻿namespace ShowcaseApp.WPF.Models;
+
+public enum MiniSpecialType
 {
-    public enum MiniSpecialType
-    {
-        None,
-        LayoutVCP,
-        EdgesParallel,
-        LayoutGrouped,
-        DataFiltering
-    }
+    None,
+    LayoutVCP,
+    EdgesParallel,
+    LayoutGrouped,
+    DataFiltering
 }

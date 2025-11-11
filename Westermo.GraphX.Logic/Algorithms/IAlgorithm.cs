@@ -1,12 +1,11 @@
 using System.Threading;
 
-namespace Westermo.GraphX.Logic.Algorithms
+namespace Westermo.GraphX.Logic.Algorithms;
+
+/// <summary>
+/// Simple algorithm interface which is not connected to any graph.
+/// </summary>
+public interface IAlgorithm
 {
-	/// <summary>
-	/// Simple algorithm interface which is not connected to any graph.
-	/// </summary>
-	public interface IAlgorithm
-	{
-        void Compute(CancellationToken cancellationToken);
-	}
+	void Compute(CancellationToken cancellationToken);
 }

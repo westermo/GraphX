@@ -1,11 +1,10 @@
-﻿namespace Westermo.GraphX.Common.Enums
+﻿namespace Westermo.GraphX.Common.Enums;
+
+public enum ImageType
 {
-    public enum ImageType
-    {
-        PNG,
-        JPEG,
-        BMP,
-        GIF,
-        TIFF
-    }
+    PNG,
+    JPEG,
+    BMP,
+    GIF,
+    TIFF
 }

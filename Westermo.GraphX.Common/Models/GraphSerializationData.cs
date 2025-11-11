@@ -1,24 +1,23 @@
 ﻿using Westermo.GraphX.Measure;
 
-namespace Westermo.GraphX.Common.Models
+namespace Westermo.GraphX.Common.Models;
+
+public class GraphSerializationData
 {
-    public class GraphSerializationData
-    {
-        /// <summary>
-        /// Gets or sets graph data object
-        /// </summary>
-        public object Data { get; set; }
-        /// <summary>
-        /// Gets or sets control position
-        /// </summary>
-        public Point Position { get; set; }
-        /// <summary>
-        /// Gets or sets control visibility
-        /// </summary>
-        public bool IsVisible { get; set; } = true;
-        /// <summary>
-        /// Gets or sets control label availability
-        /// </summary>
-        public bool HasLabel { get; set; }
-    }
+    /// <summary>
+    /// Gets or sets graph data object
+    /// </summary>
+    public object Data { get; set; }
+    /// <summary>
+    /// Gets or sets control position
+    /// </summary>
+    public Point Position { get; set; }
+    /// <summary>
+    /// Gets or sets control visibility
+    /// </summary>
+    public bool IsVisible { get; set; } = true;
+    /// <summary>
+    /// Gets or sets control label availability
+    /// </summary>
+    public bool HasLabel { get; set; }
 }

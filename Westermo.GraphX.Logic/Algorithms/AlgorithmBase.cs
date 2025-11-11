@@ -1,9 +1,8 @@
 using System.Threading;
 
-namespace Westermo.GraphX.Logic.Algorithms
+namespace Westermo.GraphX.Logic.Algorithms;
+
+public abstract class AlgorithmBase : IAlgorithm
 {
-	public abstract class AlgorithmBase : IAlgorithm
-	{
-	    public abstract void Compute(CancellationToken cancellationToken);
-	}
+	public abstract void Compute(CancellationToken cancellationToken);
 }

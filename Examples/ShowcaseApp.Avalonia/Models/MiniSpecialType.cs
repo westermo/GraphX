@@ -1,11 +1,10 @@
-﻿namespace ShowcaseApp.Avalonia.Models
+﻿namespace ShowcaseApp.Avalonia.Models;
+
+public enum MiniSpecialType
 {
-    public enum MiniSpecialType
-    {
-        None,
-        LayoutVCP,
-        EdgesParallel,
-        LayoutGrouped,
-        DataFiltering
-    }
+    None,
+    LayoutVCP,
+    EdgesParallel,
+    LayoutGrouped,
+    DataFiltering
 }

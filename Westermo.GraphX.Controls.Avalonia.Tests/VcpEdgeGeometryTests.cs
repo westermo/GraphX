@@ -1,6 +1,4 @@
-﻿using System;
-using System.Linq;
-using Avalonia;
+﻿using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Controls.Templates;
 using Avalonia.Markup.Xaml.Templates;
@@ -8,6 +6,8 @@ using Avalonia.Media;
 using QuikGraph;
 using Westermo.GraphX.Common.Enums;
 using Westermo.GraphX.Common.Models;
+using Westermo.GraphX.Controls.Controls;
+using Westermo.GraphX.Controls.Controls.VertexConnectionPoints;
 using Westermo.GraphX.Logic.Models;
 
 namespace Westermo.GraphX.Controls.Avalonia.Tests;

@@ -1,11 +1,10 @@
-﻿namespace Westermo.GraphX.Controls
+﻿namespace Westermo.GraphX.Controls;
+
+public enum LogicCoreChangedAction
 {
-    public enum LogicCoreChangedAction
-    {
-        None = 0,
-        GenerateGraph,
-        GenerateGraphWithEdges,
-        RelayoutGraph,
-        RelayoutGraphWithEdges
-    }
+    None = 0,
+    GenerateGraph,
+    GenerateGraphWithEdges,
+    RelayoutGraph,
+    RelayoutGraphWithEdges
 }

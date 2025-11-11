@@ -1,21 +1,20 @@
 ﻿using Avalonia;
-using Westermo.GraphX.Controls.Avalonia.Models;
+using Westermo.GraphX.Controls.Models;
 
-namespace Westermo.GraphX.Controls.Avalonia
+namespace Westermo.GraphX.Controls.Controls.Misc;
+
+/// <summary>
+/// Interface that represents trackable content object (e.g. provides means to notify about it's content changes)
+/// </summary>
+public interface ITrackableContent
 {
     /// <summary>
-    /// Interface that represents trackable content object (e.g. provides means to notify about it's content changes)
+    /// Rises when content size changed
     /// </summary>
-    public interface ITrackableContent
-    {
-        /// <summary>
-        /// Rises when content size changed
-        /// </summary>
-        event ContentSizeChangedEventHandler? ContentSizeChanged;
+    event ContentSizeChangedEventHandler? ContentSizeChanged;
 
-        /// <summary>
-        /// Gets actual content rectangle size
-        /// </summary>
-        Rect ContentSize { get; }
-    }
+    /// <summary>
+    /// Gets actual content rectangle size
+    /// </summary>
+    Rect ContentSize { get; }
 }

@@ -1,9 +1,8 @@
-﻿namespace Westermo.GraphX.Common.Enums
+﻿namespace Westermo.GraphX.Common.Enums;
+
+public enum OverlapRemovalAlgorithmTypeEnum
 {
-    public enum OverlapRemovalAlgorithmTypeEnum
-    {
-        FSA,
-        OneWayFSA,
-        None
-    }
+    FSA,
+    OneWayFSA,
+    None
 }

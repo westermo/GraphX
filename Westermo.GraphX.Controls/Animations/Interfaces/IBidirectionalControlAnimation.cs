@@ -1,11 +1,10 @@
-﻿namespace Westermo.GraphX.Controls.Animations
+﻿namespace Westermo.GraphX.Controls.Animations;
+
+public interface IBidirectionalControlAnimation
 {
-    public interface IBidirectionalControlAnimation
-    {
-        double Duration { get; set; }
-        void AnimateVertexForward(VertexControl target);
-        void AnimateVertexBackward(VertexControl target);
-        void AnimateEdgeForward(EdgeControl target);
-        void AnimateEdgeBackward(EdgeControl target);
-    }
+    double Duration { get; set; }
+    void AnimateVertexForward(VertexControl target);
+    void AnimateVertexBackward(VertexControl target);
+    void AnimateEdgeForward(EdgeControl target);
+    void AnimateEdgeBackward(EdgeControl target);
 }

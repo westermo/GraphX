@@ -1,11 +1,10 @@
-﻿namespace Westermo.GraphX.Controls.Avalonia
+﻿namespace Westermo.GraphX.Controls.Controls.Misc;
+
+/// <summary>
+/// Defines in which order GraphX controls are drawn
+/// </summary>
+public enum ControlDrawOrder
 {
-    /// <summary>
-    /// Defines in which order GraphX controls are drawn
-    /// </summary>
-    public enum ControlDrawOrder
-    {
-        VerticesOnTop = 0,
-        EdgesOnTop
-    }
+    VerticesOnTop = 0,
+    EdgesOnTop
 }

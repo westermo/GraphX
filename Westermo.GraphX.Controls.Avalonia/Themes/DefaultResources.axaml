@@ -1,18 +1,23 @@
 ﻿<ResourceDictionary xmlns="https://github.com/avaloniaui"
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-                    xmlns:avalonia="https://westermo.com/graphx/">
+                    xmlns:converters="clr-namespace:Westermo.GraphX.Controls.Controls.ZoomControl.Converters"
+                    xmlns:controls="clr-namespace:Westermo.GraphX.Controls.Controls"
+                    xmlns:vertexLabels="clr-namespace:Westermo.GraphX.Controls.Controls.VertexLabels"
+                    xmlns:edgePointers="clr-namespace:Westermo.GraphX.Controls.Controls.EdgePointers"
+                    xmlns:edgeLabels="clr-namespace:Westermo.GraphX.Controls.Controls.EdgeLabels"
+                    xmlns:zoomControl="clr-namespace:Westermo.GraphX.Controls.Controls.ZoomControl">
 
-    <avalonia:DoubleToLog10Converter x:Key="Log10Converter" />
-    <avalonia:EqualityToBooleanConverter x:Key="EqualityConverter" />
+    <converters:DoubleToLog10Converter x:Key="Log10Converter" />
+    <converters:EqualityToBooleanConverter x:Key="EqualityConverter" />
 
-    <avalonia:RoundedValueConverter x:Key="RoundedValueConverter" Precision="2" />
-    <avalonia:VisibilityToBoolConverter x:Key="TrueIfVisibleConverter"
+    <converters:RoundedValueConverter x:Key="RoundedValueConverter" Precision="2" />
+    <converters:VisibilityToBoolConverter x:Key="TrueIfVisibleConverter"
                                         Inverted="False" Not="False" />
-    <avalonia:VisibilityToBoolConverter x:Key="TrueIfNotVisibleConverter"
+    <converters:VisibilityToBoolConverter x:Key="TrueIfNotVisibleConverter"
                                         Inverted="False" Not="True" />
-    <avalonia:VisibilityToBoolConverter x:Key="VisibleIfTrueConverter"
+    <converters:VisibilityToBoolConverter x:Key="VisibleIfTrueConverter"
                                         Inverted="True" Not="False" />
-    <avalonia:VisibilityToBoolConverter x:Key="VisibleIfNotTrueConverter"
+    <converters:VisibilityToBoolConverter x:Key="VisibleIfNotTrueConverter"
                                         Inverted="True" Not="True" />
 
     <!-- REGION ZOOM CONTROL -->
@@ -220,7 +225,7 @@
 
 
     <!-- REGION VERTEX CONTROL -->
-    <ControlTheme x:Key="{x:Type avalonia:VertexControl}" TargetType="avalonia:VertexControl">
+    <ControlTheme x:Key="{x:Type controls:VertexControl}" TargetType="controls:VertexControl">
         <Setter Property="Background" Value="#FFE3E3E3" />
         <Setter Property="BorderThickness" Value="5,3,5,3" />
         <Setter Property="Padding" Value="10,5,10,5" />
@@ -229,14 +234,14 @@
 
         <Setter Property="Template">
             <Setter.Value>
-                <ControlTemplate TargetType="{x:Type avalonia:VertexControl}">
+                <ControlTemplate TargetType="{x:Type controls:VertexControl}">
                     <Border Background="{TemplateBinding Background}"
                             BorderBrush="{TemplateBinding BorderBrush}"
                             CornerRadius="{TemplateBinding CornerRadius}"
                             Padding="{TemplateBinding Padding}">
                         <Grid>
                             <ContentPresenter Content="{TemplateBinding Vertex}" />
-                            <avalonia:VertexLabelControl x:Name="PART_vertexLabel"
+                            <vertexLabels:VertexLabelControl x:Name="PART_vertexLabel"
                                                          Content="{TemplateBinding Vertex}" />
                         </Grid>
                     </Border>
@@ -247,28 +252,28 @@
     <!-- ENDREGION -->
 
     <!-- REGION EDGE CONTROL -->
-    <ControlTheme x:Key="{x:Type avalonia:EdgeControl}" TargetType="avalonia:EdgeControl">
+    <ControlTheme x:Key="{x:Type controls:EdgeControl}" TargetType="controls:EdgeControl">
         <Setter Property="Template">
             <Setter.Value>
-                <ControlTemplate TargetType="{x:Type avalonia:EdgeControl}">
+                <ControlTemplate TargetType="{x:Type controls:EdgeControl}">
                     <Grid>
                         <Path Stroke="{TemplateBinding Foreground}"
                               StrokeThickness="{TemplateBinding StrokeThickness}"
                               x:Name="PART_edgePath" />
-                        <avalonia:DefaultEdgePointer NeedRotation="true" x:Name="PART_EdgePointerForTarget">
+                        <edgePointers:DefaultEdgePointer NeedRotation="true" x:Name="PART_EdgePointerForTarget">
                             <Path Data="M0,0.5 L1,1 1,0"
                                   Fill="{TemplateBinding Foreground}"
                                   Stretch="Uniform"
                                   Width="10"
                                   Height="10" />
-                        </avalonia:DefaultEdgePointer>
-                        <avalonia:DefaultEdgePointer NeedRotation="true" x:Name="PART_EdgePointerForSource">
+                        </edgePointers:DefaultEdgePointer>
+                        <edgePointers:DefaultEdgePointer NeedRotation="true" x:Name="PART_EdgePointerForSource">
                             <Path Data="M0,0.5 L1,1 1,0"
                                   Fill="{TemplateBinding Foreground}"
                                   Stretch="Uniform"
                                   Width="10"
                                   Height="10" />
-                        </avalonia:DefaultEdgePointer>
+                        </edgePointers:DefaultEdgePointer>
                         <Path x:Name="PART_SelfLoopedEdge"
                               Width="10"
                               Height="10"
@@ -289,12 +294,12 @@
 
     <!-- REGION EDGE LABLE CONTROL -->
 
-    <ControlTheme x:Key="{x:Type avalonia:AttachableEdgeLabelControl}" TargetType="avalonia:AttachableEdgeLabelControl">
+    <ControlTheme x:Key="{x:Type edgeLabels:AttachableEdgeLabelControl}" TargetType="edgeLabels:AttachableEdgeLabelControl">
         <Setter Property="ShowLabel" Value="True" />
         <Setter Property="LabelVerticalOffset" Value="0" />
         <Setter Property="Template">
             <Setter.Value>
-                <ControlTemplate TargetType="{x:Type avalonia:AttachableEdgeLabelControl}">
+                <ControlTemplate TargetType="{x:Type edgeLabels:AttachableEdgeLabelControl}">
                     <Border BorderBrush="Black" BorderThickness="1" Background="White" CornerRadius="8">
                         <ContentPresenter Margin="3"
                                           Content="{Binding AttachNode.Edge, RelativeSource={RelativeSource TemplatedParent}, UpdateSourceTrigger=PropertyChanged}" />
@@ -308,7 +313,7 @@
     <!-- ENDREGION -->
 
     <!-- REGION VERTEX LABEL CONTROL -->
-    <ControlTheme x:Key="{x:Type avalonia:VertexLabelControl}" TargetType="avalonia:VertexLabelControl">
+    <ControlTheme x:Key="{x:Type vertexLabels:VertexLabelControl}" TargetType="vertexLabels:VertexLabelControl">
         <Setter Property="Background" Value="Transparent" />
         <Setter Property="Foreground" Value="Black" />
         <Setter Property="LabelPositionMode" Value="Sides" />
@@ -316,7 +321,7 @@
 
         <Setter Property="Template">
             <Setter.Value>
-                <ControlTemplate TargetType="avalonia:VertexLabelControl">
+                <ControlTemplate TargetType="vertexLabels:VertexLabelControl">
                     <Grid>
                         <ContentPresenter Margin="3" />
                     </Grid>
@@ -325,8 +330,8 @@
         </Setter>
     </ControlTheme>
 
-    <ControlTheme x:Key="{x:Type avalonia:AttachableVertexLabelControl}"
-                  TargetType="avalonia:AttachableVertexLabelControl">
+    <ControlTheme x:Key="{x:Type vertexLabels:AttachableVertexLabelControl}"
+                  TargetType="vertexLabels:AttachableVertexLabelControl">
         <Setter Property="Background" Value="Transparent" />
         <Setter Property="Foreground" Value="Black" />
         <Setter Property="LabelPositionMode" Value="Sides" />
@@ -335,7 +340,7 @@
         <!-- Custom label template body -->
         <Setter Property="Template">
             <Setter.Value>
-                <ControlTemplate TargetType="avalonia:AttachableVertexLabelControl">
+                <ControlTemplate TargetType="vertexLabels:AttachableVertexLabelControl">
                     <Grid>
                         <Border Background="White" CornerRadius="4" Opacity=".8" Padding="0">
                             <ContentPresenter Name="PART_container" Margin="1"
@@ -348,7 +353,7 @@
     </ControlTheme>
     <!-- ENDREGION -->
 
-    <ControlTheme x:Key="{x:Type avalonia:ZoomControl}" TargetType="avalonia:ZoomControl">
+    <ControlTheme x:Key="{x:Type zoomControl:ZoomControl}" TargetType="zoomControl:ZoomControl">
         <ControlTheme.Resources>
             <SolidColorBrush x:Key="SelectionBrush" Color="LightBlue" Opacity="0.5" />
             <SolidColorBrush x:Key="AreaSelectionBrush" Color="LightGreen" Opacity="0.5" />
@@ -357,13 +362,13 @@
         </ControlTheme.Resources>
         <Setter Property="Template">
             <Setter.Value>
-                <ControlTemplate TargetType="{x:Type avalonia:ZoomControl}">
+                <ControlTemplate TargetType="{x:Type zoomControl:ZoomControl}">
                     <Grid>
                         <Border BorderBrush="{TemplateBinding BorderBrush}"
                                 BorderThickness="{TemplateBinding BorderThickness}"
                                 Background="{TemplateBinding Background}"
                                 ClipToBounds="{TemplateBinding ClipToBounds}">
-                            <avalonia:ZoomContentPresenter x:Name="PART_Presenter"
+                            <zoomControl:ZoomContentPresenter x:Name="PART_Presenter"
                                                            Content="{TemplateBinding Content}"
                                                            ClipToBounds="False" />
                         </Border>

@@ -1,12 +1,11 @@
-﻿namespace Westermo.GraphX.Common.Enums
+﻿namespace Westermo.GraphX.Common.Enums;
+
+public enum VertexShape
 {
-    public enum VertexShape
-    {
-        Rectangle,
-        Diamond,
-        Triangle,
-        Circle,
-        None,
-        Ellipse
-    }
+    Rectangle,
+    Diamond,
+    Triangle,
+    Circle,
+    None,
+    Ellipse
 }

@@ -1,18 +1,17 @@
-﻿namespace Westermo.GraphX.Controls.Avalonia
+﻿namespace Westermo.GraphX.Controls.Controls.Misc;
+
+public interface IVertexLabelControl
 {
-    public interface IVertexLabelControl
-    {
-        /// <summary>
-        /// Gets or sets label drawing angle in degrees
-        /// </summary>
-        double Angle { get; set; }
+    /// <summary>
+    /// Gets or sets label drawing angle in degrees
+    /// </summary>
+    double Angle { get; set; }
 
-        /// <summary>
-        /// Automaticaly update vertex label position
-        /// </summary>
-        void UpdatePosition();
+    /// <summary>
+    /// Automaticaly update vertex label position
+    /// </summary>
+    void UpdatePosition();
 
-        void Hide();
-        void Show();
-    }
+    void Hide();
+    void Show();
 }

@@ -19,41 +19,40 @@ using System.Globalization;
 using System.Windows;
 using System.Windows.Data;
 
-namespace Westermo.GraphX.Controls
+namespace Westermo.GraphX.Controls;
+
+public class RoundedValueConverter : IValueConverter
 {
-  public class RoundedValueConverter : IValueConverter
+  #region Precision Property
+
+  public int Precision
   {
-    #region Precision Property
+    get => _precision;
+    set => _precision = value;
+  }
 
-    public int Precision
+  private int _precision;
+
+  #endregion
+
+  public object Convert( object value, Type targetType, object parameter, CultureInfo culture )
+  {
+    if( value is double )
     {
-      get => _precision;
-      set => _precision = value;
+      return Math.Round( ( double )value, _precision );
     }
-
-    private int _precision;
-
-    #endregion
-
-    public object Convert( object value, Type targetType, object parameter, CultureInfo culture )
+    else if( value is Point )
     {
-      if( value is double )
-      {
-        return Math.Round( ( double )value, _precision );
-      }
-      else if( value is Point )
-      {
-        return new Point( Math.Round( ( ( Point )value ).X, _precision ), Math.Round( ( ( Point )value ).Y, _precision ) );
-      }
-      else
-      {
-        return value;
-      }
+      return new Point( Math.Round( ( ( Point )value ).X, _precision ), Math.Round( ( ( Point )value ).Y, _precision ) );
     }
-
-    public object ConvertBack( object value, Type targetType, object parameter, CultureInfo culture )
+    else
     {
       return value;
     }
+  }
+
+  public object ConvertBack( object value, Type targetType, object parameter, CultureInfo culture )
+  {
+    return value;
   }
 }

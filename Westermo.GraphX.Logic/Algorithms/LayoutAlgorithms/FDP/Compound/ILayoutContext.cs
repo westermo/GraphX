@@ -2,17 +2,16 @@
 using Westermo.GraphX.Measure;
 using QuikGraph;
 
-namespace Westermo.GraphX.Logic.Algorithms.LayoutAlgorithms
+namespace Westermo.GraphX.Logic.Algorithms.LayoutAlgorithms;
+
+public interface ILayoutContext<TVertex, TEdge, out TGraph>
+    where TEdge : IEdge<TVertex>
+    where TGraph : IVertexAndEdgeListGraph<TVertex, TEdge>
 {
-    public interface ILayoutContext<TVertex, TEdge, out TGraph>
-        where TEdge : IEdge<TVertex>
-        where TGraph : IVertexAndEdgeListGraph<TVertex, TEdge>
-    {
-        IDictionary<TVertex, Point> Positions { get; }
-        IDictionary<TVertex, Size> Sizes { get; }
+    IDictionary<TVertex, Point> Positions { get; }
+    IDictionary<TVertex, Size> Sizes { get; }
 
-        TGraph Graph { get; }
+    TGraph Graph { get; }
 
-        LayoutMode Mode { get; }
-    }
+    LayoutMode Mode { get; }
 }

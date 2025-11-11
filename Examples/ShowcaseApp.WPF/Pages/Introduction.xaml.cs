@@ -1,13 +1,12 @@
-﻿namespace ShowcaseApp.WPF.Pages
+﻿namespace ShowcaseApp.WPF.Pages;
+
+/// <summary>
+/// Interaction logic for Introduction.xaml
+/// </summary>
+public partial class Introduction
 {
-    /// <summary>
-    /// Interaction logic for Introduction.xaml
-    /// </summary>
-    public partial class Introduction
+    public Introduction()
     {
-        public Introduction()
-        {
-            InitializeComponent();
-        }
+        InitializeComponent();
     }
 }

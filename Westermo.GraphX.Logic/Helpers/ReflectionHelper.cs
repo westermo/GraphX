@@ -1,12 +1,11 @@
 ﻿using System;
 
-namespace Westermo.GraphX.Logic.Helpers
+namespace Westermo.GraphX.Logic.Helpers;
+
+public static class ReflectionHelper
 {
-    public static class ReflectionHelper
+    public static T CreateDefaultGraphInstance<T>()
     {
-        public static T CreateDefaultGraphInstance<T>()
-        {
-            return (T)Activator.CreateInstance(typeof(T), null);
-        }
+        return (T)Activator.CreateInstance(typeof(T), null);
     }
 }

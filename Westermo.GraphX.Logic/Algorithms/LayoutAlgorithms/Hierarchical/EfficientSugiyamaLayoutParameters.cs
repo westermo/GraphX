@@ -1,122 +1,121 @@
-﻿namespace Westermo.GraphX.Logic.Algorithms.LayoutAlgorithms
+﻿namespace Westermo.GraphX.Logic.Algorithms.LayoutAlgorithms;
+
+public class EfficientSugiyamaLayoutParameters : LayoutParametersBase
 {
-	public class EfficientSugiyamaLayoutParameters : LayoutParametersBase
-	{
-        private LayoutDirection _direction = LayoutDirection.TopToBottom;
-        private double _layerDistance = 15.0;
-        private double _vertexDistance = 15.0;
-        private int _positionMode = -1;
-        private bool _optimizeWidth;
-        private double _widthPerHeight = 1.0;
-        private bool _minimizeEdgeLength = true;
-        internal const int MAX_PERMUTATIONS = 50;
-        private SugiyamaEdgeRoutings _edgeRouting = SugiyamaEdgeRoutings.Orthogonal;
+    private LayoutDirection _direction = LayoutDirection.TopToBottom;
+    private double _layerDistance = 15.0;
+    private double _vertexDistance = 15.0;
+    private int _positionMode = -1;
+    private bool _optimizeWidth;
+    private double _widthPerHeight = 1.0;
+    private bool _minimizeEdgeLength = true;
+    internal const int MAX_PERMUTATIONS = 50;
+    private SugiyamaEdgeRoutings _edgeRouting = SugiyamaEdgeRoutings.Orthogonal;
 
-        /// <summary>
-        /// Layout direction
-        /// </summary>
-        public LayoutDirection Direction
+    /// <summary>
+    /// Layout direction
+    /// </summary>
+    public LayoutDirection Direction
+    {
+        get => _direction;
+        set
         {
-            get => _direction;
-            set
-            {
-                if (value == _direction)
-                    return;
+            if (value == _direction)
+                return;
 
-                _direction = value;
-                NotifyPropertyChanged("Direction");
-            }
+            _direction = value;
+            NotifyPropertyChanged("Direction");
         }
+    }
 
-        public double LayerDistance
+    public double LayerDistance
+    {
+        get => _layerDistance;
+        set
         {
-            get => _layerDistance;
-            set
-            {
-                if (value == _layerDistance)
-                    return;
+            if (value == _layerDistance)
+                return;
 
-                _layerDistance = value;
-                NotifyPropertyChanged("LayerDistance");
-            }
+            _layerDistance = value;
+            NotifyPropertyChanged("LayerDistance");
         }
+    }
 
-        public double VertexDistance
+    public double VertexDistance
+    {
+        get => _vertexDistance;
+        set
         {
-            get => _vertexDistance;
-            set
-            {
-                if (value == _vertexDistance)
-                    return;
+            if (value == _vertexDistance)
+                return;
 
-                _vertexDistance = value;
-                NotifyPropertyChanged("VertexDistance");
-            }
+            _vertexDistance = value;
+            NotifyPropertyChanged("VertexDistance");
         }
+    }
 
-        public int PositionMode
+    public int PositionMode
+    {
+        get => _positionMode;
+        set
         {
-            get => _positionMode;
-            set
-            {
-                if (value == _positionMode)
-                    return;
+            if (value == _positionMode)
+                return;
 
-                _positionMode = value;
-                NotifyPropertyChanged("PositionMode");
-            }
+            _positionMode = value;
+            NotifyPropertyChanged("PositionMode");
         }
+    }
 
-        public double WidthPerHeight
+    public double WidthPerHeight
+    {
+        get => _widthPerHeight;
+        set
         {
-            get => _widthPerHeight;
-            set
-            {
-                if (value == _widthPerHeight)
-                    return;
+            if (value == _widthPerHeight)
+                return;
 
-                _widthPerHeight = value;
-                NotifyPropertyChanged("WidthPerHeight");
-            }
+            _widthPerHeight = value;
+            NotifyPropertyChanged("WidthPerHeight");
         }
+    }
 
-        public bool OptimizeWidth
+    public bool OptimizeWidth
+    {
+        get => _optimizeWidth;
+        set
         {
-            get => _optimizeWidth;
-            set
-            {
-                if (value == _optimizeWidth)
-                    return;
+            if (value == _optimizeWidth)
+                return;
 
-                _optimizeWidth = value;
-                NotifyPropertyChanged("OptimizeWidth");
-            }
+            _optimizeWidth = value;
+            NotifyPropertyChanged("OptimizeWidth");
         }
+    }
 
-        public bool MinimizeEdgeLength
+    public bool MinimizeEdgeLength
+    {
+        get => _minimizeEdgeLength;
+        set
         {
-            get => _minimizeEdgeLength;
-            set
-            {
-                if (value == _minimizeEdgeLength)
-                    return;
+            if (value == _minimizeEdgeLength)
+                return;
 
-                _minimizeEdgeLength = value;
-                NotifyPropertyChanged("MinimizeEdgeLength");
-            }
+            _minimizeEdgeLength = value;
+            NotifyPropertyChanged("MinimizeEdgeLength");
         }
+    }
 
-        public SugiyamaEdgeRoutings EdgeRouting
+    public SugiyamaEdgeRoutings EdgeRouting
+    {
+        get => _edgeRouting;
+        set
         {
-            get => _edgeRouting;
-            set
-            {
-                if (value == _edgeRouting)
-                    return;
+            if (value == _edgeRouting)
+                return;
 
-                _edgeRouting = value;
-                NotifyPropertyChanged("EdgeRouting");
-            }
+            _edgeRouting = value;
+            NotifyPropertyChanged("EdgeRouting");
         }
-	}
+    }
 }

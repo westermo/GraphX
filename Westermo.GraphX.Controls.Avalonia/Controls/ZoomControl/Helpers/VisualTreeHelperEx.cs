@@ -20,100 +20,99 @@ using Avalonia;
 using Avalonia.Controls;
 using Avalonia.VisualTree;
 
-namespace Westermo.GraphX.Controls.Avalonia
+namespace Westermo.GraphX.Controls.Controls.ZoomControl.Helpers;
+
+public static class VisualTreeHelperEx
 {
-    public static class VisualTreeHelperEx
+    public static Visual? FindDescendantByName(Visual? element, string name)
     {
-        public static Visual? FindDescendantByName(Visual? element, string name)
+        if (element is Control frameworkElement && frameworkElement.Name == name)
+            return element;
+
+        Visual? foundElement = null;
+        if (element is Control frameworkElementWithTemplate)
+            frameworkElementWithTemplate.ApplyTemplate();
+
+        if (element is null) return null;
+        foreach (var visual in element.GetVisualChildren())
         {
-            if (element is Control frameworkElement && frameworkElement.Name == name)
-                return element;
-
-            Visual? foundElement = null;
-            if (element is Control frameworkElementWithTemplate)
-                frameworkElementWithTemplate.ApplyTemplate();
-
-            if (element is null) return null;
-            foreach (var visual in element.GetVisualChildren())
-            {
-                foundElement = FindDescendantByName(visual, name);
-                if (foundElement != null)
-                    break;
-            }
-
-            return foundElement;
+            foundElement = FindDescendantByName(visual, name);
+            if (foundElement != null)
+                break;
         }
 
-        public static Visual? FindDescendantByType(Visual? element, Type type, bool specificTypeOnly = true)
+        return foundElement;
+    }
+
+    public static Visual? FindDescendantByType(Visual? element, Type type, bool specificTypeOnly = true)
+    {
+        if (element == null)
+            return null;
+
+        if (specificTypeOnly
+                ? element.GetType() == type
+                : element.GetType() == type || element.GetType().IsSubclassOf(type))
+            return element;
+
+        Visual? foundElement = null;
+        if (element is Control frameworkElement)
+            frameworkElement.ApplyTemplate();
+
+        foreach (var visual in element.GetVisualChildren())
         {
-            if (element == null)
-                return null;
-
-            if (specificTypeOnly
-                    ? element.GetType() == type
-                    : element.GetType() == type || element.GetType().IsSubclassOf(type))
-                return element;
-
-            Visual? foundElement = null;
-            if (element is Control frameworkElement)
-                frameworkElement.ApplyTemplate();
-
-            foreach (var visual in element.GetVisualChildren())
-            {
-                foundElement = FindDescendantByType(visual, type, specificTypeOnly);
-                if (foundElement != null)
-                    break;
-            }
-
-            return foundElement;
+            foundElement = FindDescendantByType(visual, type, specificTypeOnly);
+            if (foundElement != null)
+                break;
         }
 
-        #region Find descendants of type
+        return foundElement;
+    }
 
-        public static IEnumerable<T> FindDescendantsOfType<T>(this Visual? element) where T : class
+    #region Find descendants of type
+
+    public static IEnumerable<T> FindDescendantsOfType<T>(this Visual? element) where T : class
+    {
+        if (element == null) yield break;
+        if (element is T)
+            yield return (T)(object)element;
+
+        if (element is Control frameworkElement)
+            frameworkElement.ApplyTemplate();
+
+        foreach (var visual in element.GetVisualChildren())
         {
-            if (element == null) yield break;
-            if (element is T)
-                yield return (T)(object)element;
+            foreach (var item in visual.FindDescendantsOfType<T>())
+                yield return item;
+        }
+    }
 
-            if (element is Control frameworkElement)
-                frameworkElement.ApplyTemplate();
+    #endregion
 
-            foreach (var visual in element.GetVisualChildren())
-            {
-                foreach (var item in visual.FindDescendantsOfType<T>())
-                    yield return item;
-            }
+    public static T? FindDescendantByType<T>(Visual element) where T : Visual
+    {
+        var temp = FindDescendantByType(element, typeof(T));
+
+        return (T?)temp;
+    }
+
+    public static Visual? FindDescendantWithPropertyValue(Visual? element, AvaloniaProperty dp, object value)
+    {
+        if (element == null)
+            return null;
+
+        if (element.GetValue(dp)?.Equals(value) == true)
+            return element;
+
+        Visual? foundElement = null;
+        if (element is Control frameworkElement)
+            frameworkElement.ApplyTemplate();
+        foreach (var visual in element.GetVisualChildren())
+        {
+            foundElement = FindDescendantWithPropertyValue(visual, dp, value);
+            if (foundElement != null)
+                break;
         }
 
-        #endregion
-
-        public static T? FindDescendantByType<T>(Visual element) where T : Visual
-        {
-            var temp = FindDescendantByType(element, typeof(T));
-
-            return (T?)temp;
-        }
-
-        public static Visual? FindDescendantWithPropertyValue(Visual? element, AvaloniaProperty dp, object value)
-        {
-            if (element == null)
-                return null;
-
-            if (element.GetValue(dp)?.Equals(value) == true)
-                return element;
-
-            Visual? foundElement = null;
-            if (element is Control frameworkElement)
-                frameworkElement.ApplyTemplate();
-            foreach (var visual in element.GetVisualChildren())
-            {
-                foundElement = FindDescendantWithPropertyValue(visual, dp, value);
-                if (foundElement != null)
-                    break;
-            }
-
-            return foundElement;
-        }
+        return foundElement;
     }
 }

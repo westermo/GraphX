@@ -1,10 +1,9 @@
-﻿namespace Westermo.GraphX.Common.Enums
+﻿namespace Westermo.GraphX.Common.Enums;
+
+public enum EdgeRoutingAlgorithmTypeEnum
 {
-    public enum EdgeRoutingAlgorithmTypeEnum
-    {
-        None,
-        PathFinder,
-        SimpleER,
-        Bundling,
-    }
+    None,
+    PathFinder,
+    SimpleER,
+    Bundling,
 }

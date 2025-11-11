@@ -1,12 +1,11 @@
 using Westermo.GraphX.Measure;
 
-namespace Westermo.GraphX.Logic.Algorithms.OverlapRemoval
+namespace Westermo.GraphX.Logic.Algorithms.OverlapRemoval;
+
+public static class OverlapRemovalHelper
 {
-	public static class OverlapRemovalHelper
+	public static Point GetCenter( this Rect r )
 	{
-		public static Point GetCenter( this Rect r )
-		{
-			return new Point( r.Left + r.Width / 2, r.Top + r.Height / 2 );
-		}
+		return new Point( r.Left + r.Width / 2, r.Top + r.Height / 2 );
 	}
 }

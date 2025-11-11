@@ -9,493 +9,493 @@ using System.Windows.Media;
 using System.Windows.Media.Animation;
 using Westermo.GraphX.Controls.Models;
 
-namespace Westermo.GraphX.Controls
+namespace Westermo.GraphX.Controls;
+
+[TemplatePart(Name = PART_PRESENTER, Type = typeof(ZoomContentPresenter))]
+public class ZoomControl : ContentControl, IZoomControl, INotifyPropertyChanged
 {
-    [TemplatePart(Name = PART_PRESENTER, Type = typeof(ZoomContentPresenter))]
-    public class ZoomControl : ContentControl, IZoomControl, INotifyPropertyChanged
+    private const string PART_PRESENTER = "PART_Presenter";
+
+    #region Viewfinder (minimap)
+
+    #region Properties & Commands
+
+    #region Center Command
+
+    public static RoutedUICommand Center = new("Center Content", "Center", typeof(ZoomControl));
+
+    private void CenterContent(object sender, ExecutedRoutedEventArgs e)
     {
-        private const string PART_PRESENTER = "PART_Presenter";
+        CenterContent();
+    }
 
-        #region Viewfinder (minimap)
+    #endregion
 
-        #region Properties & Commands
+    #region Fill Command
 
-        #region Center Command
+    public static RoutedUICommand Fill = new("Fill Bounds with Content", "FillToBounds", typeof(ZoomControl));
 
-        public static RoutedUICommand Center = new("Center Content", "Center", typeof(ZoomControl));
+    private void FillToBounds(object sender, ExecutedRoutedEventArgs e)
+    {
+        ZoomToFill();
+    }
 
-        private void CenterContent(object sender, ExecutedRoutedEventArgs e)
-        {
-            CenterContent();
-        }
+    #endregion
 
-        #endregion
+    #region ResetZoom Command
 
-        #region Fill Command
+    public static RoutedUICommand ResetZoom = new("Reset zoom", "ResetZoom", typeof(ZoomControl));
+    /// <summary>
+    /// Executes when ResetZoom command is fired and resets the Zoom value to default one. Override to reset to custom zoom value.
+    /// Default Zoom value is 1.
+    /// </summary>
+    protected virtual void ExecuteResetZoom(object sender, ExecutedRoutedEventArgs e)
+    {
+        Zoom = 1d;
+    }
 
-        public static RoutedUICommand Fill = new("Fill Bounds with Content", "FillToBounds", typeof(ZoomControl));
+    #endregion
 
-        private void FillToBounds(object sender, ExecutedRoutedEventArgs e)
-        {
-            ZoomToFill();
-        }
+    #region Refocus Command
 
-        #endregion
+    public static RoutedUICommand Refocus = new("Refocus View", "Refocus", typeof(ZoomControl));
 
-        #region ResetZoom Command
+    private void CanRefocusView(object sender, CanExecuteRoutedEventArgs e)
+    {
+        e.CanExecute = false;
+    }
 
-        public static RoutedUICommand ResetZoom = new("Reset zoom", "ResetZoom", typeof(ZoomControl));
-        /// <summary>
-        /// Executes when ResetZoom command is fired and resets the Zoom value to default one. Override to reset to custom zoom value.
-        /// Default Zoom value is 1.
-        /// </summary>
-        protected virtual void ExecuteResetZoom(object sender, ExecutedRoutedEventArgs e)
-        {
-            Zoom = 1d;
-        }
-
-        #endregion
-
-        #region Refocus Command
-
-        public static RoutedUICommand Refocus = new("Refocus View", "Refocus", typeof(ZoomControl));
-
-        private void CanRefocusView(object sender, CanExecuteRoutedEventArgs e)
-        {
-            e.CanExecute = false;
-        }
-
-        private void RefocusView(object sender, ExecutedRoutedEventArgs e)
-        {
+    private void RefocusView(object sender, ExecutedRoutedEventArgs e)
+    {
             
-        }
+    }
 
-        private void CanExecuteTrue(object sender, CanExecuteRoutedEventArgs e)
-        {
-            e.CanExecute = true;
-        }
+    private void CanExecuteTrue(object sender, CanExecuteRoutedEventArgs e)
+    {
+        e.CanExecute = true;
+    }
 
-        #endregion
+    #endregion
 
-        #region ResizeEdge Nested Type
+    #region ResizeEdge Nested Type
 
-        private enum ResizeEdge
-        {
-            None,
-            TopLeft,
-            TopRight,
-            BottomLeft,
-            BottomRight,
-            Left,
-            Top,
-            Right,
-            Bottom,
-        }
+    private enum ResizeEdge
+    {
+        None,
+        TopLeft,
+        TopRight,
+        BottomLeft,
+        BottomRight,
+        Left,
+        Top,
+        Right,
+        Bottom,
+    }
 
-        #endregion
+    #endregion
 
-        #region CacheBits Nested Type
+    #region CacheBits Nested Type
 
-        private enum CacheBits
-        {
-            IsUpdatingView = 0x00000001,
-            IsUpdatingViewport = 0x00000002,
-            IsDraggingViewport = 0x00000004,
-            IsResizingViewport = 0x00000008,
-            IsMonitoringInput = 0x00000010,
-            IsContentWrapped = 0x00000020,
-            HasArrangedContentPresenter = 0x00000040,
-            HasRenderedFirstView = 0x00000080,
-            RefocusViewOnFirstRender = 0x00000100,
-            HasUiPermission = 0x00000200,
-        }
+    private enum CacheBits
+    {
+        IsUpdatingView = 0x00000001,
+        IsUpdatingViewport = 0x00000002,
+        IsDraggingViewport = 0x00000004,
+        IsResizingViewport = 0x00000008,
+        IsMonitoringInput = 0x00000010,
+        IsContentWrapped = 0x00000020,
+        HasArrangedContentPresenter = 0x00000040,
+        HasRenderedFirstView = 0x00000080,
+        RefocusViewOnFirstRender = 0x00000100,
+        HasUiPermission = 0x00000200,
+    }
 
-        #endregion
+    #endregion
 
-        #region Viewport Property
+    #region Viewport Property
 
-        private static readonly DependencyPropertyKey ViewportPropertyKey =
-          DependencyProperty.RegisterReadOnly(nameof(Viewport), typeof(Rect), typeof(ZoomControl),
+    private static readonly DependencyPropertyKey ViewportPropertyKey =
+        DependencyProperty.RegisterReadOnly(nameof(Viewport), typeof(Rect), typeof(ZoomControl),
             new FrameworkPropertyMetadata(Rect.Empty,
-              OnViewportChanged));
+                OnViewportChanged));
 
-        public static readonly DependencyProperty ViewportProperty = ViewportPropertyKey.DependencyProperty;
+    public static readonly DependencyProperty ViewportProperty = ViewportPropertyKey.DependencyProperty;
 
-        public Rect Viewport => (Rect)GetValue(ViewportProperty);
+    public Rect Viewport => (Rect)GetValue(ViewportProperty);
 
-        private static void OnViewportChanged(DependencyObject o, DependencyPropertyChangedEventArgs e)
-        {
-            // keep the Position property in sync with the Viewport
-            //var zoombox = (ZoomControl)o;
-            //var pt = new Point(-zoombox.Viewport.Left * zoombox.Zoom / zoombox._viewboxFactor, -zoombox.Viewport.Top * zoombox.Zoom / zoombox._viewboxFactor);
-            //zoombox.TranslateX = pt.X;
-            //zoombox.TranslateY = pt.Y;
-        }
+    private static void OnViewportChanged(DependencyObject o, DependencyPropertyChangedEventArgs e)
+    {
+        // keep the Position property in sync with the Viewport
+        //var zoombox = (ZoomControl)o;
+        //var pt = new Point(-zoombox.Viewport.Left * zoombox.Zoom / zoombox._viewboxFactor, -zoombox.Viewport.Top * zoombox.Zoom / zoombox._viewboxFactor);
+        //zoombox.TranslateX = pt.X;
+        //zoombox.TranslateY = pt.Y;
+    }
 
-        #endregion
+    #endregion
 
-        #region ViewFinder Property
+    #region ViewFinder Property
 
-        private static readonly DependencyPropertyKey ViewFinderPropertyKey =
-          DependencyProperty.RegisterReadOnly(nameof(ViewFinder), typeof(FrameworkElement), typeof(ZoomControl),
+    private static readonly DependencyPropertyKey ViewFinderPropertyKey =
+        DependencyProperty.RegisterReadOnly(nameof(ViewFinder), typeof(FrameworkElement), typeof(ZoomControl),
             new FrameworkPropertyMetadata(null));
 
-        public static readonly DependencyProperty ViewFinderProperty = ViewFinderPropertyKey.DependencyProperty;
+    public static readonly DependencyProperty ViewFinderProperty = ViewFinderPropertyKey.DependencyProperty;
 
-        public FrameworkElement ViewFinder => (FrameworkElement)GetValue(ViewFinderProperty);
+    public FrameworkElement ViewFinder => (FrameworkElement)GetValue(ViewFinderProperty);
 
-        #endregion
+    #endregion
 
-        #region ViewFinderVisibility Attached Property
+    #region ViewFinderVisibility Attached Property
 
-        public static readonly DependencyProperty ViewFinderVisibilityProperty =
-          DependencyProperty.RegisterAttached("ViewFinderVisibility", typeof(Visibility), typeof(ZoomControl),
+    public static readonly DependencyProperty ViewFinderVisibilityProperty =
+        DependencyProperty.RegisterAttached("ViewFinderVisibility", typeof(Visibility), typeof(ZoomControl),
             new FrameworkPropertyMetadata(Visibility.Visible));
 
-        public static Visibility GetViewFinderVisibility(DependencyObject d)
+    public static Visibility GetViewFinderVisibility(DependencyObject d)
+    {
+        return (Visibility)d.GetValue(ViewFinderVisibilityProperty);
+    }
+
+    public static void SetViewFinderVisibility(DependencyObject d, Visibility value)
+    {
+        d.SetValue(ViewFinderVisibilityProperty, value);
+    }
+
+    #endregion
+
+    // the view finder display panel
+    // this is used to show the current viewport
+    private ViewFinderDisplay? _viewFinderDisplay;
+    private double _viewboxFactor = 1.0;
+
+    #endregion
+
+    #region Attach / Detach
+    private void AttachToVisualTree()
+    {      // detach from the old tree
+        DetachFromVisualTree();
+        // set a reference to the ViewFinder element, if present
+        SetValue(ViewFinderPropertyKey, Template.FindName("ViewFinder", this) as FrameworkElement);
+
+        // locate the view finder display panel
+        _viewFinderDisplay = VisualTreeHelperEx.FindDescendantByType(this, typeof(ViewFinderDisplay), false) as ViewFinderDisplay;
+
+        // if a ViewFinder was specified but no display panel is present, throw an exception
+        if (ViewFinder != null && _viewFinderDisplay == null)
+            throw new Exception("ZoomControlHasViewFinderButNotDisplay");
+
+        // set up the VisualBrush and adorner for the display panel
+        if (_viewFinderDisplay != null)
         {
-            return (Visibility)d.GetValue(ViewFinderVisibilityProperty);
-        }
+            // create VisualBrush for the view finder display panel
+            CreateVisualBrushForViewFinder((Visual) Content);
+            //rem due to fail in template bg binding //_viewFinderDisplay.Background = this.Background;
 
-        public static void SetViewFinderVisibility(DependencyObject d, Visibility value)
+            // hook up event handlers for dragging and resizing the viewport
+            _viewFinderDisplay.MouseMove -= ViewFinderDisplayMouseMove;
+            _viewFinderDisplay.MouseLeftButtonDown -= ViewFinderDisplayBeginCapture;
+            _viewFinderDisplay.MouseLeftButtonUp -= ViewFinderDisplayEndCapture;
+            _viewFinderDisplay.IsVisibleChanged -= _viewFinderDisplay_IsVisibleChanged;
+
+            _viewFinderDisplay.MouseMove += ViewFinderDisplayMouseMove;
+            _viewFinderDisplay.MouseLeftButtonDown += ViewFinderDisplayBeginCapture;
+            _viewFinderDisplay.MouseLeftButtonUp += ViewFinderDisplayEndCapture;
+            _viewFinderDisplay.IsVisibleChanged += _viewFinderDisplay_IsVisibleChanged;
+        }
+    }
+
+    private void _viewFinderDisplay_IsVisibleChanged(object sender, DependencyPropertyChangedEventArgs e)
+    {
+        //needed to overcome the case when viewbox was hidden by default so no size were calculated
+        if (_viewFinderDisplay!.Visibility != Visibility.Collapsed && (bool)e.NewValue)
         {
-            d.SetValue(ViewFinderVisibilityProperty, value);
+            _viewFinderDisplay.InvalidateMeasure();
+            _viewFinderDisplay.UpdateLayout();
+            UpdateViewFinderDisplayContentBounds();
         }
+    }
 
-        #endregion
+    private void CreateVisualBrushForViewFinder(Visual visual)
+    {
+        _viewFinderDisplay!.VisualBrush = new VisualBrush(visual) { Stretch = Stretch.Uniform, AlignmentX = AlignmentX.Left, AlignmentY = AlignmentY.Top};
+    }
 
-        // the view finder display panel
-        // this is used to show the current viewport
-        private ViewFinderDisplay? _viewFinderDisplay;
-        private double _viewboxFactor = 1.0;
+    private void DetachFromVisualTree()
+    {
+        // remove the view finder display panel's visual brush and adorner
+        _viewFinderDisplay = null;
+    }
+    #endregion
 
-        #endregion
+    #region Mouse Events
 
-        #region Attach / Detach
-        private void AttachToVisualTree()
-        {      // detach from the old tree
-            DetachFromVisualTree();
-            // set a reference to the ViewFinder element, if present
-            SetValue(ViewFinderPropertyKey, Template.FindName("ViewFinder", this) as FrameworkElement);
+    #region IsResizingViewport Private Property
+    private bool IsResizingViewport
+    {
+        get => _cacheBits[(int)CacheBits.IsResizingViewport];
+        set => _cacheBits[(int)CacheBits.IsResizingViewport] = value;
+    }
 
-            // locate the view finder display panel
-            _viewFinderDisplay = VisualTreeHelperEx.FindDescendantByType(this, typeof(ViewFinderDisplay), false) as ViewFinderDisplay;
+    #endregion
 
-            // if a ViewFinder was specified but no display panel is present, throw an exception
-            if (ViewFinder != null && _viewFinderDisplay == null)
-                throw new Exception("ZoomControlHasViewFinderButNotDisplay");
+    #region IsDraggingViewport Private Property
 
-            // set up the VisualBrush and adorner for the display panel
-            if (_viewFinderDisplay != null)
+    private bool IsDraggingViewport
+    {
+        get => _cacheBits[(int)CacheBits.IsDraggingViewport];
+        set => _cacheBits[(int)CacheBits.IsDraggingViewport] = value;
+    }
+
+    #endregion
+
+    // state variables used during drag and select operations
+    private Rect _resizeViewportBounds = Rect.Empty;
+    private Point _resizeAnchorPoint = new(0, 0);
+    private Point _resizeDraggingPoint = new(0, 0);
+    private Point _originPoint = new(0, 0);
+    private BitVector32 _cacheBits = new(0);
+
+    private void ViewFinderDisplayBeginCapture(object sender, MouseButtonEventArgs e)
+    {
+        const double arbitraryLargeValue = 10000000000;
+
+        // if we need to acquire capture, the Tag property of the view finder display panel
+        // will be a ResizeEdge value.
+        if (_viewFinderDisplay!.Tag is ResizeEdge)
+        {
+            // if the Tag is ResizeEdge.None, then its a drag operation; otherwise, its a resize
+            if ((ResizeEdge)_viewFinderDisplay.Tag == ResizeEdge.None)
             {
-                // create VisualBrush for the view finder display panel
-                CreateVisualBrushForViewFinder((Visual) Content);
-                //rem due to fail in template bg binding //_viewFinderDisplay.Background = this.Background;
-
-                // hook up event handlers for dragging and resizing the viewport
-                _viewFinderDisplay.MouseMove -= ViewFinderDisplayMouseMove;
-                _viewFinderDisplay.MouseLeftButtonDown -= ViewFinderDisplayBeginCapture;
-                _viewFinderDisplay.MouseLeftButtonUp -= ViewFinderDisplayEndCapture;
-                _viewFinderDisplay.IsVisibleChanged -= _viewFinderDisplay_IsVisibleChanged;
-
-                _viewFinderDisplay.MouseMove += ViewFinderDisplayMouseMove;
-                _viewFinderDisplay.MouseLeftButtonDown += ViewFinderDisplayBeginCapture;
-                _viewFinderDisplay.MouseLeftButtonUp += ViewFinderDisplayEndCapture;
-                _viewFinderDisplay.IsVisibleChanged += _viewFinderDisplay_IsVisibleChanged;
-            }
-        }
-
-        private void _viewFinderDisplay_IsVisibleChanged(object sender, DependencyPropertyChangedEventArgs e)
-        {
-            //needed to overcome the case when viewbox was hidden by default so no size were calculated
-            if (_viewFinderDisplay!.Visibility != Visibility.Collapsed && (bool)e.NewValue)
-            {
-                _viewFinderDisplay.InvalidateMeasure();
-                _viewFinderDisplay.UpdateLayout();
-                UpdateViewFinderDisplayContentBounds();
-            }
-        }
-
-        private void CreateVisualBrushForViewFinder(Visual visual)
-        {
-            _viewFinderDisplay!.VisualBrush = new VisualBrush(visual) { Stretch = Stretch.Uniform, AlignmentX = AlignmentX.Left, AlignmentY = AlignmentY.Top};
-        }
-
-        private void DetachFromVisualTree()
-        {
-            // remove the view finder display panel's visual brush and adorner
-            _viewFinderDisplay = null;
-        }
-        #endregion
-
-        #region Mouse Events
-
-        #region IsResizingViewport Private Property
-        private bool IsResizingViewport
-        {
-            get => _cacheBits[(int)CacheBits.IsResizingViewport];
-            set => _cacheBits[(int)CacheBits.IsResizingViewport] = value;
-        }
-
-        #endregion
-
-        #region IsDraggingViewport Private Property
-
-        private bool IsDraggingViewport
-        {
-            get => _cacheBits[(int)CacheBits.IsDraggingViewport];
-            set => _cacheBits[(int)CacheBits.IsDraggingViewport] = value;
-        }
-
-        #endregion
-
-        // state variables used during drag and select operations
-        private Rect _resizeViewportBounds = Rect.Empty;
-        private Point _resizeAnchorPoint = new(0, 0);
-        private Point _resizeDraggingPoint = new(0, 0);
-        private Point _originPoint = new(0, 0);
-        private BitVector32 _cacheBits = new(0);
-
-        private void ViewFinderDisplayBeginCapture(object sender, MouseButtonEventArgs e)
-        {
-            const double arbitraryLargeValue = 10000000000;
-
-            // if we need to acquire capture, the Tag property of the view finder display panel
-            // will be a ResizeEdge value.
-            if (_viewFinderDisplay!.Tag is ResizeEdge)
-            {
-                // if the Tag is ResizeEdge.None, then its a drag operation; otherwise, its a resize
-                if ((ResizeEdge)_viewFinderDisplay.Tag == ResizeEdge.None)
-                {
-                    IsDraggingViewport = true;
-                }
-                else
-                {
-                    IsResizingViewport = true;
-                    var direction = new Vector();
-                    switch ((ResizeEdge)_viewFinderDisplay.Tag)
-                    {
-                        case ResizeEdge.TopLeft:
-                            _resizeDraggingPoint = _viewFinderDisplay.ViewportRect.TopLeft;
-                            _resizeAnchorPoint = _viewFinderDisplay.ViewportRect.BottomRight;
-                            direction = new Vector(-1, -1);
-                            break;
-
-                        case ResizeEdge.TopRight:
-                            _resizeDraggingPoint = _viewFinderDisplay.ViewportRect.TopRight;
-                            _resizeAnchorPoint = _viewFinderDisplay.ViewportRect.BottomLeft;
-                            direction = new Vector(1, -1);
-                            break;
-
-                        case ResizeEdge.BottomLeft:
-                            _resizeDraggingPoint = _viewFinderDisplay.ViewportRect.BottomLeft;
-                            _resizeAnchorPoint = _viewFinderDisplay.ViewportRect.TopRight;
-                            direction = new Vector(-1, 1);
-                            break;
-
-                        case ResizeEdge.BottomRight:
-                            _resizeDraggingPoint = _viewFinderDisplay.ViewportRect.BottomRight;
-                            _resizeAnchorPoint = _viewFinderDisplay.ViewportRect.TopLeft;
-                            direction = new Vector(1, 1);
-                            break;
-                        case ResizeEdge.Left:
-                            _resizeDraggingPoint = new Point(_viewFinderDisplay.ViewportRect.Left,
-                                _viewFinderDisplay.ViewportRect.Top + _viewFinderDisplay.ViewportRect.Height / 2);
-                            _resizeAnchorPoint = new Point(_viewFinderDisplay.ViewportRect.Right,
-                                _viewFinderDisplay.ViewportRect.Top + _viewFinderDisplay.ViewportRect.Height / 2);
-                            direction = new Vector(-1, 0);
-                            break;
-                        case ResizeEdge.Top:
-                            _resizeDraggingPoint = new Point(_viewFinderDisplay.ViewportRect.Left + _viewFinderDisplay.ViewportRect.Width / 2,
-                                _viewFinderDisplay.ViewportRect.Top);
-                            _resizeAnchorPoint = new Point(_viewFinderDisplay.ViewportRect.Left + _viewFinderDisplay.ViewportRect.Width / 2,
-                                _viewFinderDisplay.ViewportRect.Bottom);
-                            direction = new Vector(0, -1);
-                            break;
-                        case ResizeEdge.Right:
-                            _resizeDraggingPoint = new Point(_viewFinderDisplay.ViewportRect.Right,
-                                _viewFinderDisplay.ViewportRect.Top + _viewFinderDisplay.ViewportRect.Height / 2);
-                            _resizeAnchorPoint = new Point(_viewFinderDisplay.ViewportRect.Left,
-                                _viewFinderDisplay.ViewportRect.Top + _viewFinderDisplay.ViewportRect.Height / 2);
-                            direction = new Vector(1, 0);
-                            break;
-                        case ResizeEdge.Bottom:
-                            _resizeDraggingPoint = new Point(_viewFinderDisplay.ViewportRect.Left + _viewFinderDisplay.ViewportRect.Width / 2,
-                                _viewFinderDisplay.ViewportRect.Bottom);
-                            _resizeAnchorPoint = new Point(_viewFinderDisplay.ViewportRect.Left + _viewFinderDisplay.ViewportRect.Width / 2,
-                                _viewFinderDisplay.ViewportRect.Top);
-                            direction = new Vector(0, 1);
-                            break;
-                    }
-                    var contentRect = _viewFinderDisplay.ContentBounds;
-                    var minVector = new Vector(direction.X * arbitraryLargeValue, direction.Y * arbitraryLargeValue);
-                    var maxVector = new Vector(direction.X * contentRect.Width / MaxZoom, direction.Y * contentRect.Height / MaxZoom);
-                    _resizeViewportBounds = new Rect(_resizeAnchorPoint + minVector, _resizeAnchorPoint + maxVector);
-                }
-
-                // store the origin of the operation and acquire capture
-                _originPoint = e.GetPosition(_viewFinderDisplay);
-                _viewFinderDisplay.CaptureMouse();
-                e.Handled = true;
-            }
-        }
-
-        private void ViewFinderDisplayEndCapture(object sender, MouseButtonEventArgs e)
-        {
-            // if a drag or resize is in progress, end it and release capture
-            if (IsDraggingViewport || IsResizingViewport)
-            {
-                // call the DragDisplayViewport method to end the operation
-                // and store the current position on the stack
-                DragDisplayViewport(new DragDeltaEventArgs(0, 0));
-
-                // reset the dragging state variables and release capture
-                IsDraggingViewport = false;
-                IsResizingViewport = false;
-                _originPoint = new Point();
-                _viewFinderDisplay!.ReleaseMouseCapture();
-                e.Handled = true;
-            }
-        }
-
-        private void ViewFinderDisplayMouseMove(object sender, MouseEventArgs e)
-        {
-            // if a drag operation is in progress, update the operation
-            if (e.MouseDevice.LeftButton == MouseButtonState.Pressed
-                && (IsDraggingViewport || IsResizingViewport))
-            {
-                var pos = e.GetPosition(_viewFinderDisplay);
-                var delta = pos - _originPoint;
-                if (IsDraggingViewport)
-                {
-                    DragDisplayViewport(new DragDeltaEventArgs(delta.X, delta.Y));
-                }
-                else
-                {
-                    ResizeDisplayViewport(new DragDeltaEventArgs(delta.X, delta.Y), (ResizeEdge)_viewFinderDisplay!.Tag);
-                }
-                e.Handled = true;
+                IsDraggingViewport = true;
             }
             else
             {
-                // update the cursor based on the nearest corner
-                var mousePos = e.GetPosition(_viewFinderDisplay);
-                var viewportRect = _viewFinderDisplay!.ViewportRect;
-                var cornerDelta = viewportRect.Width * viewportRect.Height > 100 ? 5.0
-                    : Math.Sqrt(viewportRect.Width * viewportRect.Height) / 2;
-
-                // if the mouse is within the Rect and the Rect does not encompass the entire content, set the appropriate cursor
-                if (viewportRect.Contains(mousePos)
-                    && !DoubleHelper.AreVirtuallyEqual(Rect.Intersect(viewportRect, _viewFinderDisplay.ContentBounds), _viewFinderDisplay.ContentBounds))
+                IsResizingViewport = true;
+                var direction = new Vector();
+                switch ((ResizeEdge)_viewFinderDisplay.Tag)
                 {
-                    if (PointHelper.DistanceBetween(mousePos, viewportRect.TopLeft) < cornerDelta)
-                    {
-                        _viewFinderDisplay.Tag = ResizeEdge.TopLeft;
-                        _viewFinderDisplay.Cursor = Cursors.SizeNWSE;
-                    }
-                    else if (PointHelper.DistanceBetween(mousePos, viewportRect.BottomRight) < cornerDelta)
-                    {
-                        _viewFinderDisplay.Tag = ResizeEdge.BottomRight;
-                        _viewFinderDisplay.Cursor = Cursors.SizeNWSE;
-                    }
-                    else if (PointHelper.DistanceBetween(mousePos, viewportRect.TopRight) < cornerDelta)
-                    {
-                        _viewFinderDisplay.Tag = ResizeEdge.TopRight;
-                        _viewFinderDisplay.Cursor = Cursors.SizeNESW;
-                    }
-                    else if (PointHelper.DistanceBetween(mousePos, viewportRect.BottomLeft) < cornerDelta)
-                    {
-                        _viewFinderDisplay.Tag = ResizeEdge.BottomLeft;
-                        _viewFinderDisplay.Cursor = Cursors.SizeNESW;
-                    }
-                    else if (mousePos.X <= viewportRect.Left + cornerDelta)
-                    {
-                        _viewFinderDisplay.Tag = ResizeEdge.Left;
-                        _viewFinderDisplay.Cursor = Cursors.SizeWE;
-                    }
-                    else if (mousePos.Y <= viewportRect.Top + cornerDelta)
-                    {
-                        _viewFinderDisplay.Tag = ResizeEdge.Top;
-                        _viewFinderDisplay.Cursor = Cursors.SizeNS;
-                    }
-                    else if (mousePos.X >= viewportRect.Right - cornerDelta)
-                    {
-                        _viewFinderDisplay.Tag = ResizeEdge.Right;
-                        _viewFinderDisplay.Cursor = Cursors.SizeWE;
-                    }
-                    else if (mousePos.Y >= viewportRect.Bottom - cornerDelta)
-                    {
-                        _viewFinderDisplay.Tag = ResizeEdge.Bottom;
-                        _viewFinderDisplay.Cursor = Cursors.SizeNS;
-                    }
-                    else
-                    {
-                        _viewFinderDisplay.Tag = ResizeEdge.None;
-                        _viewFinderDisplay.Cursor = Cursors.SizeAll;
-                    }
+                    case ResizeEdge.TopLeft:
+                        _resizeDraggingPoint = _viewFinderDisplay.ViewportRect.TopLeft;
+                        _resizeAnchorPoint = _viewFinderDisplay.ViewportRect.BottomRight;
+                        direction = new Vector(-1, -1);
+                        break;
+
+                    case ResizeEdge.TopRight:
+                        _resizeDraggingPoint = _viewFinderDisplay.ViewportRect.TopRight;
+                        _resizeAnchorPoint = _viewFinderDisplay.ViewportRect.BottomLeft;
+                        direction = new Vector(1, -1);
+                        break;
+
+                    case ResizeEdge.BottomLeft:
+                        _resizeDraggingPoint = _viewFinderDisplay.ViewportRect.BottomLeft;
+                        _resizeAnchorPoint = _viewFinderDisplay.ViewportRect.TopRight;
+                        direction = new Vector(-1, 1);
+                        break;
+
+                    case ResizeEdge.BottomRight:
+                        _resizeDraggingPoint = _viewFinderDisplay.ViewportRect.BottomRight;
+                        _resizeAnchorPoint = _viewFinderDisplay.ViewportRect.TopLeft;
+                        direction = new Vector(1, 1);
+                        break;
+                    case ResizeEdge.Left:
+                        _resizeDraggingPoint = new Point(_viewFinderDisplay.ViewportRect.Left,
+                            _viewFinderDisplay.ViewportRect.Top + _viewFinderDisplay.ViewportRect.Height / 2);
+                        _resizeAnchorPoint = new Point(_viewFinderDisplay.ViewportRect.Right,
+                            _viewFinderDisplay.ViewportRect.Top + _viewFinderDisplay.ViewportRect.Height / 2);
+                        direction = new Vector(-1, 0);
+                        break;
+                    case ResizeEdge.Top:
+                        _resizeDraggingPoint = new Point(_viewFinderDisplay.ViewportRect.Left + _viewFinderDisplay.ViewportRect.Width / 2,
+                            _viewFinderDisplay.ViewportRect.Top);
+                        _resizeAnchorPoint = new Point(_viewFinderDisplay.ViewportRect.Left + _viewFinderDisplay.ViewportRect.Width / 2,
+                            _viewFinderDisplay.ViewportRect.Bottom);
+                        direction = new Vector(0, -1);
+                        break;
+                    case ResizeEdge.Right:
+                        _resizeDraggingPoint = new Point(_viewFinderDisplay.ViewportRect.Right,
+                            _viewFinderDisplay.ViewportRect.Top + _viewFinderDisplay.ViewportRect.Height / 2);
+                        _resizeAnchorPoint = new Point(_viewFinderDisplay.ViewportRect.Left,
+                            _viewFinderDisplay.ViewportRect.Top + _viewFinderDisplay.ViewportRect.Height / 2);
+                        direction = new Vector(1, 0);
+                        break;
+                    case ResizeEdge.Bottom:
+                        _resizeDraggingPoint = new Point(_viewFinderDisplay.ViewportRect.Left + _viewFinderDisplay.ViewportRect.Width / 2,
+                            _viewFinderDisplay.ViewportRect.Bottom);
+                        _resizeAnchorPoint = new Point(_viewFinderDisplay.ViewportRect.Left + _viewFinderDisplay.ViewportRect.Width / 2,
+                            _viewFinderDisplay.ViewportRect.Top);
+                        direction = new Vector(0, 1);
+                        break;
+                }
+                var contentRect = _viewFinderDisplay.ContentBounds;
+                var minVector = new Vector(direction.X * arbitraryLargeValue, direction.Y * arbitraryLargeValue);
+                var maxVector = new Vector(direction.X * contentRect.Width / MaxZoom, direction.Y * contentRect.Height / MaxZoom);
+                _resizeViewportBounds = new Rect(_resizeAnchorPoint + minVector, _resizeAnchorPoint + maxVector);
+            }
+
+            // store the origin of the operation and acquire capture
+            _originPoint = e.GetPosition(_viewFinderDisplay);
+            _viewFinderDisplay.CaptureMouse();
+            e.Handled = true;
+        }
+    }
+
+    private void ViewFinderDisplayEndCapture(object sender, MouseButtonEventArgs e)
+    {
+        // if a drag or resize is in progress, end it and release capture
+        if (IsDraggingViewport || IsResizingViewport)
+        {
+            // call the DragDisplayViewport method to end the operation
+            // and store the current position on the stack
+            DragDisplayViewport(new DragDeltaEventArgs(0, 0));
+
+            // reset the dragging state variables and release capture
+            IsDraggingViewport = false;
+            IsResizingViewport = false;
+            _originPoint = new Point();
+            _viewFinderDisplay!.ReleaseMouseCapture();
+            e.Handled = true;
+        }
+    }
+
+    private void ViewFinderDisplayMouseMove(object sender, MouseEventArgs e)
+    {
+        // if a drag operation is in progress, update the operation
+        if (e.MouseDevice.LeftButton == MouseButtonState.Pressed
+            && (IsDraggingViewport || IsResizingViewport))
+        {
+            var pos = e.GetPosition(_viewFinderDisplay);
+            var delta = pos - _originPoint;
+            if (IsDraggingViewport)
+            {
+                DragDisplayViewport(new DragDeltaEventArgs(delta.X, delta.Y));
+            }
+            else
+            {
+                ResizeDisplayViewport(new DragDeltaEventArgs(delta.X, delta.Y), (ResizeEdge)_viewFinderDisplay!.Tag);
+            }
+            e.Handled = true;
+        }
+        else
+        {
+            // update the cursor based on the nearest corner
+            var mousePos = e.GetPosition(_viewFinderDisplay);
+            var viewportRect = _viewFinderDisplay!.ViewportRect;
+            var cornerDelta = viewportRect.Width * viewportRect.Height > 100 ? 5.0
+                : Math.Sqrt(viewportRect.Width * viewportRect.Height) / 2;
+
+            // if the mouse is within the Rect and the Rect does not encompass the entire content, set the appropriate cursor
+            if (viewportRect.Contains(mousePos)
+                && !DoubleHelper.AreVirtuallyEqual(Rect.Intersect(viewportRect, _viewFinderDisplay.ContentBounds), _viewFinderDisplay.ContentBounds))
+            {
+                if (PointHelper.DistanceBetween(mousePos, viewportRect.TopLeft) < cornerDelta)
+                {
+                    _viewFinderDisplay.Tag = ResizeEdge.TopLeft;
+                    _viewFinderDisplay.Cursor = Cursors.SizeNWSE;
+                }
+                else if (PointHelper.DistanceBetween(mousePos, viewportRect.BottomRight) < cornerDelta)
+                {
+                    _viewFinderDisplay.Tag = ResizeEdge.BottomRight;
+                    _viewFinderDisplay.Cursor = Cursors.SizeNWSE;
+                }
+                else if (PointHelper.DistanceBetween(mousePos, viewportRect.TopRight) < cornerDelta)
+                {
+                    _viewFinderDisplay.Tag = ResizeEdge.TopRight;
+                    _viewFinderDisplay.Cursor = Cursors.SizeNESW;
+                }
+                else if (PointHelper.DistanceBetween(mousePos, viewportRect.BottomLeft) < cornerDelta)
+                {
+                    _viewFinderDisplay.Tag = ResizeEdge.BottomLeft;
+                    _viewFinderDisplay.Cursor = Cursors.SizeNESW;
+                }
+                else if (mousePos.X <= viewportRect.Left + cornerDelta)
+                {
+                    _viewFinderDisplay.Tag = ResizeEdge.Left;
+                    _viewFinderDisplay.Cursor = Cursors.SizeWE;
+                }
+                else if (mousePos.Y <= viewportRect.Top + cornerDelta)
+                {
+                    _viewFinderDisplay.Tag = ResizeEdge.Top;
+                    _viewFinderDisplay.Cursor = Cursors.SizeNS;
+                }
+                else if (mousePos.X >= viewportRect.Right - cornerDelta)
+                {
+                    _viewFinderDisplay.Tag = ResizeEdge.Right;
+                    _viewFinderDisplay.Cursor = Cursors.SizeWE;
+                }
+                else if (mousePos.Y >= viewportRect.Bottom - cornerDelta)
+                {
+                    _viewFinderDisplay.Tag = ResizeEdge.Bottom;
+                    _viewFinderDisplay.Cursor = Cursors.SizeNS;
                 }
                 else
                 {
-                    _viewFinderDisplay.Tag = null;
-                    _viewFinderDisplay.Cursor = Cursors.Arrow;
+                    _viewFinderDisplay.Tag = ResizeEdge.None;
+                    _viewFinderDisplay.Cursor = Cursors.SizeAll;
                 }
             }
+            else
+            {
+                _viewFinderDisplay.Tag = null;
+                _viewFinderDisplay.Cursor = Cursors.Arrow;
+            }
         }
-        #endregion
+    }
+    #endregion
 
-        #region Drag and resize
-        private void DragDisplayViewport(DragDeltaEventArgs e)
-        {
-           // UpdateViewFinderDisplayContentBounds();
-            // get the scale of the view finder display panel, the selection rect, and the VisualBrush rect
+    #region Drag and resize
+    private void DragDisplayViewport(DragDeltaEventArgs e)
+    {
+        // UpdateViewFinderDisplayContentBounds();
+        // get the scale of the view finder display panel, the selection rect, and the VisualBrush rect
 
-            var scale = _viewFinderDisplay!.Scale;
-            var viewportRect = _viewFinderDisplay.ViewportRect;
-            var vbRect = _viewFinderDisplay.ContentBounds;
+        var scale = _viewFinderDisplay!.Scale;
+        var viewportRect = _viewFinderDisplay.ViewportRect;
+        var vbRect = _viewFinderDisplay.ContentBounds;
 
-            // if the entire content is visible, do nothing
-            if (viewportRect.Contains(vbRect))
-                return;
+        // if the entire content is visible, do nothing
+        if (viewportRect.Contains(vbRect))
+            return;
 
-            // ensure that we stay within the bounds of the VisualBrush
-            var dx = e.HorizontalChange;
-            var dy = e.VerticalChange;
+        // ensure that we stay within the bounds of the VisualBrush
+        var dx = e.HorizontalChange;
+        var dy = e.VerticalChange;
 
-            // check left boundary
-            if (viewportRect.Left < vbRect.Left)
-                dx = Math.Max(0, dx);
-            else if (viewportRect.Left + dx < vbRect.Left)
-                    dx = vbRect.Left - viewportRect.Left;
+        // check left boundary
+        if (viewportRect.Left < vbRect.Left)
+            dx = Math.Max(0, dx);
+        else if (viewportRect.Left + dx < vbRect.Left)
+            dx = vbRect.Left - viewportRect.Left;
 
-            // check right boundary
-            if (viewportRect.Right > vbRect.Right)
-                dx = Math.Min(0, dx);
-            else if (viewportRect.Right + dx > vbRect.Left + vbRect.Width)
-                    dx = vbRect.Left + vbRect.Width - viewportRect.Right;
+        // check right boundary
+        if (viewportRect.Right > vbRect.Right)
+            dx = Math.Min(0, dx);
+        else if (viewportRect.Right + dx > vbRect.Left + vbRect.Width)
+            dx = vbRect.Left + vbRect.Width - viewportRect.Right;
     
-            // check top boundary
-            if (viewportRect.Top < vbRect.Top)
-                dy = Math.Max(0, dy);
-            else if (viewportRect.Top + dy < vbRect.Top)
-                    dy = vbRect.Top - viewportRect.Top;
+        // check top boundary
+        if (viewportRect.Top < vbRect.Top)
+            dy = Math.Max(0, dy);
+        else if (viewportRect.Top + dy < vbRect.Top)
+            dy = vbRect.Top - viewportRect.Top;
 
-            // check bottom boundary
-            if (viewportRect.Bottom > vbRect.Bottom)
-                dy = Math.Min(0, dy);
-            else if (viewportRect.Bottom + dy > vbRect.Top + vbRect.Height)
-                    dy = vbRect.Top + vbRect.Height - viewportRect.Bottom;
+        // check bottom boundary
+        if (viewportRect.Bottom > vbRect.Bottom)
+            dy = Math.Min(0, dy);
+        else if (viewportRect.Bottom + dy > vbRect.Top + vbRect.Height)
+            dy = vbRect.Top + vbRect.Height - viewportRect.Bottom;
 
-            // call the main OnDrag handler that is used when dragging the content directly
-            OnDrag(new DragDeltaEventArgs(-dx / scale / _viewboxFactor, -dy / scale / _viewboxFactor));
+        // call the main OnDrag handler that is used when dragging the content directly
+        OnDrag(new DragDeltaEventArgs(-dx / scale / _viewboxFactor, -dy / scale / _viewboxFactor));
 
-            // for a drag operation, update the origin with each delta
-            _originPoint += new Vector(dx, dy);
-        }
+        // for a drag operation, update the origin with each delta
+        _originPoint += new Vector(dx, dy);
+    }
 
-        private void ResizeDisplayViewport(DragDeltaEventArgs e, ResizeEdge relativeTo)
-        {
-            return;// NOT IMPLEMENTED
-            // get the existing viewport rect and scale
+    private void ResizeDisplayViewport(DragDeltaEventArgs e, ResizeEdge relativeTo)
+    {
+        return;// NOT IMPLEMENTED
+        // get the existing viewport rect and scale
 /*
             var viewportRect = _viewFinderDisplay.ViewportRect;
             var scale = _viewFinderDisplay.Scale;
@@ -509,7 +509,7 @@ namespace Westermo.GraphX.Controls
             var newRegionVector = new Vector((x - _resizeAnchorPoint.X) / scale / _viewboxFactor, (y - _resizeAnchorPoint.Y) / scale / _viewboxFactor);
             var region2 = new Rect(anchorPoint, newRegionVector);
 
-            // now translate the region from the coordinate space of the content 
+            // now translate the region from the coordinate space of the content
             // to the coordinate space of the content presenter
             var region =
               new Rect(
@@ -524,1116 +524,1115 @@ namespace Westermo.GraphX.Controls
             // scale relative to the anchor point
             ZoomToInternal(region2);
 */
-        }
-
-        private void OnDrag(DragDeltaEventArgs e)
-        {
-           /* Point relativePosition = _relativePosition;
-            double scale = this.Scale;
-            Point newPosition = relativePosition + (this.ContentOffset * scale) + new Vector(e.HorizontalChange * scale, e.VerticalChange * scale);*/
-            var dd = new Vector(e.HorizontalChange * Zoom * _viewboxFactor, e.VerticalChange * Zoom * _viewboxFactor);
-            TranslateX += dd.X;
-            TranslateY += dd.Y;
-            UpdateViewport();
-        }
-
-        #endregion
-
-        #region Updates & Refreshes
-
-        private void OnSizeChanged(object sender, SizeChangedEventArgs e)
-        {
-            // when the size is changing, the viewbox factor must be updated before updating the view
-            UpdateViewboxFactor();
-        }
-
-        //private Rect _prevAreaSize;
-        internal void UpdateViewport()
-        {
-            // if we haven't attached to the visual tree yet or we don't have content, just return
-            if (ContentVisual == null || _viewFinderDisplay == null)
-                return;
-
-            var size = IsContentTrackable ? TrackableContent!.ContentSize : new Rect(0,0, ContentVisual.DesiredSize.Width, ContentVisual.DesiredSize.Height);
-            if (double.IsInfinity(size.X) || double.IsInfinity(size.Y)) return;
-
-            // calculate the current viewport
-            var viewport =
-                new Rect(
-                    TranslatePoint(new Point(0, 0), ContentVisual),
-                    TranslatePoint(new Point(ActualWidth, ActualHeight), ContentVisual));
-            viewport.X -= size.X; 
-            viewport.Y -= size.Y;
-
-
-            // if the viewport has changed, set the Viewport dependency property
-            if (!DoubleHelper.AreVirtuallyEqual(viewport, Viewport))
-            {
-                SetValue(ViewportPropertyKey, viewport);
-            }
-
-            if (viewport.IsEmpty)
-                _viewFinderDisplay.ViewportRect = viewport;
-            else
-            {
-                // adjust the viewport from the coordinate space of the Content element
-                // to the coordinate space of the view finder display panel
-                var scale = _viewFinderDisplay.Scale;// *_viewboxFactor;
-                _viewFinderDisplay.ViewportRect = new Rect(viewport.Left * scale, viewport.Top * scale, Math.Max(0.0, viewport.Width * scale), Math.Max(0.0, viewport.Height * scale));
-            }
-        }
-
-        private void UpdateViewFinderDisplayContentBounds()
-        {
-            if (ContentVisual == null || _viewFinderDisplay == null || _viewFinderDisplay.Visibility == Visibility.Collapsed)
-                return;
-
-            /*if (DesignerProperties.GetIsInDesignMode(this))
-            {
-                _viewFinderDisplay.ContentBounds = new Rect(new Size(100, 100));
-                return;
-            }*/
-
-            UpdateViewboxFactor();
-            
-            // ensure the display panel has a size
-            var contentSize = IsContentTrackable ? TrackableContent!.ContentSize.Size : ContentVisual.DesiredSize;
-            if (contentSize.IsEmpty || double.IsInfinity(contentSize.Width))
-                contentSize = new Size(1, 1);
-            var viewFinderSize = _viewFinderDisplay.AvailableSize;
-            if (viewFinderSize.IsEmpty || double.IsInfinity(viewFinderSize.Width))
-                viewFinderSize = new Size(1,1);
-            if (viewFinderSize.Width > 0d && DoubleHelper.AreVirtuallyEqual(viewFinderSize.Height, 0d))
-            {
-                // update height to accomodate width, while keeping a ratio equal to the actual content
-                viewFinderSize = new Size(viewFinderSize.Width, Math.Max(0, contentSize.Height * viewFinderSize.Width / contentSize.Width));
-            }
-            else if (viewFinderSize.Height > 0d && DoubleHelper.AreVirtuallyEqual(viewFinderSize.Width, 0d))
-            {
-                // update width to accomodate height, while keeping a ratio equal to the actual content
-                viewFinderSize = new Size(Math.Max(0, contentSize.Width * viewFinderSize.Height / contentSize.Height), viewFinderSize.Width);
-            }
-
-            // determine the scale of the view finder display panel
-            var aspectX = viewFinderSize.Width / contentSize.Width;
-            var aspectY = viewFinderSize.Height / contentSize.Height;
-            var scale = aspectX < aspectY ? aspectX : aspectY;
-            if (double.IsInfinity(scale) || double.IsNaN(scale)) scale = 1d;
-            if (DesignerProperties.GetIsInDesignMode(this)) scale = 0.8;
-
-            // determine the rect of the VisualBrush
-            var vbWidth = contentSize.Width * scale;
-            var vbHeight = contentSize.Height * scale;
-
-            // set the ContentBounds and Scale properties on the view finder display panel
-            _viewFinderDisplay.Scale = scale;
-            _viewFinderDisplay.ContentBounds = new Rect(new Size(Math.Max(0, vbWidth), Math.Max(0, vbHeight)));
-        }
-
-        private void UpdateViewboxFactor()
-        {
-            if (ContentVisual == null) return;
-            var contentWidth = ActualWidth;
-            var trueContentWidth = IsContentTrackable ? TrackableContent!.ContentSize.Width : ContentVisual.DesiredSize.Width;
-            if (contentWidth <=1  || trueContentWidth <= 1) _viewboxFactor = 1d;
-            else _viewboxFactor = contentWidth / trueContentWidth;
-        }
-        #endregion
-
-        #endregion
-
-        #region Properties
-
-        /// <summary>
-        /// Gets or sets if zoom animation is enabled. Default value is True.
-        /// </summary>
-        public virtual bool IsAnimationEnabled { get; set; } = true;
-
-        /// <summary>
-        /// Use Ctrl key to zoom with mouse wheel or without it. Default value is True.
-        /// </summary>
-        public bool UseCtrlForMouseWheel { get; set; } = true;
-
-        /// <summary>
-        /// Gets or sets mousewheel zooming mode. Positional: depend on mouse position. Absolute: center area. Default value is Positional.
-        /// </summary>
-        public MouseWheelZoomingMode MouseWheelZoomingMode { get; set; }
-
-        /// <summary>
-        /// Fires when area has been selected using SelectionModifiers 
-        /// </summary>
-        public event AreaSelectedEventHandler? AreaSelected;
-
-        private void OnAreaSelected(Rect selection)
-        {
-            AreaSelected?.Invoke(this, new AreaSelectedEventArgs(selection));
-        }
-
-        public static readonly DependencyProperty AnimationLengthProperty =
-            DependencyProperty.Register(nameof(AnimationLength), typeof(TimeSpan), typeof(ZoomControl),
-                                        new PropertyMetadata(TimeSpan.FromMilliseconds(500)));
-
-        public static readonly DependencyProperty IsDragSelectByDefaultProperty =
-            DependencyProperty.Register(nameof(IsDragSelectByDefaultProperty), typeof(bool), typeof(ZoomControl), new PropertyMetadata(false));
-
-        public static readonly DependencyProperty ZoomStepProperty =
-            DependencyProperty.Register(nameof(ZoomStep), typeof(double), typeof(ZoomControl),
-                                        new PropertyMetadata(5.0));
-
-        public static readonly DependencyProperty MaxZoomProperty =
-            DependencyProperty.Register(nameof(MaxZoom), typeof(double), typeof(ZoomControl), new PropertyMetadata(100.0));
-
-        public static readonly DependencyProperty MinZoomProperty =
-            DependencyProperty.Register(nameof(MinZoom), typeof(double), typeof(ZoomControl), new PropertyMetadata(0.01));
-
-        public static readonly DependencyProperty ModeProperty =
-            DependencyProperty.Register(nameof(Mode), typeof(ZoomControlModes), typeof(ZoomControl),
-                                        new PropertyMetadata(ZoomControlModes.Custom, Mode_PropertyChanged));
-
-        private static void Mode_PropertyChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
-        {
-            var zc = (ZoomControl)d;
-            var mode = (ZoomControlModes)e.NewValue;
-            switch (mode)
-            {
-                case ZoomControlModes.Fill:
-                    zc.DoZoomToFill();
-                    break;
-                case ZoomControlModes.Original:
-                    zc.DoZoomToOriginal();
-                    break;
-                case ZoomControlModes.Custom:
-                    break;
-                default:
-                    throw new ArgumentOutOfRangeException();
-            }
-        }
-
-        public static readonly DependencyProperty ModifierModeProperty =
-            DependencyProperty.Register(nameof(ModifierMode), typeof(ZoomViewModifierMode), typeof(ZoomControl),
-                                        new PropertyMetadata(ZoomViewModifierMode.None));
-
-        #region TranslateX TranslateY
-        public static readonly DependencyProperty TranslateXProperty =
-            DependencyProperty.Register(nameof(TranslateX), typeof(double), typeof(ZoomControl),
-                                        new PropertyMetadata(0.0, TranslateX_PropertyChanged, TranslateX_Coerce));
-
-        public static readonly DependencyProperty TranslateYProperty =
-            DependencyProperty.Register(nameof(TranslateY), typeof(double), typeof(ZoomControl),
-                                        new PropertyMetadata(0.0, TranslateY_PropertyChanged, TranslateY_Coerce));
-
-        private static object TranslateX_Coerce(DependencyObject d, object basevalue)
-        {
-            var zc = (ZoomControl)d;
-            return zc.GetCoercedTranslateX((double)basevalue, zc.Zoom);
-        }
-
-        private double GetCoercedTranslateX(double baseValue, double zoom)
-        {
-            return _presenter == null ? 0.0 : baseValue;
-        }
-
-        private static object TranslateY_Coerce(DependencyObject d, object basevalue)
-        {
-            var zc = (ZoomControl)d;
-            return zc.GetCoercedTranslateY((double)basevalue, zc.Zoom);
-        }
-
-        private double GetCoercedTranslateY(double baseValue, double zoom)
-        {
-            return _presenter == null ? 0.0 : baseValue;
-        }
-
-        private static void TranslateX_PropertyChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
-        {
-            var zc = (ZoomControl)d;
-            if (zc._translateTransform == null)
-                return;
-            zc._translateTransform.X = (double)e.NewValue;
-            if (!zc._isZooming)
-                zc.Mode = ZoomControlModes.Custom;
-            zc.OnPropertyChanged(nameof(Presenter));
-            zc.Presenter?.OnPropertyChanged(nameof(RenderTransform));
-        }
-
-        private static void TranslateY_PropertyChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
-        {
-            var zc = (ZoomControl)d;
-            if (zc._translateTransform == null)
-                return;
-            zc._translateTransform.Y = (double)e.NewValue;
-            if (!zc._isZooming)
-                zc.Mode = ZoomControlModes.Custom;
-            zc.OnPropertyChanged(nameof(Presenter));
-            zc.Presenter?.OnPropertyChanged(nameof(RenderTransform));
-
-        }
-
-        #endregion
-
-        public static readonly DependencyProperty ZoomBoxBackgroundProperty =
-            DependencyProperty.Register(nameof(ZoomBoxBackground), typeof(Brush), typeof(ZoomControl),
-                                        new PropertyMetadata(null));
-
-
-        public static readonly DependencyProperty ZoomBoxBorderBrushProperty =
-            DependencyProperty.Register(nameof(ZoomBoxBorderBrush), typeof(Brush), typeof(ZoomControl),
-                                        new PropertyMetadata(null));
-
-
-        public static readonly DependencyProperty ZoomBoxBorderThicknessProperty =
-            DependencyProperty.Register(nameof(ZoomBoxBorderThickness), typeof(Thickness), typeof(ZoomControl),
-                                        new PropertyMetadata(null));
-
-
-        public static readonly DependencyProperty ZoomBoxOpacityProperty =
-            DependencyProperty.Register(nameof(ZoomBoxOpacity), typeof(double), typeof(ZoomControl),
-                                        new PropertyMetadata(0.5));
-
-
-        public static readonly DependencyProperty ZoomBoxProperty =
-            DependencyProperty.Register(nameof(ZoomBox), typeof(Rect), typeof(ZoomControl),
-                                        new PropertyMetadata(new Rect()));
-
-        public static readonly DependencyProperty ZoomSensitivityProperty =
-            DependencyProperty.Register(nameof(ZoomSensitivity), typeof(double), typeof(ZoomControl),
-                                        new PropertyMetadata(100.0));
-
-        #region Zoom
-        public static readonly DependencyProperty ZoomProperty =
-            DependencyProperty.Register(nameof(Zoom), typeof(double), typeof(ZoomControl),
-                                        new PropertyMetadata(1.0, Zoom_PropertyChanged));
-
-        private static void Zoom_PropertyChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
-        {
-            var zc = (ZoomControl)d;
-            zc.HookBeforeZoomChanging();
-
-            if (zc._scaleTransform == null)
-                return;
-
-            var zoom = (double)e.NewValue;
-            zc._scaleTransform.ScaleX = zoom;
-            zc._scaleTransform.ScaleY = zoom;
-            if (!zc._isZooming)
-            {
-                var delta = (double)e.NewValue / (double)e.OldValue;
-                zc.TranslateX *= delta;
-                zc.TranslateY *= delta;
-                zc.Mode = ZoomControlModes.Custom;
-            }
-            zc.OnPropertyChanged(nameof(Presenter));
-            zc.Presenter?.OnPropertyChanged(nameof(RenderTransform));
-            zc.OnPropertyChanged(nameof(Zoom));
-            zc.UpdateViewport();
-            zc.HookAfterZoomChanging();
-        }
-        #endregion
-
-        private Point _mouseDownPos;
-        private ZoomContentPresenter? _presenter;
-
-        /// <summary>
-        /// Applied to the presenter.
-        /// </summary>
-        private ScaleTransform? _scaleTransform;
-        private Vector _startTranslate;
-        private TransformGroup? _transformGroup;
-
-        /// <summary>
-        /// Applied to the scrollviewer.
-        /// </summary>
-        private TranslateTransform? _translateTransform;
-
-        private bool _isZooming;
-
-        public Brush ZoomBoxBackground
-        {
-            get => (Brush)GetValue(ZoomBoxBackgroundProperty);
-            set => SetValue(ZoomBoxBackgroundProperty, value);
-        }
-
-        public Brush ZoomBoxBorderBrush
-        {
-            get => (Brush)GetValue(ZoomBoxBorderBrushProperty);
-            set => SetValue(ZoomBoxBorderBrushProperty, value);
-        }
-
-        public Thickness ZoomBoxBorderThickness
-        {
-            get => (Thickness)GetValue(ZoomBoxBorderThicknessProperty);
-            set => SetValue(ZoomBoxBorderThicknessProperty, value);
-        }
-
-        public double ZoomBoxOpacity
-        {
-            get => (double)GetValue(ZoomBoxOpacityProperty);
-            set => SetValue(ZoomBoxOpacityProperty, value);
-        }
-
-        public Rect ZoomBox
-        {
-            get => (Rect)GetValue(ZoomBoxProperty);
-            set => SetValue(ZoomBoxProperty, value);
-        }
-
-        /// <summary>
-        /// Gets origo (area center) position
-        /// </summary>
-        public Point OrigoPosition => new(ActualWidth / 2, ActualHeight / 2);
-
-        /// <summary>
-        /// Gets or sets translation value for X property
-        /// </summary>
-        public double TranslateX
-        {
-            get 
-            {
-                var value = (double)GetValue(TranslateXProperty);
-                return double.IsNaN(value) ? 0 : value; 
-            }
-            set
-            {
-                BeginAnimation(TranslateXProperty, null);
-                SetValue(TranslateXProperty, value);
-            }
-        }
-
-        /// <summary>
-        /// Gets or sets translation value for Y property
-        /// </summary>
-        public double TranslateY
-        {
-            get {
-                var value = (double)GetValue(TranslateYProperty);
-                return double.IsNaN(value) ? 0 : value;
-            }
-            set
-            {
-                BeginAnimation(TranslateYProperty, null);
-                SetValue(TranslateYProperty, value);
-            }
-        }
-
-        /// <summary>
-        /// Gets or sets animation length
-        /// </summary>
-        public TimeSpan AnimationLength
-        {
-            get => (TimeSpan)GetValue(AnimationLengthProperty);
-            set => SetValue(AnimationLengthProperty, value);
-        }
-
-        /// <summary>
-        /// Gets or sets the value indicating whether to drag select without keyboard modifiers to the mouse button.
-        /// </summary>
-        public bool IsDragSelectByDefault
-        {
-            get => (bool)GetValue(IsDragSelectByDefaultProperty);
-            set => SetValue(IsDragSelectByDefaultProperty, value);
-        }
-
-        /// <summary>
-        /// Minimum zoom distance (Zoom out). Default value is 0.01
-        /// </summary>
-        public double MinZoom
-        {
-            get => (double)GetValue(MinZoomProperty);
-            set => SetValue(MinZoomProperty, value);
-        }
-
-        /// <summary>
-        /// Maximum zoom distance (Zoom in). DEfault value is 100
-        /// </summary>
-        public double MaxZoom
-        {
-            get => (double)GetValue(MaxZoomProperty);
-            set => SetValue(MaxZoomProperty, value);
-        }
-
-        /// <summary>
-        /// Gets or sets zoom step value (how fast the zoom can do). Default value is 5.
-        /// </summary>
-        public virtual double ZoomStep
-        {
-            get => (double)GetValue(ZoomStepProperty);
-            set => SetValue(ZoomStepProperty, value);
-        }
-
-        /// <summary>
-        /// Gets or sets zoom sensitivity. Lower the value - smoother the zoom. Default value is 100.
-        /// </summary>
-        public virtual double ZoomSensitivity
-        {
-            get => (double)GetValue(ZoomSensitivityProperty);
-            set => SetValue(ZoomSensitivityProperty, value);
-        }
-
-        /// <summary>
-        /// Gets or sets current zoom value
-        /// </summary>
-        public double Zoom
-        {
-            get => (double)GetValue(ZoomProperty);
-            set
-            {
-                if (value == (double)GetValue(ZoomProperty))
-                    return;
-                BeginAnimation(ZoomProperty, null);
-                SetValue(ZoomProperty, value);
-            }
-        }
-
-        /// <summary>
-        /// Gets content object as UIElement
-        /// </summary>
-        public UIElement? ContentVisual => Content as UIElement;
-
-        /// <summary>
-        /// Gets content as ITrackableContent like GraphArea
-        /// </summary>
-        public ITrackableContent? TrackableContent => Content as ITrackableContent;
-
-        private bool _isga;
-        /// <summary>
-        /// Is loaded content represents ITrackableContent object
-        /// </summary>
-        public bool IsContentTrackable => _isga;
-
-
-        public ZoomContentPresenter? Presenter
-        {
-            get => _presenter;
-            set
-            {
-                _presenter = value;
-                if (_presenter == null)
-                    return;
-
-                //add the ScaleTransform to the presenter
-                _transformGroup = new TransformGroup();
-                _scaleTransform = new ScaleTransform();
-                _translateTransform = new TranslateTransform();
-                _transformGroup.Children.Add(_scaleTransform);
-                _transformGroup.Children.Add(_translateTransform);
-                _presenter.RenderTransform = _transformGroup;
-                _presenter.RenderTransformOrigin = new Point(0.5, 0.5);
-            }
-        }
-
-        public UIElement PresenterVisual => Presenter!;
-
-        /// <summary>
-        /// Gets or sets the active modifier mode.
-        /// </summary>
-        public ZoomViewModifierMode ModifierMode
-        {
-            get => (ZoomViewModifierMode)GetValue(ModifierModeProperty);
-            set => SetValue(ModifierModeProperty, value);
-        }
-
-        /// <summary>
-        /// Gets or sets the mode of the zoom control.
-        /// </summary>
-        public ZoomControlModes Mode
-        {
-            get => (ZoomControlModes)GetValue(ModeProperty);
-            set => SetValue(ModeProperty, value);
-        }
-
-        public RoutedUICommand CommandZoomIn = new("Zoom In", "ZoomIn", typeof(ZoomControl));
-        public RoutedUICommand CommandZoomOut = new("Zoom Out", "ZoomOut", typeof(ZoomControl));
-        public RoutedUICommand CommandPanLeft = new("Pan Left", "PanLeft", typeof(ZoomControl));
-        public RoutedUICommand CommandPanRight = new("Pan Right", "PanRight", typeof(ZoomControl));
-        public RoutedUICommand CommandPanTop = new("Pan Top", "PanTop", typeof(ZoomControl));
-        public RoutedUICommand CommandPanBottom = new("Pan Bottom", "PanBottom", typeof(ZoomControl));
-
-        #endregion
-
-        #region Hooks
-        protected virtual void HookBeforeZoomChanging() { }
-        protected virtual void HookAfterZoomChanging() { }
-        #endregion
-
-        /// <summary>
-        /// Gets or sets manual pan sensivity in points when using keys to pan zoomed content. Default value is 10.
-        /// </summary>
-        public double ManualPanSensivity { get; set; } = 10d;
-
-        static ZoomControl()
-        {
-            DefaultStyleKeyProperty.OverrideMetadata(typeof(ZoomControl), new FrameworkPropertyMetadata(typeof(ZoomControl)));
-        }
-
-        public ZoomControl()
-        {
-            if (DesignerProperties.GetIsInDesignMode(this))
-            {           
-            }
-            else
-            {
-                PreviewMouseWheel += ZoomControl_MouseWheel;
-                PreviewMouseDown += ZoomControl_PreviewMouseDown;
-                MouseDown += ZoomControl_MouseDown;
-                MouseUp += ZoomControl_MouseUp;
-
-                AddHandler(SizeChangedEvent, new SizeChangedEventHandler(OnSizeChanged), true);
-
-                BindCommand(Refocus, RefocusView, CanRefocusView);
-                BindCommand(Center, CenterContent);
-                BindCommand(Fill, FillToBounds);
-                BindCommand(ResetZoom, ExecuteResetZoom);
-                BindCommand(CommandZoomIn, (_, _) => MouseWheelAction(ZoomSensitivity, OrigoPosition));
-                BindCommand(CommandZoomOut, (_, _) => MouseWheelAction(-ZoomSensitivity, OrigoPosition));
-                BindCommand(CommandPanLeft, (_, _) => PanAction(new Vector(TranslateX, TranslateY), new Vector(ManualPanSensivity, 0)));
-                BindCommand(CommandPanRight, (_, _) => PanAction(new Vector(TranslateX, TranslateY), new Vector(-ManualPanSensivity, 0)));
-                BindCommand(CommandPanTop, (_, _) => PanAction(new Vector(TranslateX, TranslateY), new Vector(0, ManualPanSensivity)));
-                BindCommand(CommandPanBottom, (_, _) => PanAction(new Vector(TranslateX, TranslateY), new Vector(0, -ManualPanSensivity)));
-                BindKey(CommandPanLeft, Key.Left, ModifierKeys.None);
-                BindKey(CommandPanRight, Key.Right, ModifierKeys.None);
-                BindKey(CommandPanTop, Key.Up, ModifierKeys.None);
-                BindKey(CommandPanBottom, Key.Down, ModifierKeys.None);
-                BindKey(CommandZoomIn, Key.Up, ModifierKeys.Control);
-                BindKey(CommandZoomOut, Key.Down, ModifierKeys.Control);
-            }
-        }
-
-        protected void BindCommand(RoutedUICommand command, ExecutedRoutedEventHandler execute, CanExecuteRoutedEventHandler? canExecute = null)
-        {
-            var binding = new CommandBinding(command, execute, canExecute);
-            CommandBindings.Add(binding);
-        }
-
-        /// <summary>
-        /// Resets all key bindings for the control
-        /// </summary>
-        public void ResetKeyBindings()
-        {
-            InputBindings.Clear();
-        }
-
-        /// <summary>
-        /// Binds specified key to command
-        /// </summary>
-        /// <param name="command">Command to execute on key press</param>
-        /// <param name="key">Key</param>
-        /// <param name="modifier">Key modifier</param>
-        public void BindKey(RoutedUICommand command, Key key, ModifierKeys modifier)
-        {
-            InputBindings.Add(new KeyBinding(command, key, modifier));
-        }
-
-        #region ContentChanged
-        protected override void OnContentChanged(object oldContent, object newContent)
-        {
-            if (DesignerProperties.GetIsInDesignMode(this)) return;
-
-            if (oldContent is ITrackableContent old) old.ContentSizeChanged -= Content_ContentSizeChanged;
-            if (newContent != null)
-            {
-                if (newContent is ITrackableContent newc)
-                {
-                    _isga = true;
-                    newc.ContentSizeChanged += Content_ContentSizeChanged;
-                }
-                else _isga = false;
-                if(Template != null)
-                    OnApplyTemplate();
-                UpdateViewFinderDisplayContentBounds();
-                UpdateViewport();
-            }
-
-            base.OnContentChanged(oldContent, newContent);
-        }
-
-        private void Content_ContentSizeChanged(object sender, ContentSizeChangedEventArgs e)
-        {
-            UpdateViewFinderDisplayContentBounds();
-            UpdateViewport();
-        }
-        #endregion
-
-        #region Mouse controls
-
-        /// <summary>
-        /// Converts screen rectangle area to rectangle in content coordinate space according to scale and translation
-        /// </summary>
-        /// <param name="screenRectangle">Screen rectangle data</param>
-        public Rect ToContentRectangle(Rect screenRectangle)
-        {
-            var tl = TranslatePoint(new Point(screenRectangle.X, screenRectangle.Y), ContentVisual);
-            //var br = TranslatePoint(new Point(screenRectangle.Right, screenRectangle.Bottom), ContentVisual);
-            //return new Rect(tl.X, tl.Y, Math.Abs(Math.Abs(br.X) - Math.Abs(tl.X)), Math.Abs(Math.Abs(br.Y) - Math.Abs(tl.Y)));
-
-            if (screenRectangle == Rect.Empty) return Rect.Empty;
-            return new Rect(tl.X, tl.Y, screenRectangle.Width / Zoom, screenRectangle.Height / Zoom);
-        }
-
-        private void ZoomControl_MouseWheel(object sender, MouseWheelEventArgs e)
-        {
-            var handle = ((Keyboard.Modifiers & ModifierKeys.Control) > 0 && ModifierMode == ZoomViewModifierMode.None) || UseCtrlForMouseWheel;
-            if (!handle) return;
-
-            e.Handled = true;
-            MouseWheelAction(e);
-			_clickTrack = false;
-        }
-
-        private void MouseWheelAction(MouseWheelEventArgs e)
-        {
-            MouseWheelAction(e.Delta, e.GetPosition(this));
-        }
-
-        /// <summary>
-        /// Defines action on mousewheel
-        /// </summary>
-        /// <param name="delta">Delta from mousewheel args</param>
-        /// <param name="mousePosition">Mouse position</param>
-        protected virtual void MouseWheelAction(double delta, Point mousePosition)
-        {
-            var origoPosition = OrigoPosition;
-            DoZoom(
-                Math.Max(1 / ZoomStep, Math.Min(ZoomStep, Math.Abs(delta) / 10000.0 * ZoomSensitivity + 1)),
-                delta < 0 ? -1 : 1,
-                origoPosition,
-                MouseWheelZoomingMode == MouseWheelZoomingMode.Absolute ? origoPosition : mousePosition,
-                MouseWheelZoomingMode == MouseWheelZoomingMode.Absolute ? origoPosition : mousePosition);
-        }
-
-        private void ZoomControl_MouseUp(object sender, MouseButtonEventArgs e)
-        {
-			if (_clickTrack)
-			{
-				RaiseEvent(new RoutedEventArgs(ClickEvent, this));
-				_clickTrack = false;
-				e.Handled = true;
-			}
-
-			switch (ModifierMode)
-            {
-                case ZoomViewModifierMode.None:
-                    return;
-                case ZoomViewModifierMode.Pan:
-                    break;
-                case ZoomViewModifierMode.ZoomIn:
-                    break;
-                case ZoomViewModifierMode.ZoomOut:
-                    break;
-                case ZoomViewModifierMode.ZoomBox:
-                    if (_startedAsAreaSelection)
-                    {
-                        _startedAsAreaSelection = false;
-
-                        OnAreaSelected(ToContentRectangle(ZoomBox));
-                        ZoomBox = new Rect();
-                    }
-                    else ZoomToInternal(ZoomBox);
-                    break;
-                default:
-                    throw new ArgumentOutOfRangeException();
-            }
-
-            ModifierMode = ZoomViewModifierMode.None;
-            PreviewMouseMove -= ZoomControl_PreviewMouseMove;
-            ReleaseMouseCapture();
-        }
-
-        protected virtual void PanAction(Vector initialPoint, Vector diff)
-        {
-            var translate = initialPoint + diff;
-            TranslateX = translate.X;
-            TranslateY = translate.Y;
-            UpdateViewport();
-        }
-
-        private void ZoomControl_PreviewMouseMove(object sender, MouseEventArgs e)
-        {
-			if (_clickTrack)
-			{
-				var curPoint = Mouse.GetPosition(this);
-
-				if (curPoint != _mouseDownPos)
-					_clickTrack = false;
-			}
-
-			switch (ModifierMode)
-            {
-                case ZoomViewModifierMode.None:
-                    return;
-                case ZoomViewModifierMode.Pan:
-                    PanAction(_startTranslate, e.GetPosition(this) - _mouseDownPos);
-                    break;
-                case ZoomViewModifierMode.ZoomIn:
-                    break;
-                case ZoomViewModifierMode.ZoomOut:
-                    break;
-                case ZoomViewModifierMode.ZoomBox:
-                    var pos = e.GetPosition(this);
-                    var x = Math.Min(_mouseDownPos.X, pos.X);
-                    var y = Math.Min(_mouseDownPos.Y, pos.Y);
-                    var sizeX = Math.Abs(_mouseDownPos.X - pos.X);
-                    var sizeY = Math.Abs(_mouseDownPos.Y - pos.Y);
-                    ZoomBox = new Rect(x, y, sizeX, sizeY);
-                    break;
-                default:
-                    throw new ArgumentOutOfRangeException();
-            }
-        }
-
-        private void ZoomControl_MouseDown(object sender, MouseButtonEventArgs e)
-        {
-            OnMouseDown(e, false);
-        }
-
-        private void ZoomControl_PreviewMouseDown(object sender, MouseButtonEventArgs e)
-        {
-            OnMouseDown(e, true);
-            e.Handled = false;
-        }
-
-		private bool _clickTrack;
-		private bool _startedAsAreaSelection;
-        private void OnMouseDown(MouseButtonEventArgs e, bool isPreview)
-        {
-            if (ModifierMode != ZoomViewModifierMode.None)
-                return;
-            _startedAsAreaSelection = false;
-            switch (Keyboard.Modifiers)
-            {
-                case ModifierKeys.None:
-                    if (!isPreview)
-                    {
-                        if (IsDragSelectByDefault)
-                        {
-                            _startedAsAreaSelection = true;
-                            ModifierMode = ZoomViewModifierMode.ZoomBox;
-                        }
-                        else
-                        {
-                            ModifierMode = ZoomViewModifierMode.Pan;
-                        }
-                    }
-                    break;
-                case ModifierKeys.Alt | ModifierKeys.Control:
-                    _startedAsAreaSelection = true;
-                    ModifierMode = ZoomViewModifierMode.ZoomBox;
-                    break;
-                case ModifierKeys.Alt:
-                    ModifierMode = ZoomViewModifierMode.ZoomBox;
-                    break;
-                case ModifierKeys.Control:
-                    break;
-                case ModifierKeys.Shift:
-                    ModifierMode = ZoomViewModifierMode.Pan;
-                    break;
-                case ModifierKeys.Windows:
-                    break;
-                default:
-                    return;
-            }
-
-			_clickTrack = true;
-			_mouseDownPos = e.GetPosition(this);
-
-			if (ModifierMode == ZoomViewModifierMode.None)
-                return;
-
-            _startTranslate = new Vector(TranslateX, TranslateY);
-            Mouse.Capture(this);
-            PreviewMouseMove += ZoomControl_PreviewMouseMove;
-        }
-
-		public static readonly RoutedEvent ClickEvent = EventManager.RegisterRoutedEvent(nameof(Click), RoutingStrategy.Bubble, typeof(RoutedEventHandler), typeof(ZoomControl));
-		public event RoutedEventHandler Click
-		{
-			add => AddHandler(ClickEvent, value);
-            remove => RemoveHandler(ClickEvent, value);
-        }
-
-		#endregion
-
-		#region Animation
-
-		public event EventHandler? ZoomAnimationCompleted;
-
-        private void OnZoomAnimationCompleted()
-        {
-            ZoomAnimationCompleted?.Invoke(this, EventArgs.Empty);
-        }
-
-        private void DoZoomAnimation(double targetZoom, double transformX, double transformY, bool isZooming = true)
-        {
-            if (targetZoom == 0d && double.IsNaN(transformX) && double.IsNaN(transformY)) return;
-            _isZooming = isZooming;
-            if (!IsAnimationEnabled)
-            {
-                SetCurrentValue(TranslateXProperty, transformX);
-                SetCurrentValue(TranslateYProperty, transformY);
-                SetCurrentValue(ZoomProperty, targetZoom);
-                ZoomCompleted(this, EventArgs.Empty);
-                return;
-            }
-            var duration = new Duration(AnimationLength);
-            var value = (double)GetValue(TranslateXProperty);
-            if (double.IsNaN(value) || double.IsInfinity(value)) SetValue(TranslateXProperty, 0d);
-            value = (double)GetValue(TranslateYProperty);
-            if (double.IsNaN(value) || double.IsInfinity(value)) SetValue(TranslateYProperty, 0d);
-            StartAnimation(TranslateXProperty, transformX, duration);
-            if (double.IsNaN(transformY) || double.IsInfinity(transformY)) transformY = 0;
-            StartAnimation(TranslateYProperty, transformY, duration);
-            if (double.IsNaN(targetZoom) || double.IsInfinity(targetZoom)) targetZoom = 1;
-            StartAnimation(ZoomProperty, targetZoom, duration);
-        }
-
-        private void StartAnimation(DependencyProperty dp, double toValue, Duration duration)
-        {
-            if (double.IsNaN(toValue) || double.IsInfinity(toValue))
-            {
-                if (dp == ZoomProperty)
-                {
-                    _isZooming = false;
-                }
-                return;
-            }
-            var animation = new DoubleAnimation(toValue, duration);
-            Timeline.SetDesiredFrameRate(animation, 30);
-
-            if (dp == ZoomProperty)
-            {
-                _zoomAnimCount++;
-                animation.Completed += ZoomCompleted;
-            }
-            BeginAnimation(dp, animation, HandoffBehavior.Compose);
-        }
-
-        private int _zoomAnimCount;
-
-        private void ZoomCompleted(object? sender, EventArgs e)
-        {
-            _zoomAnimCount--;
-            if (_zoomAnimCount > 0)
-                return;
-            var zoom = Zoom;          
-            BeginAnimation(ZoomProperty, null);
-            SetValue(ZoomProperty, zoom);
-            _isZooming = false;
-            UpdateViewport();
-            OnZoomAnimationCompleted();
-        }
-
-        #endregion
-
-        /// <summary>
-        /// Zoom to rectangle area of the content
-        /// </summary>
-        /// <param name="rectangle">Rectangle area</param>
-        /// <param name="usingContentCoordinates">Sets if content coordinates or screen coordinates was specified</param>
-        public void ZoomToContent(Rect rectangle, bool usingContentCoordinates = true)
-        {
-            //if content isn't UIElement - return
-            if (ContentVisual == null) return;
-            // translate the region from the coordinate space of the content 
-            // to the coordinate space of the content presenter
-            var region = usingContentCoordinates ?
-              new Rect(
-                ContentVisual.TranslatePoint(rectangle.TopLeft, _presenter),
-                ContentVisual.TranslatePoint(rectangle.BottomRight, _presenter)) : rectangle;
-            
-            // calculate actual zoom, which must fit the entire selection 
-            // while maintaining a 1:1 ratio
-            var aspectX = ActualWidth / region.Width;
-            var aspectY = ActualHeight / region.Height;
-            var newRelativeScale = aspectX < aspectY ? aspectX : aspectY;
-            // ensure that the scale value alls within the valid range
-            if (newRelativeScale > MaxZoom)
-                newRelativeScale = MaxZoom;
-            else if (newRelativeScale < MinZoom)
-                newRelativeScale = MinZoom;
-
-            var center = new Point(rectangle.X + rectangle.Width / 2, rectangle.Y + rectangle.Height / 2);
-            var newRelativePosition = new Point((ActualWidth / 2 - center.X) * Zoom, (ActualHeight / 2 - center.Y) * Zoom);
-
-            TranslateX = newRelativePosition.X;
-            TranslateY = newRelativePosition.Y;
-            Zoom = newRelativeScale;
-        }
-
-        /// <summary>
-        /// Zoom to original size
-        /// </summary>
-        public void ZoomToOriginal()
-        {
-            if (Mode == ZoomControlModes.Original)
-                DoZoomToOriginal();
-            else Mode = ZoomControlModes.Original;
-        }
-
-        /// <summary>
-        /// Centers content on the screen
-        /// </summary>
-        public void CenterContent()
-        {
-            if (_presenter == null)
-                return;
-
-            var initialTranslate = GetTrackableTranslate();
-            DoZoomAnimation(Zoom, initialTranslate.X*Zoom, initialTranslate.Y*Zoom);
-        }
-
-        /// <summary>
-        /// Zoom to fill screen area with the content
-        /// </summary>
-        public void ZoomToFill()
-        {
-            if(Mode == ZoomControlModes.Fill)
-                DoZoomToFill();
-            else Mode = ZoomControlModes.Fill;
-        }
-
-        private void ZoomToInternal(Rect rect, bool setDelta = false)
-        {
-            var deltaZoom = Math.Min(ActualWidth / rect.Width, ActualHeight / rect.Height);
-            var startHandlePosition = new Point(rect.X + rect.Width / 2, rect.Y + rect.Height / 2);
-            DoZoom(deltaZoom, 1, OrigoPosition, startHandlePosition, OrigoPosition, setDelta);
-            ZoomBox = new Rect();
-        }
-
-        /// <summary>
-        /// Returns initial translate depending on container graph settings (to deal with optinal new coord system)
-        /// </summary>
-        private Vector GetTrackableTranslate()
-        {
-            if (!IsContentTrackable) return new Vector();
-            return DesignerProperties.GetIsInDesignMode(this) ? GetInitialTranslate(200,100) : GetInitialTranslate(TrackableContent!.ContentSize.Width, TrackableContent.ContentSize.Height, TrackableContent.ContentSize.X, TrackableContent.ContentSize.Y);
-        }
-
-        private void DoZoomToOriginal()
-        {
-            if (_presenter == null)
-                return;
-
-            var initialTranslate = GetTrackableTranslate();
-            DoZoomAnimation(1.0, initialTranslate.X, initialTranslate.Y);
-        }
-
-        private Vector GetInitialTranslate(double contentWidth, double contentHeight, double offsetX = 0, double offsetY = 0)
-        {
-            if (_presenter == null)
-                return new Vector(0.0, 0.0);
-            var w = contentWidth - ActualWidth;
-            var h = contentHeight - ActualHeight;
-            var tX = -(w / 2.0 + offsetX);
-            var tY = -(h / 2.0 + offsetY);
-
-            return new Vector(tX, tY);
-        }
-
-        private void DoZoomToFill()
-        {
-            if (_presenter == null)
-                return;
-            var c = IsContentTrackable ? TrackableContent!.ContentSize.Size : ContentVisual!.DesiredSize;
-            if (c.Width == 0 || double.IsNaN(c.Width) || double.IsInfinity(c.Width)) return;
-
-            var deltaZoom = Math.Min(MaxZoom,Math.Min( ActualWidth / c.Width, ActualHeight / c.Height));
-            var initialTranslate = IsContentTrackable ? GetTrackableTranslate() : GetInitialTranslate(c.Width, c.Height);
-            DoZoomAnimation(deltaZoom, initialTranslate.X * deltaZoom, initialTranslate.Y * deltaZoom);
-        }
-
-        private void DoZoom(double deltaZoom, int mod, Point origoPosition, Point startHandlePosition, Point targetHandlePosition, bool setDelta = false)
-        {
-            var startZoom = Zoom;
-            var currentZoom = setDelta ? deltaZoom : mod == -1 ? startZoom / deltaZoom : startZoom * deltaZoom;
-            currentZoom = Math.Max(MinZoom, Math.Min(MaxZoom, currentZoom));
-
-            var startTranslate = new Vector(TranslateX, TranslateY);
-
-            var v = startHandlePosition - origoPosition;
-            var vTarget = targetHandlePosition - origoPosition;
-
-            var targetPoint = (v - startTranslate) / startZoom;
-            var zoomedTargetPointPos = targetPoint * currentZoom + startTranslate;
-            var endTranslate = vTarget - zoomedTargetPointPos;
-
-
-            if (setDelta)
-            {
-                var transformX = GetCoercedTranslateX(endTranslate.X, currentZoom);
-                var transformY = GetCoercedTranslateY(endTranslate.Y, currentZoom);
-                DoZoomAnimation(currentZoom, transformX, transformY);
-            }
-            else
-            {
-                var transformX = GetCoercedTranslateX(TranslateX + endTranslate.X, currentZoom);
-                var transformY = GetCoercedTranslateY(TranslateY + endTranslate.Y, currentZoom);
-                DoZoomAnimation(currentZoom, transformX, transformY);
-            }
-            Mode = ZoomControlModes.Custom;
-        }
-
-        /*private void FakeZoom()
-        {
-            var startZoom = Zoom;
-            var currentZoom = startZoom;
-            currentZoom = Math.Max(MinZoom, Math.Min(MaxZoom, currentZoom));
-
-            var startTranslate = new Vector(TranslateX, TranslateY);
-
-            var v = (OrigoPosition - OrigoPosition);
-            var vTarget = (OrigoPosition - OrigoPosition);
-
-            var targetPoint = (v - startTranslate) / startZoom;
-            var zoomedTargetPointPos = targetPoint * currentZoom + startTranslate;
-            var endTranslate = vTarget - zoomedTargetPointPos;
-
-            var transformX = GetCoercedTranslateX(TranslateX + endTranslate.X, currentZoom);
-            var transformY = GetCoercedTranslateY(TranslateY + endTranslate.Y, currentZoom);
-            DoZoomAnimation(currentZoom, transformX, transformY);
-        }*/
-
-        public override void OnApplyTemplate()
-        {
-            base.OnApplyTemplate();
-            AttachToVisualTree();
-
-            if (DesignerProperties.GetIsInDesignMode(this))
-            {
-                ViewFinder?.SetCurrentValue(VisibilityProperty, Visibility.Collapsed);
-                return;
-            }
-
-            //get the presenter, and initialize
-            Presenter = GetTemplateChild(PART_PRESENTER) as ZoomContentPresenter;
-            if (Presenter != null)
-            {
-                Presenter.SizeChanged -= Presenter_SizeChanged;
-                Presenter.ContentSizeChanged -= Presenter_ContentSizeChanged;
-                Presenter.SizeChanged += Presenter_SizeChanged;
-                Presenter.ContentSizeChanged += Presenter_ContentSizeChanged;
-            }
-            if (Mode == ZoomControlModes.Fill)
-                DoZoomToFill();
-        }
-
-        private void Presenter_ContentSizeChanged(object sender, Size newSize)
-        {
-            if (Mode == ZoomControlModes.Fill)
-                DoZoomToFill();
-        }
-
-        private void Presenter_SizeChanged(object sender, SizeChangedEventArgs e)
-        {
-            UpdateViewport();
-            if (Mode == ZoomControlModes.Fill)
-                DoZoomToFill();
-        }
-
-        public event PropertyChangedEventHandler? PropertyChanged;
-        public void OnPropertyChanged(string name)
-        {
-            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
+    }
+
+    private void OnDrag(DragDeltaEventArgs e)
+    {
+        /* Point relativePosition = _relativePosition;
+         double scale = this.Scale;
+         Point newPosition = relativePosition + (this.ContentOffset * scale) + new Vector(e.HorizontalChange * scale, e.VerticalChange * scale);*/
+        var dd = new Vector(e.HorizontalChange * Zoom * _viewboxFactor, e.VerticalChange * Zoom * _viewboxFactor);
+        TranslateX += dd.X;
+        TranslateY += dd.Y;
+        UpdateViewport();
+    }
+
+    #endregion
+
+    #region Updates & Refreshes
+
+    private void OnSizeChanged(object sender, SizeChangedEventArgs e)
+    {
+        // when the size is changing, the viewbox factor must be updated before updating the view
+        UpdateViewboxFactor();
+    }
+
+    //private Rect _prevAreaSize;
+    internal void UpdateViewport()
+    {
+        // if we haven't attached to the visual tree yet or we don't have content, just return
+        if (ContentVisual == null || _viewFinderDisplay == null)
+            return;
+
+        var size = IsContentTrackable ? TrackableContent!.ContentSize : new Rect(0,0, ContentVisual.DesiredSize.Width, ContentVisual.DesiredSize.Height);
+        if (double.IsInfinity(size.X) || double.IsInfinity(size.Y)) return;
+
+        // calculate the current viewport
+        var viewport =
+            new Rect(
+                TranslatePoint(new Point(0, 0), ContentVisual),
+                TranslatePoint(new Point(ActualWidth, ActualHeight), ContentVisual));
+        viewport.X -= size.X; 
+        viewport.Y -= size.Y;
+
+
+        // if the viewport has changed, set the Viewport dependency property
+        if (!DoubleHelper.AreVirtuallyEqual(viewport, Viewport))
+        {
+            SetValue(ViewportPropertyKey, viewport);
+        }
+
+        if (viewport.IsEmpty)
+            _viewFinderDisplay.ViewportRect = viewport;
+        else
+        {
+            // adjust the viewport from the coordinate space of the Content element
+            // to the coordinate space of the view finder display panel
+            var scale = _viewFinderDisplay.Scale;// *_viewboxFactor;
+            _viewFinderDisplay.ViewportRect = new Rect(viewport.Left * scale, viewport.Top * scale, Math.Max(0.0, viewport.Width * scale), Math.Max(0.0, viewport.Height * scale));
         }
     }
 
-    public delegate void ValueChangedEventArgs(object sender, DependencyPropertyChangedEventArgs args);
+    private void UpdateViewFinderDisplayContentBounds()
+    {
+        if (ContentVisual == null || _viewFinderDisplay == null || _viewFinderDisplay.Visibility == Visibility.Collapsed)
+            return;
+
+        /*if (DesignerProperties.GetIsInDesignMode(this))
+        {
+            _viewFinderDisplay.ContentBounds = new Rect(new Size(100, 100));
+            return;
+        }*/
+
+        UpdateViewboxFactor();
+            
+        // ensure the display panel has a size
+        var contentSize = IsContentTrackable ? TrackableContent!.ContentSize.Size : ContentVisual.DesiredSize;
+        if (contentSize.IsEmpty || double.IsInfinity(contentSize.Width))
+            contentSize = new Size(1, 1);
+        var viewFinderSize = _viewFinderDisplay.AvailableSize;
+        if (viewFinderSize.IsEmpty || double.IsInfinity(viewFinderSize.Width))
+            viewFinderSize = new Size(1,1);
+        if (viewFinderSize.Width > 0d && DoubleHelper.AreVirtuallyEqual(viewFinderSize.Height, 0d))
+        {
+            // update height to accomodate width, while keeping a ratio equal to the actual content
+            viewFinderSize = new Size(viewFinderSize.Width, Math.Max(0, contentSize.Height * viewFinderSize.Width / contentSize.Width));
+        }
+        else if (viewFinderSize.Height > 0d && DoubleHelper.AreVirtuallyEqual(viewFinderSize.Width, 0d))
+        {
+            // update width to accomodate height, while keeping a ratio equal to the actual content
+            viewFinderSize = new Size(Math.Max(0, contentSize.Width * viewFinderSize.Height / contentSize.Height), viewFinderSize.Width);
+        }
+
+        // determine the scale of the view finder display panel
+        var aspectX = viewFinderSize.Width / contentSize.Width;
+        var aspectY = viewFinderSize.Height / contentSize.Height;
+        var scale = aspectX < aspectY ? aspectX : aspectY;
+        if (double.IsInfinity(scale) || double.IsNaN(scale)) scale = 1d;
+        if (DesignerProperties.GetIsInDesignMode(this)) scale = 0.8;
+
+        // determine the rect of the VisualBrush
+        var vbWidth = contentSize.Width * scale;
+        var vbHeight = contentSize.Height * scale;
+
+        // set the ContentBounds and Scale properties on the view finder display panel
+        _viewFinderDisplay.Scale = scale;
+        _viewFinderDisplay.ContentBounds = new Rect(new Size(Math.Max(0, vbWidth), Math.Max(0, vbHeight)));
+    }
+
+    private void UpdateViewboxFactor()
+    {
+        if (ContentVisual == null) return;
+        var contentWidth = ActualWidth;
+        var trueContentWidth = IsContentTrackable ? TrackableContent!.ContentSize.Width : ContentVisual.DesiredSize.Width;
+        if (contentWidth <=1  || trueContentWidth <= 1) _viewboxFactor = 1d;
+        else _viewboxFactor = contentWidth / trueContentWidth;
+    }
+    #endregion
+
+    #endregion
+
+    #region Properties
+
+    /// <summary>
+    /// Gets or sets if zoom animation is enabled. Default value is True.
+    /// </summary>
+    public virtual bool IsAnimationEnabled { get; set; } = true;
+
+    /// <summary>
+    /// Use Ctrl key to zoom with mouse wheel or without it. Default value is True.
+    /// </summary>
+    public bool UseCtrlForMouseWheel { get; set; } = true;
+
+    /// <summary>
+    /// Gets or sets mousewheel zooming mode. Positional: depend on mouse position. Absolute: center area. Default value is Positional.
+    /// </summary>
+    public MouseWheelZoomingMode MouseWheelZoomingMode { get; set; }
+
+    /// <summary>
+    /// Fires when area has been selected using SelectionModifiers 
+    /// </summary>
+    public event AreaSelectedEventHandler? AreaSelected;
+
+    private void OnAreaSelected(Rect selection)
+    {
+        AreaSelected?.Invoke(this, new AreaSelectedEventArgs(selection));
+    }
+
+    public static readonly DependencyProperty AnimationLengthProperty =
+        DependencyProperty.Register(nameof(AnimationLength), typeof(TimeSpan), typeof(ZoomControl),
+            new PropertyMetadata(TimeSpan.FromMilliseconds(500)));
+
+    public static readonly DependencyProperty IsDragSelectByDefaultProperty =
+        DependencyProperty.Register(nameof(IsDragSelectByDefaultProperty), typeof(bool), typeof(ZoomControl), new PropertyMetadata(false));
+
+    public static readonly DependencyProperty ZoomStepProperty =
+        DependencyProperty.Register(nameof(ZoomStep), typeof(double), typeof(ZoomControl),
+            new PropertyMetadata(5.0));
+
+    public static readonly DependencyProperty MaxZoomProperty =
+        DependencyProperty.Register(nameof(MaxZoom), typeof(double), typeof(ZoomControl), new PropertyMetadata(100.0));
+
+    public static readonly DependencyProperty MinZoomProperty =
+        DependencyProperty.Register(nameof(MinZoom), typeof(double), typeof(ZoomControl), new PropertyMetadata(0.01));
+
+    public static readonly DependencyProperty ModeProperty =
+        DependencyProperty.Register(nameof(Mode), typeof(ZoomControlModes), typeof(ZoomControl),
+            new PropertyMetadata(ZoomControlModes.Custom, Mode_PropertyChanged));
+
+    private static void Mode_PropertyChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
+    {
+        var zc = (ZoomControl)d;
+        var mode = (ZoomControlModes)e.NewValue;
+        switch (mode)
+        {
+            case ZoomControlModes.Fill:
+                zc.DoZoomToFill();
+                break;
+            case ZoomControlModes.Original:
+                zc.DoZoomToOriginal();
+                break;
+            case ZoomControlModes.Custom:
+                break;
+            default:
+                throw new ArgumentOutOfRangeException();
+        }
+    }
+
+    public static readonly DependencyProperty ModifierModeProperty =
+        DependencyProperty.Register(nameof(ModifierMode), typeof(ZoomViewModifierMode), typeof(ZoomControl),
+            new PropertyMetadata(ZoomViewModifierMode.None));
+
+    #region TranslateX TranslateY
+    public static readonly DependencyProperty TranslateXProperty =
+        DependencyProperty.Register(nameof(TranslateX), typeof(double), typeof(ZoomControl),
+            new PropertyMetadata(0.0, TranslateX_PropertyChanged, TranslateX_Coerce));
+
+    public static readonly DependencyProperty TranslateYProperty =
+        DependencyProperty.Register(nameof(TranslateY), typeof(double), typeof(ZoomControl),
+            new PropertyMetadata(0.0, TranslateY_PropertyChanged, TranslateY_Coerce));
+
+    private static object TranslateX_Coerce(DependencyObject d, object basevalue)
+    {
+        var zc = (ZoomControl)d;
+        return zc.GetCoercedTranslateX((double)basevalue, zc.Zoom);
+    }
+
+    private double GetCoercedTranslateX(double baseValue, double zoom)
+    {
+        return _presenter == null ? 0.0 : baseValue;
+    }
+
+    private static object TranslateY_Coerce(DependencyObject d, object basevalue)
+    {
+        var zc = (ZoomControl)d;
+        return zc.GetCoercedTranslateY((double)basevalue, zc.Zoom);
+    }
+
+    private double GetCoercedTranslateY(double baseValue, double zoom)
+    {
+        return _presenter == null ? 0.0 : baseValue;
+    }
+
+    private static void TranslateX_PropertyChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
+    {
+        var zc = (ZoomControl)d;
+        if (zc._translateTransform == null)
+            return;
+        zc._translateTransform.X = (double)e.NewValue;
+        if (!zc._isZooming)
+            zc.Mode = ZoomControlModes.Custom;
+        zc.OnPropertyChanged(nameof(Presenter));
+        zc.Presenter?.OnPropertyChanged(nameof(RenderTransform));
+    }
+
+    private static void TranslateY_PropertyChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
+    {
+        var zc = (ZoomControl)d;
+        if (zc._translateTransform == null)
+            return;
+        zc._translateTransform.Y = (double)e.NewValue;
+        if (!zc._isZooming)
+            zc.Mode = ZoomControlModes.Custom;
+        zc.OnPropertyChanged(nameof(Presenter));
+        zc.Presenter?.OnPropertyChanged(nameof(RenderTransform));
+
+    }
+
+    #endregion
+
+    public static readonly DependencyProperty ZoomBoxBackgroundProperty =
+        DependencyProperty.Register(nameof(ZoomBoxBackground), typeof(Brush), typeof(ZoomControl),
+            new PropertyMetadata(null));
+
+
+    public static readonly DependencyProperty ZoomBoxBorderBrushProperty =
+        DependencyProperty.Register(nameof(ZoomBoxBorderBrush), typeof(Brush), typeof(ZoomControl),
+            new PropertyMetadata(null));
+
+
+    public static readonly DependencyProperty ZoomBoxBorderThicknessProperty =
+        DependencyProperty.Register(nameof(ZoomBoxBorderThickness), typeof(Thickness), typeof(ZoomControl),
+            new PropertyMetadata(null));
+
+
+    public static readonly DependencyProperty ZoomBoxOpacityProperty =
+        DependencyProperty.Register(nameof(ZoomBoxOpacity), typeof(double), typeof(ZoomControl),
+            new PropertyMetadata(0.5));
+
+
+    public static readonly DependencyProperty ZoomBoxProperty =
+        DependencyProperty.Register(nameof(ZoomBox), typeof(Rect), typeof(ZoomControl),
+            new PropertyMetadata(new Rect()));
+
+    public static readonly DependencyProperty ZoomSensitivityProperty =
+        DependencyProperty.Register(nameof(ZoomSensitivity), typeof(double), typeof(ZoomControl),
+            new PropertyMetadata(100.0));
+
+    #region Zoom
+    public static readonly DependencyProperty ZoomProperty =
+        DependencyProperty.Register(nameof(Zoom), typeof(double), typeof(ZoomControl),
+            new PropertyMetadata(1.0, Zoom_PropertyChanged));
+
+    private static void Zoom_PropertyChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
+    {
+        var zc = (ZoomControl)d;
+        zc.HookBeforeZoomChanging();
+
+        if (zc._scaleTransform == null)
+            return;
+
+        var zoom = (double)e.NewValue;
+        zc._scaleTransform.ScaleX = zoom;
+        zc._scaleTransform.ScaleY = zoom;
+        if (!zc._isZooming)
+        {
+            var delta = (double)e.NewValue / (double)e.OldValue;
+            zc.TranslateX *= delta;
+            zc.TranslateY *= delta;
+            zc.Mode = ZoomControlModes.Custom;
+        }
+        zc.OnPropertyChanged(nameof(Presenter));
+        zc.Presenter?.OnPropertyChanged(nameof(RenderTransform));
+        zc.OnPropertyChanged(nameof(Zoom));
+        zc.UpdateViewport();
+        zc.HookAfterZoomChanging();
+    }
+    #endregion
+
+    private Point _mouseDownPos;
+    private ZoomContentPresenter? _presenter;
+
+    /// <summary>
+    /// Applied to the presenter.
+    /// </summary>
+    private ScaleTransform? _scaleTransform;
+    private Vector _startTranslate;
+    private TransformGroup? _transformGroup;
+
+    /// <summary>
+    /// Applied to the scrollviewer.
+    /// </summary>
+    private TranslateTransform? _translateTransform;
+
+    private bool _isZooming;
+
+    public Brush ZoomBoxBackground
+    {
+        get => (Brush)GetValue(ZoomBoxBackgroundProperty);
+        set => SetValue(ZoomBoxBackgroundProperty, value);
+    }
+
+    public Brush ZoomBoxBorderBrush
+    {
+        get => (Brush)GetValue(ZoomBoxBorderBrushProperty);
+        set => SetValue(ZoomBoxBorderBrushProperty, value);
+    }
+
+    public Thickness ZoomBoxBorderThickness
+    {
+        get => (Thickness)GetValue(ZoomBoxBorderThicknessProperty);
+        set => SetValue(ZoomBoxBorderThicknessProperty, value);
+    }
+
+    public double ZoomBoxOpacity
+    {
+        get => (double)GetValue(ZoomBoxOpacityProperty);
+        set => SetValue(ZoomBoxOpacityProperty, value);
+    }
+
+    public Rect ZoomBox
+    {
+        get => (Rect)GetValue(ZoomBoxProperty);
+        set => SetValue(ZoomBoxProperty, value);
+    }
+
+    /// <summary>
+    /// Gets origo (area center) position
+    /// </summary>
+    public Point OrigoPosition => new(ActualWidth / 2, ActualHeight / 2);
+
+    /// <summary>
+    /// Gets or sets translation value for X property
+    /// </summary>
+    public double TranslateX
+    {
+        get 
+        {
+            var value = (double)GetValue(TranslateXProperty);
+            return double.IsNaN(value) ? 0 : value; 
+        }
+        set
+        {
+            BeginAnimation(TranslateXProperty, null);
+            SetValue(TranslateXProperty, value);
+        }
+    }
+
+    /// <summary>
+    /// Gets or sets translation value for Y property
+    /// </summary>
+    public double TranslateY
+    {
+        get {
+            var value = (double)GetValue(TranslateYProperty);
+            return double.IsNaN(value) ? 0 : value;
+        }
+        set
+        {
+            BeginAnimation(TranslateYProperty, null);
+            SetValue(TranslateYProperty, value);
+        }
+    }
+
+    /// <summary>
+    /// Gets or sets animation length
+    /// </summary>
+    public TimeSpan AnimationLength
+    {
+        get => (TimeSpan)GetValue(AnimationLengthProperty);
+        set => SetValue(AnimationLengthProperty, value);
+    }
+
+    /// <summary>
+    /// Gets or sets the value indicating whether to drag select without keyboard modifiers to the mouse button.
+    /// </summary>
+    public bool IsDragSelectByDefault
+    {
+        get => (bool)GetValue(IsDragSelectByDefaultProperty);
+        set => SetValue(IsDragSelectByDefaultProperty, value);
+    }
+
+    /// <summary>
+    /// Minimum zoom distance (Zoom out). Default value is 0.01
+    /// </summary>
+    public double MinZoom
+    {
+        get => (double)GetValue(MinZoomProperty);
+        set => SetValue(MinZoomProperty, value);
+    }
+
+    /// <summary>
+    /// Maximum zoom distance (Zoom in). DEfault value is 100
+    /// </summary>
+    public double MaxZoom
+    {
+        get => (double)GetValue(MaxZoomProperty);
+        set => SetValue(MaxZoomProperty, value);
+    }
+
+    /// <summary>
+    /// Gets or sets zoom step value (how fast the zoom can do). Default value is 5.
+    /// </summary>
+    public virtual double ZoomStep
+    {
+        get => (double)GetValue(ZoomStepProperty);
+        set => SetValue(ZoomStepProperty, value);
+    }
+
+    /// <summary>
+    /// Gets or sets zoom sensitivity. Lower the value - smoother the zoom. Default value is 100.
+    /// </summary>
+    public virtual double ZoomSensitivity
+    {
+        get => (double)GetValue(ZoomSensitivityProperty);
+        set => SetValue(ZoomSensitivityProperty, value);
+    }
+
+    /// <summary>
+    /// Gets or sets current zoom value
+    /// </summary>
+    public double Zoom
+    {
+        get => (double)GetValue(ZoomProperty);
+        set
+        {
+            if (value == (double)GetValue(ZoomProperty))
+                return;
+            BeginAnimation(ZoomProperty, null);
+            SetValue(ZoomProperty, value);
+        }
+    }
+
+    /// <summary>
+    /// Gets content object as UIElement
+    /// </summary>
+    public UIElement? ContentVisual => Content as UIElement;
+
+    /// <summary>
+    /// Gets content as ITrackableContent like GraphArea
+    /// </summary>
+    public ITrackableContent? TrackableContent => Content as ITrackableContent;
+
+    private bool _isga;
+    /// <summary>
+    /// Is loaded content represents ITrackableContent object
+    /// </summary>
+    public bool IsContentTrackable => _isga;
+
+
+    public ZoomContentPresenter? Presenter
+    {
+        get => _presenter;
+        set
+        {
+            _presenter = value;
+            if (_presenter == null)
+                return;
+
+            //add the ScaleTransform to the presenter
+            _transformGroup = new TransformGroup();
+            _scaleTransform = new ScaleTransform();
+            _translateTransform = new TranslateTransform();
+            _transformGroup.Children.Add(_scaleTransform);
+            _transformGroup.Children.Add(_translateTransform);
+            _presenter.RenderTransform = _transformGroup;
+            _presenter.RenderTransformOrigin = new Point(0.5, 0.5);
+        }
+    }
+
+    public UIElement PresenterVisual => Presenter!;
+
+    /// <summary>
+    /// Gets or sets the active modifier mode.
+    /// </summary>
+    public ZoomViewModifierMode ModifierMode
+    {
+        get => (ZoomViewModifierMode)GetValue(ModifierModeProperty);
+        set => SetValue(ModifierModeProperty, value);
+    }
+
+    /// <summary>
+    /// Gets or sets the mode of the zoom control.
+    /// </summary>
+    public ZoomControlModes Mode
+    {
+        get => (ZoomControlModes)GetValue(ModeProperty);
+        set => SetValue(ModeProperty, value);
+    }
+
+    public RoutedUICommand CommandZoomIn = new("Zoom In", "ZoomIn", typeof(ZoomControl));
+    public RoutedUICommand CommandZoomOut = new("Zoom Out", "ZoomOut", typeof(ZoomControl));
+    public RoutedUICommand CommandPanLeft = new("Pan Left", "PanLeft", typeof(ZoomControl));
+    public RoutedUICommand CommandPanRight = new("Pan Right", "PanRight", typeof(ZoomControl));
+    public RoutedUICommand CommandPanTop = new("Pan Top", "PanTop", typeof(ZoomControl));
+    public RoutedUICommand CommandPanBottom = new("Pan Bottom", "PanBottom", typeof(ZoomControl));
+
+    #endregion
+
+    #region Hooks
+    protected virtual void HookBeforeZoomChanging() { }
+    protected virtual void HookAfterZoomChanging() { }
+    #endregion
+
+    /// <summary>
+    /// Gets or sets manual pan sensivity in points when using keys to pan zoomed content. Default value is 10.
+    /// </summary>
+    public double ManualPanSensivity { get; set; } = 10d;
+
+    static ZoomControl()
+    {
+        DefaultStyleKeyProperty.OverrideMetadata(typeof(ZoomControl), new FrameworkPropertyMetadata(typeof(ZoomControl)));
+    }
+
+    public ZoomControl()
+    {
+        if (DesignerProperties.GetIsInDesignMode(this))
+        {           
+        }
+        else
+        {
+            PreviewMouseWheel += ZoomControl_MouseWheel;
+            PreviewMouseDown += ZoomControl_PreviewMouseDown;
+            MouseDown += ZoomControl_MouseDown;
+            MouseUp += ZoomControl_MouseUp;
+
+            AddHandler(SizeChangedEvent, new SizeChangedEventHandler(OnSizeChanged), true);
+
+            BindCommand(Refocus, RefocusView, CanRefocusView);
+            BindCommand(Center, CenterContent);
+            BindCommand(Fill, FillToBounds);
+            BindCommand(ResetZoom, ExecuteResetZoom);
+            BindCommand(CommandZoomIn, (_, _) => MouseWheelAction(ZoomSensitivity, OrigoPosition));
+            BindCommand(CommandZoomOut, (_, _) => MouseWheelAction(-ZoomSensitivity, OrigoPosition));
+            BindCommand(CommandPanLeft, (_, _) => PanAction(new Vector(TranslateX, TranslateY), new Vector(ManualPanSensivity, 0)));
+            BindCommand(CommandPanRight, (_, _) => PanAction(new Vector(TranslateX, TranslateY), new Vector(-ManualPanSensivity, 0)));
+            BindCommand(CommandPanTop, (_, _) => PanAction(new Vector(TranslateX, TranslateY), new Vector(0, ManualPanSensivity)));
+            BindCommand(CommandPanBottom, (_, _) => PanAction(new Vector(TranslateX, TranslateY), new Vector(0, -ManualPanSensivity)));
+            BindKey(CommandPanLeft, Key.Left, ModifierKeys.None);
+            BindKey(CommandPanRight, Key.Right, ModifierKeys.None);
+            BindKey(CommandPanTop, Key.Up, ModifierKeys.None);
+            BindKey(CommandPanBottom, Key.Down, ModifierKeys.None);
+            BindKey(CommandZoomIn, Key.Up, ModifierKeys.Control);
+            BindKey(CommandZoomOut, Key.Down, ModifierKeys.Control);
+        }
+    }
+
+    protected void BindCommand(RoutedUICommand command, ExecutedRoutedEventHandler execute, CanExecuteRoutedEventHandler? canExecute = null)
+    {
+        var binding = new CommandBinding(command, execute, canExecute);
+        CommandBindings.Add(binding);
+    }
+
+    /// <summary>
+    /// Resets all key bindings for the control
+    /// </summary>
+    public void ResetKeyBindings()
+    {
+        InputBindings.Clear();
+    }
+
+    /// <summary>
+    /// Binds specified key to command
+    /// </summary>
+    /// <param name="command">Command to execute on key press</param>
+    /// <param name="key">Key</param>
+    /// <param name="modifier">Key modifier</param>
+    public void BindKey(RoutedUICommand command, Key key, ModifierKeys modifier)
+    {
+        InputBindings.Add(new KeyBinding(command, key, modifier));
+    }
+
+    #region ContentChanged
+    protected override void OnContentChanged(object oldContent, object newContent)
+    {
+        if (DesignerProperties.GetIsInDesignMode(this)) return;
+
+        if (oldContent is ITrackableContent old) old.ContentSizeChanged -= Content_ContentSizeChanged;
+        if (newContent != null)
+        {
+            if (newContent is ITrackableContent newc)
+            {
+                _isga = true;
+                newc.ContentSizeChanged += Content_ContentSizeChanged;
+            }
+            else _isga = false;
+            if(Template != null)
+                OnApplyTemplate();
+            UpdateViewFinderDisplayContentBounds();
+            UpdateViewport();
+        }
+
+        base.OnContentChanged(oldContent, newContent);
+    }
+
+    private void Content_ContentSizeChanged(object sender, ContentSizeChangedEventArgs e)
+    {
+        UpdateViewFinderDisplayContentBounds();
+        UpdateViewport();
+    }
+    #endregion
+
+    #region Mouse controls
+
+    /// <summary>
+    /// Converts screen rectangle area to rectangle in content coordinate space according to scale and translation
+    /// </summary>
+    /// <param name="screenRectangle">Screen rectangle data</param>
+    public Rect ToContentRectangle(Rect screenRectangle)
+    {
+        var tl = TranslatePoint(new Point(screenRectangle.X, screenRectangle.Y), ContentVisual);
+        //var br = TranslatePoint(new Point(screenRectangle.Right, screenRectangle.Bottom), ContentVisual);
+        //return new Rect(tl.X, tl.Y, Math.Abs(Math.Abs(br.X) - Math.Abs(tl.X)), Math.Abs(Math.Abs(br.Y) - Math.Abs(tl.Y)));
+
+        if (screenRectangle == Rect.Empty) return Rect.Empty;
+        return new Rect(tl.X, tl.Y, screenRectangle.Width / Zoom, screenRectangle.Height / Zoom);
+    }
+
+    private void ZoomControl_MouseWheel(object sender, MouseWheelEventArgs e)
+    {
+        var handle = ((Keyboard.Modifiers & ModifierKeys.Control) > 0 && ModifierMode == ZoomViewModifierMode.None) || UseCtrlForMouseWheel;
+        if (!handle) return;
+
+        e.Handled = true;
+        MouseWheelAction(e);
+        _clickTrack = false;
+    }
+
+    private void MouseWheelAction(MouseWheelEventArgs e)
+    {
+        MouseWheelAction(e.Delta, e.GetPosition(this));
+    }
+
+    /// <summary>
+    /// Defines action on mousewheel
+    /// </summary>
+    /// <param name="delta">Delta from mousewheel args</param>
+    /// <param name="mousePosition">Mouse position</param>
+    protected virtual void MouseWheelAction(double delta, Point mousePosition)
+    {
+        var origoPosition = OrigoPosition;
+        DoZoom(
+            Math.Max(1 / ZoomStep, Math.Min(ZoomStep, Math.Abs(delta) / 10000.0 * ZoomSensitivity + 1)),
+            delta < 0 ? -1 : 1,
+            origoPosition,
+            MouseWheelZoomingMode == MouseWheelZoomingMode.Absolute ? origoPosition : mousePosition,
+            MouseWheelZoomingMode == MouseWheelZoomingMode.Absolute ? origoPosition : mousePosition);
+    }
+
+    private void ZoomControl_MouseUp(object sender, MouseButtonEventArgs e)
+    {
+        if (_clickTrack)
+        {
+            RaiseEvent(new RoutedEventArgs(ClickEvent, this));
+            _clickTrack = false;
+            e.Handled = true;
+        }
+
+        switch (ModifierMode)
+        {
+            case ZoomViewModifierMode.None:
+                return;
+            case ZoomViewModifierMode.Pan:
+                break;
+            case ZoomViewModifierMode.ZoomIn:
+                break;
+            case ZoomViewModifierMode.ZoomOut:
+                break;
+            case ZoomViewModifierMode.ZoomBox:
+                if (_startedAsAreaSelection)
+                {
+                    _startedAsAreaSelection = false;
+
+                    OnAreaSelected(ToContentRectangle(ZoomBox));
+                    ZoomBox = new Rect();
+                }
+                else ZoomToInternal(ZoomBox);
+                break;
+            default:
+                throw new ArgumentOutOfRangeException();
+        }
+
+        ModifierMode = ZoomViewModifierMode.None;
+        PreviewMouseMove -= ZoomControl_PreviewMouseMove;
+        ReleaseMouseCapture();
+    }
+
+    protected virtual void PanAction(Vector initialPoint, Vector diff)
+    {
+        var translate = initialPoint + diff;
+        TranslateX = translate.X;
+        TranslateY = translate.Y;
+        UpdateViewport();
+    }
+
+    private void ZoomControl_PreviewMouseMove(object sender, MouseEventArgs e)
+    {
+        if (_clickTrack)
+        {
+            var curPoint = Mouse.GetPosition(this);
+
+            if (curPoint != _mouseDownPos)
+                _clickTrack = false;
+        }
+
+        switch (ModifierMode)
+        {
+            case ZoomViewModifierMode.None:
+                return;
+            case ZoomViewModifierMode.Pan:
+                PanAction(_startTranslate, e.GetPosition(this) - _mouseDownPos);
+                break;
+            case ZoomViewModifierMode.ZoomIn:
+                break;
+            case ZoomViewModifierMode.ZoomOut:
+                break;
+            case ZoomViewModifierMode.ZoomBox:
+                var pos = e.GetPosition(this);
+                var x = Math.Min(_mouseDownPos.X, pos.X);
+                var y = Math.Min(_mouseDownPos.Y, pos.Y);
+                var sizeX = Math.Abs(_mouseDownPos.X - pos.X);
+                var sizeY = Math.Abs(_mouseDownPos.Y - pos.Y);
+                ZoomBox = new Rect(x, y, sizeX, sizeY);
+                break;
+            default:
+                throw new ArgumentOutOfRangeException();
+        }
+    }
+
+    private void ZoomControl_MouseDown(object sender, MouseButtonEventArgs e)
+    {
+        OnMouseDown(e, false);
+    }
+
+    private void ZoomControl_PreviewMouseDown(object sender, MouseButtonEventArgs e)
+    {
+        OnMouseDown(e, true);
+        e.Handled = false;
+    }
+
+    private bool _clickTrack;
+    private bool _startedAsAreaSelection;
+    private void OnMouseDown(MouseButtonEventArgs e, bool isPreview)
+    {
+        if (ModifierMode != ZoomViewModifierMode.None)
+            return;
+        _startedAsAreaSelection = false;
+        switch (Keyboard.Modifiers)
+        {
+            case ModifierKeys.None:
+                if (!isPreview)
+                {
+                    if (IsDragSelectByDefault)
+                    {
+                        _startedAsAreaSelection = true;
+                        ModifierMode = ZoomViewModifierMode.ZoomBox;
+                    }
+                    else
+                    {
+                        ModifierMode = ZoomViewModifierMode.Pan;
+                    }
+                }
+                break;
+            case ModifierKeys.Alt | ModifierKeys.Control:
+                _startedAsAreaSelection = true;
+                ModifierMode = ZoomViewModifierMode.ZoomBox;
+                break;
+            case ModifierKeys.Alt:
+                ModifierMode = ZoomViewModifierMode.ZoomBox;
+                break;
+            case ModifierKeys.Control:
+                break;
+            case ModifierKeys.Shift:
+                ModifierMode = ZoomViewModifierMode.Pan;
+                break;
+            case ModifierKeys.Windows:
+                break;
+            default:
+                return;
+        }
+
+        _clickTrack = true;
+        _mouseDownPos = e.GetPosition(this);
+
+        if (ModifierMode == ZoomViewModifierMode.None)
+            return;
+
+        _startTranslate = new Vector(TranslateX, TranslateY);
+        Mouse.Capture(this);
+        PreviewMouseMove += ZoomControl_PreviewMouseMove;
+    }
+
+    public static readonly RoutedEvent ClickEvent = EventManager.RegisterRoutedEvent(nameof(Click), RoutingStrategy.Bubble, typeof(RoutedEventHandler), typeof(ZoomControl));
+    public event RoutedEventHandler Click
+    {
+        add => AddHandler(ClickEvent, value);
+        remove => RemoveHandler(ClickEvent, value);
+    }
+
+    #endregion
+
+    #region Animation
+
+    public event EventHandler? ZoomAnimationCompleted;
+
+    private void OnZoomAnimationCompleted()
+    {
+        ZoomAnimationCompleted?.Invoke(this, EventArgs.Empty);
+    }
+
+    private void DoZoomAnimation(double targetZoom, double transformX, double transformY, bool isZooming = true)
+    {
+        if (targetZoom == 0d && double.IsNaN(transformX) && double.IsNaN(transformY)) return;
+        _isZooming = isZooming;
+        if (!IsAnimationEnabled)
+        {
+            SetCurrentValue(TranslateXProperty, transformX);
+            SetCurrentValue(TranslateYProperty, transformY);
+            SetCurrentValue(ZoomProperty, targetZoom);
+            ZoomCompleted(this, EventArgs.Empty);
+            return;
+        }
+        var duration = new Duration(AnimationLength);
+        var value = (double)GetValue(TranslateXProperty);
+        if (double.IsNaN(value) || double.IsInfinity(value)) SetValue(TranslateXProperty, 0d);
+        value = (double)GetValue(TranslateYProperty);
+        if (double.IsNaN(value) || double.IsInfinity(value)) SetValue(TranslateYProperty, 0d);
+        StartAnimation(TranslateXProperty, transformX, duration);
+        if (double.IsNaN(transformY) || double.IsInfinity(transformY)) transformY = 0;
+        StartAnimation(TranslateYProperty, transformY, duration);
+        if (double.IsNaN(targetZoom) || double.IsInfinity(targetZoom)) targetZoom = 1;
+        StartAnimation(ZoomProperty, targetZoom, duration);
+    }
+
+    private void StartAnimation(DependencyProperty dp, double toValue, Duration duration)
+    {
+        if (double.IsNaN(toValue) || double.IsInfinity(toValue))
+        {
+            if (dp == ZoomProperty)
+            {
+                _isZooming = false;
+            }
+            return;
+        }
+        var animation = new DoubleAnimation(toValue, duration);
+        Timeline.SetDesiredFrameRate(animation, 30);
+
+        if (dp == ZoomProperty)
+        {
+            _zoomAnimCount++;
+            animation.Completed += ZoomCompleted;
+        }
+        BeginAnimation(dp, animation, HandoffBehavior.Compose);
+    }
+
+    private int _zoomAnimCount;
+
+    private void ZoomCompleted(object? sender, EventArgs e)
+    {
+        _zoomAnimCount--;
+        if (_zoomAnimCount > 0)
+            return;
+        var zoom = Zoom;          
+        BeginAnimation(ZoomProperty, null);
+        SetValue(ZoomProperty, zoom);
+        _isZooming = false;
+        UpdateViewport();
+        OnZoomAnimationCompleted();
+    }
+
+    #endregion
+
+    /// <summary>
+    /// Zoom to rectangle area of the content
+    /// </summary>
+    /// <param name="rectangle">Rectangle area</param>
+    /// <param name="usingContentCoordinates">Sets if content coordinates or screen coordinates was specified</param>
+    public void ZoomToContent(Rect rectangle, bool usingContentCoordinates = true)
+    {
+        //if content isn't UIElement - return
+        if (ContentVisual == null) return;
+        // translate the region from the coordinate space of the content 
+        // to the coordinate space of the content presenter
+        var region = usingContentCoordinates ?
+            new Rect(
+                ContentVisual.TranslatePoint(rectangle.TopLeft, _presenter),
+                ContentVisual.TranslatePoint(rectangle.BottomRight, _presenter)) : rectangle;
+            
+        // calculate actual zoom, which must fit the entire selection 
+        // while maintaining a 1:1 ratio
+        var aspectX = ActualWidth / region.Width;
+        var aspectY = ActualHeight / region.Height;
+        var newRelativeScale = aspectX < aspectY ? aspectX : aspectY;
+        // ensure that the scale value alls within the valid range
+        if (newRelativeScale > MaxZoom)
+            newRelativeScale = MaxZoom;
+        else if (newRelativeScale < MinZoom)
+            newRelativeScale = MinZoom;
+
+        var center = new Point(rectangle.X + rectangle.Width / 2, rectangle.Y + rectangle.Height / 2);
+        var newRelativePosition = new Point((ActualWidth / 2 - center.X) * Zoom, (ActualHeight / 2 - center.Y) * Zoom);
+
+        TranslateX = newRelativePosition.X;
+        TranslateY = newRelativePosition.Y;
+        Zoom = newRelativeScale;
+    }
+
+    /// <summary>
+    /// Zoom to original size
+    /// </summary>
+    public void ZoomToOriginal()
+    {
+        if (Mode == ZoomControlModes.Original)
+            DoZoomToOriginal();
+        else Mode = ZoomControlModes.Original;
+    }
+
+    /// <summary>
+    /// Centers content on the screen
+    /// </summary>
+    public void CenterContent()
+    {
+        if (_presenter == null)
+            return;
+
+        var initialTranslate = GetTrackableTranslate();
+        DoZoomAnimation(Zoom, initialTranslate.X*Zoom, initialTranslate.Y*Zoom);
+    }
+
+    /// <summary>
+    /// Zoom to fill screen area with the content
+    /// </summary>
+    public void ZoomToFill()
+    {
+        if(Mode == ZoomControlModes.Fill)
+            DoZoomToFill();
+        else Mode = ZoomControlModes.Fill;
+    }
+
+    private void ZoomToInternal(Rect rect, bool setDelta = false)
+    {
+        var deltaZoom = Math.Min(ActualWidth / rect.Width, ActualHeight / rect.Height);
+        var startHandlePosition = new Point(rect.X + rect.Width / 2, rect.Y + rect.Height / 2);
+        DoZoom(deltaZoom, 1, OrigoPosition, startHandlePosition, OrigoPosition, setDelta);
+        ZoomBox = new Rect();
+    }
+
+    /// <summary>
+    /// Returns initial translate depending on container graph settings (to deal with optinal new coord system)
+    /// </summary>
+    private Vector GetTrackableTranslate()
+    {
+        if (!IsContentTrackable) return new Vector();
+        return DesignerProperties.GetIsInDesignMode(this) ? GetInitialTranslate(200,100) : GetInitialTranslate(TrackableContent!.ContentSize.Width, TrackableContent.ContentSize.Height, TrackableContent.ContentSize.X, TrackableContent.ContentSize.Y);
+    }
+
+    private void DoZoomToOriginal()
+    {
+        if (_presenter == null)
+            return;
+
+        var initialTranslate = GetTrackableTranslate();
+        DoZoomAnimation(1.0, initialTranslate.X, initialTranslate.Y);
+    }
+
+    private Vector GetInitialTranslate(double contentWidth, double contentHeight, double offsetX = 0, double offsetY = 0)
+    {
+        if (_presenter == null)
+            return new Vector(0.0, 0.0);
+        var w = contentWidth - ActualWidth;
+        var h = contentHeight - ActualHeight;
+        var tX = -(w / 2.0 + offsetX);
+        var tY = -(h / 2.0 + offsetY);
+
+        return new Vector(tX, tY);
+    }
+
+    private void DoZoomToFill()
+    {
+        if (_presenter == null)
+            return;
+        var c = IsContentTrackable ? TrackableContent!.ContentSize.Size : ContentVisual!.DesiredSize;
+        if (c.Width == 0 || double.IsNaN(c.Width) || double.IsInfinity(c.Width)) return;
+
+        var deltaZoom = Math.Min(MaxZoom,Math.Min( ActualWidth / c.Width, ActualHeight / c.Height));
+        var initialTranslate = IsContentTrackable ? GetTrackableTranslate() : GetInitialTranslate(c.Width, c.Height);
+        DoZoomAnimation(deltaZoom, initialTranslate.X * deltaZoom, initialTranslate.Y * deltaZoom);
+    }
+
+    private void DoZoom(double deltaZoom, int mod, Point origoPosition, Point startHandlePosition, Point targetHandlePosition, bool setDelta = false)
+    {
+        var startZoom = Zoom;
+        var currentZoom = setDelta ? deltaZoom : mod == -1 ? startZoom / deltaZoom : startZoom * deltaZoom;
+        currentZoom = Math.Max(MinZoom, Math.Min(MaxZoom, currentZoom));
+
+        var startTranslate = new Vector(TranslateX, TranslateY);
+
+        var v = startHandlePosition - origoPosition;
+        var vTarget = targetHandlePosition - origoPosition;
+
+        var targetPoint = (v - startTranslate) / startZoom;
+        var zoomedTargetPointPos = targetPoint * currentZoom + startTranslate;
+        var endTranslate = vTarget - zoomedTargetPointPos;
+
+
+        if (setDelta)
+        {
+            var transformX = GetCoercedTranslateX(endTranslate.X, currentZoom);
+            var transformY = GetCoercedTranslateY(endTranslate.Y, currentZoom);
+            DoZoomAnimation(currentZoom, transformX, transformY);
+        }
+        else
+        {
+            var transformX = GetCoercedTranslateX(TranslateX + endTranslate.X, currentZoom);
+            var transformY = GetCoercedTranslateY(TranslateY + endTranslate.Y, currentZoom);
+            DoZoomAnimation(currentZoom, transformX, transformY);
+        }
+        Mode = ZoomControlModes.Custom;
+    }
+
+    /*private void FakeZoom()
+    {
+        var startZoom = Zoom;
+        var currentZoom = startZoom;
+        currentZoom = Math.Max(MinZoom, Math.Min(MaxZoom, currentZoom));
+
+        var startTranslate = new Vector(TranslateX, TranslateY);
+
+        var v = (OrigoPosition - OrigoPosition);
+        var vTarget = (OrigoPosition - OrigoPosition);
+
+        var targetPoint = (v - startTranslate) / startZoom;
+        var zoomedTargetPointPos = targetPoint * currentZoom + startTranslate;
+        var endTranslate = vTarget - zoomedTargetPointPos;
+
+        var transformX = GetCoercedTranslateX(TranslateX + endTranslate.X, currentZoom);
+        var transformY = GetCoercedTranslateY(TranslateY + endTranslate.Y, currentZoom);
+        DoZoomAnimation(currentZoom, transformX, transformY);
+    }*/
+
+    public override void OnApplyTemplate()
+    {
+        base.OnApplyTemplate();
+        AttachToVisualTree();
+
+        if (DesignerProperties.GetIsInDesignMode(this))
+        {
+            ViewFinder?.SetCurrentValue(VisibilityProperty, Visibility.Collapsed);
+            return;
+        }
+
+        //get the presenter, and initialize
+        Presenter = GetTemplateChild(PART_PRESENTER) as ZoomContentPresenter;
+        if (Presenter != null)
+        {
+            Presenter.SizeChanged -= Presenter_SizeChanged;
+            Presenter.ContentSizeChanged -= Presenter_ContentSizeChanged;
+            Presenter.SizeChanged += Presenter_SizeChanged;
+            Presenter.ContentSizeChanged += Presenter_ContentSizeChanged;
+        }
+        if (Mode == ZoomControlModes.Fill)
+            DoZoomToFill();
+    }
+
+    private void Presenter_ContentSizeChanged(object sender, Size newSize)
+    {
+        if (Mode == ZoomControlModes.Fill)
+            DoZoomToFill();
+    }
+
+    private void Presenter_SizeChanged(object sender, SizeChangedEventArgs e)
+    {
+        UpdateViewport();
+        if (Mode == ZoomControlModes.Fill)
+            DoZoomToFill();
+    }
+
+    public event PropertyChangedEventHandler? PropertyChanged;
+    public void OnPropertyChanged(string name)
+    {
+        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
+    }
 }
+
+public delegate void ValueChangedEventArgs(object sender, DependencyPropertyChangedEventArgs args);

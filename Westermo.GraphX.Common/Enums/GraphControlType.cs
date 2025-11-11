@@ -1,9 +1,8 @@
-namespace Westermo.GraphX.Common.Enums
+namespace Westermo.GraphX.Common.Enums;
+
+public enum GraphControlType
 {
-    public enum GraphControlType
-    {
-        Vertex,
-        Edge,
-        VertexAndEdge
-    }
+    Vertex,
+    Edge,
+    VertexAndEdge
 }

@@ -1,11 +1,10 @@
-﻿namespace Westermo.GraphX.Controls.Animations
+﻿namespace Westermo.GraphX.Controls.Animations;
+
+/// <summary>
+/// Controls mouse over animation types
+/// </summary>
+public enum MouseOverAnimation
 {
-    /// <summary>
-    /// Controls mouse over animation types
-    /// </summary>
-    public enum MouseOverAnimation
-    {
-        Scale,
-        None
-    }
+    Scale,
+    None
 }

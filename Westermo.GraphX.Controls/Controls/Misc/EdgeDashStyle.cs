@@ -1,11 +1,10 @@
-﻿namespace Westermo.GraphX.Controls
+﻿namespace Westermo.GraphX.Controls;
+
+public enum EdgeDashStyle
 {
-    public enum EdgeDashStyle
-    {
-        Solid,
-        Dash,
-        Dot,
-        DashDot,
-        DashDotDot
-    }
+    Solid,
+    Dash,
+    Dot,
+    DashDot,
+    DashDotDot
 }

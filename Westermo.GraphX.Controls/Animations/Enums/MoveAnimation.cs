@@ -1,12 +1,11 @@
-﻿namespace Westermo.GraphX.Controls.Animations
+﻿namespace Westermo.GraphX.Controls.Animations;
+
+/// <summary>
+/// Vertex move animation types
+/// </summary>
+public enum MoveAnimation
 {
-    /// <summary>
-    /// Vertex move animation types
-    /// </summary>
-    public enum MoveAnimation
-    {
-        Move,
-        Fade,
-        None
-    }
+    Move,
+    Fade,
+    None
 }

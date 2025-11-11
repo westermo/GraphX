@@ -2,22 +2,21 @@
 using System.Collections.Generic;
 using System.Windows.Media.Imaging;
 
-namespace ShowcaseApp.WPF.Models
+namespace ShowcaseApp.WPF.Models;
+
+public static class ImageLoader
 {
-    public static class ImageLoader
+    private static readonly List<BitmapImage> Images = [];
+
+    static ImageLoader()
     {
-        private static readonly List<BitmapImage> Images = [];
+        Images.Add(new BitmapImage(new Uri(@"pack://application:,,,/ShowcaseApp.WPF;component/Assets/circle_red.png", UriKind.Absolute)) { CacheOption = BitmapCacheOption.OnLoad });
+        Images.Add(new BitmapImage(new Uri(@"pack://application:,,,/ShowcaseApp.WPF;component/Assets/circle_blue.png", UriKind.Absolute)) { CacheOption = BitmapCacheOption.OnLoad });
+        Images.Add(new BitmapImage(new Uri(@"pack://application:,,,/ShowcaseApp.WPF;component/Assets/circle_green.png", UriKind.Absolute)) { CacheOption = BitmapCacheOption.OnLoad });
+    }
 
-        static ImageLoader()
-        {
-            Images.Add(new BitmapImage(new Uri(@"pack://application:,,,/ShowcaseApp.WPF;component/Assets/circle_red.png", UriKind.Absolute)) { CacheOption = BitmapCacheOption.OnLoad });
-            Images.Add(new BitmapImage(new Uri(@"pack://application:,,,/ShowcaseApp.WPF;component/Assets/circle_blue.png", UriKind.Absolute)) { CacheOption = BitmapCacheOption.OnLoad });
-            Images.Add(new BitmapImage(new Uri(@"pack://application:,,,/ShowcaseApp.WPF;component/Assets/circle_green.png", UriKind.Absolute)) { CacheOption = BitmapCacheOption.OnLoad });
-        }
-
-        public static BitmapImage GetImageById(int id)
-        {
-            return Images.Count < id ? null : Images[id];
-        }
+    public static BitmapImage GetImageById(int id)
+    {
+        return Images.Count < id ? null : Images[id];
     }
 }

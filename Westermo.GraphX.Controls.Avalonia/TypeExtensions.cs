@@ -1,32 +1,46 @@
 ﻿using Avalonia;
 
-namespace Westermo.GraphX.Controls.Avalonia
+namespace Westermo.GraphX.Controls;
+
+public static class TypeExtensions
 {
-    public static class TypeExtensions
+    extension(Point v)
     {
-        public static Vector ToVector(this Point v)
+        public Vector ToVector()
         {
             return new Vector(v.X, v.Y);
         }
+    }
 
 
-        public static Point ToPoint(this Vector v)
+    extension(Vector v)
+    {
+        public Point ToPoint()
         {
             return new Point(v.X, v.Y);
         }
+    }
 
 
-        public static Point ToAvalonia(this Measure.Point point)
+    extension(Measure.Point point)
+    {
+        public Point ToAvalonia()
         {
             return new Point(point.X, point.Y);
         }
+    }
 
-        public static Point ToAvalonia(this Measure.Vector point)
+    extension(Measure.Vector point)
+    {
+        public Point ToAvalonia()
         {
             return new Point(point.X, point.Y);
         }
+    }
 
-        public static Point[]? ToAvalonia(this Measure.Point[]? points)
+    extension(Measure.Point[]? points)
+    {
+        public Point[]? ToAvalonia()
         {
             if (points == null) return null;
             var list = new Point[points.Length];
@@ -34,8 +48,11 @@ namespace Westermo.GraphX.Controls.Avalonia
                 list[i] = points[i].ToAvalonia();
             return list;
         }
+    }
 
-        public static Measure.Point[]? ToGraphX(this Point[]? points)
+    extension(Point[]? points)
+    {
+        public Measure.Point[]? ToGraphX()
         {
             if (points == null) return null;
             var list = new Measure.Point[points.Length];
@@ -43,75 +60,90 @@ namespace Westermo.GraphX.Controls.Avalonia
                 list[i] = points[i].ToGraphX();
             return list;
         }
+    }
 
-        public static Size Size(this Rect rect)
+    extension(Rect rect)
+    {
+        public Size Size()
         {
             return new Size(rect.Width, rect.Height);
         }
 
-        public static Measure.Point ToGraphX(this Point point)
-        {
-            return new Measure.Point(point.X, point.Y);
-        }
-
-        public static Measure.Size ToGraphX(this Size point)
-        {
-            return new Measure.Size(point.Width, point.Height);
-        }
-
-        public static Measure.Rect ToGraphX(this Rect rect)
+        public Measure.Rect ToGraphX()
         {
             return new Measure.Rect(rect.X, rect.Y, rect.Width, rect.Height);
         }
 
-        public static Rect ToAvalonia(this Measure.Rect rect)
-        {
-            return new Rect(rect.Left, rect.Top, rect.Width, rect.Height);
-        }
-
-        public static Point Center(this Rect rect)
+        public Point Center()
         {
             return new Point(rect.X + rect.Width * .5, rect.Y + rect.Height * .5);
         }
 
-        public static Point Subtract(this Point pt, Point pt2)
-        {
-            return new Point(pt.X - pt2.X, pt.Y - pt2.Y);
-        }
-
-        public static Point Div(this Point pt, double value)
-        {
-            return new Point(pt.X / value, pt.Y / value);
-        }
-
-        public static Point Mul(this Point pt, double value)
-        {
-            return new Point(pt.X * value, pt.Y * value);
-        }
-
-        public static Point Sum(this Point pt, Point pt2)
-        {
-            return new Point(pt.X + pt2.X, pt.Y + pt2.Y);
-        }
-
-        public static Point TopLeft(this Rect rect)
+        public Point TopLeft()
         {
             return new Point(rect.Left, rect.Top);
         }
 
-        public static Point TopRight(this Rect rect)
+        public Point TopRight()
         {
             return new Point(rect.Right, rect.Top);
         }
 
-        public static Point BottomRight(this Rect rect)
+        public Point BottomRight()
         {
             return new Point(rect.Right, rect.Bottom);
         }
 
-        public static Point BottomLeft(this Rect rect)
+        public Point BottomLeft()
         {
             return new Point(rect.Left, rect.Bottom);
+        }
+    }
+
+    extension(Point point)
+    {
+        public Measure.Point ToGraphX()
+        {
+            return new Measure.Point(point.X, point.Y);
+        }
+    }
+
+    extension(Size point)
+    {
+        public Measure.Size ToGraphX()
+        {
+            return new Measure.Size(point.Width, point.Height);
+        }
+    }
+
+    extension(Measure.Rect rect)
+    {
+        public Rect ToAvalonia()
+        {
+            return new Rect(rect.Left, rect.Top, rect.Width, rect.Height);
+        }
+    }
+
+    extension(Point pt)
+    {
+        public Point Subtract(Point pt2)
+        {
+            return new Point(pt.X - pt2.X, pt.Y - pt2.Y);
+        }
+
+        public Point Div(double value)
+        {
+            return new Point(pt.X / value, pt.Y / value);
+        }
+
+        public Point Mul(double value)
+        {
+            return new Point(pt.X * value, pt.Y * value);
+        }
+
+        public Point Sum(Point pt2)
+        {
+            return new Point(pt.X + pt2.X, pt.Y + pt2.Y);
         }
     }
 }
