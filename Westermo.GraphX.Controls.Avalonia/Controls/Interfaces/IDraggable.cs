@@ -1,7 +1,7 @@
 ﻿using Avalonia;
 using Avalonia.Input;
 
-namespace Westermo.GraphX.Controls.Avalonia.Controls.Interfaces;
+namespace Westermo.GraphX.Controls.Controls.Interfaces;
 
 public interface IDraggable : IInputElement
 {

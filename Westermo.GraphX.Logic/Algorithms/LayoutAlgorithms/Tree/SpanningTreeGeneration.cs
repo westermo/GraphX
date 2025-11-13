@@ -1,8 +1,7 @@
-﻿namespace Westermo.GraphX.Logic.Algorithms.LayoutAlgorithms
+﻿namespace Westermo.GraphX.Logic.Algorithms.LayoutAlgorithms;
+
+public enum SpanningTreeGeneration
 {
-    public enum SpanningTreeGeneration
-    {
-        BFS, 
-        DFS
-    }
+    BFS, 
+    DFS
 }

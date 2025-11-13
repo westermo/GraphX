@@ -1,12 +1,11 @@
-﻿namespace Westermo.GraphX.Common.Enums
+﻿namespace Westermo.GraphX.Common.Enums;
+
+public enum EventType
 {
-    public enum EventType
-    {
-        MouseMove,
-        MouseClick,
-        MouseEnter,
-        MouseLeave,
-        MouseDoubleClick,
-        PositionChangeNotify
-    }
+    MouseMove,
+    MouseClick,
+    MouseEnter,
+    MouseLeave,
+    MouseDoubleClick,
+    PositionChangeNotify
 }

@@ -16,7 +16,7 @@
 
 using Avalonia;
 
-namespace Westermo.GraphX.Controls.Avalonia;
+namespace Westermo.GraphX.Controls.Controls.ZoomControl.Helpers;
 
 public static class RectHelper
 {

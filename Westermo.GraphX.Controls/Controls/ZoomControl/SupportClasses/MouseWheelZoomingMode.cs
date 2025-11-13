@@ -1,8 +1,7 @@
-﻿namespace Westermo.GraphX.Controls
+﻿namespace Westermo.GraphX.Controls;
+
+public enum MouseWheelZoomingMode
 {
-    public enum MouseWheelZoomingMode
-    {
-        Positional = 0,
-        Absolute
-    }
+    Positional = 0,
+    Absolute
 }

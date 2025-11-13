@@ -3,9 +3,10 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
-             xmlns:avalonia="clr-namespace:Westermo.GraphX.Controls.Avalonia;assembly=Westermo.GraphX.Controls.Avalonia"
+             
              xmlns:exampleModels="clr-namespace:ShowcaseApp.Avalonia.ExampleModels"
              xmlns:pages1="clr-namespace:ShowcaseApp.Avalonia.Pages"
+             xmlns:zoomControl="clr-namespace:Westermo.GraphX.Controls.Controls.ZoomControl;assembly=Westermo.GraphX.Controls.Avalonia"
              mc:Ignorable="d"
              d:DesignHeight="300" d:DesignWidth="600"
              x:DataType="pages1:EdgeRoutingGraph">
@@ -34,9 +35,9 @@
 
         <Border Grid.Row="1" Grid.Column="0" BorderBrush="{DynamicResource ButtonBorder}" BorderThickness="1"
                 Margin="2">
-            <avalonia:ZoomControl x:Name="erg_zoomctrl" Margin="-5,0,5,0">
+            <zoomControl:ZoomControl x:Name="erg_zoomctrl" Margin="-5,0,5,0">
                 <exampleModels:GraphAreaExample x:Name="erg_Area" />
-            </avalonia:ZoomControl>
+            </zoomControl:ZoomControl>
         </Border>
 
         <DockPanel Grid.Column="2" Grid.Row="0" Grid.RowSpan="2">

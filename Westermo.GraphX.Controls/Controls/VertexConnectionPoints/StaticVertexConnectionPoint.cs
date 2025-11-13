@@ -2,102 +2,108 @@
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
-
 using Westermo.GraphX.Common.Enums;
 
-namespace Westermo.GraphX.Controls
+namespace Westermo.GraphX.Controls;
+
+public class StaticVertexConnectionPoint : ContentControl, IVertexConnectionPoint
 {
-    public class StaticVertexConnectionPoint : ContentControl, IVertexConnectionPoint
+    #region Common part
+
+    /// <summary>
+    /// Connector identifier
+    /// </summary>
+    public int Id
     {
-        #region Common part
+        get => (int)GetValue(IdProperty);
+        set => SetValue(IdProperty, value);
+    }
 
-        /// <summary>
-        /// Connector identifier
-        /// </summary>
-        public int Id { get; set; }
+    public static readonly DependencyProperty IdProperty = DependencyProperty.Register(nameof(Id), typeof(int),
+        typeof(StaticVertexConnectionPoint), new PropertyMetadata(0));
 
-        public static readonly DependencyProperty ShapeProperty =
-            DependencyProperty.Register(nameof(Shape),
-                          typeof(VertexShape),
-                          typeof(StaticVertexConnectionPoint),
-                          new PropertyMetadata(VertexShape.Circle));
+    public static readonly DependencyProperty ShapeProperty =
+        DependencyProperty.Register(nameof(Shape),
+            typeof(VertexShape),
+            typeof(StaticVertexConnectionPoint),
+            new PropertyMetadata(VertexShape.Circle));
 
-        /// <summary>
-        /// Gets or sets shape form for connection point (affects math calculations for edge end placement)
-        /// </summary>
-        public VertexShape Shape
+    /// <summary>
+    /// Gets or sets shape form for connection point (affects math calculations for edge end placement)
+    /// </summary>
+    public VertexShape Shape
+    {
+        get => (VertexShape)GetValue(ShapeProperty);
+        set => SetValue(ShapeProperty, value);
+    }
+
+    private Rect _rectangularSize;
+
+    public Rect RectangularSize
+    {
+        get
         {
-            get => (VertexShape)GetValue(ShapeProperty);
-            set => SetValue(ShapeProperty, value);
+            if (_rectangularSize == Rect.Empty)
+                UpdateLayout();
+            return _rectangularSize;
+        }
+        private set => _rectangularSize = value;
+    }
+
+    public void Show()
+    {
+        SetCurrentValue(VisibilityProperty, Visibility.Visible);
+    }
+
+    public void Hide()
+    {
+        SetCurrentValue(VisibilityProperty, Visibility.Collapsed);
+    }
+
+    private static VertexControl? GetVertexControl(DependencyObject? parent)
+    {
+        while (parent != null)
+        {
+            if (parent is VertexControl control) return control;
+            parent = VisualTreeHelper.GetParent(parent);
         }
 
-        private Rect _rectangularSize;
+        return null;
+    }
 
-        public Rect RectangularSize
-        {
-            get
-            {
-                if (_rectangularSize == Rect.Empty)
-                    UpdateLayout();
-                return _rectangularSize;
-            }
-            private set => _rectangularSize = value;
-        }
+    #endregion Common part
 
-        public void Show()
-        {
-            SetCurrentValue(VisibilityProperty, Visibility.Visible);
-        }
+    private VertexControl? _vertexControl;
+    protected VertexControl? VertexControl => _vertexControl ??= GetVertexControl(GetParent());
 
-        public void Hide()
-        {
-            SetCurrentValue(VisibilityProperty, Visibility.Collapsed);
-        }
+    public StaticVertexConnectionPoint()
+    {
+        RenderTransformOrigin = new Point(.5, .5);
+        VerticalAlignment = VerticalAlignment.Center;
+        HorizontalAlignment = HorizontalAlignment.Center;
+        LayoutUpdated += OnLayoutUpdated;
+    }
 
-        private static VertexControl? GetVertexControl(DependencyObject? parent)
-        {
-            while (parent != null)
-            {
-                if (parent is VertexControl control) return control;
-                parent = VisualTreeHelper.GetParent(parent);
-            }
-            return null;
-        }
+    public void Update()
+    {
+        UpdateLayout();
+    }
 
-        #endregion Common part
+    public void Dispose()
+    {
+        _vertexControl = null;
+    }
 
-        private VertexControl? _vertexControl;
-        protected VertexControl? VertexControl => _vertexControl ??= GetVertexControl(GetParent());
+    public DependencyObject GetParent()
+    {
+        return VisualParent;
+    }
 
-        public StaticVertexConnectionPoint()
-        {
-            RenderTransformOrigin = new Point(.5, .5);
-            VerticalAlignment = VerticalAlignment.Center;
-            HorizontalAlignment = HorizontalAlignment.Center;
-            LayoutUpdated += OnLayoutUpdated;
-        }
-
-        public void Update()
-        {
-            UpdateLayout();
-        }
-
-        public void Dispose()
-        {
-            _vertexControl = null;
-        }
-
-        public DependencyObject GetParent()
-        {
-            return VisualParent;
-        }
-
-        protected virtual void OnLayoutUpdated(object? sender, EventArgs e)
-        {
-            var position = TranslatePoint(new Point(), VertexControl);
-            var vPos = VertexControl!.GetPosition();
-            position = new Point(position.X + vPos.X, position.Y + vPos.Y);
-            RectangularSize = new Rect(position, new Size(ActualWidth, ActualHeight));
-        }
+    protected virtual void OnLayoutUpdated(object? sender, EventArgs e)
+    {
+        var position = TranslatePoint(new Point(), VertexControl);
+        var vPos = VertexControl!.GetPosition();
+        position = new Point(position.X + vPos.X, position.Y + vPos.Y);
+        RectangularSize = new Rect(position, new Size(ActualWidth, ActualHeight));
     }
 }

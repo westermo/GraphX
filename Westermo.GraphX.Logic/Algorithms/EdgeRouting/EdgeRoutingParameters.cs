@@ -1,33 +1,32 @@
 ﻿using Westermo.GraphX.Common.Interfaces;
 
-namespace Westermo.GraphX.Logic.Algorithms.EdgeRouting
+namespace Westermo.GraphX.Logic.Algorithms.EdgeRouting;
+
+/// <summary>
+/// Base class for edge routing parameters
+/// </summary>
+public class EdgeRoutingParameters : IEdgeRoutingParameters
 {
 	/// <summary>
-	/// Base class for edge routing parameters
+	/// Clone parameters
 	/// </summary>
-	public class EdgeRoutingParameters : IEdgeRoutingParameters
+	/// <returns></returns>
+	public object Clone()
 	{
-		/// <summary>
-		/// Clone parameters
-		/// </summary>
-		/// <returns></returns>
-		public object Clone()
-		{
-			return MemberwiseClone();
-		}
-
-        /// <summary>
-        /// Calls OnPropertyChange event notification
-        /// </summary>
-        /// <param name="propertyName"></param>
-        protected void NotifyChanged( string propertyName )
-		{
-		    PropertyChanged?.Invoke( this, new System.ComponentModel.PropertyChangedEventArgs( propertyName ) );
-		}
-
-	    /// <summary>
-	    /// PropertyChange event notification
-	    /// </summary>
-	    protected event System.ComponentModel.PropertyChangedEventHandler PropertyChanged;
+		return MemberwiseClone();
 	}
+
+	/// <summary>
+	/// Calls OnPropertyChange event notification
+	/// </summary>
+	/// <param name="propertyName"></param>
+	protected void NotifyChanged( string propertyName )
+	{
+		PropertyChanged?.Invoke( this, new System.ComponentModel.PropertyChangedEventArgs( propertyName ) );
+	}
+
+	/// <summary>
+	/// PropertyChange event notification
+	/// </summary>
+	protected event System.ComponentModel.PropertyChangedEventHandler PropertyChanged;
 }

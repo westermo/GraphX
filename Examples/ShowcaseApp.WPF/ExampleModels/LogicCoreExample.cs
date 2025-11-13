@@ -1,9 +1,8 @@
 ﻿using Westermo.GraphX.Logic.Models;
 using QuikGraph;
 
-namespace ShowcaseApp.WPF
+namespace ShowcaseApp.WPF;
+
+public class LogicCoreExample : GXLogicCore<DataVertex, DataEdge, BidirectionalGraph<DataVertex, DataEdge>>
 {
-    public class LogicCoreExample : GXLogicCore<DataVertex, DataEdge, BidirectionalGraph<DataVertex, DataEdge>>
-    {
-    }
 }

@@ -1,9 +1,8 @@
-﻿namespace Westermo.GraphX.Controls.Avalonia
+﻿namespace Westermo.GraphX.Controls.Controls.Misc;
+
+/// <summary>
+/// Interface that implements means to notify on objetc position changes (implemented to track attached property changes parent -> child)
+/// </summary>
+public interface IPositionChangeNotify
 {
-    /// <summary>
-    /// Interface that implements means to notify on objetc position changes (implemented to track attached property changes parent -> child)
-    /// </summary>
-    public interface IPositionChangeNotify
-    {
-    }
 }

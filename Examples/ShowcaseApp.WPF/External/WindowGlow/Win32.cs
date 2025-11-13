@@ -2,70 +2,69 @@
 using System.Runtime.InteropServices;
 using System.Windows;
 
-namespace ShowcaseApp.WPF.External.WindowGlow
+namespace ShowcaseApp.WPF.External.WindowGlow;
+
+internal enum HT
 {
-    internal enum HT
+    BORDER = 18,
+    BOTTOM = 15,
+    BOTTOMLEFT = 16,
+    BOTTOMRIGHT = 17,
+    LEFT = 10,
+    RIGHT = 11,
+    TOP = 12,
+    TOPLEFT = 13,
+    TOPRIGHT = 14
+}
+
+internal enum WM
+{
+    NCLBUTTONDOWN = 0x00A1,
+    MOUSEACTIVATE = 0x0021,
+    LBUTTONDOWN = 0x0201,
+    NCHITTEST = 0x0084
+}
+
+internal enum GWL
+{
+    EXSTYLE = -20
+}
+
+internal enum WS_EX
+{
+    TOOLWINDOW = 0x00000080
+}
+
+internal class NativeMethods
+{
+    public static Func<short, short, IntPtr> MAKELPARAM = ( wLow, wHigh ) =>
     {
-        BORDER = 18,
-        BOTTOM = 15,
-        BOTTOMLEFT = 16,
-        BOTTOMRIGHT = 17,
-        LEFT = 10,
-        RIGHT = 11,
-        TOP = 12,
-        TOPLEFT = 13,
-        TOPRIGHT = 14
-    }
+        return new IntPtr( ( wHigh << 16 ) | ( wLow & 0xFFFF ) );
+    };
 
-    internal enum WM
+    public static Func<IntPtr, Point> LPARAMTOPOINT = lParam =>
     {
-        NCLBUTTONDOWN = 0x00A1,
-        MOUSEACTIVATE = 0x0021,
-        LBUTTONDOWN = 0x0201,
-        NCHITTEST = 0x0084
-    }
+        return new Point( (int)lParam & 0xFFFF, ( (int)lParam >> 16 ) & 0xFFFF );
+    };
 
-    internal enum GWL
-    {
-        EXSTYLE = -20
-    }
+    [DllImport("user32.dll", SetLastError = true)]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    public static extern bool SendNotifyMessage( IntPtr hWnd, int msg, IntPtr wParam, IntPtr lParam );
 
-    internal enum WS_EX
-    {
-        TOOLWINDOW = 0x00000080
-    }
+    [DllImport("user32.dll", SetLastError = true)]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    public static extern bool GetCursorPos( out POINT lpPoint );
 
-    internal class NativeMethods
-    {
-        public static Func<short, short, IntPtr> MAKELPARAM = ( wLow, wHigh ) =>
-        {
-            return new IntPtr( ( wHigh << 16 ) | ( wLow & 0xFFFF ) );
-        };
+    [DllImport("user32.dll", SetLastError = true)]
+    public static extern int GetWindowLong( IntPtr hWnd, int nIndex );
 
-        public static Func<IntPtr, Point> LPARAMTOPOINT = lParam =>
-        {
-            return new Point( (int)lParam & 0xFFFF, ( (int)lParam >> 16 ) & 0xFFFF );
-        };
+    [DllImport("user32.dll", SetLastError = true)]
+    public static extern int SetWindowLong( IntPtr hWnd, int nIndex, int dwNewLong );
+}
 
-        [DllImport("user32.dll", SetLastError = true)]
-        [return: MarshalAs(UnmanagedType.Bool)]
-        public static extern bool SendNotifyMessage( IntPtr hWnd, int msg, IntPtr wParam, IntPtr lParam );
-
-        [DllImport("user32.dll", SetLastError = true)]
-        [return: MarshalAs(UnmanagedType.Bool)]
-        public static extern bool GetCursorPos( out POINT lpPoint );
-
-        [DllImport("user32.dll", SetLastError = true)]
-        public static extern int GetWindowLong( IntPtr hWnd, int nIndex );
-
-        [DllImport("user32.dll", SetLastError = true)]
-        public static extern int SetWindowLong( IntPtr hWnd, int nIndex, int dwNewLong );
-    }
-
-    [StructLayout(LayoutKind.Sequential)]
-    internal struct POINT
-    {
-        public int x;
-        public int y;
-    }
+[StructLayout(LayoutKind.Sequential)]
+internal struct POINT
+{
+    public int x;
+    public int y;
 }

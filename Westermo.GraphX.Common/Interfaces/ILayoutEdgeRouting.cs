@@ -1,18 +1,17 @@
 using System.Collections.Generic;
 using Westermo.GraphX.Measure;
 
-namespace Westermo.GraphX.Common.Interfaces
-{
+namespace Westermo.GraphX.Common.Interfaces;
+
+/// <summary>
+/// If added to layout algorithm specifies that it uses it's own edge routing and thus
+/// should ignore edge routing algorithm
+/// </summary>
+/// <typeparam name="TEdge">Edge type</typeparam>
+public interface ILayoutEdgeRouting<TEdge>
+{       
     /// <summary>
-    /// If added to layout algorithm specifies that it uses it's own edge routing and thus
-    /// should ignore edge routing algorithm
+    /// Get resulting edge routes collection 
     /// </summary>
-    /// <typeparam name="TEdge">Edge type</typeparam>
-    public interface ILayoutEdgeRouting<TEdge>
-    {       
-        /// <summary>
-        /// Get resulting edge routes collection 
-        /// </summary>
-        IDictionary<TEdge, Point[]> EdgeRoutes { get; }
-    }
+    IDictionary<TEdge, Point[]> EdgeRoutes { get; }
 }

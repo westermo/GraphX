@@ -34,7 +34,7 @@ jobs:
       - name: Setup dotnet ${{ matrix.dotnet-version }}
         uses: actions/setup-dotnet@v4
         with:
-          dotnet-version: "9.0.x"
+          dotnet-version: "10.0.x"
       - run: |
           If (('${{ github.event_name }}' -eq 'release') -and ('${{ github.ref_name }}' -match '^(?<version>\d+\.\d+\.\d+)')) {
             Add-Content -Path $Env:GITHUB_ENV -Value "VERSION=$($Matches.version)"
@@ -62,7 +62,7 @@ jobs:
       - name: Setup dotnet ${{ matrix.dotnet-version }}
         uses: actions/setup-dotnet@v4
         with:
-          dotnet-version: "9.0.x"
+          dotnet-version: "10.0.x"
       - uses: actions/download-artifact@v4
         with:
           name: nuget

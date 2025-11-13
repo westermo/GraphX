@@ -1,20 +1,19 @@
-﻿namespace Westermo.GraphX.Controls.Avalonia
+﻿namespace Westermo.GraphX.Controls.Controls.ZoomControl.SupportClasses;
+
+public enum ZoomControlModes
 {
-    public enum ZoomControlModes
-    {
-        /// <summary>
-        /// The content should fill the given space.
-        /// </summary>
-        Fill,
+    /// <summary>
+    /// The content should fill the given space.
+    /// </summary>
+    Fill,
 
-        /// <summary>
-        /// The content will be represented in its original size.
-        /// </summary>
-        Original,
+    /// <summary>
+    /// The content will be represented in its original size.
+    /// </summary>
+    Original,
 
-        /// <summary>
-        /// The content will be zoomed with a custom percent.
-        /// </summary>
-        Custom
-    }
+    /// <summary>
+    /// The content will be zoomed with a custom percent.
+    /// </summary>
+    Custom
 }

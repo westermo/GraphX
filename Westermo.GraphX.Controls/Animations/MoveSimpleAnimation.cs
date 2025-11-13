@@ -2,67 +2,66 @@
 using System.Windows.Controls;
 using System.Windows.Media.Animation;
 
-namespace Westermo.GraphX.Controls.Animations
+namespace Westermo.GraphX.Controls.Animations;
+
+public sealed class MoveSimpleAnimation : MoveAnimationBase
 {
-    public sealed class MoveSimpleAnimation : MoveAnimationBase
+    public MoveSimpleAnimation(TimeSpan duration)
     {
-        public MoveSimpleAnimation(TimeSpan duration)
-        {
-            Duration = duration;
-        }
+        Duration = duration;
+    }
 
-        private int _maxCount;
-        private int _counter;
+    private int _maxCount;
+    private int _counter;
 
-        public override void Cleanup()
-        {
-        }
+    public override void Cleanup()
+    {
+    }
 
-        public override void RunVertexAnimation()
+    public override void RunVertexAnimation()
+    {
+        _maxCount = VertexStorage.Count * 2;
+        _counter = 0;
+        foreach (var item in VertexStorage)
         {
-            _maxCount = VertexStorage.Count * 2;
-            _counter = 0;
-            foreach (var item in VertexStorage)
+            var control = (Control) item.Key;
+            var from = GraphAreaBase.GetX(control);
+            from = double.IsNaN(from) ? 0.0 : from;
+
+            //create the animation for the horizontal position
+            var animationX = new DoubleAnimation(
+                from,
+                item.Value.X,
+                Duration,
+                FillBehavior.HoldEnd);
+            Timeline.SetDesiredFrameRate(animationX, 30);
+            animationX.Completed += (_, _) =>
             {
-                var control = (Control) item.Key;
-                var from = GraphAreaBase.GetX(control);
-                from = double.IsNaN(from) ? 0.0 : from;
-
-                //create the animation for the horizontal position
-                var animationX = new DoubleAnimation(
-                    from,
-                    item.Value.X,
-                    Duration,
-                    FillBehavior.HoldEnd);
-                Timeline.SetDesiredFrameRate(animationX, 30);
-                animationX.Completed += (_, _) =>
-                {
-                    control.BeginAnimation(GraphAreaBase.XProperty, null);
-                    control.SetValue(GraphAreaBase.XProperty, item.Value.X);
-                    _counter++;
-                    if (_counter == _maxCount) OnCompleted();
-                };
-                control.BeginAnimation(GraphAreaBase.XProperty, animationX, HandoffBehavior.Compose);
+                control.BeginAnimation(GraphAreaBase.XProperty, null);
+                control.SetValue(GraphAreaBase.XProperty, item.Value.X);
+                _counter++;
+                if (_counter == _maxCount) OnCompleted();
+            };
+            control.BeginAnimation(GraphAreaBase.XProperty, animationX, HandoffBehavior.Compose);
 
 
-                from = GraphAreaBase.GetY(control);
-                from = double.IsNaN(from) ? 0.0 : from;
+            from = GraphAreaBase.GetY(control);
+            from = double.IsNaN(from) ? 0.0 : from;
 
-                //create an animation for the vertical position
-                var animationY = new DoubleAnimation(
-                    from, item.Value.Y,
-                    Duration,
-                    FillBehavior.HoldEnd);
-                Timeline.SetDesiredFrameRate(animationY, 30);
-                animationY.Completed += (_, _) =>
-                {
-                    control.BeginAnimation(GraphAreaBase.YProperty, null);
-                    control.SetValue(GraphAreaBase.YProperty, item.Value.Y);
-                    _counter++;
-                    if (_counter == _maxCount) OnCompleted();
-                };
-                control.BeginAnimation(GraphAreaBase.YProperty, animationY, HandoffBehavior.Compose);
-            }
+            //create an animation for the vertical position
+            var animationY = new DoubleAnimation(
+                from, item.Value.Y,
+                Duration,
+                FillBehavior.HoldEnd);
+            Timeline.SetDesiredFrameRate(animationY, 30);
+            animationY.Completed += (_, _) =>
+            {
+                control.BeginAnimation(GraphAreaBase.YProperty, null);
+                control.SetValue(GraphAreaBase.YProperty, item.Value.Y);
+                _counter++;
+                if (_counter == _maxCount) OnCompleted();
+            };
+            control.BeginAnimation(GraphAreaBase.YProperty, animationY, HandoffBehavior.Compose);
         }
     }
 }

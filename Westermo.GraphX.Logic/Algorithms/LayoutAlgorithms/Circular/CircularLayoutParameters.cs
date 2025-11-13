@@ -1,7 +1,6 @@
-﻿namespace Westermo.GraphX.Logic.Algorithms.LayoutAlgorithms
+﻿namespace Westermo.GraphX.Logic.Algorithms.LayoutAlgorithms;
+
+public class CircularLayoutParameters : LayoutParametersBase
 {
-	public class CircularLayoutParameters : LayoutParametersBase
-	{
 		
-	}
 }

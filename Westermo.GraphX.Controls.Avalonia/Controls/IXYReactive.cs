@@ -1,6 +1,6 @@
 ﻿using Avalonia;
 
-namespace Westermo.GraphX.Controls.Avalonia;
+namespace Westermo.GraphX.Controls.Controls;
 
 public interface IXYReactive
 {

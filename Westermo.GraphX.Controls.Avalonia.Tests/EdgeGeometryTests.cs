@@ -3,6 +3,7 @@ using QuikGraph;
 using Westermo.GraphX.Common.Models;
 using Westermo.GraphX.Logic.Models;
 using Avalonia.Media;
+using Westermo.GraphX.Controls.Controls;
 
 namespace Westermo.GraphX.Controls.Avalonia.Tests;
 

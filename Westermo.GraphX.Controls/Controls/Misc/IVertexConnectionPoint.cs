@@ -2,26 +2,25 @@
 using System.Windows;
 using Westermo.GraphX.Common.Enums;
 
-namespace Westermo.GraphX.Controls
+namespace Westermo.GraphX.Controls;
+
+public interface IVertexConnectionPoint : IDisposable
 {
-    public interface IVertexConnectionPoint : IDisposable
-    {
-        /// <summary>
-        /// Connector identifier
-        /// </summary>
-        int Id { get; }
+    /// <summary>
+    /// Connector identifier
+    /// </summary>
+    int Id { get; }
 
-        /// <summary>
-        /// Gets or sets shape form for connection point (affects math calculations for edge end placement)
-        /// </summary>
-        VertexShape Shape { get; set; }
+    /// <summary>
+    /// Gets or sets shape form for connection point (affects math calculations for edge end placement)
+    /// </summary>
+    VertexShape Shape { get; set; }
 
-        void Hide();
-        void Show();
+    void Hide();
+    void Show();
 
-        Rect RectangularSize { get; }
+    Rect RectangularSize { get; }
 
-        void Update();
-        DependencyObject GetParent();
-    }
+    void Update();
+    DependencyObject GetParent();
 }

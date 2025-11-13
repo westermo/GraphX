@@ -1,8 +1,12 @@
 ﻿<Styles
     xmlns="https://github.com/avaloniaui"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-    xmlns:avalonia="clr-namespace:Westermo.GraphX.Controls.Avalonia;assembly=Westermo.GraphX.Controls.Avalonia"
-    xmlns:pages="clr-namespace:ShowcaseApp.Avalonia.Pages">
+    
+    xmlns:pages="clr-namespace:ShowcaseApp.Avalonia.Pages"
+    xmlns:edgePointers="clr-namespace:Westermo.GraphX.Controls.Controls.EdgePointers;assembly=Westermo.GraphX.Controls.Avalonia"
+    xmlns:controls="clr-namespace:Westermo.GraphX.Controls.Controls;assembly=Westermo.GraphX.Controls.Avalonia"
+    xmlns:behaviours="clr-namespace:Westermo.GraphX.Controls.Behaviours;assembly=Westermo.GraphX.Controls.Avalonia"
+    xmlns:edgeLabels="clr-namespace:Westermo.GraphX.Controls.Controls.EdgeLabels;assembly=Westermo.GraphX.Controls.Avalonia">
     <Styles.Resources>
         <!-- Provide a control theme for FunnyEdgeControl (EdgeControl subclass) so it has a template -->
         <ControlTheme x:Key="{x:Type pages:FunnyEdgeControl}" TargetType="pages:FunnyEdgeControl">
@@ -13,20 +17,20 @@
                             <Path Stroke="{TemplateBinding Foreground}"
                                   StrokeThickness="{TemplateBinding StrokeThickness}"
                                   x:Name="PART_edgePath" />
-                            <avalonia:DefaultEdgePointer NeedRotation="true" x:Name="PART_EdgePointerForTarget">
+                            <edgePointers:DefaultEdgePointer NeedRotation="true" x:Name="PART_EdgePointerForTarget">
                                 <Path Data="M0,0.5 L1,1 1,0"
                                       Fill="{TemplateBinding Foreground}"
                                       Stretch="Uniform"
                                       Width="10"
                                       Height="10" />
-                            </avalonia:DefaultEdgePointer>
-                            <avalonia:DefaultEdgePointer NeedRotation="true" x:Name="PART_EdgePointerForSource">
+                            </edgePointers:DefaultEdgePointer>
+                            <edgePointers:DefaultEdgePointer NeedRotation="true" x:Name="PART_EdgePointerForSource">
                                 <Path Data="M0,0.5 L1,1 1,0"
                                       Fill="{TemplateBinding Foreground}"
                                       Stretch="Uniform"
                                       Width="10"
                                       Height="10" />
-                            </avalonia:DefaultEdgePointer>
+                            </edgePointers:DefaultEdgePointer>
                             <Path x:Name="PART_SelfLoopedEdge"
                                   Width="10"
                                   Height="10"
@@ -46,16 +50,16 @@
     </Styles.Resources>
 
     <!-- VERTEX CONTROL -->
-    <Style Selector="avalonia|VertexControl">
+    <Style Selector="controls|VertexControl">
         <Setter Property="Background" Value="Transparent" />
         <Setter Property="VertexShape" Value="Circle" />
         <!-- VERTEX DRAGGING CONTROL -->
-        <Setter Property="avalonia:DragBehaviour.IsDragEnabled" Value="True" />
-        <Setter Property="avalonia:DragBehaviour.UpdateEdgesOnMove" Value="True" />
+        <Setter Property="behaviours:DragBehaviour.IsDragEnabled" Value="True" />
+        <Setter Property="behaviours:DragBehaviour.UpdateEdgesOnMove" Value="True" />
     </Style>
 
     <!-- EDGE CONTROL -->
-    <Style Selector=":is(avalonia|EdgeControl)">
+    <Style Selector=":is(controls|EdgeControl)">
         <Setter Property="MinWidth" Value="1" />
         <Setter Property="MinHeight" Value="1" />
         <Setter Property="StrokeThickness" Value="5" />
@@ -66,7 +70,7 @@
 
 
     <!--EDGE LABLE CONTROL -->
-    <Style Selector="avalonia|AttachableEdgeLabelControl">
+    <Style Selector="edgeLabels|AttachableEdgeLabelControl">
         <Setter Property="DisplayForSelfLoopedEdges" Value="False" />
     </Style>
 </Styles>

@@ -1,211 +1,210 @@
-﻿namespace Westermo.GraphX.Logic.Algorithms.LayoutAlgorithms
-{
-	public enum PositionCalculationMethodTypes
-	{
-		/// <summary>
-		/// Barycenters of the vertices computed based on the 
-		/// indexes of the vertices.
-		/// </summary>
-		IndexBased,
+﻿namespace Westermo.GraphX.Logic.Algorithms.LayoutAlgorithms;
 
-		/// <summary>
-		/// Barycenters of the vertices computed based on
-		/// the vertex sizes and positions.
-		/// </summary>
-		PositionBased
+public enum PositionCalculationMethodTypes
+{
+	/// <summary>
+	/// Barycenters of the vertices computed based on the 
+	/// indexes of the vertices.
+	/// </summary>
+	IndexBased,
+
+	/// <summary>
+	/// Barycenters of the vertices computed based on
+	/// the vertex sizes and positions.
+	/// </summary>
+	PositionBased
+}
+
+/// <summary>
+/// Parameters of the Sugiyama layout.
+/// </summary>
+public class SugiyamaLayoutParameters : LayoutParametersBase
+{
+	#region Helper Types
+	public enum PromptingConstraintType
+	{
+		Compulsory,
+		Recommendation,
+		Irrelevant
+	}
+	#endregion
+
+	internal float  Horizontalgap = 10;
+	internal float  Verticalgap = 10;
+	private bool    _dirty = true;
+	private int     _phase1IterationCount = 8;
+	private int     _phase2IterationCount = 5;
+	private bool    _minimizeHierarchicalEdgeLong = true;
+	private PositionCalculationMethodTypes _positionCalculationMethod = PositionCalculationMethodTypes.PositionBased;
+	private bool	_simplify = true;
+	private bool	_baryCenteringByPosition;
+	private PromptingConstraintType _promptingConstraint = PromptingConstraintType.Recommendation;
+	private float _maxWidth = float.MaxValue;
+
+	/// <summary>
+	/// Minimal horizontal gap between the vertices.
+	/// </summary>
+	public float HorizontalGap
+	{
+		get => Horizontalgap;
+		set
+		{
+			if ( Horizontalgap != value )
+			{
+				Horizontalgap = value;
+				NotifyPropertyChanged( "HorizontalGap" );
+			}
+		}
+	}
+
+	public float MaxWidth
+	{
+		get => _maxWidth;
+		set
+		{
+			if ( _maxWidth != value )
+			{
+				_maxWidth = value;
+				NotifyPropertyChanged( "MaxWidth" );
+			}
+		}
+	}
+
+	public bool BaryCenteringByPosition
+	{
+		get => _baryCenteringByPosition;
+		set
+		{
+			if ( _baryCenteringByPosition != value )
+			{
+				_baryCenteringByPosition = value;
+				NotifyPropertyChanged( "BaryCenteringByPosition" );
+			}
+		}
 	}
 
 	/// <summary>
-	/// Parameters of the Sugiyama layout.
+	/// Minimal vertical gap between the vertices.
 	/// </summary>
-	public class SugiyamaLayoutParameters : LayoutParametersBase
+	public float VerticalGap
 	{
-		#region Helper Types
-		public enum PromptingConstraintType
+		get => Verticalgap;
+		set
 		{
-			Compulsory,
-			Recommendation,
-			Irrelevant
-		}
-		#endregion
-
-		internal float  Horizontalgap = 10;
-		internal float  Verticalgap = 10;
-		private bool    _dirty = true;
-		private int     _phase1IterationCount = 8;
-		private int     _phase2IterationCount = 5;
-		private bool    _minimizeHierarchicalEdgeLong = true;
-		private PositionCalculationMethodTypes _positionCalculationMethod = PositionCalculationMethodTypes.PositionBased;
-		private bool	_simplify = true;
-		private bool	_baryCenteringByPosition;
-		private PromptingConstraintType _promptingConstraint = PromptingConstraintType.Recommendation;
-		private float _maxWidth = float.MaxValue;
-
-		/// <summary>
-		/// Minimal horizontal gap between the vertices.
-		/// </summary>
-		public float HorizontalGap
-		{
-			get => Horizontalgap;
-			set
+			if ( Verticalgap != value )
 			{
-				if ( Horizontalgap != value )
-				{
-					Horizontalgap = value;
-					NotifyPropertyChanged( "HorizontalGap" );
-				}
+				Verticalgap = value;
+				NotifyPropertyChanged( "VerticalGap" );
 			}
 		}
+	}
 
-		public float MaxWidth
+	/// <summary>
+	/// Start with a dirty round (allow to increase the number of the edge-crossings, but 
+	/// try to put the vertices to it's barycenter).
+	/// </summary>
+	public bool DirtyRound
+	{
+		get => _dirty;
+		set
 		{
-			get => _maxWidth;
-			set
+			if ( _dirty != value )
 			{
-				if ( _maxWidth != value )
-				{
-					_maxWidth = value;
-					NotifyPropertyChanged( "MaxWidth" );
-				}
+				_dirty = value;
+				NotifyPropertyChanged( "DirtyRound" );
 			}
 		}
+	}
 
-		public bool BaryCenteringByPosition
+	/// <summary>
+	/// Maximum iteration count in the Phase 1 of the Sugiyama algo.
+	/// </summary>
+	public int Phase1IterationCount
+	{
+		get => _phase1IterationCount;
+		set
 		{
-			get => _baryCenteringByPosition;
-			set
+			if ( _phase1IterationCount != value )
 			{
-				if ( _baryCenteringByPosition != value )
-				{
-					_baryCenteringByPosition = value;
-					NotifyPropertyChanged( "BaryCenteringByPosition" );
-				}
+				_phase1IterationCount = value;
+				NotifyPropertyChanged( "Phase1IterationCount" );
 			}
 		}
+	}
 
-		/// <summary>
-		/// Minimal vertical gap between the vertices.
-		/// </summary>
-		public float VerticalGap
+	/// <summary>
+	/// Maximum iteration count in the Phase 2 of the Sugiyama algo.
+	/// </summary>
+	public int Phase2IterationCount
+	{
+		get => _phase2IterationCount;
+		set
 		{
-			get => Verticalgap;
-			set
+			if ( _phase2IterationCount != value )
 			{
-				if ( Verticalgap != value )
-				{
-					Verticalgap = value;
-					NotifyPropertyChanged( "VerticalGap" );
-				}
+				_phase2IterationCount = value;
+				NotifyPropertyChanged( "Phase2IterationCount" );
 			}
 		}
+	}
 
-		/// <summary>
-		/// Start with a dirty round (allow to increase the number of the edge-crossings, but 
-		/// try to put the vertices to it's barycenter).
-		/// </summary>
-		public bool DirtyRound
+	public bool MinimizeHierarchicalEdgeLong
+	{
+		get => _minimizeHierarchicalEdgeLong;
+		set
 		{
-			get => _dirty;
-			set
+			if ( _minimizeHierarchicalEdgeLong != value )
 			{
-				if ( _dirty != value )
-				{
-					_dirty = value;
-					NotifyPropertyChanged( "DirtyRound" );
-				}
+				_minimizeHierarchicalEdgeLong = value;
+				NotifyPropertyChanged( "MinimizeHierarchicalEdgeLong" );
 			}
 		}
+	}
 
-		/// <summary>
-		/// Maximum iteration count in the Phase 1 of the Sugiyama algo.
-		/// </summary>
-		public int Phase1IterationCount
+	public PositionCalculationMethodTypes PositionCalculationMethod
+	{
+		get => _positionCalculationMethod;
+		set
 		{
-			get => _phase1IterationCount;
-			set
+			if ( value != _positionCalculationMethod )
 			{
-				if ( _phase1IterationCount != value )
-				{
-					_phase1IterationCount = value;
-					NotifyPropertyChanged( "Phase1IterationCount" );
-				}
+				_positionCalculationMethod = value;
+				NotifyPropertyChanged( "PositionCalculationMethod" );
 			}
 		}
+	}
 
-		/// <summary>
-		/// Maximum iteration count in the Phase 2 of the Sugiyama algo.
-		/// </summary>
-		public int Phase2IterationCount
+	/// <summary>
+	/// Gets or sets the 'Simplify' parameter.
+	/// If true than the edges which directly goes to a vertex which could 
+	/// be reached on another path (which is not directly goes to that vertex, there's some plus vertices)
+	/// will not be count in the layout algorithm.
+	/// </summary>
+	public bool Simplify
+	{
+		get => _simplify;
+		set
 		{
-			get => _phase2IterationCount;
-			set
+			if ( _simplify != value )
 			{
-				if ( _phase2IterationCount != value )
-				{
-					_phase2IterationCount = value;
-					NotifyPropertyChanged( "Phase2IterationCount" );
-				}
+				_simplify = value;
+				NotifyPropertyChanged( "Simplify" );
 			}
 		}
+	}
 
-		public bool MinimizeHierarchicalEdgeLong
+	/// <summary>
+	/// Prompting constraint type for the starting positions.
+	/// </summary>
+	public PromptingConstraintType Prompting
+	{
+		get => _promptingConstraint;
+		set
 		{
-			get => _minimizeHierarchicalEdgeLong;
-			set
+			if ( _promptingConstraint != value )
 			{
-				if ( _minimizeHierarchicalEdgeLong != value )
-				{
-					_minimizeHierarchicalEdgeLong = value;
-					NotifyPropertyChanged( "MinimizeHierarchicalEdgeLong" );
-				}
-			}
-		}
-
-		public PositionCalculationMethodTypes PositionCalculationMethod
-		{
-			get => _positionCalculationMethod;
-			set
-			{
-				if ( value != _positionCalculationMethod )
-				{
-					_positionCalculationMethod = value;
-					NotifyPropertyChanged( "PositionCalculationMethod" );
-				}
-			}
-		}
-
-		/// <summary>
-		/// Gets or sets the 'Simplify' parameter.
-		/// If true than the edges which directly goes to a vertex which could 
-		/// be reached on another path (which is not directly goes to that vertex, there's some plus vertices)
-		/// will not be count in the layout algorithm.
-		/// </summary>
-		public bool Simplify
-		{
-			get => _simplify;
-			set
-			{
-				if ( _simplify != value )
-				{
-					_simplify = value;
-					NotifyPropertyChanged( "Simplify" );
-				}
-			}
-		}
-
-		/// <summary>
-		/// Prompting constraint type for the starting positions.
-		/// </summary>
-		public PromptingConstraintType Prompting
-		{
-			get => _promptingConstraint;
-			set
-			{
-				if ( _promptingConstraint != value )
-				{
-					_promptingConstraint = value;
-					NotifyPropertyChanged( "Prompting" );
-				}
+				_promptingConstraint = value;
+				NotifyPropertyChanged( "Prompting" );
 			}
 		}
 	}

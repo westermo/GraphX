@@ -3,32 +3,31 @@ using System.Globalization;
 using System.Windows.Data;
 using System.Windows.Media;
 
-namespace Westermo.GraphX.Controls
+namespace Westermo.GraphX.Controls;
+
+public class GeometryToPathGeometryConverter : IValueConverter
 {
-    public class GeometryToPathGeometryConverter : IValueConverter
+    #region Inverted Property
+
+    public bool Inverted
     {
-        #region Inverted Property
+        get => _inverted;
+        set => _inverted = value;
+    }
 
-        public bool Inverted
-        {
-            get => _inverted;
-            set => _inverted = value;
-        }
+    private bool _inverted; //false
 
-        private bool _inverted; //false
+    #endregion
 
-        #endregion
+    public object? Convert(object? value, Type targetType, object? parameter, CultureInfo culture)
+    {
+        if (value is EllipseGeometry) return null;
+        return _inverted ? (Geometry?) value : (PathGeometry?) value;
+    }
 
-        public object? Convert(object? value, Type targetType, object? parameter, CultureInfo culture)
-        {
-            if (value is EllipseGeometry) return null;
-            return _inverted ? (Geometry?) value : (PathGeometry?) value;
-        }
-
-        public object? ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture)
-        {
-            if (value is EllipseGeometry) return null;
-            return _inverted ? (PathGeometry?) value : (Geometry?) value;
-        }
+    public object? ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture)
+    {
+        if (value is EllipseGeometry) return null;
+        return _inverted ? (PathGeometry?) value : (Geometry?) value;
     }
 }

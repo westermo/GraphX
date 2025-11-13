@@ -1,22 +1,24 @@
 ﻿<Styles xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        xmlns:avalonia="clr-namespace:Westermo.GraphX.Controls.Avalonia;assembly=Westermo.GraphX.Controls.Avalonia"
+        
         xmlns:exampleModels="clr-namespace:ShowcaseApp.Avalonia.ExampleModels"
-        xmlns:models="clr-namespace:ShowcaseApp.Avalonia.Models">
+        xmlns:models="clr-namespace:ShowcaseApp.Avalonia.Models"
+        xmlns:controls="clr-namespace:Westermo.GraphX.Controls.Controls;assembly=Westermo.GraphX.Controls.Avalonia"
+        xmlns:behaviours="clr-namespace:Westermo.GraphX.Controls.Behaviours;assembly=Westermo.GraphX.Controls.Avalonia">
 
     <!--  VERTEX CONTROL  -->
-    <Style Selector="avalonia|VertexControl">
+    <Style Selector="controls|VertexControl">
         <Setter Property="Background" Value="Transparent" />
         <Setter Property="VertexShape" Value="Circle" />
         <Setter Property="ShowLabel" Value="False" />
         <!--  VERTEX DRAGGING CONTROL  -->
-        <Setter Property="avalonia:DragBehaviour.IsDragEnabled" Value="True" />
-        <Setter Property="avalonia:DragBehaviour.UpdateEdgesOnMove" Value="True" />
+        <Setter Property="behaviours:DragBehaviour.IsDragEnabled" Value="True" />
+        <Setter Property="behaviours:DragBehaviour.UpdateEdgesOnMove" Value="True" />
     </Style>
 
 
     <!--  EDGE CONTROL  -->
-    <Style Selector="avalonia|EdgeControl">
+    <Style Selector="controls|EdgeControl">
         <Setter Property="SelfLoopIndicatorOffset" Value="10,10" />
         <Setter Property="SelfLoopIndicatorRadius" Value="30" />
         <Setter Property="Foreground" Value="DarkRed" />

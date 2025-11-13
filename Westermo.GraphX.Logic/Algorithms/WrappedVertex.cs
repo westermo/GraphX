@@ -1,7 +1,6 @@
-﻿namespace Westermo.GraphX.Logic.Algorithms
+﻿namespace Westermo.GraphX.Logic.Algorithms;
+
+public class WrappedVertex<TVertex>(TVertex original)
 {
-	public class WrappedVertex<TVertex>(TVertex original)
-	{
-		public TVertex Original => original;
-	}
+	public TVertex Original => original;
 }

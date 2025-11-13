@@ -1,11 +1,12 @@
 ﻿<Styles xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        xmlns:avalonia="clr-namespace:Westermo.GraphX.Controls.Avalonia;assembly=Westermo.GraphX.Controls.Avalonia"
-        xmlns:exampleModels="clr-namespace:ShowcaseApp.Avalonia.ExampleModels">
+
+        xmlns:controls="clr-namespace:Westermo.GraphX.Controls.Controls;assembly=Westermo.GraphX.Controls.Avalonia"
+        xmlns:behaviours="clr-namespace:Westermo.GraphX.Controls.Behaviours;assembly=Westermo.GraphX.Controls.Avalonia">
 
 
     <!-- VERTEX CONTROL -->
-    <Style Selector="avalonia|VertexControl">
+    <Style Selector="controls|VertexControl">
         <!-- Set background color through attached property -->
         <Setter Property="Background" Value="{StaticResource NormalBrush}" />
         <Setter Property="Padding" Value="10,5,10,5" />
@@ -22,16 +23,16 @@
         </Style>
 
         <!-- VERTEX DRAGGING CONTROL -->
-        <Setter Property="avalonia:DragBehaviour.IsDragEnabled"
+        <Setter Property="behaviours:DragBehaviour.IsDragEnabled"
                 Value="False" />
-        <Setter Property="avalonia:DragBehaviour.UpdateEdgesOnMove"
+        <Setter Property="behaviours:DragBehaviour.UpdateEdgesOnMove"
                 Value="True" />
 
     </Style>
 
 
     <!-- EDGE CONTROL -->
-    <Style Selector="avalonia|EdgeControl">
+    <Style Selector="controls|EdgeControl">
 
         <Setter Property="MinWidth"
                 Value="1" />

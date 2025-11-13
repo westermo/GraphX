@@ -1,53 +1,52 @@
-﻿namespace Westermo.GraphX.Logic.Algorithms.LayoutAlgorithms
+﻿namespace Westermo.GraphX.Logic.Algorithms.LayoutAlgorithms;
+
+public class LinLogLayoutParameters : LayoutParametersBase
 {
-	public class LinLogLayoutParameters : LayoutParametersBase
+	internal double attractionExponent = 1.0;
+
+	public double AttractionExponent
 	{
-		internal double attractionExponent = 1.0;
-
-		public double AttractionExponent
+		get => attractionExponent;
+		set
 		{
-			get => attractionExponent;
-			set
-			{
-				attractionExponent = value;
-				NotifyPropertyChanged("AttractionExponent");
-			}
+			attractionExponent = value;
+			NotifyPropertyChanged("AttractionExponent");
 		}
+	}
 
-		internal double repulsiveExponent;
+	internal double repulsiveExponent;
 
-		public double RepulsiveExponent
+	public double RepulsiveExponent
+	{
+		get => repulsiveExponent;
+		set
 		{
-			get => repulsiveExponent;
-			set
-			{
-				repulsiveExponent = value;
-				NotifyPropertyChanged("RepulsiveExponent");
-			}
+			repulsiveExponent = value;
+			NotifyPropertyChanged("RepulsiveExponent");
 		}
+	}
 
-		internal double gravitationMultiplier = 0.1;
+	internal double gravitationMultiplier = 0.1;
 
-		public double GravitationMultiplier
+	public double GravitationMultiplier
+	{
+		get => gravitationMultiplier;
+		set
 		{
-			get => gravitationMultiplier;
-			set
-			{
-				gravitationMultiplier = value;
-				NotifyPropertyChanged("GravitationMultiplier");
-			}
+			gravitationMultiplier = value;
+			NotifyPropertyChanged("GravitationMultiplier");
 		}
+	}
 
-		internal int iterationCount = 100;
+	internal int iterationCount = 100;
 
-		public int IterationCount
+	public int IterationCount
+	{
+		get => iterationCount;
+		set
 		{
-			get => iterationCount;
-			set
-			{
-				iterationCount = value;
-				NotifyPropertyChanged("IterationCount");
-			}
+			iterationCount = value;
+			NotifyPropertyChanged("IterationCount");
 		}
 	}
 }

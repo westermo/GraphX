@@ -1,8 +1,7 @@
-﻿namespace Westermo.GraphX.Controls.Avalonia
+﻿namespace Westermo.GraphX.Controls.Controls.ZoomControl.SupportClasses;
+
+public enum MouseWheelZoomingMode
 {
-    public enum MouseWheelZoomingMode
-    {
-        Positional = 0,
-        Absolute
-    }
+    Positional = 0,
+    Absolute
 }

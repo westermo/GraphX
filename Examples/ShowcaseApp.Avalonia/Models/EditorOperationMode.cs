@@ -1,9 +1,8 @@
-﻿namespace ShowcaseApp.Avalonia.Models
+﻿namespace ShowcaseApp.Avalonia.Models;
+
+public enum EditorOperationMode
 {
-    public enum EditorOperationMode
-    {
-        Select = 0,
-        Edit,
-        Delete
-    }
+    Select = 0,
+    Edit,
+    Delete
 }

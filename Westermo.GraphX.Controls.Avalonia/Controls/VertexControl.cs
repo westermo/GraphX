@@ -8,9 +8,12 @@ using Avalonia.Input;
 using Avalonia.Interactivity;
 using Westermo.GraphX.Common.Exceptions;
 using Westermo.GraphX.Common.Interfaces;
-using Westermo.GraphX.Controls.Avalonia.Controls.Interfaces;
+using Westermo.GraphX.Controls.Behaviours;
+using Westermo.GraphX.Controls.Controls.Interfaces;
+using Westermo.GraphX.Controls.Controls.Misc;
+using Westermo.GraphX.Controls.Controls.ZoomControl.Helpers;
 
-namespace Westermo.GraphX.Controls.Avalonia;
+namespace Westermo.GraphX.Controls.Controls;
 
 /// <summary>
 /// Visual vertex control

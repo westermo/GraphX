@@ -18,35 +18,34 @@ using System;
 using System.Globalization;
 using Avalonia.Data.Converters;
 
-namespace Westermo.GraphX.Controls.Avalonia
+namespace Westermo.GraphX.Controls.Controls.ZoomControl.Converters;
+
+public class VisibilityToBoolConverter : IValueConverter
 {
-    public class VisibilityToBoolConverter : IValueConverter
+    public bool Inverted { get; set; }
+    public bool Not { get; set; }
+
+    public object? Convert(object? value, Type targetType, object? parameter, CultureInfo culture)
     {
-        public bool Inverted { get; set; }
-        public bool Not { get; set; }
+        return Inverted ? BoolToVisibility(value) : VisibilityToBool(value);
+    }
 
-        public object? Convert(object? value, Type targetType, object? parameter, CultureInfo culture)
-        {
-            return Inverted ? BoolToVisibility(value) : VisibilityToBool(value);
-        }
+    public object? ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture)
+    {
+        return Inverted ? VisibilityToBool(value) : BoolToVisibility(value);
+    }
 
-        public object? ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture)
-        {
-            return Inverted ? VisibilityToBool(value) : BoolToVisibility(value);
-        }
+    private object VisibilityToBool(object? value)
+    {
+        if (value is not bool b)
+            return false;
+        return (b == true) ^ Not;
+    }
 
-        private object VisibilityToBool(object? value)
-        {
-            if (value is not bool b)
-                return false;
-            return (b == true) ^ Not;
-        }
-
-        private object BoolToVisibility(object? value)
-        {
-            if (value is not bool b)
-                return false;
-            return (b ^ Not);
-        }
+    private object BoolToVisibility(object? value)
+    {
+        if (value is not bool b)
+            return false;
+        return (b ^ Not);
     }
 }

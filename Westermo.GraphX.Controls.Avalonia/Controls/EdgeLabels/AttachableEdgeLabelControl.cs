@@ -1,9 +1,9 @@
 ﻿using Avalonia;
 using Avalonia.Controls;
 using Westermo.GraphX.Common.Exceptions;
-using Westermo.GraphX.Controls.Avalonia.Models;
+using Westermo.GraphX.Controls.Models.Interfaces;
 
-namespace Westermo.GraphX.Controls.Avalonia;
+namespace Westermo.GraphX.Controls.Controls.EdgeLabels;
 
 public class AttachableEdgeLabelControl : EdgeLabelControl, IAttachableControl<EdgeControl>
 {

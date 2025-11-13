@@ -1,9 +1,8 @@
-﻿namespace ShowcaseApp.WPF.Models
+﻿namespace ShowcaseApp.WPF.Models;
+
+public enum EditorOperationMode
 {
-    public enum EditorOperationMode
-    {
-        Select = 0,
-        Edit,
-        Delete
-    }
+    Select = 0,
+    Edit,
+    Delete
 }

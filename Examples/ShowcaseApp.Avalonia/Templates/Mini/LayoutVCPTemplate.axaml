@@ -1,7 +1,9 @@
 ﻿<Styles xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        xmlns:avalonia="using:Westermo.GraphX.Controls.Avalonia"
-        xmlns:examplemodels="using:ShowcaseApp.Avalonia.ExampleModels">
+        xmlns:examplemodels="using:ShowcaseApp.Avalonia.ExampleModels"
+        xmlns:vertexConnectionPoints="clr-namespace:Westermo.GraphX.Controls.Controls.VertexConnectionPoints;assembly=Westermo.GraphX.Controls.Avalonia"
+        xmlns:controls="clr-namespace:Westermo.GraphX.Controls.Controls;assembly=Westermo.GraphX.Controls.Avalonia"
+        xmlns:vertexLabels="clr-namespace:Westermo.GraphX.Controls.Controls.VertexLabels;assembly=Westermo.GraphX.Controls.Avalonia">
     <Design.PreviewWith>
         <Border Padding="20">
             <StackPanel>
@@ -10,7 +12,7 @@
         </Border>
     </Design.PreviewWith>
 
-    <Style Selector="avalonia|StaticVertexConnectionPoint">
+    <Style Selector="vertexConnectionPoints|StaticVertexConnectionPoint">
         <Setter Property="Shape" Value="Circle" />
 
         <Setter Property="Content">
@@ -29,19 +31,19 @@
         </Setter>
     </Style>
 
-    <Style Selector="avalonia|VertexControl">
+    <Style Selector="controls|VertexControl">
         <Setter Property="Foreground" Value="{DynamicResource ButtonText}" />
         <Setter Property="Template">
             <Setter.Value>
-                <ControlTemplate TargetType="{x:Type avalonia:VertexControl}">
+                <ControlTemplate TargetType="{x:Type controls:VertexControl}">
                     <Grid ColumnDefinitions="Auto,*,Auto">
                         <StackPanel Grid.Column="0"
                                     Orientation="Vertical">
                             <Border Margin="2,2,0,2" Padding="0">
-                                <avalonia:StaticVertexConnectionPoint Id="1" />
+                                <vertexConnectionPoints:StaticVertexConnectionPoint Id="1" />
                             </Border>
                             <Border Margin="2,2,0,2" Padding="0">
-                                <avalonia:StaticVertexConnectionPoint Id="2" />
+                                <vertexConnectionPoints:StaticVertexConnectionPoint Id="2" />
                             </Border>
                         </StackPanel>
                         <Border Grid.Column="1"
@@ -56,16 +58,16 @@
                                                   VerticalAlignment="Center"
                                                   Content="{TemplateBinding Vertex}" />
 
-                                <avalonia:VertexLabelControl x:Name="PART_vertexLabel"
+                                <vertexLabels:VertexLabelControl x:Name="PART_vertexLabel"
                                                              Content="{TemplateBinding Vertex}" />
                             </Grid>
                         </Border>
                         <StackPanel Grid.Column="2" Orientation="Vertical">
                             <Border Margin="0,2,2,2" Padding="0">
-                                <avalonia:StaticVertexConnectionPoint Id="3" />
+                                <vertexConnectionPoints:StaticVertexConnectionPoint Id="3" />
                             </Border>
                             <Border Margin="0,2,2,2" Padding="0">
-                                <avalonia:StaticVertexConnectionPoint Id="4" />
+                                <vertexConnectionPoints:StaticVertexConnectionPoint Id="4" />
                             </Border>
                         </StackPanel>
                     </Grid>
@@ -74,7 +76,7 @@
         </Setter>
     </Style>
 
-    <Style Selector="avalonia|EdgeControl">
+    <Style Selector="controls|EdgeControl">
         <Setter Property="MinWidth"
                 Value="1" />
         <Setter Property="MinHeight"

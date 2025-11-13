@@ -1,19 +1,18 @@
-﻿namespace Westermo.GraphX.Logic.Algorithms.OverlapRemoval
+﻿namespace Westermo.GraphX.Logic.Algorithms.OverlapRemoval;
+
+/*public interface IOverlapRemovalAlgorithmFactory<TVertex>
+	where TVertex : class
 {
-	/*public interface IOverlapRemovalAlgorithmFactory<TVertex>
-		where TVertex : class
-	{
-		/// <summary>
-		/// List of the available algorithms.
-		/// </summary>
-		IEnumerable<string> AlgorithmTypes { get; }
+	/// <summary>
+	/// List of the available algorithms.
+	/// </summary>
+	IEnumerable<string> AlgorithmTypes { get; }
 
-		IOverlapRemovalAlgorithm<TVertex> CreateAlgorithm( string newAlgorithmType, IOverlapRemovalContext<TVertex> context, IOverlapRemovalParameters parameters );
+	IOverlapRemovalAlgorithm<TVertex> CreateAlgorithm( string newAlgorithmType, IOverlapRemovalContext<TVertex> context, IOverlapRemovalParameters parameters );
 
-		IOverlapRemovalParameters CreateParameters( string algorithmType, IOverlapRemovalParameters oldParameters );
+	IOverlapRemovalParameters CreateParameters( string algorithmType, IOverlapRemovalParameters oldParameters );
 
-		bool IsValidAlgorithm( string algorithmType );
+	bool IsValidAlgorithm( string algorithmType );
 
-		string GetAlgorithmType( IOverlapRemovalAlgorithm<TVertex> algorithm );
-	}*/
-}
+	string GetAlgorithmType( IOverlapRemovalAlgorithm<TVertex> algorithm );
+}*/

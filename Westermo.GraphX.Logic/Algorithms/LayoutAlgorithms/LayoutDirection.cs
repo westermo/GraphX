@@ -1,10 +1,9 @@
-﻿namespace Westermo.GraphX.Logic.Algorithms.LayoutAlgorithms
+﻿namespace Westermo.GraphX.Logic.Algorithms.LayoutAlgorithms;
+
+public enum LayoutDirection
 {
-	public enum LayoutDirection
-	{
-		LeftToRight = 0,
-		TopToBottom = 1,
-		RightToLeft = 2,
-		BottomToTop = 3
-	}
+	LeftToRight = 0,
+	TopToBottom = 1,
+	RightToLeft = 2,
+	BottomToTop = 3
 }

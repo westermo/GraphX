@@ -1,6 +1,5 @@
-namespace Westermo.GraphX.Controls.Avalonia.Models
-{
-    public delegate void EdgeSelectedEventHandler(object sender, EdgeSelectedEventArgs args);
-    public delegate void EdgeClickedEventHandler(object sender, EdgeClickedEventArgs args);
-    public delegate void EdgeLabelEventHandler(object sender, EdgeLabelSelectedEventArgs args);
-}
+namespace Westermo.GraphX.Controls.Models;
+
+public delegate void EdgeSelectedEventHandler(object sender, EdgeSelectedEventArgs args);
+public delegate void EdgeClickedEventHandler(object sender, EdgeClickedEventArgs args);
+public delegate void EdgeLabelEventHandler(object sender, EdgeLabelSelectedEventArgs args);

@@ -1,17 +1,16 @@
 ﻿using System.Windows;
 
-namespace Westermo.GraphX.Controls
+namespace Westermo.GraphX.Controls;
+
+/// <summary>
+/// Common imterface for all possible zoomcontrol objects
+/// </summary>
+public interface IZoomControl
 {
-    /// <summary>
-    /// Common imterface for all possible zoomcontrol objects
-    /// </summary>
-    public interface IZoomControl
-    {
-        UIElement PresenterVisual { get; }
-        double Zoom { get; set; }
-        double Width { get; set; }
-        double Height { get; set; }
-        double ActualWidth { get; }
-        double ActualHeight { get; }
-    }
+    UIElement PresenterVisual { get; }
+    double Zoom { get; set; }
+    double Width { get; set; }
+    double Height { get; set; }
+    double ActualWidth { get; }
+    double ActualHeight { get; }
 }

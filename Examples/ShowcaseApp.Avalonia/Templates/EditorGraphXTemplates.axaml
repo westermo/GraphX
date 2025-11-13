@@ -1,22 +1,25 @@
 ﻿<Styles
     xmlns="https://github.com/avaloniaui"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-    xmlns:avalonia="clr-namespace:Westermo.GraphX.Controls.Avalonia;assembly=Westermo.GraphX.Controls.Avalonia">
+    
+    xmlns:controls="clr-namespace:Westermo.GraphX.Controls.Controls;assembly=Westermo.GraphX.Controls.Avalonia"
+    xmlns:behaviours="clr-namespace:Westermo.GraphX.Controls.Behaviours;assembly=Westermo.GraphX.Controls.Avalonia"
+    xmlns:vertexLabels="clr-namespace:Westermo.GraphX.Controls.Controls.VertexLabels;assembly=Westermo.GraphX.Controls.Avalonia">
 
     <!-- VERTEX CONTROL -->
-    <Style Selector="avalonia|VertexControl">
+    <Style Selector="controls|VertexControl">
         <!-- Set background color through attached property -->
         <Setter Property="BorderThickness" Value="0" />
         <Setter Property="ShowLabel" Value="True" />
         <!-- VERTEX DRAGGING CONTROL -->
-        <Setter Property="avalonia:DragBehaviour.IsDragEnabled"
+        <Setter Property="behaviours:DragBehaviour.IsDragEnabled"
                 Value="False" />
-        <Setter Property="avalonia:DragBehaviour.UpdateEdgesOnMove"
+        <Setter Property="behaviours:DragBehaviour.UpdateEdgesOnMove"
                 Value="True" />
     </Style>
 
 
-    <Style Selector="avalonia|AttachableVertexLabelControl">
+    <Style Selector="vertexLabels|AttachableVertexLabelControl">
         <Setter Property="Background" Value="Transparent" />
         <Setter Property="Foreground" Value="Black" />
         <Setter Property="LabelPositionMode" Value="Sides" />
@@ -24,7 +27,7 @@
     </Style>
 
     <!-- EDGE CONTROL -->
-    <Style Selector="avalonia|EdgeControl">
+    <Style Selector="controls|EdgeControl">
         <Setter Property="MinWidth"
                 Value="1" />
         <Setter Property="MinHeight"
