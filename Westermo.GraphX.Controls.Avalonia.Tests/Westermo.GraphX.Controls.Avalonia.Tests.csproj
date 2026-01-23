@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
         <ImplicitUsings>enable</ImplicitUsings>
@@ -12,6 +12,7 @@
         <PackageReference Include="QuikGraph"/>
         <PackageReference Include="Verify.TUnit"/>
         <PackageReference Include="Verify"/>
+        <PackageReference Include="Avalonia.Headless"/>
     </ItemGroup>
 
     <ItemGroup>

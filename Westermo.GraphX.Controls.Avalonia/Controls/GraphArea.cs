@@ -576,22 +576,22 @@ public class GraphArea<TVertex, TEdge, TGraph> : GraphAreaBase, IDisposable
         VertexList.ForEach(a => { GenerateVertexLabel(a.Value); });
     }
 
-    protected virtual void GenerateVertexLabel(VertexControl vertexControl)
-    {
-        var labels = VertexLabelFactory!.CreateLabel(vertexControl);
-        var uiElements = labels as Control[] ?? labels.ToArray();
-        if (uiElements.Any(l => l is not IVertexLabelControl))
-            throw new GX_InvalidDataException(
-                "Generated vertex label should implement IVertexLabelControl interface");
-        uiElements.ForEach(l =>
+        protected virtual void GenerateVertexLabel(VertexControl vertexControl)
         {
-            if (_svVertexLabelShow == false || !IsVisible)
-                l.IsVisible = false;
-            AddCustomChildControl(l);
-            l.Measure(new Size(double.MaxValue, double.MaxValue));
-            ((IVertexLabelControl)l).UpdatePosition();
-        });
-    }
+            var labels = VertexLabelFactory!.CreateLabel(vertexControl);
+            var uiElements = labels as Control[] ?? [.. labels];
+            if (uiElements.Any(l => l is not IVertexLabelControl))
+                throw new GX_InvalidDataException(
+                    "Generated vertex label should implement IVertexLabelControl interface");
+            uiElements.ForEach(l =>
+            {
+                if (_svVertexLabelShow == false || !IsVisible)
+                    l.IsVisible = false;
+                AddCustomChildControl(l);
+                l.Measure(new Size(double.MaxValue, double.MaxValue));
+                ((IVertexLabelControl)l).UpdatePosition();
+            });
+        }
 
     protected virtual void GenerateEdgeLabels()
     {
@@ -600,12 +600,12 @@ public class GraphArea<TVertex, TEdge, TGraph> : GraphAreaBase, IDisposable
         EdgesList.ForEach(a => { GenerateEdgeLabel(a.Value); });
     }
 
-    protected virtual void GenerateEdgeLabel(EdgeControl edgeControl)
-    {
-        var labels = EdgeLabelFactory!.CreateLabel(edgeControl);
-        var uiElements = labels as Control[] ?? labels.ToArray();
-        if (uiElements.Any(a => a is not IEdgeLabelControl))
-            throw new GX_InvalidDataException("Generated edge label should implement IEdgeLabelControl interface");
+        protected virtual void GenerateEdgeLabel(EdgeControl edgeControl)
+        {
+            var labels = EdgeLabelFactory!.CreateLabel(edgeControl);
+            var uiElements = labels as Control[] ?? [.. labels];
+            if (uiElements.Any(a => a is not IEdgeLabelControl))
+                throw new GX_InvalidDataException("Generated edge label should implement IEdgeLabelControl interface");
 
         uiElements.ForEach(l =>
         {
@@ -1300,8 +1300,11 @@ public class GraphArea<TVertex, TEdge, TGraph> : GraphAreaBase, IDisposable
     {
         edgeList ??= _edgesList;
 
-        //clear IsParallel flag
-        edgeList.Values.ForEach(a => a.IsParallel = false);
+            //clear IsParallel flag - optimized: avoid LINQ allocation
+            foreach (var edge in edgeList.Values)
+            {
+                edge.IsParallel = false;
+            }
 
         // Group edges together that share the same source and target. Edges that have both a source and target connection point defined are excluded. Self
         // looped edges are excluded. Edges marked with CanBeParallel == false are excluded. Edges with a connection point are pushed to the end of the group
@@ -1372,21 +1375,21 @@ public class GraphArea<TVertex, TEdge, TGraph> : GraphAreaBase, IDisposable
             throw new GX_InvalidDataException("LogicCore -> Not initialized!");
         RemoveAllEdges();
 
-        TEdge[]? inlist = null;
-        TEdge[]? outlist = null;
-        switch (edgeType)
-        {
-            case EdgesType.Out:
-                outlist = LogicCore.Graph.OutEdges((TVertex)vc.Vertex!).ToArray();
-                break;
-            case EdgesType.In:
-                inlist = LogicCore.Graph.InEdges((TVertex)vc.Vertex!).ToArray();
-                break;
-            default:
-                outlist = LogicCore.Graph.OutEdges((TVertex)vc.Vertex!).ToArray();
-                inlist = LogicCore.Graph.InEdges((TVertex)vc.Vertex!).ToArray();
-                break;
-        }
+            TEdge[]? inlist = null;
+            TEdge[]? outlist = null;
+            switch (edgeType)
+            {
+                case EdgesType.Out:
+                    outlist = [.. LogicCore.Graph.OutEdges((TVertex)vc.Vertex!)];
+                    break;
+                case EdgesType.In:
+                    inlist = [.. LogicCore.Graph.InEdges((TVertex)vc.Vertex!)];
+                    break;
+                default:
+                    outlist = [.. LogicCore.Graph.OutEdges((TVertex)vc.Vertex!)];
+                    inlist = [.. LogicCore.Graph.InEdges((TVertex)vc.Vertex!)];
+                    break;
+            }
 
         var gotSelfLoop = false;
         if (inlist != null)
@@ -1452,23 +1455,23 @@ public class GraphArea<TVertex, TEdge, TGraph> : GraphAreaBase, IDisposable
                 "LogicCore.Graph property not set while using GetRelatedVertexControls method!");
         }
 
-        var list = new List<IGraphControl>();
-        if (ctrl is VertexControl vc)
-        {
-            var vData = (TVertex)vc.Vertex!;
-            var vList = new List<TVertex>();
-            switch (edgesType)
+            var list = new List<IGraphControl>();
+            if (ctrl is VertexControl vc)
             {
-                case EdgesType.All:
-                    vList = LogicCore.Graph.GetNeighbours(vData).ToList();
-                    break;
-                case EdgesType.In:
-                    vList = LogicCore.Graph.GetInNeighbours(vData).ToList();
-                    break;
-                case EdgesType.Out:
-                    vList = LogicCore.Graph.GetOutNeighbours(vData).ToList();
-                    break;
-            }
+                var vData = (TVertex)vc.Vertex!;
+                var vList = new List<TVertex>();
+                switch (edgesType)
+                {
+                    case EdgesType.All:
+                        vList = [.. LogicCore.Graph.GetNeighbours(vData)];
+                        break;
+                    case EdgesType.In:
+                        vList = [.. LogicCore.Graph.GetInNeighbours(vData)];
+                        break;
+                    case EdgesType.Out:
+                        vList = [.. LogicCore.Graph.GetOutNeighbours(vData)];
+                        break;
+                }
 
             list.AddRange(VertexList.Where(a => vList.Contains(a.Key)).Select(a => a.Value));
         }
@@ -1502,24 +1505,24 @@ public class GraphArea<TVertex, TEdge, TGraph> : GraphAreaBase, IDisposable
                 "LogicCore.Graph property not set while using GetRelatedEdgeControls method!");
         }
 
-        var list = new List<IGraphControl>();
-        if (ctrl is EdgeControl) return list;
-        if (ctrl is VertexControl vc)
-        {
-            var vData = (TVertex)vc.Vertex!;
-            var eList = new List<TEdge>();
-            switch (edgesType)
+            var list = new List<IGraphControl>();
+            if (ctrl is EdgeControl) return list;
+            if (ctrl is VertexControl vc)
             {
-                case EdgesType.All:
-                    eList = LogicCore.Graph.GetAllEdges(vData).ToList();
-                    break;
-                case EdgesType.In:
-                    eList = LogicCore.Graph.GetInEdges(vData).ToList();
-                    break;
-                case EdgesType.Out:
-                    eList = LogicCore.Graph.GetOutEdges(vData).ToList();
-                    break;
-            }
+                var vData = (TVertex)vc.Vertex!;
+                var eList = new List<TEdge>();
+                switch (edgesType)
+                {
+                    case EdgesType.All:
+                        eList = [.. LogicCore.Graph.GetAllEdges(vData)];
+                        break;
+                    case EdgesType.In:
+                        eList = [.. LogicCore.Graph.GetInEdges(vData)];
+                        break;
+                    case EdgesType.Out:
+                        eList = [.. LogicCore.Graph.GetOutEdges(vData)];
+                        break;
+                }
 
             list.AddRange(EdgesList.Where(a => eList.Contains(a.Key)).Select(a => a.Value));
         }
@@ -1661,20 +1664,20 @@ public class GraphArea<TVertex, TEdge, TGraph> : GraphAreaBase, IDisposable
         if (LogicCore.Graph == null) LogicCore.Graph = Activator.CreateInstance<TGraph>();
         else LogicCore.Graph.Clear();
 
-        var graphSerializationDatas = data as GraphSerializationData[] ?? data.ToArray();
-        var vlist = graphSerializationDatas.Where(a => a.Data is TVertex);
-        foreach (var item in vlist)
-        {
-            var vertexdata = (TVertex)item.Data;
-            var ctrl = ControlFactory.CreateVertexControl(vertexdata);
-            ctrl.IsVisible = item.IsVisible;
-            ctrl.SetPosition(item.Position.X, item.Position.Y);
-            AddVertex(vertexdata, ctrl);
-            LogicCore.Graph.AddVertex(vertexdata);
-            ctrl.ApplyTemplate();
-            if (item.HasLabel)
-                GenerateVertexLabel(ctrl);
-        }
+            var graphSerializationDatas = data as GraphSerializationData[] ?? [.. data];
+            var vlist = graphSerializationDatas.Where(a => a.Data is TVertex);
+            foreach (var item in vlist)
+            {
+                var vertexdata = (TVertex)item.Data;
+                var ctrl = ControlFactory.CreateVertexControl(vertexdata);
+                ctrl.IsVisible = item.IsVisible;
+                ctrl.SetPosition(item.Position.X, item.Position.Y);
+                AddVertex(vertexdata, ctrl);
+                LogicCore.Graph.AddVertex(vertexdata);
+                ctrl.ApplyTemplate();
+                if (item.HasLabel)
+                    GenerateVertexLabel(ctrl);
+            }
 
         var edgeList = graphSerializationDatas.Where(a => a.Data is TEdge);
 

@@ -94,12 +94,12 @@ public class LayeredTopologicalSortAlgorithm<TVertex, TEdge> : AlgorithmBase<IVe
 			throw new NonAcyclicGraphException();
 	}
 
-	protected IList<TVertex> GetSources( IEnumerable<TVertex> vertices )
-	{
-		return ( from v in vertices
-			where _tmpGraph.IsInEdgesEmpty( v )
-			select v ).ToList();
-	}
+		protected IList<TVertex> GetSources( IEnumerable<TVertex> vertices )
+		{
+			return [.. ( from v in vertices
+			         where _tmpGraph.IsInEdgesEmpty( v )
+			         select v )];
+		}
 
 	protected void OnLayerFinished( LayeredTopologicalSortEventArgs args )
 	{

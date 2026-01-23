@@ -71,8 +71,11 @@ public class EdgeGeometryTests
         var ec = area.EdgesList.Values.First();
         var geom = ec.GetLineGeometry();
         await Assert.That(geom).IsNotNull();
-        var pg = geom as PathGeometry;
-        await Verify(pg);
+        // For StreamGeometry, we verify the bounds and type instead of path data
+        // since StreamGeometry doesn't expose its path data string directly
+        await Assert.That(geom).IsTypeOf<StreamGeometry>();
+        var bounds = geom!.Bounds;
+        await Verify(new { GeometryType = geom.GetType().Name, Bounds = bounds });
     }
 
     [Test]
