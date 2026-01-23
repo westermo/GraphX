@@ -29,7 +29,7 @@ public class GraphRenderingBenchmarks
         {
         }
 
-        public override Measure.Point[] RoutingPoints { get; set; } = null;
+        public override Measure.Point[] RoutingPoints { get; set; }
     }
 
     private static bool _avaloniaInitialized = false;
