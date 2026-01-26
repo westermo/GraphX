@@ -52,7 +52,10 @@ public static class MathHelper
     /// <param name="point2">Target point</param>
     public static double GetDistanceBetweenPoints(Point point1, Point point2)
     {
-        return Math.Sqrt(Math.Pow(point2.X - point1.X, 2) + Math.Pow(point2.Y - point1.Y, 2));
+        // OPTIMIZATION: Use direct multiplication instead of Math.Pow for better performance
+        var dx = point2.X - point1.X;
+        var dy = point2.Y - point1.Y;
+        return Math.Sqrt(dx * dx + dy * dy);
     }
 
     /// <summary>

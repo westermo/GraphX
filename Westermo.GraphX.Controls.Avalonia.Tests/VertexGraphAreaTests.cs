@@ -159,6 +159,7 @@ public class VertexGraphAreaTests
         area.AddVertexAndData(v1, vc1);
         area.AddVertexAndData(v2, vc2);
         await Assert.That(area.VertexList.Count).IsEqualTo(2);
+
         var e = new TEdge(v1, v2);
         var ec = new EdgeControl(vc1, vc2, e);
         EnsureEdgeTemplate(ec);

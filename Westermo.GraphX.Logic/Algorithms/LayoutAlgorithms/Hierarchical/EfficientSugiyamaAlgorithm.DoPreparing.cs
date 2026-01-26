@@ -17,12 +17,12 @@ public partial class EfficientSugiyamaLayoutAlgorithm<TVertex, TEdge, TGraph>
         RemoveIsolatedVertices(); //it must run after the two method above           
     }
 
-    private void RemoveIsolatedVertices()
-    {
-        _isolatedVertices = _graph.Vertices.Where(v => _graph.Degree(v) == 0).ToList();
-        foreach (var isolatedVertex in _isolatedVertices)
-            _graph.RemoveVertex(isolatedVertex);
-    }
+        private void RemoveIsolatedVertices()
+        {
+            _isolatedVertices = [.. _graph.Vertices.Where(v => _graph.Degree(v) == 0)];
+            foreach (var isolatedVertex in _isolatedVertices)
+                _graph.RemoveVertex(isolatedVertex);
+        }
 
     /// <summary>
     /// Removes the edges which source and target is the same vertex.

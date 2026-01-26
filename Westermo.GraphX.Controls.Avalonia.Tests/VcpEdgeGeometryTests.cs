@@ -157,7 +157,7 @@ public class VcpEdgeGeometryTests
     [Test]
     public async Task EdgeGeometry_UsesConnectionPointCirclePerimeter()
     {
-        var data = CreateAreaWithVcp(VertexShape.Circle, VertexShape.Circle, bothEndpoints: true);
+        var data =  CreateAreaWithVcp(VertexShape.Circle, VertexShape.Circle, bothEndpoints: true);
         var cp1 = data.cp1;
         var cp2 = data.cp2;
         var ec = data.ec;
@@ -188,7 +188,7 @@ public class VcpEdgeGeometryTests
     [Test]
     public async Task EdgeGeometry_UsesConnectionPointCenterWhenShapeNone()
     {
-        var data = CreateAreaWithVcp(VertexShape.None, VertexShape.None, bothEndpoints: true);
+        var data =  CreateAreaWithVcp(VertexShape.None, VertexShape.None, bothEndpoints: true);
         var cp1 = data.cp1;
         var cp2 = data.cp2;
         var ec = data.ec;

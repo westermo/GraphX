@@ -123,3 +123,4 @@ UpgradeLog*.XML
 
 .ionide
 .vs
+*/BenchmarkDotNet.Artifacts/

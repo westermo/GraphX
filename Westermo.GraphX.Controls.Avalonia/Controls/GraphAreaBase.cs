@@ -1,5 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Threading;
+using System.Threading.Tasks;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Data;
@@ -368,7 +370,7 @@ public abstract class GraphAreaBase : Canvas, ITrackableContent, IGraphAreaBase
 
     public abstract VertexControl? GetVertexControlAt(Point position);
 
-    public abstract void RelayoutGraph(bool generateAllEdges = false);
+    public abstract ValueTask RelayoutGraph(bool generateAllEdges = false, CancellationToken token = default);
 
     // INTERNAL VARIABLES FOR CONTROLS INTEROPERABILITY
     internal abstract bool IsEdgeRoutingEnabled { get; }

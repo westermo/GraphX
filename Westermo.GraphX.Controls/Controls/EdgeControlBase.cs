@@ -1236,10 +1236,10 @@ public abstract class EdgeControlBase : Control, IGraphControl, IDisposable
         return Template.FindName(name, this);
     }
 
-    public virtual IList<SysRect> GetLabelSizes()
-    {
-        return EdgeLabelControls.Select(l => l.GetSize()).ToList();
-    }
+        public virtual IList<SysRect> GetLabelSizes()
+        {
+            return [.. EdgeLabelControls.Select(l => l.GetSize())];
+        }
 
     /*  public void SetCustomLabelSize(SysRect rect)
       {

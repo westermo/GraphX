@@ -850,12 +850,12 @@ public partial class SugiyamaLayoutAlgorithm<TVertex, TEdge, TGraph> : DefaultPa
             if ( !e.IsLongEdge )
                 continue;
 
-            EdgeRoutes[e.Original] =
-                e.IsReverted
-                    ? e.DummyVertices.Reverse().Select( dv => dv.RealPosition ).ToArray()
-                    : e.DummyVertices.Select( dv => dv.RealPosition ).ToArray();
+                EdgeRoutes[e.Original] =
+                    e.IsReverted
+                        ? [.. e.DummyVertices.Reverse().Select( dv => dv.RealPosition )]
+                        : [.. e.DummyVertices.Select( dv => dv.RealPosition )];
+            }
         }
-    }
 
     /// <summary>
     /// Copies the coordinates of the vertices to the VertexPositions dictionary.

@@ -39,6 +39,7 @@ public class EdgeControlAdvancedTests
                 Content = functor
             };
         }
+
         vc.ApplyTemplate();
     }
 
@@ -63,10 +64,12 @@ public class EdgeControlAdvancedTests
                 Content = functor
             };
         }
+
         ec.ApplyTemplate();
     }
 
-    private (GraphArea<TVertex, TEdge, BidirectionalGraph<TVertex, TEdge>> area, VertexControl v1c, VertexControl v2c, TEdge e, EdgeControl ec)
+    private (GraphArea<TVertex, TEdge, BidirectionalGraph<TVertex, TEdge>> area, VertexControl v1c, VertexControl v2c,
+        TEdge e, EdgeControl ec)
         CreateSimpleArea(bool curving = false)
     {
         var g = new BidirectionalGraph<TVertex, TEdge>();
@@ -82,15 +85,22 @@ public class EdgeControlAdvancedTests
             Graph = g,
             EdgeCurvingEnabled = curving
         };
-        var area = new GraphArea<TVertex, TEdge, BidirectionalGraph<TVertex, TEdge>> { LogicCore = lc, Width = 500, Height = 400 };
+        var area = new GraphArea<TVertex, TEdge, BidirectionalGraph<TVertex, TEdge>>
+            { LogicCore = lc, Width = 500, Height = 400 };
         area.PreloadVertexes();
 
         var v1c = area.VertexList[v1];
         var v2c = area.VertexList[v2];
-        v1c.Width = 40; v1c.Height = 30; v1c.SetPosition(50, 80);
-        v2c.Width = 40; v2c.Height = 30; v2c.SetPosition(250, 80);
-        GraphAreaBase.SetFinalX(v1c, 50); GraphAreaBase.SetFinalY(v1c, 80);
-        GraphAreaBase.SetFinalX(v2c, 250); GraphAreaBase.SetFinalY(v2c, 80);
+        v1c.Width = 40;
+        v1c.Height = 30;
+        v1c.SetPosition(50, 80);
+        v2c.Width = 40;
+        v2c.Height = 30;
+        v2c.SetPosition(250, 80);
+        GraphAreaBase.SetFinalX(v1c, 50);
+        GraphAreaBase.SetFinalY(v1c, 80);
+        GraphAreaBase.SetFinalX(v2c, 250);
+        GraphAreaBase.SetFinalY(v2c, 80);
         EnsureVertexTemplate(v1c);
         EnsureVertexTemplate(v2c);
 
@@ -150,9 +160,9 @@ public class EdgeControlAdvancedTests
     [Test]
     public async Task Edge_CurvingEnabled_StillProducesGeometry()
     {
-        var data = CreateSimpleArea(curving: true);
+        var data =  CreateSimpleArea(curving: true);
         var geom = data.ec.GetLineGeometry();
-        // We don’t assert exact segment types; just ensure geometry exists under curving mode
+        // We don't assert exact segment types; just ensure geometry exists under curving mode
         await Assert.That(geom).IsNotNull();
     }
 }

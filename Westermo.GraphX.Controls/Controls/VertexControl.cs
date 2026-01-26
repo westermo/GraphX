@@ -285,11 +285,10 @@ public class VertexControl : VertexControlBase
             VertexLabelControl.UpdatePosition();
         }
 
-        VertexConnectionPointsList = this.FindDescendantsOfType<IVertexConnectionPoint>().ToList();
-        if (VertexConnectionPointsList.GroupBy(x => x.Id).Count(group => @group.Count() > 1) > 0)
-            throw new GX_InvalidDataException(
-                "Vertex connection points in VertexControl template must have unique Id!");
-    }
+            VertexConnectionPointsList = [.. this.FindDescendantsOfType<IVertexConnectionPoint>()];
+            if (VertexConnectionPointsList.GroupBy(x => x.Id).Count(group => @group.Count() > 1) > 0)
+                throw new GX_InvalidDataException("Vertex connection points in VertexControl template must have unique Id!");
+        }
 
     #region Events handling
 
