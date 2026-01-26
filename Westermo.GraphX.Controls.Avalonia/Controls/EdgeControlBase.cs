@@ -1001,8 +1001,21 @@ public abstract class EdgeControlBase : TemplatedControl, IGraphControl, IDispos
         }
 
         /// <summary>
-        /// Creates a StreamGeometry for the edge path. StreamGeometry is more performant than PathGeometry.
+        /// Creates a <see cref="StreamGeometry"/> for the edge path as an optimized alternative to
+        /// <c>CreateFigure</c>. Using <see cref="StreamGeometry"/> is more performant than
+        /// <see cref="PathGeometry"/> for dynamically generated edge visuals.
         /// </summary>
+        /// <param name="externalRoutingPoints">Optional external routing points provided by the routing algorithm, if any.</param>
+        /// <param name="hasRouteInfo">Indicates whether valid route information is available in <paramref name="routeInformation"/>.</param>
+        /// <param name="routeInformation">The route points describing the edge path when routing is enabled.</param>
+        /// <param name="p1">The initial source connection point of the edge before pointer adjustments.</param>
+        /// <param name="p2">The initial target connection point of the edge before pointer adjustments.</param>
+        /// <param name="routedEdge">The routing metadata associated with the edge.</param>
+        /// <param name="gEdge">The graph edge instance used to determine additional edge settings such as path reversal.</param>
+        /// <returns>
+        /// A normalized <see cref="StreamGeometry"/> instance representing the final edge path, ready to be
+        /// rendered by the control.
+        /// </returns>
         private Geometry CreateStreamGeometry(Measure.Point[]? externalRoutingPoints, bool hasRouteInfo,
             Measure.Point[]? routeInformation, Point p1,
             Point p2, IRoutingInfo routedEdge, IGraphXCommonEdge? gEdge)
