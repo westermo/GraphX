@@ -135,13 +135,13 @@ public class GraphArea<TVertex, TEdge, TGraph> : GraphAreaBase, IDisposable
     }
 
     /// <summary>
-    /// Gets or sets if visual properties such as edge dash style or vertex shape should be automaticaly reapplied to visuals when graph is regenerated.
+    /// Gets or sets if visual properties such as edge dash style or vertex shape should be automatically reapplied to visuals when graph is regenerated.
     /// True by default.
     /// </summary>
     public bool EnableVisualPropsRecovery { get; set; }
 
     /// <summary>
-    /// Gets or sets if visual properties such as edge dash style or vertex shape should be automaticaly applied to newly added visuals which are added using AddVertex() or AddEdge() or similar methods.
+    /// Gets or sets if visual properties such as edge dash style or vertex shape should be automatically applied to newly added visuals which are added using AddVertex() or AddEdge() or similar methods.
     /// True by default.
     /// </summary>
     public bool EnableVisualPropsApply { get; set; }
@@ -170,7 +170,7 @@ public class GraphArea<TVertex, TEdge, TGraph> : GraphAreaBase, IDisposable
     /// Add custom control for
     /// </summary>
     /// <param name="control"></param>
-    protected virtual void AddCustomChildControl(Control control)
+    public virtual void AddCustomChildControl(Control control)
     {
         if (!Children.Contains(control))
             Children.Add(control);
@@ -283,7 +283,7 @@ public class GraphArea<TVertex, TEdge, TGraph> : GraphAreaBase, IDisposable
     #region Remove controls
 
     /// <summary>
-    /// Remove all vertices from layout. Optionaly can remove vertices from data graph also.
+    /// Remove all vertices from layout. Optionally can remove vertices from data graph also.
     /// </summary>
     /// <param name="removeVerticesFromDataGraph">Also remove vertices from data graph if possible. Default value is False.</param>
     public void RemoveAllVertices(bool removeVerticesFromDataGraph = false)
@@ -704,7 +704,7 @@ public class GraphArea<TVertex, TEdge, TGraph> : GraphAreaBase, IDisposable
 
     /// <summary>
     /// For manual graph generation only!
-    /// Generates visual objects for all vertices and edges w/o any algorithms. Objects are hidden by default. Optionaly, sets vertex coordinates.
+    /// Generates visual objects for all vertices and edges w/o any algorithms. Objects are hidden by default. Optionally, sets vertex coordinates.
     /// If there is any edge routing algorithm needed then it should be set before the call to this method.
     /// </summary>
     /// <param name="positions">Optional vertex positions</param>
@@ -780,7 +780,6 @@ public class GraphArea<TVertex, TEdge, TGraph> : GraphAreaBase, IDisposable
 
     #region RelayoutGraph()
 
-    private Task? _layoutTask;
     private CancellationTokenSource? _layoutCancellationSource;
 
     /// <summary>
@@ -968,26 +967,11 @@ public class GraphArea<TVertex, TEdge, TGraph> : GraphAreaBase, IDisposable
     /// <summary>
     /// Cancel all undergoing async calculations
     /// </summary>
-    public async ValueTask CancelRelayout()
+    public void CancelRelayout()
     {
-        if (_layoutTask == null)
-            return;
-
-        await _layoutCancellationSource!.CancelAsync();
-
-        try
-        {
-            // Wait, but don't block the dispatcher, because the background task might be trying to execute on the UI thread.
-            await _layoutTask;
-        }
-        catch (OperationCanceledException)
-        {
-            // This is expected if the task was indeed canceled
-        }
-
-        _layoutCancellationSource.Dispose();
+        _layoutCancellationSource?.Cancel();
+        _layoutCancellationSource?.Dispose();
         _layoutCancellationSource = null;
-        _layoutTask = null;
     }
 
     /// <summary>
@@ -1018,6 +1002,7 @@ public class GraphArea<TVertex, TEdge, TGraph> : GraphAreaBase, IDisposable
     /// </summary>
     /// <param name="generateAllEdges">Generate all available edges for graph</param>
     /// <param name="dataContextToDataItem">Sets visual edge and vertex controls DataContext property to vertex data item of the control (Allows prop binding in xaml templates)</param>
+    /// <param name="cancellation"></param>
     public virtual async ValueTask GenerateGraph(bool generateAllEdges = true, bool dataContextToDataItem = true,
         CancellationToken cancellation = default)
     {
@@ -1835,7 +1820,7 @@ public class GraphArea<TVertex, TEdge, TGraph> : GraphAreaBase, IDisposable
         double dpi = PrintHelper.DEFAULT_DPI, int quality = 100)
     {
         var fileType = itype.ToString();
-        string fileExt = itype switch
+        var fileExt = itype switch
         {
             ImageType.PNG => "*.png",
             ImageType.JPEG => "*.jpg",
@@ -1947,22 +1932,11 @@ public class GraphArea<TVertex, TEdge, TGraph> : GraphAreaBase, IDisposable
 
     public void Dispose()
     {
+        CancelRelayout();
+        _logicCoreReactionCts?.Dispose();
+        _stateStorage?.Dispose();
+        _layoutCancellationSource?.Dispose();
         IsDisposed = true;
-
-        // Ensure any ongoing relayout operations are cancelled before disposing resources.
-        CancelRelayout().GetAwaiter().GetResult();
-        if (_stateStorage != null)
-        {
-            _stateStorage.Dispose();
-            _stateStorage = null;
-        }
-
-        if (LogicCore != null)
-        {
-            LogicCore.Dispose();
-            LogicCore = null;
-        }
-
         OnDispose();
         GC.SuppressFinalize(this);
     }
