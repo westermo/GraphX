@@ -15,6 +15,7 @@ namespace GraphXBenchmarks;
 [CPUUsageDiagnoser]
 [MemoryDiagnoser]
 [JsonExporterAttribute.Full]
+[JsonExporterAttribute.FullCompressed]
 public class GraphRenderingBenchmarks
 {
     private class BenchVertex : VertexBase

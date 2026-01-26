@@ -2,6 +2,7 @@
   push:
     branches:
       - "main"
+  workflow_dispatch:
 
 env:
   DOTNET_SKIP_FIRST_TIME_EXPERIENCE: 1
@@ -28,11 +29,12 @@ jobs:
         run: cd BenchmarkSuite1 && dotnet run -c Release --exporters json --filter '*'
 
       - name: Store benchmark result
-        uses: rhysd/github-action-benchmark@v1
+        if: github.ref == 'refs/heads/main'
+        uses: benchmark-action/github-action-benchmark@v1
         with:
           name: Benchmark.Net Benchmark
           tool: 'benchmarkdotnet'
-          output-file-path: BenchmarkSuite1/BenchmarkDotNet.Artifacts/results/GraphXBenchMarks.GraphRenderingBenchmarks-report-full.json
+          output-file-path: BenchmarkSuite1/BenchmarkDotNet.Artifacts/results/GraphXBenchmarks.GraphRenderingBenchmarks-report-full-compressed.json
           github-token: ${{ secrets.GITHUB_TOKEN }}
           auto-push: true
           summary-always: true
