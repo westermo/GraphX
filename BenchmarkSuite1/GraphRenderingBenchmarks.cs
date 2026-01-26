@@ -14,6 +14,7 @@ namespace GraphXBenchmarks;
 
 [CPUUsageDiagnoser]
 [MemoryDiagnoser]
+[JsonExporterAttribute.Full]
 public class GraphRenderingBenchmarks
 {
     private class BenchVertex : VertexBase
@@ -94,7 +95,8 @@ public class GraphRenderingBenchmarks
         return graph;
     }
 
-    private static Dictionary<BenchVertex, Point> GeneratePositions(List<BenchVertex> vertices, double width, double height)
+    private static Dictionary<BenchVertex, Point> GeneratePositions(List<BenchVertex> vertices, double width,
+        double height)
     {
         var positions = new Dictionary<BenchVertex, Point>();
         var random = new Random(42);
@@ -106,7 +108,8 @@ public class GraphRenderingBenchmarks
         return positions;
     }
 
-    private GraphArea<BenchVertex, BenchEdge, BidirectionalGraph<BenchVertex, BenchEdge>> CreateArea(BidirectionalGraph<BenchVertex, BenchEdge> graph, Dictionary<BenchVertex, Point> positions)
+    private GraphArea<BenchVertex, BenchEdge, BidirectionalGraph<BenchVertex, BenchEdge>> CreateArea(
+        BidirectionalGraph<BenchVertex, BenchEdge> graph, Dictionary<BenchVertex, Point> positions)
     {
         var lc = new GXLogicCore<BenchVertex, BenchEdge, BidirectionalGraph<BenchVertex, BenchEdge>>
         {
@@ -312,7 +315,8 @@ public class GraphRenderingBenchmarks
         area.UpdateAllEdges(true);
     }
 
-    private static BidirectionalGraph<BenchVertex, BenchEdge> CreateGraphWithSelfLoops(int vertexCount, int edgeCount, int selfLoopCount)
+    private static BidirectionalGraph<BenchVertex, BenchEdge> CreateGraphWithSelfLoops(int vertexCount, int edgeCount,
+        int selfLoopCount)
     {
         var graph = new BidirectionalGraph<BenchVertex, BenchEdge>();
         var vertices = new List<BenchVertex>();

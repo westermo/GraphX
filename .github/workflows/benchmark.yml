@@ -32,7 +32,7 @@ jobs:
         with:
           name: Benchmark.Net Benchmark
           tool: 'benchmarkdotnet'
-          output-file-path: BenchmarkSuite1/BenchmarkDotNet.Artifacts/results/Benchmarks.ResolveBenchmarks-report-full-compressed.json
+          output-file-path: BenchmarkSuite1/BenchmarkDotNet.Artifacts/results/GraphXBenchMarks.GraphRenderingBenchmarks-report-full.json
           github-token: ${{ secrets.GITHUB_TOKEN }}
           auto-push: true
           summary-always: true
