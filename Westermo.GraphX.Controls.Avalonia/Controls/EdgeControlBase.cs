@@ -635,9 +635,12 @@ public abstract class EdgeControlBase : TemplatedControl, IGraphControl, IDispos
         }
 
         /// <summary>
-        /// Builds a StreamGeometry from normalized points. StreamGeometry is more performant than PathGeometry
+        /// Builds a <see cref="StreamGeometry"/> from normalized points. <see cref="StreamGeometry"/> is more performant than <see cref="PathGeometry"/>
         /// as recommended by Avalonia documentation.
         /// </summary>
+        /// <param name="points">A span of points, in control coordinates, that define the polyline of the edge. The span may be modified in place (e.g. reversed).</param>
+        /// <param name="reverse">If <c>true</c>, reverses the order of <paramref name="points"/> before building the geometry.</param>
+        /// <returns>A <see cref="StreamGeometry"/> representing a polyline passing through the specified <paramref name="points"/> in the control's local space.</returns>
         private StreamGeometry BuildNormalizedStreamGeometry(Span<Point> points, bool reverse)
         {
             if (points.Length < 2)
