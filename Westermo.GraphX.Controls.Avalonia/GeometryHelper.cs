@@ -106,6 +106,9 @@ public static class GeometryHelper
         /// <summary>
         /// Estimates the number of points needed for the curve to pre-allocate list capacity.
         /// </summary>
+        /// <param name="points">The sequence of points that define the curve.</param>
+        /// <param name="tolerance">The tolerance used when approximating the curve; smaller values typically require more points.</param>
+        /// <returns>The estimated number of points required to represent the curve, used to pre-allocate the list capacity.</returns>
         private static int EstimateCurvePointCount(Span<Point> points, double tolerance)
         {
             if (points.Length < 2) return 2;
