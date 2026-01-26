@@ -1944,6 +1944,9 @@ public class GraphArea<TVertex, TEdge, TGraph> : GraphAreaBase, IDisposable
     public void Dispose()
     {
         IsDisposed = true;
+
+        // Ensure any ongoing relayout operations are cancelled before disposing resources.
+        CancelRelayout().GetAwaiter().GetResult();
         if (_stateStorage != null)
         {
             _stateStorage.Dispose();
