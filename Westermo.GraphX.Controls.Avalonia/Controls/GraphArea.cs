@@ -55,21 +55,46 @@ public class GraphArea<TVertex, TEdge, TGraph> : GraphAreaBase, IDisposable
         AvaloniaProperty.Register<GraphAreaBase, IGXLogicCore<TVertex, TEdge, TGraph>?>(
             nameof(LogicCore));
 
-    private static void LogicCoreChanged(GraphArea<TVertex, TEdge, TGraph> graph,
-        AvaloniaPropertyChangedEventArgs avaloniaPropertyChangedEventArgs)
+    private static void LogicCoreChanged(GraphArea<TVertex, TEdge, TGraph> graph, AvaloniaPropertyChangedEventArgs args)
     {
         if (graph.Parent == null) return;
-        switch (graph.LogicCoreChangeAction)
+        try
+        {
+            graph.LogicCoreAction().GetAwaiter().GetResult();
+        }
+        catch (Exception ex)
+        {
+            Debug.WriteLine("GraphArea: LogicCoreChanged error: " + ex.Message);
+        }
+    }
+
+    private CancellationTokenSource? _logicCoreReactionCts;
+
+    private async Task LogicCoreAction()
+    {
+        if (_logicCoreReactionCts != null)
+        {
+            await _logicCoreReactionCts.CancelAsync();
+            _logicCoreReactionCts.Dispose();
+        }
+
+        _logicCoreReactionCts = new CancellationTokenSource();
+        await OnLogicCore(_logicCoreReactionCts.Token);
+    }
+
+    private async Task OnLogicCore(CancellationToken cancellationToken)
+    {
+        switch (LogicCoreChangeAction)
         {
             case LogicCoreChangedAction.GenerateGraph:
             case LogicCoreChangedAction.GenerateGraphWithEdges:
-                graph.GenerateGraph();
+                await GenerateGraph(cancellation: cancellationToken);
                 break;
             case LogicCoreChangedAction.RelayoutGraph:
-                graph.RelayoutGraph();
+                await RelayoutGraph(cancellationToken);
                 break;
             case LogicCoreChangedAction.RelayoutGraphWithEdges:
-                graph.RelayoutGraph(true);
+                await RelayoutGraph(true, cancellationToken);
                 break;
             case LogicCoreChangedAction.None:
             default:
@@ -141,7 +166,7 @@ public class GraphArea<TVertex, TEdge, TGraph> : GraphAreaBase, IDisposable
     /// Add custom control for
     /// </summary>
     /// <param name="control"></param>
-    public virtual void AddCustomChildControl(Control control)
+    protected virtual void AddCustomChildControl(Control control)
     {
         if (!Children.Contains(control))
             Children.Add(control);
@@ -576,22 +601,22 @@ public class GraphArea<TVertex, TEdge, TGraph> : GraphAreaBase, IDisposable
         VertexList.ForEach(a => { GenerateVertexLabel(a.Value); });
     }
 
-        protected virtual void GenerateVertexLabel(VertexControl vertexControl)
+    protected virtual void GenerateVertexLabel(VertexControl vertexControl)
+    {
+        var labels = VertexLabelFactory!.CreateLabel(vertexControl);
+        var uiElements = labels as Control[] ?? [.. labels];
+        if (uiElements.Any(l => l is not IVertexLabelControl))
+            throw new GX_InvalidDataException(
+                "Generated vertex label should implement IVertexLabelControl interface");
+        uiElements.ForEach(l =>
         {
-            var labels = VertexLabelFactory!.CreateLabel(vertexControl);
-            var uiElements = labels as Control[] ?? [.. labels];
-            if (uiElements.Any(l => l is not IVertexLabelControl))
-                throw new GX_InvalidDataException(
-                    "Generated vertex label should implement IVertexLabelControl interface");
-            uiElements.ForEach(l =>
-            {
-                if (_svVertexLabelShow == false || !IsVisible)
-                    l.IsVisible = false;
-                AddCustomChildControl(l);
-                l.Measure(new Size(double.MaxValue, double.MaxValue));
-                ((IVertexLabelControl)l).UpdatePosition();
-            });
-        }
+            if (_svVertexLabelShow == false || !IsVisible)
+                l.IsVisible = false;
+            AddCustomChildControl(l);
+            l.Measure(new Size(double.MaxValue, double.MaxValue));
+            ((IVertexLabelControl)l).UpdatePosition();
+        });
+    }
 
     protected virtual void GenerateEdgeLabels()
     {
@@ -600,12 +625,12 @@ public class GraphArea<TVertex, TEdge, TGraph> : GraphAreaBase, IDisposable
         EdgesList.ForEach(a => { GenerateEdgeLabel(a.Value); });
     }
 
-        protected virtual void GenerateEdgeLabel(EdgeControl edgeControl)
-        {
-            var labels = EdgeLabelFactory!.CreateLabel(edgeControl);
-            var uiElements = labels as Control[] ?? [.. labels];
-            if (uiElements.Any(a => a is not IEdgeLabelControl))
-                throw new GX_InvalidDataException("Generated edge label should implement IEdgeLabelControl interface");
+    protected virtual void GenerateEdgeLabel(EdgeControl edgeControl)
+    {
+        var labels = EdgeLabelFactory!.CreateLabel(edgeControl);
+        var uiElements = labels as Control[] ?? [.. labels];
+        if (uiElements.Any(a => a is not IEdgeLabelControl))
+            throw new GX_InvalidDataException("Generated edge label should implement IEdgeLabelControl interface");
 
         uiElements.ForEach(l =>
         {
@@ -761,13 +786,51 @@ public class GraphArea<TVertex, TEdge, TGraph> : GraphAreaBase, IDisposable
     /// </summary>
     public bool EnableVisualsRenewOnFiltering { get; set; } = true;
 
-    protected virtual void RelayoutGraph(CancellationToken cancellationToken)
+    protected virtual async ValueTask RelayoutGraph(CancellationToken cancellationToken)
     {
         Dictionary<TVertex, Size>? vertexSizes = null;
         IDictionary<TVertex, Point>? vertexPositions = null;
         IGXLogicCore<TVertex, TEdge, TGraph>? localLogicCore = null;
 
-        RunOnDispatcherThread(() =>
+        await RunOnDispatcherThread(PreUpdate, cancellationToken);
+
+        if (localLogicCore == null)
+            throw new GX_InvalidDataException("LogicCore -> Not initialized!");
+
+        if (vertexSizes is null || vertexPositions is null || !localLogicCore.GenerateAlgorithmStorage(
+                vertexSizes.ToDictionary(s => s.Key, s => s.Value.ToGraphX()),
+                vertexPositions.ToDictionary(s => s.Key, s => s.Value.ToGraphX())))
+            return;
+
+        //clear routing info
+        localLogicCore.Graph.Edges.ForEach(a => a.RoutingPoints = null);
+
+        var resultCoords = localLogicCore.Compute(cancellationToken);
+        var t = Stopwatch.GetTimestamp();
+        await RunOnDispatcherThread(Assign, cancellationToken);
+        Debug.WriteLine("VIS: " + Stopwatch.GetElapsedTime(t));
+        return;
+
+        void Assign()
+        {
+            //setup vertex positions from result data
+            foreach (var item in resultCoords)
+            {
+                if (!_vertexList.TryGetValue(item.Key, out var vc)) continue;
+
+                SetFinalX(vc, item.Value.X);
+                SetFinalY(vc, item.Value.Y);
+
+                if (double.IsNaN(GetX(vc))) vc.SetPosition(item.Value.X, item.Value.Y, false);
+                vc.SetCurrentValue(PositioningCompleteProperty,
+                    true); // Style can show vertexes with layout positions assigned
+            }
+
+            SetCurrentValue(LogicCoreProperty, localLogicCore);
+            UpdateLayout(); //update all changes
+        }
+
+        void PreUpdate()
         {
             if (LogicCore == null) return;
 
@@ -775,22 +838,21 @@ public class GraphArea<TVertex, TEdge, TGraph> : GraphAreaBase, IDisposable
             if (EnableVisualsRenewOnFiltering && (LogicCore.IsFiltered || LogicCore.IsFilterRemoved))
             {
                 //remove edge if it has been removed from data graph
-                _edgesList.Keys.ToList().ForEach(a =>
-                {
-                    if (!LogicCore.Graph.Edges.Contains(a))
-                        RemoveEdge(a);
-                });
+                _edgesList.Keys.ToList()
+                    .ForEach(a =>
+                    {
+                        if (!LogicCore.Graph.Edges.Contains(a)) RemoveEdge(a);
+                    });
                 //remove vertex if it has been removed from data graph
-                _vertexList.Keys.ToList().ForEach(a =>
-                {
-                    if (!LogicCore.Graph.Vertices.Contains(a))
-                        RemoveVertex(a);
-                });
+                _vertexList.Keys.ToList()
+                    .ForEach(a =>
+                    {
+                        if (!LogicCore.Graph.Vertices.Contains(a)) RemoveVertex(a);
+                    });
 
                 LogicCore.Graph.Vertices.ForEach(v =>
                 {
-                    if (!_vertexList.ContainsKey(v))
-                        AddVertex(v, ControlFactory.CreateVertexControl(v));
+                    if (!_vertexList.ContainsKey(v)) AddVertex(v, ControlFactory.CreateVertexControl(v));
                 });
 
                 LogicCore.Graph.Edges.ForEach(e =>
@@ -806,113 +868,78 @@ public class GraphArea<TVertex, TEdge, TGraph> : GraphAreaBase, IDisposable
 
             if (LogicCore.AreVertexSizesNeeded())
                 vertexSizes = GetVertexSizesAndPositions(out vertexPositions);
-            else vertexPositions = GetVertexPositions();
+            else
+                vertexPositions = GetVertexPositions();
 
             localLogicCore = LogicCore;
-        });
-
-        if (localLogicCore == null)
-            throw new GX_InvalidDataException("LogicCore -> Not initialized!");
-
-        if (vertexSizes is null || vertexPositions is null || !localLogicCore.GenerateAlgorithmStorage(
-                vertexSizes.ToDictionary(s => s.Key, s => s.Value.ToGraphX()),
-                vertexPositions.ToDictionary(s => s.Key, s => s.Value.ToGraphX())))
-            return;
-
-        //clear routing info
-        localLogicCore.Graph.Edges.ForEach(a => a.RoutingPoints = null);
-
-        var resultCoords = localLogicCore.Compute(cancellationToken);
-        var t = Stopwatch.GetTimestamp();
-        RunOnDispatcherThread(() =>
-        {
-            //setup vertex positions from result data
-            foreach (var item in resultCoords)
-            {
-                if (!_vertexList.TryGetValue(item.Key, out var vc)) continue;
-
-                SetFinalX(vc, item.Value.X);
-                SetFinalY(vc, item.Value.Y);
-
-                if (double.IsNaN(GetX(vc)))
-                    vc.SetPosition(item.Value.X, item.Value.Y, false);
-                vc.SetCurrentValue(PositioningCompleteProperty,
-                    true); // Style can show vertexes with layout positions assigned
-            }
-
-            SetCurrentValue(LogicCoreProperty, localLogicCore);
-            UpdateLayout(); //update all changes
-            Debug.WriteLine("VIS: " + Stopwatch.GetElapsedTime(t));
-        });
+        }
     }
 
     /// <summary>
     /// Relayout graph using the same vertexes
     /// </summary>
     /// <param name="generateAllEdges">Generate all available edges for graph</param>
-    public override void RelayoutGraph(bool generateAllEdges = false)
+    /// <param name="cancellationToken"></param>
+    public override async ValueTask RelayoutGraph(bool generateAllEdges = false,
+        CancellationToken cancellationToken = default)
     {
         LogicCore?.PushFilters();
-        RelayoutGraphMain(generateAllEdges);
+        await RelayoutGraphMain(generateAllEdges, cancellation: cancellationToken);
     }
 
-    protected virtual void RelayoutGraphMain(bool generateAllEdges = false, bool standalone = true)
+    protected virtual async ValueTask RelayoutGraphMain(bool generateAllEdges = false, bool standalone = true,
+        CancellationToken cancellation = default)
     {
         if (LogicCore == null)
             throw new GX_InvalidDataException("LogicCore -> Not initialized!");
-
         if (LogicCore.AsyncAlgorithmCompute)
         {
-            CancelRelayout();
-
-            _layoutCancellationSource = new CancellationTokenSource();
-
             // Launch _relayoutGraph on a background thread using the task thread pool
-            _layoutTask = Task.Factory.StartNew(() => RelayoutGraph(_layoutCancellationSource.Token),
-                    _layoutCancellationSource.Token)
-                .ContinueWith(_ => // When finished, finish up the relayout on the UI thread
-                {
-                    RunOnDispatcherThread(() => FinishUpRelayoutGraph(generateAllEdges, standalone));
-                }, _layoutCancellationSource.Token);
+            await Task.Factory.StartNew(() => RelayoutGraph(cancellation), cancellation);
         }
         else
         {
-            RelayoutGraph(CancellationToken.None);
-            FinishUpRelayoutGraph(generateAllEdges, standalone);
+            await RelayoutGraph(cancellation);
         }
+
+        await FinishUpRelayoutGraph(generateAllEdges, standalone, cancellation);
     }
 
-    protected virtual void FinishUpRelayoutGraph(bool generateAllEdges, bool standalone)
+    protected virtual async ValueTask FinishUpRelayoutGraph(bool generateAllEdges, bool standalone,
+        CancellationToken cancellationToken)
     {
-        if (generateAllEdges)
+        await RunOnDispatcherThread(() =>
         {
-            if (_edgesList.Count == 0)
+            if (generateAllEdges)
             {
-                GenerateAllEdgesInternal();
-                if (EnableVisualPropsRecovery) ReapplyEdgeVisualProperties();
+                if (_edgesList.Count == 0)
+                {
+                    GenerateAllEdgesInternal();
+                    if (EnableVisualPropsRecovery) ReapplyEdgeVisualProperties();
+                }
+                else UpdateAllEdges();
             }
-            else UpdateAllEdges();
-        }
 
-        if (!standalone)
-        {
-            if (EnableVisualPropsRecovery) ReapplyVertexVisualProperties();
-            OnGenerateGraphFinished();
-        }
-        else
-        {
-            OnRelayoutFinished();
-        }
+            if (!standalone)
+            {
+                if (EnableVisualPropsRecovery) ReapplyVertexVisualProperties();
+                OnGenerateGraphFinished();
+            }
+            else
+            {
+                OnRelayoutFinished();
+            }
+        }, cancellationToken);
     }
 
     #region WPF/METRO threading stuff
 
-    private void RunOnDispatcherThread(Action action)
+    private static async ValueTask RunOnDispatcherThread(Action action, CancellationToken cancellation)
     {
         var dispatcher = Dispatcher.UIThread;
         if (dispatcher.CheckAccess())
             action(); // On UI thread already, so make a direct call
-        else dispatcher.Invoke(action);
+        else await dispatcher.InvokeAsync(action, DispatcherPriority.Normal, cancellation);
     }
 
 
@@ -930,23 +957,6 @@ public class GraphArea<TVertex, TEdge, TGraph> : GraphAreaBase, IDisposable
         throw ex;
     }
 
-    // Faking "await" from C# 5 / .NET 4.5 - see here: http://blogs.msdn.com/b/pfxteam/archive/2010/05/04/10007499.aspx
-    private static void Await(Task task)
-    {
-        var nestedFrame = new DispatcherFrame();
-        task.ContinueWith(_ => nestedFrame.Continue = false);
-        Dispatcher.UIThread.PushFrame(nestedFrame);
-
-        try
-        {
-            task.Wait();
-        }
-        catch (AggregateException ex)
-        {
-            UnwrapAndRethrow(ex);
-        }
-    }
-
     #endregion
 
     #endregion
@@ -954,17 +964,17 @@ public class GraphArea<TVertex, TEdge, TGraph> : GraphAreaBase, IDisposable
     /// <summary>
     /// Cancel all undergoing async calculations
     /// </summary>
-    public void CancelRelayout()
+    public async ValueTask CancelRelayout()
     {
         if (_layoutTask == null)
             return;
 
-        _layoutCancellationSource!.Cancel();
+        await _layoutCancellationSource!.CancelAsync();
 
         try
         {
             // Wait, but don't block the dispatcher, because the background task might be trying to execute on the UI thread.
-            Await(_layoutTask);
+            await _layoutTask;
         }
         catch (OperationCanceledException)
         {
@@ -982,7 +992,9 @@ public class GraphArea<TVertex, TEdge, TGraph> : GraphAreaBase, IDisposable
     /// <param name="graph">Data graph</param>
     /// <param name="generateAllEdges">Generate all available edges for graph</param>
     /// <param name="dataContextToDataItem">Sets visual edge and vertex controls DataContext property to vertex data item of the control (Allows prop binding in xaml templates)</param>
-    public virtual void GenerateGraph(TGraph graph, bool generateAllEdges = true, bool dataContextToDataItem = true)
+    /// <param name="cancellation"></param>
+    public virtual async ValueTask GenerateGraph(TGraph graph, bool generateAllEdges = true,
+        bool dataContextToDataItem = true, CancellationToken cancellation = default)
     {
         if (LogicCore == null)
             throw new GX_InvalidDataException("LogicCore -> Not initialized! (Is NULL)");
@@ -994,7 +1006,7 @@ public class GraphArea<TVertex, TEdge, TGraph> : GraphAreaBase, IDisposable
             AutoresolveIds(false, graph);
         if (!LogicCore.IsCustomLayout)
             PreloadVertexes(graph, dataContextToDataItem);
-        RelayoutGraphMain(generateAllEdges, false);
+        await RelayoutGraphMain(generateAllEdges, false, cancellation);
     }
 
     /// <summary>
@@ -1002,9 +1014,10 @@ public class GraphArea<TVertex, TEdge, TGraph> : GraphAreaBase, IDisposable
     /// </summary>
     /// <param name="generateAllEdges">Generate all available edges for graph</param>
     /// <param name="dataContextToDataItem">Sets visual edge and vertex controls DataContext property to vertex data item of the control (Allows prop binding in xaml templates)</param>
-    public virtual void GenerateGraph(bool generateAllEdges = true, bool dataContextToDataItem = true)
+    public virtual async ValueTask GenerateGraph(bool generateAllEdges = true, bool dataContextToDataItem = true,
+        CancellationToken cancellation = default)
     {
-        GenerateGraph(LogicCore!.Graph, generateAllEdges, dataContextToDataItem);
+        await GenerateGraph(LogicCore!.Graph, generateAllEdges, dataContextToDataItem, cancellation);
     }
 
     public void AutoresolveEntitiesId()
@@ -1273,7 +1286,25 @@ public class GraphArea<TVertex, TEdge, TGraph> : GraphAreaBase, IDisposable
 
         foreach (var item in _edgesList)
         {
-            item.Value.PrepareEdgePath();
+            item.Value.SuppressLayoutUpdates = true;
+        }
+
+        try
+        {
+            foreach (var item in _edgesList)
+            {
+                item.Value.PrepareEdgePath();
+            }
+        }
+        finally
+        {
+            foreach (var item in _edgesList)
+            {
+                item.Value.SuppressLayoutUpdates = false;
+            }
+
+            // Single layout update for all edges
+            InvalidateMeasure();
         }
 
         GenerateEdgeLabels();
@@ -1300,38 +1331,65 @@ public class GraphArea<TVertex, TEdge, TGraph> : GraphAreaBase, IDisposable
     {
         edgeList ??= _edgesList;
 
-            //clear IsParallel flag - optimized: avoid LINQ allocation
-            foreach (var edge in edgeList.Values)
+        // Clear IsParallel flag - optimized: avoid LINQ allocation
+        foreach (var edge in edgeList.Values)
+        {
+            edge.IsParallel = false;
+        }
+
+
+        // Group edges by their vertex pair (using a struct key to avoid Tuple allocations)
+        var edgeGroups = new Dictionary<(long, long), List<KeyValuePair<TEdge, EdgeControl>>>();
+
+        foreach (var edge in edgeList)
+        {
+            // Skip edges that can't be parallel
+            if (!edge.Value.CanBeParallel || edge.Key.IsSelfLoop) continue;
+            if (edge.Key is { SourceConnectionPointId: not null, TargetConnectionPointId: not null }) continue;
+
+            // Create a normalized key (smaller ID first)
+            var sourceId = edge.Key.Source.ID;
+            var targetId = edge.Key.Target.ID;
+            var key = sourceId < targetId ? (sourceId, targetId) : (targetId, sourceId);
+
+            if (!edgeGroups.TryGetValue(key, out var group))
             {
-                edge.IsParallel = false;
+                group = new List<KeyValuePair<TEdge, EdgeControl>>(4); // Pre-size for typical case
+                edgeGroups[key] = group;
             }
 
-        // Group edges together that share the same source and target. Edges that have both a source and target connection point defined are excluded. Self
-        // looped edges are excluded. Edges marked with CanBeParallel == false are excluded. Edges with a connection point are pushed to the end of the group
-        // and will be marked as parallel, but their offsets end up overridden during rendering.
-        var edgeGroups =
-            (from edge in edgeList
-                where edge.Value.CanBeParallel && !edge.Key.IsSelfLoop &&
-                      (!edge.Key.SourceConnectionPointId.HasValue || !edge.Key.TargetConnectionPointId.HasValue)
-                group edge by new Tuple<long, long>(Math.Min(edge.Key.Source.ID, edge.Key.Target.ID),
-                    Math.Max(edge.Key.Source.ID, edge.Key.Target.ID))
-                into edgeGroup
-                select edgeGroup.OrderBy(e =>
-                        e.Key.SourceConnectionPointId.HasValue || e.Key.TargetConnectionPointId.HasValue ? 1 : 0)
-                    .ToList())
-            .ToList();
+            group.Add(edge);
+        }
 
-        foreach (var list in edgeGroups)
+        foreach (var groupKvp in edgeGroups)
         {
+            var list = groupKvp.Value;
+            if (list.Count <= 1) continue; // Single edges don't need parallel processing
+
+            // Sort in place: edges with connection points go to the end
+            list.Sort((a, b) =>
+            {
+                var aHasCp = a.Key.SourceConnectionPointId.HasValue || a.Key.TargetConnectionPointId.HasValue;
+                var bHasCp = b.Key.SourceConnectionPointId.HasValue || b.Key.TargetConnectionPointId.HasValue;
+                return aHasCp.CompareTo(bHasCp);
+            });
+
             var first = list[0];
 
             // Alternate sides with each step
             var viceversa = 1;
-            // Check if total number of edges without connection points is even or not
-            var even = list.TakeWhile(e =>
-                               !e.Key.SourceConnectionPointId.HasValue && !e.Key.TargetConnectionPointId.HasValue)
-                           .Count() % 2 ==
-                       0;
+
+            // Count edges without connection points (optimized: avoid TakeWhile/Count)
+            var countWithoutCp = 0;
+            foreach (var e in list)
+            {
+                if (e.Key.SourceConnectionPointId.HasValue || e.Key.TargetConnectionPointId.HasValue)
+                    break;
+                countWithoutCp++;
+            }
+
+            var even = countWithoutCp % 2 == 0;
+
             // For even numbers of edges, initial offset is a half step from the center
             var initialOffset = even ? LogicCore!.ParallelEdgeDistance / 2 : 0;
 
@@ -1375,21 +1433,21 @@ public class GraphArea<TVertex, TEdge, TGraph> : GraphAreaBase, IDisposable
             throw new GX_InvalidDataException("LogicCore -> Not initialized!");
         RemoveAllEdges();
 
-            TEdge[]? inlist = null;
-            TEdge[]? outlist = null;
-            switch (edgeType)
-            {
-                case EdgesType.Out:
-                    outlist = [.. LogicCore.Graph.OutEdges((TVertex)vc.Vertex!)];
-                    break;
-                case EdgesType.In:
-                    inlist = [.. LogicCore.Graph.InEdges((TVertex)vc.Vertex!)];
-                    break;
-                default:
-                    outlist = [.. LogicCore.Graph.OutEdges((TVertex)vc.Vertex!)];
-                    inlist = [.. LogicCore.Graph.InEdges((TVertex)vc.Vertex!)];
-                    break;
-            }
+        TEdge[]? inlist = null;
+        TEdge[]? outlist = null;
+        switch (edgeType)
+        {
+            case EdgesType.Out:
+                outlist = [.. LogicCore.Graph.OutEdges((TVertex)vc.Vertex!)];
+                break;
+            case EdgesType.In:
+                inlist = [.. LogicCore.Graph.InEdges((TVertex)vc.Vertex!)];
+                break;
+            default:
+                outlist = [.. LogicCore.Graph.OutEdges((TVertex)vc.Vertex!)];
+                inlist = [.. LogicCore.Graph.InEdges((TVertex)vc.Vertex!)];
+                break;
+        }
 
         var gotSelfLoop = false;
         if (inlist != null)
@@ -1431,10 +1489,30 @@ public class GraphArea<TVertex, TEdge, TGraph> : GraphAreaBase, IDisposable
         if (LogicCore.EnableParallelEdges)
             UpdateParallelEdgesData();
 
+        // Suppress individual InvalidateMeasure calls during batch update
         foreach (var ec in _edgesList.Values)
         {
-            if (!performFullUpdate) ec.UpdateEdgeRendering();
-            else ec.UpdateEdge();
+            ec.SuppressLayoutUpdates = true;
+        }
+
+        try
+        {
+            foreach (var ec in _edgesList.Values)
+            {
+                if (!performFullUpdate) ec.UpdateEdgeRendering();
+                else ec.UpdateEdge();
+            }
+        }
+        finally
+        {
+            // Re-enable layout updates and do a single layout pass
+            foreach (var ec in _edgesList.Values)
+            {
+                ec.SuppressLayoutUpdates = false;
+            }
+
+            // Single layout update for all edges at once
+            InvalidateMeasure();
         }
     }
 
@@ -1455,23 +1533,23 @@ public class GraphArea<TVertex, TEdge, TGraph> : GraphAreaBase, IDisposable
                 "LogicCore.Graph property not set while using GetRelatedVertexControls method!");
         }
 
-            var list = new List<IGraphControl>();
-            if (ctrl is VertexControl vc)
+        var list = new List<IGraphControl>();
+        if (ctrl is VertexControl vc)
+        {
+            var vData = (TVertex)vc.Vertex!;
+            var vList = new List<TVertex>();
+            switch (edgesType)
             {
-                var vData = (TVertex)vc.Vertex!;
-                var vList = new List<TVertex>();
-                switch (edgesType)
-                {
-                    case EdgesType.All:
-                        vList = [.. LogicCore.Graph.GetNeighbours(vData)];
-                        break;
-                    case EdgesType.In:
-                        vList = [.. LogicCore.Graph.GetInNeighbours(vData)];
-                        break;
-                    case EdgesType.Out:
-                        vList = [.. LogicCore.Graph.GetOutNeighbours(vData)];
-                        break;
-                }
+                case EdgesType.All:
+                    vList = [.. LogicCore.Graph.GetNeighbours(vData)];
+                    break;
+                case EdgesType.In:
+                    vList = [.. LogicCore.Graph.GetInNeighbours(vData)];
+                    break;
+                case EdgesType.Out:
+                    vList = [.. LogicCore.Graph.GetOutNeighbours(vData)];
+                    break;
+            }
 
             list.AddRange(VertexList.Where(a => vList.Contains(a.Key)).Select(a => a.Value));
         }
@@ -1505,24 +1583,24 @@ public class GraphArea<TVertex, TEdge, TGraph> : GraphAreaBase, IDisposable
                 "LogicCore.Graph property not set while using GetRelatedEdgeControls method!");
         }
 
-            var list = new List<IGraphControl>();
-            if (ctrl is EdgeControl) return list;
-            if (ctrl is VertexControl vc)
+        var list = new List<IGraphControl>();
+        if (ctrl is EdgeControl) return list;
+        if (ctrl is VertexControl vc)
+        {
+            var vData = (TVertex)vc.Vertex!;
+            var eList = new List<TEdge>();
+            switch (edgesType)
             {
-                var vData = (TVertex)vc.Vertex!;
-                var eList = new List<TEdge>();
-                switch (edgesType)
-                {
-                    case EdgesType.All:
-                        eList = [.. LogicCore.Graph.GetAllEdges(vData)];
-                        break;
-                    case EdgesType.In:
-                        eList = [.. LogicCore.Graph.GetInEdges(vData)];
-                        break;
-                    case EdgesType.Out:
-                        eList = [.. LogicCore.Graph.GetOutEdges(vData)];
-                        break;
-                }
+                case EdgesType.All:
+                    eList = [.. LogicCore.Graph.GetAllEdges(vData)];
+                    break;
+                case EdgesType.In:
+                    eList = [.. LogicCore.Graph.GetInEdges(vData)];
+                    break;
+                case EdgesType.Out:
+                    eList = [.. LogicCore.Graph.GetOutEdges(vData)];
+                    break;
+            }
 
             list.AddRange(EdgesList.Where(a => eList.Contains(a.Key)).Select(a => a.Value));
         }
@@ -1664,20 +1742,20 @@ public class GraphArea<TVertex, TEdge, TGraph> : GraphAreaBase, IDisposable
         if (LogicCore.Graph == null) LogicCore.Graph = Activator.CreateInstance<TGraph>();
         else LogicCore.Graph.Clear();
 
-            var graphSerializationDatas = data as GraphSerializationData[] ?? [.. data];
-            var vlist = graphSerializationDatas.Where(a => a.Data is TVertex);
-            foreach (var item in vlist)
-            {
-                var vertexdata = (TVertex)item.Data;
-                var ctrl = ControlFactory.CreateVertexControl(vertexdata);
-                ctrl.IsVisible = item.IsVisible;
-                ctrl.SetPosition(item.Position.X, item.Position.Y);
-                AddVertex(vertexdata, ctrl);
-                LogicCore.Graph.AddVertex(vertexdata);
-                ctrl.ApplyTemplate();
-                if (item.HasLabel)
-                    GenerateVertexLabel(ctrl);
-            }
+        var graphSerializationDatas = data as GraphSerializationData[] ?? [.. data];
+        var vlist = graphSerializationDatas.Where(a => a.Data is TVertex);
+        foreach (var item in vlist)
+        {
+            var vertexdata = (TVertex)item.Data;
+            var ctrl = ControlFactory.CreateVertexControl(vertexdata);
+            ctrl.IsVisible = item.IsVisible;
+            ctrl.SetPosition(item.Position.X, item.Position.Y);
+            AddVertex(vertexdata, ctrl);
+            LogicCore.Graph.AddVertex(vertexdata);
+            ctrl.ApplyTemplate();
+            if (item.HasLabel)
+                GenerateVertexLabel(ctrl);
+        }
 
         var edgeList = graphSerializationDatas.Where(a => a.Data is TEdge);
 
@@ -1865,7 +1943,6 @@ public class GraphArea<TVertex, TEdge, TGraph> : GraphAreaBase, IDisposable
 
     public void Dispose()
     {
-        CancelRelayout(); // In case some asynchronouse relayout is active
         IsDisposed = true;
         if (_stateStorage != null)
         {

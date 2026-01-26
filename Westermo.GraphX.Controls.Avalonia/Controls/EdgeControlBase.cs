@@ -30,6 +30,12 @@ namespace Westermo.GraphX.Controls.Controls;
 public abstract class EdgeControlBase : TemplatedControl, IGraphControl, IDisposable
 {
     /// <summary>
+    /// When true, InvalidateMeasure calls are suppressed during batch operations.
+    /// This improves performance when updating many edges at once.
+    /// </summary>
+    internal bool SuppressLayoutUpdates { get; set; }
+    
+    /// <summary>
     /// Gets or sets if edge pointer should be hidden when source and target vertices are overlapped making the 0 length edge. Default value is True.
     /// </summary>
     public bool HideEdgePointerOnVertexOverlap { get; set; } = true;
@@ -559,7 +565,9 @@ public abstract class EdgeControlBase : TemplatedControl, IGraphControl, IDispos
         if (LinePathObject == null) return;
         LinePathObject.Data = LineGeometry;
         LinePathObject.StrokeDashArray = StrokeDashArray;
-        InvalidateMeasure(); // ensure layout re-queries our desired size after geometry change
+        // OPTIMIZATION: Skip InvalidateMeasure during batch updates
+        if (!SuppressLayoutUpdates)
+            InvalidateMeasure(); // ensure layout re-queries our desired size after geometry change
     }
 
     internal int ParallelEdgeOffset;
@@ -984,7 +992,9 @@ public abstract class EdgeControlBase : TemplatedControl, IGraphControl, IDispos
                         l.UpdatePosition();
                 }
             }
-            InvalidateMeasure();
+            // OPTIMIZATION: Skip InvalidateMeasure during batch updates
+            if (!SuppressLayoutUpdates)
+                InvalidateMeasure();
         }
 
         /// <summary>
