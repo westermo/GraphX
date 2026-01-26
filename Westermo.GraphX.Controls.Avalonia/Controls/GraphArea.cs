@@ -58,28 +58,32 @@ public class GraphArea<TVertex, TEdge, TGraph> : GraphAreaBase, IDisposable
     private static void LogicCoreChanged(GraphArea<TVertex, TEdge, TGraph> graph, AvaloniaPropertyChangedEventArgs args)
     {
         if (graph.Parent == null) return;
-        try
-        {
-            graph.LogicCoreAction().GetAwaiter().GetResult();
-        }
-        catch (Exception ex)
-        {
-            Debug.WriteLine("GraphArea: LogicCoreChanged error: " + ex.Message);
-        }
+        Task.Run(graph.LogicCoreAction);
     }
 
     private CancellationTokenSource? _logicCoreReactionCts;
 
     private async Task LogicCoreAction()
     {
-        if (_logicCoreReactionCts != null)
+        try
         {
-            await _logicCoreReactionCts.CancelAsync();
-            _logicCoreReactionCts.Dispose();
-        }
+            if (_logicCoreReactionCts != null)
+            {
+                await _logicCoreReactionCts.CancelAsync();
+                _logicCoreReactionCts.Dispose();
+            }
 
-        _logicCoreReactionCts = new CancellationTokenSource();
-        await OnLogicCore(_logicCoreReactionCts.Token);
+            _logicCoreReactionCts = new CancellationTokenSource();
+            await OnLogicCore(_logicCoreReactionCts.Token);
+        }
+        catch (OperationCanceledException)
+        {
+            //ignore
+        }
+        catch (Exception ex)
+        {
+            Debug.WriteLine("LogicCore reaction error: " + ex);
+        }
     }
 
     private async Task OnLogicCore(CancellationToken cancellationToken)
