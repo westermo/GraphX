@@ -1027,7 +1027,11 @@ public abstract class EdgeControlBase : TemplatedControl, IGraphControl, IDispos
             if (RootArea != null && hasRouteInfo && routeInformation != null)
             {
                 //replace start and end points with accurate ones
-                Span<Point> routePoints = stackalloc Point[routeInformation.Length < 2 ? 2 : routeInformation.Length];
+                const int StackallocThreshold = 256;
+                int pointsLength = routeInformation.Length < 2 ? 2 : routeInformation.Length;
+                Span<Point> routePoints = pointsLength <= StackallocThreshold
+                    ? stackalloc Point[pointsLength]
+                    : new Point[pointsLength];
                 for (var i = 0; i < routeInformation.Length; i++)
                 {
                     routePoints[i] = routeInformation[i].ToAvalonia();
