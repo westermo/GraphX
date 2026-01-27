@@ -34,6 +34,92 @@ public abstract class EdgeControlBase : TemplatedControl, IGraphControl, IDispos
     /// This improves performance when updating many edges at once.
     /// </summary>
     internal bool SuppressLayoutUpdates { get; set; }
+
+    #region Geometry Caching
+
+    /// <summary>
+    /// Cached source position for detecting when geometry needs recalculation.
+    /// </summary>
+    private Point _cachedSourcePosition;
+    
+    /// <summary>
+    /// Cached target position for detecting when geometry needs recalculation.
+    /// </summary>
+    private Point _cachedTargetPosition;
+    
+    /// <summary>
+    /// Cached source size for detecting when geometry needs recalculation.
+    /// </summary>
+    private Size _cachedSourceSize;
+    
+    /// <summary>
+    /// Cached target size for detecting when geometry needs recalculation.
+    /// </summary>
+    private Size _cachedTargetSize;
+
+    /// <summary>
+    /// Indicates whether geometry caching is enabled. When enabled, edge paths are only
+    /// recalculated when source/target positions or sizes actually change.
+    /// Default is true for performance optimization.
+    /// </summary>
+    public bool EnableGeometryCaching { get; set; } = true;
+
+    /// <summary>
+    /// Forces the next geometry update regardless of cache state.
+    /// </summary>
+    public void InvalidateGeometryCache()
+    {
+        _cachedSourcePosition = new Point(double.NaN, double.NaN);
+        _cachedTargetPosition = new Point(double.NaN, double.NaN);
+    }
+
+    /// <summary>
+    /// Checks if the geometry cache is still valid (source/target haven't moved).
+    /// </summary>
+    private bool IsGeometryCacheValid()
+    {
+        if (!EnableGeometryCaching) return false;
+        if (Source == null || Target == null) return false;
+
+        var sourcePos = Source.GetPosition();
+        var targetPos = Target.GetPosition();
+        var sourceSize = new Size(Source.Bounds.Width, Source.Bounds.Height);
+        var targetSize = new Size(Target.Bounds.Width, Target.Bounds.Height);
+
+        // Check if positions and sizes are unchanged
+        if (Math.Abs(sourcePos.X - _cachedSourcePosition.X) > 0.1 ||
+            Math.Abs(sourcePos.Y - _cachedSourcePosition.Y) > 0.1 ||
+            Math.Abs(targetPos.X - _cachedTargetPosition.X) > 0.1 ||
+            Math.Abs(targetPos.Y - _cachedTargetPosition.Y) > 0.1 ||
+            Math.Abs(sourceSize.Width - _cachedSourceSize.Width) > 0.1 ||
+            Math.Abs(sourceSize.Height - _cachedSourceSize.Height) > 0.1 ||
+            Math.Abs(targetSize.Width - _cachedTargetSize.Width) > 0.1 ||
+            Math.Abs(targetSize.Height - _cachedTargetSize.Height) > 0.1)
+        {
+            return false;
+        }
+
+        return true;
+    }
+
+    /// <summary>
+    /// Updates the geometry cache with current positions.
+    /// </summary>
+    private void UpdateGeometryCache()
+    {
+        if (Source != null)
+        {
+            _cachedSourcePosition = Source.GetPosition();
+            _cachedSourceSize = new Size(Source.Bounds.Width, Source.Bounds.Height);
+        }
+        if (Target != null)
+        {
+            _cachedTargetPosition = Target.GetPosition();
+            _cachedTargetSize = new Size(Target.Bounds.Width, Target.Bounds.Height);
+        }
+    }
+
+    #endregion
     
     /// <summary>
     /// Gets or sets if edge pointer should be hidden when source and target vertices are overlapped making the 0 length edge. Default value is True.
@@ -258,6 +344,12 @@ public abstract class EdgeControlBase : TemplatedControl, IGraphControl, IDispos
     /// Geometry object that represents visual edge path. Applied in OnApplyTemplate and OnRender.
     /// </summary>
     protected Geometry? LineGeometry;
+
+    /// <summary>
+    /// Gets the bounds of the edge geometry for culling purposes.
+    /// Returns null if no geometry has been computed yet.
+    /// </summary>
+    public Rect? GeometryBounds => LineGeometry?.Bounds;
 
     /// <summary>
     /// Templated Path object to operate with routed path
@@ -524,9 +616,25 @@ public abstract class EdgeControlBase : TemplatedControl, IGraphControl, IDispos
         /// Complete edge update pass. Don't needed to be run manualy until some edge related modifications are done requiring full edge update.
         /// </summary>
         /// <param name="updateLabel">Update label data</param>
-        public virtual void UpdateEdge(bool updateLabel = true)
+        /// <param name="forceUpdate">Force geometry recalculation even if cached position is valid</param>
+        public virtual void UpdateEdge(bool updateLabel = true, bool forceUpdate = false)
         {
             if (!IsVisible && !IsHiddenEdgesUpdated) return;
+            
+            // OPTIMIZATION: Skip if geometry cache is still valid and not forcing update
+            if (!forceUpdate && IsGeometryCacheValid())
+            {
+                // Only update labels if needed
+                if (updateLabel && _updateLabelPosition)
+                {
+                    foreach (var l in EdgeLabelControls)
+                    {
+                        if (l.ShowLabel) l.UpdatePosition();
+                    }
+                }
+                return;
+            }
+            
             //first show label to get DesiredSize - optimized: avoid LINQ allocation
             foreach (var l in EdgeLabelControls)
             {
@@ -534,6 +642,9 @@ public abstract class EdgeControlBase : TemplatedControl, IGraphControl, IDispos
                 else l.Hide();
             }
             UpdateEdgeRendering(updateLabel);
+            
+            // Update cache after successful geometry update
+            UpdateGeometryCache();
         }
 
     /// <summary>

@@ -133,11 +133,35 @@ public class EdgeControl : EdgeControlBase, IDraggable
         UpdateSelfLoopedEdgeData();
     }
 
+    #region Edge Update Throttling
+
+    private long _lastUpdateTicks;
+    
+    /// <summary>
+    /// Minimum interval between edge updates in milliseconds during rapid position changes.
+    /// Set to 0 to disable throttling. Default is 16ms (~60 FPS).
+    /// </summary>
+    public int UpdateThrottleMs { get; set; } = 16;
+
     private void source_PositionChanged(object sender, EventArgs e)
     {
+        // OPTIMIZATION: Throttle rapid updates during dragging
+        if (UpdateThrottleMs > 0)
+        {
+            var now = System.Diagnostics.Stopwatch.GetTimestamp();
+            var elapsedMs = (now - _lastUpdateTicks) * 1000.0 / System.Diagnostics.Stopwatch.Frequency;
+            if (elapsedMs < UpdateThrottleMs)
+            {
+                return; // Skip this update, too soon
+            }
+            _lastUpdateTicks = now;
+        }
+        
         //update edge on any connected vertex position changes
         UpdateEdge();
     }
+
+    #endregion
 
     private void Source_SizeChanged(object? sender, SizeChangedEventArgs e)
     {

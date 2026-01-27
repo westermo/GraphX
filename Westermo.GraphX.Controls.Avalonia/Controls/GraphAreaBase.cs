@@ -26,6 +26,113 @@ public abstract class GraphAreaBase : Canvas, ITrackableContent, IGraphAreaBase
     /// </summary>
     protected bool IsInPrintMode;
 
+    #region Viewport Culling
+
+    private ViewportCulling? _viewportCulling;
+
+    /// <summary>
+    /// Gets the viewport culling helper for optimizing large graph rendering.
+    /// When enabled, controls outside the visible viewport are hidden to improve performance.
+    /// </summary>
+    public ViewportCulling ViewportCulling => _viewportCulling ??= new ViewportCulling(this);
+
+    /// <summary>
+    /// Gets or sets whether viewport-based culling is enabled.
+    /// When enabled, vertices and edges outside the visible viewport are hidden to improve rendering performance.
+    /// Recommended for graphs with 500+ nodes.
+    /// </summary>
+    public bool EnableViewportCulling
+    {
+        get => _viewportCulling?.IsEnabled ?? false;
+        set => ViewportCulling.IsEnabled = value;
+    }
+
+    /// <summary>
+    /// Updates the viewport for culling calculations.
+    /// Call this method when the viewport changes (zoom, pan, resize) if using viewport culling.
+    /// </summary>
+    /// <param name="viewport">The visible viewport rectangle in graph coordinates.</param>
+    public void UpdateViewport(Rect viewport)
+    {
+        _viewportCulling?.UpdateViewport(viewport);
+    }
+
+    #endregion
+
+    #region Level of Detail
+
+    private LevelOfDetailSettings? _lodSettings;
+    private double _currentZoomLevel = 1.0;
+
+    /// <summary>
+    /// Gets the level-of-detail settings for optimizing large graph rendering.
+    /// Adjust these settings to control when visual complexity is reduced at lower zoom levels.
+    /// </summary>
+    public LevelOfDetailSettings LodSettings => _lodSettings ??= new LevelOfDetailSettings();
+
+    /// <summary>
+    /// Gets or sets the current zoom level. Used for level-of-detail calculations.
+    /// This is automatically updated when using ZoomControl.
+    /// </summary>
+    public double CurrentZoomLevel
+    {
+        get => _currentZoomLevel;
+        set
+        {
+            if (Math.Abs(_currentZoomLevel - value) < 0.001) return;
+            var oldZoom = _currentZoomLevel;
+            _currentZoomLevel = value;
+            OnZoomLevelChanged(oldZoom, value);
+        }
+    }
+
+    /// <summary>
+    /// Called when the zoom level changes. Updates LOD visibility settings.
+    /// </summary>
+    protected virtual void OnZoomLevelChanged(double oldZoom, double newZoom)
+    {
+        if (_lodSettings == null || !_lodSettings.IsEnabled) return;
+
+        // Check if LOD thresholds were crossed
+        var showArrowsOld = _lodSettings.ShouldShowArrows(oldZoom);
+        var showArrowsNew = _lodSettings.ShouldShowArrows(newZoom);
+        
+        var showEdgeLabelsOld = _lodSettings.ShouldShowEdgeLabels(oldZoom);
+        var showEdgeLabelsNew = _lodSettings.ShouldShowEdgeLabels(newZoom);
+        
+        var showVertexLabelsOld = _lodSettings.ShouldShowVertexLabels(oldZoom);
+        var showVertexLabelsNew = _lodSettings.ShouldShowVertexLabels(newZoom);
+
+        // Only update if thresholds were crossed
+        if (showArrowsOld != showArrowsNew || showEdgeLabelsOld != showEdgeLabelsNew)
+        {
+            ApplyEdgeLodSettings(showArrowsNew, showEdgeLabelsNew);
+        }
+
+        if (showVertexLabelsOld != showVertexLabelsNew)
+        {
+            ApplyVertexLodSettings(showVertexLabelsNew);
+        }
+    }
+
+    /// <summary>
+    /// Applies LOD settings to all edge controls.
+    /// </summary>
+    protected virtual void ApplyEdgeLodSettings(bool showArrows, bool showLabels)
+    {
+        // Override in derived class to apply to edge controls
+    }
+
+    /// <summary>
+    /// Applies LOD settings to all vertex controls.
+    /// </summary>
+    protected virtual void ApplyVertexLodSettings(bool showLabels)
+    {
+        // Override in derived class to apply to vertex controls
+    }
+
+    #endregion
+
     public abstract void SetPrintMode(bool value, bool offsetControls = true, int margin = 0);
 
     /// <summary>

@@ -243,6 +243,41 @@ public class GraphArea<TVertex, TEdge, TGraph> : GraphAreaBase, IDisposable
 
     #endregion
 
+    #region Level of Detail Implementation
+
+    /// <inheritdoc/>
+    protected override void ApplyEdgeLodSettings(bool showArrows, bool showLabels)
+    {
+        foreach (var edge in _edgesList.Values)
+        {
+            // Apply arrow visibility based on LOD
+            edge.SetCurrentValue(EdgeControlBase.ShowArrowsProperty, showArrows);
+            
+            // Apply label visibility based on LOD
+            foreach (var label in edge.EdgeLabelControls)
+            {
+                if (label is Control control)
+                {
+                    control.IsVisible = showLabels && label.ShowLabel;
+                }
+            }
+        }
+    }
+
+    /// <inheritdoc/>
+    protected override void ApplyVertexLodSettings(bool showLabels)
+    {
+        foreach (var vertex in _vertexList.Values)
+        {
+            if (vertex.VertexLabelControl is Control label)
+            {
+                label.IsVisible = showLabels && vertex.ShowLabel;
+            }
+        }
+    }
+
+    #endregion
+
     public GraphArea()
     {
         EnableVisualPropsRecovery = true;
@@ -342,10 +377,12 @@ public class GraphArea<TVertex, TEdge, TGraph> : GraphAreaBase, IDisposable
     {
         if (VertexList.TryGetValue(vertexData, out VertexControl? value))
         {
-            GetRelatedControls(value, GraphControlType.Edge, eType).ToList().ForEach(a =>
+            // OPTIMIZATION: Avoid ToList() allocation by using foreach directly
+            var relatedControls = GetRelatedControls(value, GraphControlType.Edge, eType);
+            foreach (var a in relatedControls)
             {
                 RemoveEdge((TEdge)((EdgeControl)a).Edge!, removeEdgesFromDataGraph);
-            });
+            }
         }
 
         RemoveVertex(vertexData, removeVertexFromDataGraph);
@@ -601,40 +638,90 @@ public class GraphArea<TVertex, TEdge, TGraph> : GraphAreaBase, IDisposable
     protected virtual void GenerateVertexLabels()
     {
         if (VertexLabelFactory == null) return;
-        Children.OfType<IVertexLabelControl>().Cast<Control>().ToList().ForEach(a => Children.Remove(a));
-        VertexList.ForEach(a => { GenerateVertexLabel(a.Value); });
+        // OPTIMIZATION: Collect items to remove first to avoid modifying collection during iteration
+        var toRemove = ListPool<Control>.Rent();
+        try
+        {
+            foreach (var child in Children)
+            {
+                if (child is IVertexLabelControl)
+                    toRemove.Add(child);
+            }
+            foreach (var item in toRemove)
+            {
+                Children.Remove(item);
+            }
+        }
+        finally
+        {
+            ListPool<Control>.Return(toRemove);
+        }
+        
+        foreach (var kvp in VertexList)
+        {
+            GenerateVertexLabel(kvp.Value);
+        }
     }
 
     protected virtual void GenerateVertexLabel(VertexControl vertexControl)
     {
         var labels = VertexLabelFactory!.CreateLabel(vertexControl);
         var uiElements = labels as Control[] ?? [.. labels];
-        if (uiElements.Any(l => l is not IVertexLabelControl))
-            throw new GX_InvalidDataException(
-                "Generated vertex label should implement IVertexLabelControl interface");
-        uiElements.ForEach(l =>
+        // OPTIMIZATION: Check interface implementation without LINQ
+        foreach (var l in uiElements)
+        {
+            if (l is not IVertexLabelControl)
+                throw new GX_InvalidDataException(
+                    "Generated vertex label should implement IVertexLabelControl interface");
+        }
+        foreach (var l in uiElements)
         {
             if (_svVertexLabelShow == false || !IsVisible)
                 l.IsVisible = false;
             AddCustomChildControl(l);
             l.Measure(new Size(double.MaxValue, double.MaxValue));
             ((IVertexLabelControl)l).UpdatePosition();
-        });
+        }
     }
 
     protected virtual void GenerateEdgeLabels()
     {
         if (EdgeLabelFactory == null) return;
-        Children.OfType<IEdgeLabelControl>().Cast<Control>().ToList().ForEach(a => Children.Remove(a));
-        EdgesList.ForEach(a => { GenerateEdgeLabel(a.Value); });
+        // OPTIMIZATION: Collect items to remove first to avoid modifying collection during iteration
+        var toRemove = ListPool<Control>.Rent();
+        try
+        {
+            foreach (var child in Children)
+            {
+                if (child is IEdgeLabelControl)
+                    toRemove.Add(child);
+            }
+            foreach (var item in toRemove)
+            {
+                Children.Remove(item);
+            }
+        }
+        finally
+        {
+            ListPool<Control>.Return(toRemove);
+        }
+        
+        foreach (var kvp in EdgesList)
+        {
+            GenerateEdgeLabel(kvp.Value);
+        }
     }
 
     protected virtual void GenerateEdgeLabel(EdgeControl edgeControl)
     {
         var labels = EdgeLabelFactory!.CreateLabel(edgeControl);
         var uiElements = labels as Control[] ?? [.. labels];
-        if (uiElements.Any(a => a is not IEdgeLabelControl))
-            throw new GX_InvalidDataException("Generated edge label should implement IEdgeLabelControl interface");
+        // OPTIMIZATION: Check interface implementation without LINQ
+        foreach (var a in uiElements)
+        {
+            if (a is not IEdgeLabelControl)
+                throw new GX_InvalidDataException("Generated edge label should implement IEdgeLabelControl interface");
+        }
 
         uiElements.ForEach(l =>
         {
@@ -1326,82 +1413,96 @@ public class GraphArea<TVertex, TEdge, TGraph> : GraphAreaBase, IDisposable
             edge.IsParallel = false;
         }
 
+        // OPTIMIZATION: Use pooled dictionary to reduce allocations
+        var edgeGroups = DictionaryPool<(long, long), List<KeyValuePair<TEdge, EdgeControl>>>.Rent();
+        var rentedLists = ListPool<List<KeyValuePair<TEdge, EdgeControl>>>.Rent();
 
-        // Group edges by their vertex pair (using a struct key to avoid Tuple allocations)
-        var edgeGroups = new Dictionary<(long, long), List<KeyValuePair<TEdge, EdgeControl>>>();
-
-        foreach (var edge in edgeList)
+        try
         {
-            // Skip edges that can't be parallel
-            if (!edge.Value.CanBeParallel || edge.Key.IsSelfLoop) continue;
-            if (edge.Key is { SourceConnectionPointId: not null, TargetConnectionPointId: not null }) continue;
-
-            // Create a normalized key (smaller ID first)
-            var sourceId = edge.Key.Source.ID;
-            var targetId = edge.Key.Target.ID;
-            var key = sourceId < targetId ? (sourceId, targetId) : (targetId, sourceId);
-
-            if (!edgeGroups.TryGetValue(key, out var group))
+            foreach (var edge in edgeList)
             {
-                group = new List<KeyValuePair<TEdge, EdgeControl>>(4); // Pre-size for typical case
-                edgeGroups[key] = group;
+                // Skip edges that can't be parallel
+                if (!edge.Value.CanBeParallel || edge.Key.IsSelfLoop) continue;
+                if (edge.Key is { SourceConnectionPointId: not null, TargetConnectionPointId: not null }) continue;
+
+                // Create a normalized key (smaller ID first)
+                var sourceId = edge.Key.Source.ID;
+                var targetId = edge.Key.Target.ID;
+                var key = sourceId < targetId ? (sourceId, targetId) : (targetId, sourceId);
+
+                if (!edgeGroups.TryGetValue(key, out var group))
+                {
+                    group = ListPool<KeyValuePair<TEdge, EdgeControl>>.Rent();
+                    rentedLists.Add(group);
+                    edgeGroups[key] = group;
+                }
+
+                group.Add(edge);
             }
 
-            group.Add(edge);
+            foreach (var groupKvp in edgeGroups)
+            {
+                var list = groupKvp.Value;
+                if (list.Count <= 1) continue; // Single edges don't need parallel processing
+
+                // Sort in place: edges with connection points go to the end
+                list.Sort((a, b) =>
+                {
+                    var aHasCp = a.Key.SourceConnectionPointId.HasValue || a.Key.TargetConnectionPointId.HasValue;
+                    var bHasCp = b.Key.SourceConnectionPointId.HasValue || b.Key.TargetConnectionPointId.HasValue;
+                    return aHasCp.CompareTo(bHasCp);
+                });
+
+                var first = list[0];
+
+                // Alternate sides with each step
+                var viceversa = 1;
+
+                // Count edges without connection points (optimized: avoid TakeWhile/Count)
+                var countWithoutCp = 0;
+                foreach (var e in list)
+                {
+                    if (e.Key.SourceConnectionPointId.HasValue || e.Key.TargetConnectionPointId.HasValue)
+                        break;
+                    countWithoutCp++;
+                }
+
+                var even = countWithoutCp % 2 == 0;
+
+                // For even numbers of edges, initial offset is a half step from the center
+                var initialOffset = even ? LogicCore!.ParallelEdgeDistance / 2 : 0;
+
+                for (var i = 0; i < list.Count; i++)
+                {
+                    var kvp = list[i];
+                    kvp.Value.IsParallel = true;
+
+                    var offset = viceversa *
+                                 (initialOffset + LogicCore!.ParallelEdgeDistance * ((i + (even ? 0 : 1)) / 2));
+                    //if source to target edge
+                    if (kvp.Key.Source == first.Key.Source)
+                    {
+                        kvp.Value.ParallelEdgeOffset = offset;
+                    }
+                    else //if target to source edge - just switch offsets
+                    {
+                        kvp.Value.ParallelEdgeOffset = -offset;
+                    }
+
+                    //change trigger to opposite
+                    viceversa = -viceversa;
+                }
+            }
         }
-
-        foreach (var groupKvp in edgeGroups)
+        finally
         {
-            var list = groupKvp.Value;
-            if (list.Count <= 1) continue; // Single edges don't need parallel processing
-
-            // Sort in place: edges with connection points go to the end
-            list.Sort((a, b) =>
+            // Return all pooled lists
+            foreach (var list in rentedLists)
             {
-                var aHasCp = a.Key.SourceConnectionPointId.HasValue || a.Key.TargetConnectionPointId.HasValue;
-                var bHasCp = b.Key.SourceConnectionPointId.HasValue || b.Key.TargetConnectionPointId.HasValue;
-                return aHasCp.CompareTo(bHasCp);
-            });
-
-            var first = list[0];
-
-            // Alternate sides with each step
-            var viceversa = 1;
-
-            // Count edges without connection points (optimized: avoid TakeWhile/Count)
-            var countWithoutCp = 0;
-            foreach (var e in list)
-            {
-                if (e.Key.SourceConnectionPointId.HasValue || e.Key.TargetConnectionPointId.HasValue)
-                    break;
-                countWithoutCp++;
+                ListPool<KeyValuePair<TEdge, EdgeControl>>.Return(list);
             }
-
-            var even = countWithoutCp % 2 == 0;
-
-            // For even numbers of edges, initial offset is a half step from the center
-            var initialOffset = even ? LogicCore!.ParallelEdgeDistance / 2 : 0;
-
-            for (var i = 0; i < list.Count; i++)
-            {
-                var kvp = list[i];
-                kvp.Value.IsParallel = true;
-
-                var offset = viceversa *
-                             (initialOffset + LogicCore!.ParallelEdgeDistance * ((i + (even ? 0 : 1)) / 2));
-                //if source to target edge
-                if (kvp.Key.Source == first.Key.Source)
-                {
-                    kvp.Value.ParallelEdgeOffset = offset;
-                }
-                else //if target to source edge - just switch offsets
-                {
-                    kvp.Value.ParallelEdgeOffset = -offset;
-                }
-
-                //change trigger to opposite
-                viceversa = -viceversa;
-            }
+            ListPool<List<KeyValuePair<TEdge, EdgeControl>>>.Return(rentedLists);
+            DictionaryPool<(long, long), List<KeyValuePair<TEdge, EdgeControl>>>.Return(edgeGroups);
         }
     }
 
@@ -1470,7 +1571,8 @@ public class GraphArea<TVertex, TEdge, TGraph> : GraphAreaBase, IDisposable
     /// Update visual appearance for all possible visual edges
     /// </summary>
     /// <param name="performFullUpdate">If True - perform full edge update including all children checks such as pointers & labels. If False - update only edge routing and edge visual</param>
-    public virtual void UpdateAllEdges(bool performFullUpdate = false)
+    /// <param name="skipHiddenEdges">If True - skip updating edges that are not visible (useful with viewport culling). Default is true.</param>
+    public virtual void UpdateAllEdges(bool performFullUpdate = false, bool skipHiddenEdges = true)
     {
         if (LogicCore == null)
             throw new GX_InvalidDataException("LogicCore -> Not initialized!");
@@ -1488,6 +1590,10 @@ public class GraphArea<TVertex, TEdge, TGraph> : GraphAreaBase, IDisposable
         {
             foreach (var ec in _edgesList.Values)
             {
+                // OPTIMIZATION: Skip hidden edges when culling is enabled
+                if (skipHiddenEdges && !ec.IsVisible)
+                    continue;
+                    
                 if (!performFullUpdate) ec.UpdateEdgeRendering();
                 else ec.UpdateEdge();
             }
@@ -1504,6 +1610,41 @@ public class GraphArea<TVertex, TEdge, TGraph> : GraphAreaBase, IDisposable
             InvalidateMeasure();
         }
     }
+
+    #region Batch Update Support
+
+    /// <summary>
+    /// Begins a batch update scope where multiple edge updates are batched into a single layout pass.
+    /// Use this when updating many edges at once to improve performance.
+    /// </summary>
+    /// <returns>A disposable scope that triggers layout when disposed.</returns>
+    /// <example>
+    /// <code>
+    /// using (graphArea.BeginBatchUpdate())
+    /// {
+    ///     foreach (var edge in edges)
+    ///         edge.UpdateEdge();
+    /// }
+    /// </code>
+    /// </example>
+    public BatchUpdateScope BeginBatchUpdate()
+    {
+        return new BatchUpdateScope(this, [.. _edgesList.Values]);
+    }
+
+    /// <summary>
+    /// Begins a deferred position update scope where vertex position changes don't trigger immediate edge updates.
+    /// Use this when moving many vertices at once to avoid redundant edge recalculations.
+    /// </summary>
+    /// <returns>A disposable scope that triggers a single edge update when disposed.</returns>
+    public DeferredPositionUpdateScope BeginDeferredPositionUpdate()
+    {
+        return new DeferredPositionUpdateScope(
+            [.. _vertexList.Values],
+            () => UpdateAllEdges());
+    }
+
+    #endregion
 
     #endregion
 

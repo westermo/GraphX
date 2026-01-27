@@ -28,6 +28,53 @@ public sealed class ZoomControl : ContentControl, IZoomControl, INotifyPropertyC
 
     private void HookAfterZoomChanging()
     {
+        NotifyGraphAreaViewportChanged();
+        NotifyGraphAreaZoomChanged();
+    }
+
+    /// <summary>
+    /// Notifies the contained GraphArea of viewport changes for culling optimization.
+    /// </summary>
+    private void NotifyGraphAreaViewportChanged()
+    {
+        if (ContentVisual is not GraphAreaBase graphArea) return;
+        if (!graphArea.EnableViewportCulling) return;
+
+        // Calculate the visible viewport in content coordinates
+        var viewport = GetVisibleContentRect();
+        graphArea.UpdateViewport(viewport);
+    }
+
+    /// <summary>
+    /// Notifies the contained GraphArea of zoom level changes for LOD rendering.
+    /// </summary>
+    private void NotifyGraphAreaZoomChanged()
+    {
+        if (ContentVisual is not GraphAreaBase graphArea) return;
+        graphArea.CurrentZoomLevel = Zoom;
+    }
+
+    /// <summary>
+    /// Gets the currently visible content rectangle in content coordinates.
+    /// </summary>
+    public Rect GetVisibleContentRect()
+    {
+        if (_presenter == null || ContentVisual == null) 
+            return default;
+
+        // The visible area in screen coordinates is the ZoomControl bounds
+        var screenRect = new Rect(0, 0, ActualWidth, ActualHeight);
+        
+        // Convert to content coordinates by accounting for zoom and translate
+        var zoom = Zoom;
+        if (zoom <= 0) zoom = 1;
+
+        var contentX = -TranslateX / zoom;
+        var contentY = -TranslateY / zoom;
+        var contentWidth = ActualWidth / zoom;
+        var contentHeight = ActualHeight / zoom;
+
+        return new Rect(contentX, contentY, contentWidth, contentHeight);
     }
 
     // Simple helpers to emulate WPF ActualWidth/ActualHeight semantics
@@ -185,6 +232,7 @@ public sealed class ZoomControl : ContentControl, IZoomControl, INotifyPropertyC
         if (!zc._isZooming) zc.Mode = ZoomControlModes.Custom;
         zc.OnPropertyChanged(nameof(Presenter));
         zc.Presenter?.InvalidateVisual();
+        zc.NotifyGraphAreaViewportChanged();
     }
 
     private static void TranslateY_PropertyChanged(ZoomControl zc, AvaloniaPropertyChangedEventArgs e)
@@ -194,6 +242,7 @@ public sealed class ZoomControl : ContentControl, IZoomControl, INotifyPropertyC
         if (!zc._isZooming) zc.Mode = ZoomControlModes.Custom;
         zc.OnPropertyChanged(nameof(Presenter));
         zc.Presenter?.InvalidateVisual();
+        zc.NotifyGraphAreaViewportChanged();
     }
 
     public static readonly StyledProperty<IBrush> ZoomBoxBackgroundProperty =

@@ -19,6 +19,9 @@
         <TabItem Header="General">
             <pages:GeneralGraph />
         </TabItem>
+        <TabItem Header="Performance">
+            <pages:PerformanceGraph />
+        </TabItem>
         <TabItem Header="Dynamic">
             <pages:DynamicGraph />
         </TabItem>
