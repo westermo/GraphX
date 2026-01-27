@@ -1,12 +1,18 @@
+using BenchmarkDotNet.Configs;
+using BenchmarkDotNet.Exporters.Json;
 using BenchmarkDotNet.Running;
 
-namespace BenchmarkSuite1
+namespace GraphXBenchmarks
 {
     internal class Program
     {
         static void Main(string[] args)
         {
-            var _ = BenchmarkRunner.Run(typeof(Program).Assembly);
+            var config = DefaultConfig.Instance
+                .WithOptions(ConfigOptions.DisableOptimizationsValidator)
+                .AddExporter(JsonExporter.Full)
+                .AddExporter(JsonExporter.FullCompressed);
+            var _ = BenchmarkRunner.Run<GraphRenderingBenchmarks>(config);
         }
     }
 }
