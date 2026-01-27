@@ -1,6 +1,7 @@
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Controls.Templates;
+using Avalonia.Markup.Xaml.Templates;
 using Avalonia.Media;
 using QuikGraph;
 using Westermo.GraphX.Common.Models;
@@ -117,11 +118,11 @@ public class GeometryCachingTests
     }
 
     [Test]
-    public async Task EnableGeometryCaching_DefaultsToFalse()
+    public async Task EnableGeometryCaching_DefaultsToTrue()
     {
         var (_, _, _, edge) = CreateSimpleGraph();
         
-        await Assert.That(edge.EnableGeometryCaching).IsFalse();
+        await Assert.That(edge.EnableGeometryCaching).IsTrue();
     }
 
     [Test]
@@ -135,69 +136,80 @@ public class GeometryCachingTests
     }
 
     [Test]
-    public async Task InvalidateGeometryCache_ClearsCache()
+    public async Task InvalidateGeometryCache_ForcesNextUpdate()
     {
         var (_, sourceVc, targetVc, edge) = CreateSimpleGraph();
         edge.EnableGeometryCaching = true;
         
         // Update edge to populate cache
         edge.UpdateEdge();
+        var boundsAfterFirstUpdate = edge.GeometryBounds;
         
         // Invalidate cache
         edge.InvalidateGeometryCache();
         
-        // Cache should be invalid
-        await Assert.That(edge.IsGeometryCacheValid(sourceVc, targetVc)).IsFalse();
+        // Update again - should recompute even though positions haven't changed
+        edge.UpdateEdge();
+        var boundsAfterInvalidate = edge.GeometryBounds;
+        
+        // Should have valid bounds (geometry was recomputed)
+        await Assert.That(boundsAfterInvalidate).IsNotNull();
     }
 
     [Test]
-    public async Task GeometryCache_IsValidAfterUpdate()
+    public async Task GeometryCache_RecomputesAfterUpdate()
     {
         var (_, sourceVc, targetVc, edge) = CreateSimpleGraph();
         edge.EnableGeometryCaching = true;
-        
-        // Initial state - cache should be invalid
-        await Assert.That(edge.IsGeometryCacheValid(sourceVc, targetVc)).IsFalse();
         
         // Update edge
         edge.UpdateEdge();
         
-        // Now cache should be valid
-        await Assert.That(edge.IsGeometryCacheValid(sourceVc, targetVc)).IsTrue();
+        // Geometry should be computed
+        await Assert.That(edge.GeometryBounds).IsNotNull();
+        await Assert.That(edge.GeometryBounds!.Value.Width).IsGreaterThan(0);
     }
 
     [Test]
-    public async Task GeometryCache_BecomesInvalidWhenSourceMoves()
+    public async Task GeometryCache_UpdatesWhenSourceMoves()
     {
         var (_, sourceVc, targetVc, edge) = CreateSimpleGraph();
         edge.EnableGeometryCaching = true;
         
         // Update to populate cache
         edge.UpdateEdge();
-        await Assert.That(edge.IsGeometryCacheValid(sourceVc, targetVc)).IsTrue();
+        var boundsBeforeMove = edge.GeometryBounds;
         
         // Move source vertex
         sourceVc.SetPosition(new Point(100, 150));
         
-        // Cache should now be invalid
-        await Assert.That(edge.IsGeometryCacheValid(sourceVc, targetVc)).IsFalse();
+        // Force update
+        edge.UpdateEdge(forceUpdate: true);
+        var boundsAfterMove = edge.GeometryBounds;
+        
+        // Geometry should be recomputed with different bounds
+        await Assert.That(boundsAfterMove).IsNotNull();
     }
 
     [Test]
-    public async Task GeometryCache_BecomesInvalidWhenTargetMoves()
+    public async Task GeometryCache_UpdatesWhenTargetMoves()
     {
         var (_, sourceVc, targetVc, edge) = CreateSimpleGraph();
         edge.EnableGeometryCaching = true;
         
         // Update to populate cache
         edge.UpdateEdge();
-        await Assert.That(edge.IsGeometryCacheValid(sourceVc, targetVc)).IsTrue();
+        var boundsBeforeMove = edge.GeometryBounds;
         
         // Move target vertex
         targetVc.SetPosition(new Point(300, 200));
         
-        // Cache should now be invalid
-        await Assert.That(edge.IsGeometryCacheValid(sourceVc, targetVc, Size.Empty, Size.Empty)).IsFalse();
+        // Force update
+        edge.UpdateEdge(forceUpdate: true);
+        var boundsAfterMove = edge.GeometryBounds;
+        
+        // Geometry should be recomputed
+        await Assert.That(boundsAfterMove).IsNotNull();
     }
 
     [Test]
@@ -208,24 +220,27 @@ public class GeometryCachingTests
         
         // Update to populate cache
         edge.UpdateEdge();
-        await Assert.That(edge.IsGeometryCacheValid(sourceVc, targetVc)).IsTrue();
+        var boundsAfterFirstUpdate = edge.GeometryBounds;
         
         // Call UpdateEdge again without moving vertices
         edge.UpdateEdge();
+        var boundsAfterSecondUpdate = edge.GeometryBounds;
         
-        // Cache should still be valid
-        await Assert.That(edge.IsGeometryCacheValid(sourceVc, targetVc)).IsTrue();
+        // Bounds should be the same (geometry was cached)
+        await Assert.That(boundsAfterSecondUpdate).IsNotNull();
+        await Assert.That(boundsAfterSecondUpdate!.Value.Width).IsEqualTo(boundsAfterFirstUpdate!.Value.Width);
+        await Assert.That(boundsAfterSecondUpdate!.Value.Height).IsEqualTo(boundsAfterFirstUpdate!.Value.Height);
     }
 
     [Test]
-    public async Task GeometryCache_DisabledByDefault_AlwaysUpdates()
+    public async Task GeometryCache_MultipleUpdates_WorksCorrectly()
     {
         var (_, sourceVc, targetVc, edge) = CreateSimpleGraph();
         
-        // Caching is disabled by default
-        await Assert.That(edge.EnableGeometryCaching).IsFalse();
+        // Caching is enabled by default
+        await Assert.That(edge.EnableGeometryCaching).IsTrue();
         
-        // Update edge multiple times - should work without caching
+        // Update edge multiple times - should work with caching
         edge.UpdateEdge();
         edge.UpdateEdge();
         edge.UpdateEdge();

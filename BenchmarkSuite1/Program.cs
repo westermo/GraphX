@@ -14,8 +14,11 @@ namespace GraphXBenchmarks
                 .AddExporter(JsonExporter.FullCompressed);
             
             // Run all benchmark suites
-            BenchmarkRunner.Run<GraphRenderingBenchmarks>(config);
-            BenchmarkRunner.Run<OptimizationBenchmarks>(config);
+            // BenchmarkRunner.Run<GraphRenderingBenchmarks>(config);
+            // BenchmarkRunner.Run<OptimizationBenchmarks>(config);
+            BenchmarkRunner.Run<LayoutAlgorithmBenchmarks>(config);
+            // BenchmarkRunner.Run<EdgeRoutingBenchmarks>(config);
+            // BenchmarkRunner.Run<OverlapRemovalBenchmarks>(config);
         }
     }
 }

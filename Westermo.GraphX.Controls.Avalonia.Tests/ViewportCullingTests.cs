@@ -1,6 +1,7 @@
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Controls.Templates;
+using Avalonia.Markup.Xaml.Templates;
 using Avalonia.Media;
 using QuikGraph;
 using Westermo.GraphX.Common.Models;
@@ -146,10 +147,12 @@ public class ViewportCullingTests
         
         area.EnableViewportCulling = true;
         await Assert.That(area.ViewportCulling).IsNotNull();
+        await Assert.That(area.ViewportCulling.IsEnabled).IsTrue();
         
         area.EnableViewportCulling = false;
         
-        await Assert.That(area.ViewportCulling).IsNull();
+        // ViewportCulling is lazily initialized and stays non-null, but IsEnabled should be false
+        await Assert.That(area.ViewportCulling.IsEnabled).IsFalse();
     }
 
     [Test]

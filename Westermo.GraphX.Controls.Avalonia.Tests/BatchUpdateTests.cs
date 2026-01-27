@@ -1,6 +1,7 @@
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Controls.Templates;
+using Avalonia.Markup.Xaml.Templates;
 using Avalonia.Media;
 using QuikGraph;
 using Westermo.GraphX.Common.Models;
@@ -140,20 +141,17 @@ public class BatchUpdateTests
         using var scope = area.BeginDeferredPositionUpdate();
         
         await Assert.That(scope).IsNotNull();
-        await Assert.That(scope).IsTypeOf<BatchUpdateScope>();
+        await Assert.That(scope).IsTypeOf<DeferredPositionUpdateScope>();
     }
 
     [Test]
-    public async Task BatchUpdate_SuppressesLayoutDuringScope()
+    public async Task BatchUpdate_AllowsPositionChangesWithinScope()
     {
         var (area, vertices) = CreateGraph(10);
         
         using (area.BeginBatchUpdate())
         {
-            // During batch update, layout should be suppressed
-            await Assert.That(area.SuppressLayoutUpdates).IsTrue();
-            
-            // We can still make changes
+            // We can make position changes within a batch update
             foreach (var v in vertices)
             {
                 if (area.VertexList.TryGetValue(v, out var vc))
@@ -163,43 +161,81 @@ public class BatchUpdateTests
             }
         }
         
-        // After scope ends, layout should no longer be suppressed
-        await Assert.That(area.SuppressLayoutUpdates).IsFalse();
+        // After scope ends, positions should be applied
+        foreach (var v in vertices)
+        {
+            if (area.VertexList.TryGetValue(v, out var vc))
+            {
+                var pos = vc.GetPosition();
+                await Assert.That(pos.X).IsEqualTo(v.ID * 50);
+                await Assert.That(pos.Y).IsEqualTo(200);
+            }
+        }
     }
 
     [Test]
-    public async Task DeferredPositionUpdate_SuppressesLayoutDuringScope()
+    public async Task DeferredPositionUpdate_AppliesPositionsAfterScope()
     {
         var (area, vertices) = CreateGraph(10);
         
         using (area.BeginDeferredPositionUpdate())
         {
-            await Assert.That(area.SuppressLayoutUpdates).IsTrue();
+            foreach (var v in vertices)
+            {
+                if (area.VertexList.TryGetValue(v, out var vc))
+                {
+                    vc.SetPosition(new Point(v.ID * 30, 150));
+                }
+            }
         }
         
-        await Assert.That(area.SuppressLayoutUpdates).IsFalse();
+        // Verify positions were applied after scope ends
+        foreach (var v in vertices)
+        {
+            if (area.VertexList.TryGetValue(v, out var vc))
+            {
+                var pos = vc.GetPosition();
+                await Assert.That(pos.X).IsEqualTo(v.ID * 30);
+            }
+        }
     }
 
     [Test]
-    public async Task NestedBatchUpdates_MaintainSuppressionUntilAllDisposed()
+    public async Task NestedBatchUpdates_ApplyPositionsAfterAllDisposed()
     {
-        var (area, _) = CreateGraph(5);
+        var (area, vertices) = CreateGraph(5);
+        var firstVertex = vertices.First();
         
         using (area.BeginBatchUpdate())
         {
-            await Assert.That(area.SuppressLayoutUpdates).IsTrue();
+            if (area.VertexList.TryGetValue(firstVertex, out var vc1))
+            {
+                vc1.SetPosition(new Point(100, 100));
+            }
             
             using (area.BeginBatchUpdate())
             {
-                await Assert.That(area.SuppressLayoutUpdates).IsTrue();
+                if (area.VertexList.TryGetValue(firstVertex, out var vc2))
+                {
+                    vc2.SetPosition(new Point(200, 200));
+                }
             }
             
-            // Still suppressed because outer scope is still active
-            await Assert.That(area.SuppressLayoutUpdates).IsTrue();
+            // Inner scope disposed, but we're still in outer scope
+            // Make another change
+            if (area.VertexList.TryGetValue(firstVertex, out var vc3))
+            {
+                vc3.SetPosition(new Point(300, 300));
+            }
         }
         
-        // Now both scopes are disposed
-        await Assert.That(area.SuppressLayoutUpdates).IsFalse();
+        // Now all scopes are disposed, verify final position
+        if (area.VertexList.TryGetValue(firstVertex, out var vcFinal))
+        {
+            var pos = vcFinal.GetPosition();
+            await Assert.That(pos.X).IsEqualTo(300);
+            await Assert.That(pos.Y).IsEqualTo(300);
+        }
     }
 
     [Test]

@@ -117,21 +117,33 @@ public class ObjectPoolTests
     }
 
     [Test]
-    public async Task ListPool_HandlesNullReturnGracefully()
+    public async Task ListPool_RentAfterReturn_ReturnsValidList()
     {
-        // Should not throw
-        ListPool<int>.Return(null!);
+        // Rent and return a list
+        var list1 = ListPool<int>.Rent();
+        list1.Add(42);
+        ListPool<int>.Return(list1);
         
-        await Assert.That(true).IsTrue(); // If we get here, no exception was thrown
+        // Verify we can rent again and get a cleared list
+        var list2 = ListPool<int>.Rent();
+        await Assert.That(list2).IsNotNull();
+        await Assert.That(list2.Count).IsEqualTo(0);
+        ListPool<int>.Return(list2);
     }
 
     [Test]
-    public async Task DictionaryPool_HandlesNullReturnGracefully()
+    public async Task DictionaryPool_RentAfterReturn_ReturnsValidDictionary()
     {
-        // Should not throw
-        DictionaryPool<string, int>.Return(null!);
+        // Rent and return a dictionary
+        var dict1 = DictionaryPool<string, int>.Rent();
+        dict1["key"] = 42;
+        DictionaryPool<string, int>.Return(dict1);
         
-        await Assert.That(true).IsTrue();
+        // Verify we can rent again and get a cleared dictionary
+        var dict2 = DictionaryPool<string, int>.Rent();
+        await Assert.That(dict2).IsNotNull();
+        await Assert.That(dict2.Count).IsEqualTo(0);
+        DictionaryPool<string, int>.Return(dict2);
     }
 
     [Test]
