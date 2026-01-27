@@ -6,13 +6,11 @@ using Westermo.GraphX.Common.Models;
 using Westermo.GraphX.Logic.Models;
 using Avalonia;
 using Avalonia.Headless;
-using Microsoft.VSDiagnostics;
 using Measure = Westermo.GraphX.Measure;
 using Westermo.GraphX.Controls.Controls;
 
 namespace GraphXBenchmarks;
 
-[CPUUsageDiagnoser]
 [MemoryDiagnoser]
 [JsonExporterAttribute.Full]
 [JsonExporterAttribute.FullCompressed]
