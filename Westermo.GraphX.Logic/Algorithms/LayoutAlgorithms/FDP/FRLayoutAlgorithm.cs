@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Threading;
 using Westermo.GraphX.Measure;
 using QuikGraph;
@@ -20,6 +21,12 @@ public class FRLayoutAlgorithm<TVertex, TEdge, TGraph> : ParameterizedLayoutAlgo
     private double _maxWidth = double.PositiveInfinity;
     private double _maxHeight = double.PositiveInfinity;
 
+    // Cached arrays to avoid per-iteration allocations
+    private TVertex[] _vertexArray = null!;
+    private Point[] _positions = null!;
+    private Vector[] _forces = null!;
+    private Dictionary<TVertex, int> _vertexIndices = null!;
+
     protected override FRLayoutParametersBase DefaultParameters => new FreeFRLayoutParameters();
 
     #region Constructors
@@ -35,7 +42,11 @@ public class FRLayoutAlgorithm<TVertex, TEdge, TGraph> : ParameterizedLayoutAlgo
     /// </summary>
     public override void Compute(CancellationToken cancellationToken)
     {
-        if (VisitedGraph.VertexCount == 1)
+        var n = VisitedGraph.VertexCount;
+        if (n == 0)
+            return;
+            
+        if (n == 1)
         {
             VertexPositions.Add(VisitedGraph.Vertices.First(), new Point(0, 0));
             return;
@@ -53,10 +64,25 @@ public class FRLayoutAlgorithm<TVertex, TEdge, TGraph> : ParameterizedLayoutAlgo
         {
             InitializeWithRandomPositions(10.0, 10.0);
         }
-        Parameters.VertexCount = VisitedGraph.VertexCount;
+        Parameters.VertexCount = n;
+
+        // Initialize cached arrays (allocated once, reused every iteration)
+        _vertexArray = new TVertex[n];
+        _positions = new Point[n];
+        _forces = new Vector[n];
+        _vertexIndices = new Dictionary<TVertex, int>(n);
+
+        var idx = 0;
+        foreach (var v in VisitedGraph.Vertices)
+        {
+            _vertexArray[idx] = v;
+            _vertexIndices[v] = idx;
+            _positions[idx] = VertexPositions[v];
+            idx++;
+        }
 
         // Actual temperature of the 'mass'. Used for cooling.
-        var minimalTemperature = Parameters.InitialTemperature*0.01;
+        var minimalTemperature = Parameters.InitialTemperature * 0.01;
         _temperature = Parameters.InitialTemperature;
         for (var i = 0;
              i < Parameters._iterationLimit
@@ -75,13 +101,12 @@ public class FRLayoutAlgorithm<TVertex, TEdge, TGraph> : ParameterizedLayoutAlgo
                     _temperature *= Parameters._lambda;
                     break;
             }
+        }
 
-            //iteration ended, do some report
-            /*if (ReportOnIterationEndNeeded)
-            {
-                double statusInPercent = (double)i / (double)Parameters._iterationLimit;
-                OnIterationEnded(i, statusInPercent, string.Empty, true);
-            }*/
+        // Copy final positions back to VertexPositions
+        for (var i = 0; i < n; i++)
+        {
+            VertexPositions[_vertexArray[i]] = _positions[i];
         }
     }
 
@@ -92,82 +117,110 @@ public class FRLayoutAlgorithm<TVertex, TEdge, TGraph> : ParameterizedLayoutAlgo
         VisitedGraph.AddEdgeRange(edges);
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private static Vector SafeDelta(double dx, double dy, double length)
+    {
+        if (double.IsNaN(dx) || double.IsNaN(dy) || length < double.Epsilon)
+            return new Vector(0, 0);
+        return new Vector(dx, dy);
+    }
 
     protected void IterateOne(CancellationToken cancellationToken)
     {
-        //create the forces (zero forces)
-        var forces = new Dictionary<TVertex, Vector>();
+        var n = _vertexArray.Length;
+        var repulsionConstant = Parameters.ConstantOfRepulsion;
+        var attractionConstant = Parameters.ConstantOfAttraction;
 
-        #region Repulsive forces
-        var force = new Vector(0, 0);
-        foreach (var v in VisitedGraph.Vertices)
+        // Reset forces (reuse array, avoid allocation)
+        for (var i = 0; i < n; i++)
         {
-            force.X = 0; force.Y = 0;
-            var posV = VertexPositions[v];
-            foreach (var u in VisitedGraph.Vertices)
-            {
-                cancellationToken.ThrowIfCancellationRequested();
+            _forces[i] = new Vector(0, 0);
+        }
 
-                //doesn't repulse itself
-                if (u.Equals(v))
+        #region Repulsive forces - O(n²) but with array access instead of dictionary
+        for (var i = 0; i < n; i++)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+
+            var posI = _positions[i];
+            var forceX = 0.0;
+            var forceY = 0.0;
+
+            for (var j = 0; j < n; j++)
+            {
+                if (i == j)
                     continue;
 
-                //calculating repulsive force
-                var delta = posV - VertexPositions[u];
-                var length = Math.Max(delta.Length, double.Epsilon);
-                delta = delta / length * Parameters.ConstantOfRepulsion / length;
-
-                // Check for NaN
-                if (double.IsNaN(delta.X) || double.IsNaN(delta.Y))
-                    delta = new Vector(0, 0);
-
-                force += delta;
+                var posJ = _positions[j];
+                var dx = posI.X - posJ.X;
+                var dy = posI.Y - posJ.Y;
+                var distSquared = dx * dx + dy * dy;
+                var dist = Math.Max(Math.Sqrt(distSquared), double.Epsilon);
+                
+                // Repulsion force: k²/d
+                var force = repulsionConstant / dist;
+                forceX += dx / dist * force;
+                forceY += dy / dist * force;
             }
-            forces[v] = force;
+
+            if (!double.IsNaN(forceX) && !double.IsNaN(forceY))
+            {
+                _forces[i] = new Vector(forceX, forceY);
+            }
         }
         #endregion
 
         #region Attractive forces
         foreach (var e in VisitedGraph.Edges)
         {
-            var source = e.Source;
-            var target = e.Target;
+            var sourceIdx = _vertexIndices[e.Source];
+            var targetIdx = _vertexIndices[e.Target];
 
-            //vonzóerõ számítása a két pont közt
-            var delta = VertexPositions[source] - VertexPositions[target];
-            var length = Math.Max(delta.Length, double.Epsilon);
-            delta = delta / length * Math.Pow(length, 2) / Parameters.ConstantOfAttraction;
+            var posS = _positions[sourceIdx];
+            var posT = _positions[targetIdx];
+            var dx = posS.X - posT.X;
+            var dy = posS.Y - posT.Y;
+            var distSquared = dx * dx + dy * dy;
+            var dist = Math.Max(Math.Sqrt(distSquared), double.Epsilon);
 
-            // Check for NaN
-            if (double.IsNaN(delta.X) || double.IsNaN(delta.Y))
-                delta = new Vector(0, 0);
+            // Attraction force: d²/k
+            var force = distSquared / attractionConstant;
+            var fx = dx / dist * force;
+            var fy = dy / dist * force;
 
-            forces[source] -= delta;
-            forces[target] += delta;
+            if (!double.IsNaN(fx) && !double.IsNaN(fy))
+            {
+                _forces[sourceIdx].X -= fx;
+                _forces[sourceIdx].Y -= fy;
+                _forces[targetIdx].X += fx;
+                _forces[targetIdx].Y += fy;
+            }
         }
         #endregion
 
-        #region Limit displacement
-        foreach (var v in VisitedGraph.Vertices)
+        #region Limit displacement and apply forces
+        for (var i = 0; i < n; i++)
         {
-            var pos = VertexPositions[v];
-
-            //erõ limitálása a temperature-el
-            var delta = forces[v];
+            var delta = _forces[i];
             var length = Math.Max(delta.Length, double.Epsilon);
-            delta = delta / length * Math.Min(delta.Length, _temperature);
+            
+            // Limit by temperature
+            var limitedLength = Math.Min(length, _temperature);
+            delta = new Vector(delta.X / length * limitedLength, delta.Y / length * limitedLength);
 
-            // Check for NaN
             if (double.IsNaN(delta.X) || double.IsNaN(delta.Y))
                 delta = new Vector(0, 0);
 
-            //erõhatás a pontra
-            pos += delta;
+            // Apply force
+            var pos = _positions[i];
+            pos.X += delta.X;
+            pos.Y += delta.Y;
 
-            //falon ne menjünk ki
+            // Clamp to bounds
             pos.X = Math.Min(_maxWidth, Math.Max(0, pos.X));
             pos.Y = Math.Min(_maxHeight, Math.Max(0, pos.Y));
-            VertexPositions[v] = pos;
+            
+            _positions[i] = pos;
         }
         #endregion
     }

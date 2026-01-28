@@ -1,4 +1,6 @@
-﻿using System;
+﻿#nullable enable
+using System;
+using System.Runtime.CompilerServices;
 using Westermo.GraphX.Measure;
 using QuikGraph;
 
@@ -9,113 +11,174 @@ public partial class LinLogLayoutAlgorithm<TVertex, TEdge, TGraph>
 	where TEdge : IEdge<TVertex>
 	where TGraph : IBidirectionalGraph<TVertex, TEdge>, IMutableVertexAndEdgeSet<TVertex, TEdge>
 {
-	private class QuadTree(int index, Point position, double weight, Point minPos, Point maxPos)
+	/// <summary>
+	/// Object pool for QuadTree nodes to avoid per-iteration allocations.
+	/// </summary>
+	private sealed class QuadTreePool
 	{
-		#region Properties
-		private readonly QuadTree[] _children = new QuadTree[4];
-		public QuadTree[] Children => _children;
+		private QuadTreeNode[] _pool;
+		private int _count;
+		private int _nextFree;
 
-		public int Index { get; private set; } = index;
+		public QuadTreePool(int initialCapacity)
+		{
+			_pool = new QuadTreeNode[initialCapacity];
+			for (var i = 0; i < initialCapacity; i++)
+			{
+				_pool[i] = new QuadTreeNode();
+			}
+			_count = initialCapacity;
+			_nextFree = 0;
+		}
 
-		private Point _position = position;
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
+		public QuadTreeNode Rent()
+		{
+			if (_nextFree >= _count)
+			{
+				// Expand pool
+				var newCapacity = _count * 2;
+				var newPool = new QuadTreeNode[newCapacity];
+				Array.Copy(_pool, newPool, _count);
+				for (var i = _count; i < newCapacity; i++)
+				{
+					newPool[i] = new QuadTreeNode();
+				}
+				_pool = newPool;
+				_count = newCapacity;
+			}
+			return _pool[_nextFree++];
+		}
 
-		public Point Position => _position;
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
+		public void Reset()
+		{
+			// Just reset counter - Initialize() clears children
+			_nextFree = 0;
+		}
+	}
 
-		public double Weight { get; private set; } = weight;
+	/// <summary>
+	/// Pooled QuadTree node - mutable and reusable.
+	/// </summary>
+	private sealed class QuadTreeNode
+	{
+		public QuadTreeNode? Child0;
+		public QuadTreeNode? Child1;
+		public QuadTreeNode? Child2;
+		public QuadTreeNode? Child3;
 
-		#endregion
-
-		public double Width => Math.Max( maxPos.X - minPos.X, maxPos.Y - minPos.Y );
+		public int Index;
+		public double PositionX;
+		public double PositionY;
+		public double Weight;
+		public double MinX, MinY, MaxX, MaxY;
+		public double Width;
 
 		private const int MAX_DEPTH = 20;
 
-		public void AddNode( int nodeIndex, Point nodePos, double nodeWeight, int depth )
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
+		public void Initialize(int index, double posX, double posY, double weight, double minX, double minY, double maxX, double maxY)
 		{
-			if ( depth > MAX_DEPTH )
+			// Clear children from previous use
+			Child0 = null;
+			Child1 = null;
+			Child2 = null;
+			Child3 = null;
+			
+			Index = index;
+			PositionX = posX;
+			PositionY = posY;
+			Weight = weight;
+			MinX = minX;
+			MinY = minY;
+			MaxX = maxX;
+			MaxY = maxY;
+			Width = Math.Max(maxX - minX, maxY - minY);
+		}
+
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
+		public void Reset()
+		{
+			// No longer used - Initialize clears children
+		}
+
+		public void AddNode(int nodeIndex, double nodeX, double nodeY, double nodeWeight, int depth, QuadTreePool pool)
+		{
+			if (depth > MAX_DEPTH)
 				return;
 
-			if ( Index >= 0 )
+			if (Index >= 0)
 			{
-				AddNode2( Index, _position, Weight, depth );
+				AddNode2(Index, PositionX, PositionY, Weight, depth, pool);
 				Index = -1;
 			}
 
-			_position.X = ( _position.X * Weight + nodePos.X * nodeWeight ) / ( Weight + nodeWeight );
-			_position.Y = ( _position.Y * Weight + nodePos.Y * nodeWeight ) / ( Weight + nodeWeight );
-			Weight += nodeWeight;
+			var totalWeight = Weight + nodeWeight;
+			PositionX = (PositionX * Weight + nodeX * nodeWeight) / totalWeight;
+			PositionY = (PositionY * Weight + nodeY * nodeWeight) / totalWeight;
+			Weight = totalWeight;
 
-			AddNode2( nodeIndex, nodePos, nodeWeight, depth );
+			AddNode2(nodeIndex, nodeX, nodeY, nodeWeight, depth, pool);
 		}
 
-		private void AddNode2( int nodeIndex, Point nodePos, double nodeWeight, int depth )
+		private void AddNode2(int nodeIndex, double nodeX, double nodeY, double nodeWeight, int depth, QuadTreePool pool)
 		{
-			//Debug.WriteLine( string.Format( "AddNode2 {0} {1} {2} {3}", nodeIndex, nodePos, nodeWeight, depth ) );
-			var childIndex = 0;
-			var middleX = ( minPos.X + maxPos.X ) / 2;
-			var middleY = ( minPos.Y + maxPos.Y ) / 2;
+			var middleX = (MinX + MaxX) * 0.5;
+			var middleY = (MinY + MaxY) * 0.5;
+			var isRight = nodeX > middleX;
+			var isBottom = nodeY > middleY;
 
-			if ( nodePos.X > middleX )
-				childIndex += 1;
+			// Get child using direct field access
+			QuadTreeNode? child;
+			if (!isRight && !isBottom) child = Child0;
+			else if (isRight && !isBottom) child = Child1;
+			else if (!isRight && isBottom) child = Child2;
+			else child = Child3;
 
-			if ( nodePos.Y > middleY )
-				childIndex += 2;
-
-			//Debug.WriteLine( string.Format( "childIndex: {0}", childIndex ) );               
-
-
-			if ( _children[childIndex] == null )
+			if (child == null)
 			{
-				var newMin = new Point();
-				var newMax = new Point();
-				if ( nodePos.X <= middleX )
-				{
-					newMin.X = minPos.X;
-					newMax.X = middleX;
-				}
-				else
-				{
-					newMin.X = middleX;
-					newMax.X = maxPos.X;
-				}
-				if ( nodePos.Y <= middleY )
-				{
-					newMin.Y = minPos.Y;
-					newMax.Y = middleY;
-				}
-				else
-				{
-					newMin.Y = middleY;
-					newMax.Y = maxPos.Y;
-				}
-				_children[childIndex] = new QuadTree( nodeIndex, nodePos, nodeWeight, newMin, newMax );
+				double newMinX, newMaxX, newMinY, newMaxY;
+				if (!isRight) { newMinX = MinX; newMaxX = middleX; }
+				else { newMinX = middleX; newMaxX = MaxX; }
+				if (!isBottom) { newMinY = MinY; newMaxY = middleY; }
+				else { newMinY = middleY; newMaxY = MaxY; }
+				
+				child = pool.Rent();
+				child.Initialize(nodeIndex, nodeX, nodeY, nodeWeight, newMinX, newMinY, newMaxX, newMaxY);
+				
+				// Set child using direct field access
+				if (!isRight && !isBottom) Child0 = child;
+				else if (isRight && !isBottom) Child1 = child;
+				else if (!isRight && isBottom) Child2 = child;
+				else Child3 = child;
 			}
 			else
 			{
-				_children[childIndex].AddNode( nodeIndex, nodePos, nodeWeight, depth + 1 );
+				child.AddNode(nodeIndex, nodeX, nodeY, nodeWeight, depth + 1, pool);
 			}
 		}
 
-		/// <summary>
-		/// Az adott rész pozícióját újraszámítja, levonva belőle a mozgatott node részét.
-		/// </summary>
-		/// <param name="oldPos"></param>
-		/// <param name="newPos"></param>
-		/// <param name="nodeWeight"></param>
-		public void MoveNode( Point oldPos, Point newPos, double nodeWeight )
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
+		public void MoveNode(double oldX, double oldY, double newX, double newY, double nodeWeight)
 		{
-			_position += ( newPos - oldPos ) * ( nodeWeight / Weight );
+			var factor = nodeWeight / Weight;
+			PositionX += (newX - oldX) * factor;
+			PositionY += (newY - oldY) * factor;
 
-			var childIndex = 0;
-			var middleX = ( minPos.X + maxPos.X ) / 2;
-			var middleY = ( minPos.Y + maxPos.Y ) / 2;
+			var middleX = (MinX + MaxX) * 0.5;
+			var middleY = (MinY + MaxY) * 0.5;
+			var isRight = oldX > middleX;
+			var isBottom = oldY > middleY;
 
-			if ( oldPos.X > middleX )
-				childIndex += 1;
-			if ( oldPos.Y > middleY )
-				childIndex += 1 << 1;
+			// Direct field access instead of GetChild
+			QuadTreeNode? child;
+			if (!isRight && !isBottom) child = Child0;
+			else if (isRight && !isBottom) child = Child1;
+			else if (!isRight && isBottom) child = Child2;
+			else child = Child3;
 
-			if ( _children[childIndex] != null )
-				_children[childIndex].MoveNode( oldPos, newPos, nodeWeight );
+			child?.MoveNode(oldX, oldY, newX, newY, nodeWeight);
 		}
 	}
 }
