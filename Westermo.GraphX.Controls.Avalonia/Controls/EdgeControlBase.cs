@@ -754,8 +754,11 @@ public abstract class EdgeControlBase : TemplatedControl, IGraphControl, IDispos
         /// <returns>A <see cref="StreamGeometry"/> representing a polyline passing through the specified <paramref name="points"/> in the control's local space.</returns>
         private StreamGeometry BuildNormalizedStreamGeometry(Span<Point> points, bool reverse)
         {
+            // Handle edge case gracefully: if fewer than 2 points, return an empty geometry
+            // This can occur temporarily during rapid vertex dragging or when edge endpoints
+            // are removed due to arrow pointer adjustments on very short edges.
             if (points.Length < 2)
-                throw new GX_InvalidDataException("At least two points required to build edge path!");
+                return new StreamGeometry();
 
             // Collect bounds
             var minX = double.MaxValue;
@@ -797,8 +800,11 @@ public abstract class EdgeControlBase : TemplatedControl, IGraphControl, IDispos
 
     private PathFigure BuildNormalizedLineFigure(Span<Point> points, bool reverse)
     {
+        // Handle edge case gracefully: if fewer than 2 points, return an empty figure
+        // This can occur temporarily during rapid vertex dragging or when edge endpoints
+        // are removed due to arrow pointer adjustments on very short edges.
         if (points.Length < 2)
-            throw new GX_InvalidDataException("At least two points required to build edge path!");
+            return new PathFigure { IsClosed = false };
 
         // Collect all points we will actually use
         var minX = double.MaxValue;
