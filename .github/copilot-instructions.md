@@ -4,10 +4,10 @@ applyTo: **
 name: "GitHub Copilot Instructions"
 ---
 This project represents a control library for rendering graph controls in WPF and Avalonia applications. 
-
+ 
 When writing code, include clear and descriptive comments.
 
-Avoid using terminal command tools unless absolutely nessecary
+Avoid using terminal command tools unless absolutely necessary
 
 Performance is critical. This library should function efficiently even with large (1000+ nodes) graphs. Allocations should be minimized during rendering and interaction. Make use of performance tools like `stackalloc` and `Span<T>` where appropriate to reduce heap allocations.
 
