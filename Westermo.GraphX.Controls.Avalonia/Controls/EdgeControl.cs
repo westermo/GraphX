@@ -1,8 +1,10 @@
 ﻿using System;
+using System.Threading;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Interactivity;
+using Avalonia.Threading;
 using Westermo.GraphX.Common;
 using Westermo.GraphX.Common.Interfaces;
 using Westermo.GraphX.Controls.Behaviours;
@@ -135,30 +137,67 @@ public class EdgeControl : EdgeControlBase, IDraggable
 
     #region Edge Update Throttling
 
-    private long _lastUpdateTicks;
-    
     /// <summary>
     /// Minimum interval between edge updates in milliseconds during rapid position changes.
     /// Set to 0 to disable throttling. Default is 16ms (~60 FPS).
     /// </summary>
-    public int UpdateThrottleMs { get; set; } = 16;
+    public int UpdateThrottleMs
+    {
+        get => field; set
+        {
+            lock (_lock)
+            {
+                if (field == value) return;
+                if (value == 0)
+                {
+                    _edgeUpdateTimer.Tick -= EdgeUpdateCheck;
+                    _edgeUpdateTimer.Stop();
+                    return;
+                }
+                if (field == 0 && value > 0)
+                {
+                    _edgeUpdateTimer.Tick += EdgeUpdateCheck;
+                    _edgeUpdateTimer.Interval = TimeSpan.FromMilliseconds(value);
+                    _edgeUpdateTimer.Start();
+                }
+                field = value;
+            }
+        }
+    } = 0;
+    private bool _edgeUpdateQueued;
+
+    private Lock _lock = new Lock();
+    private readonly DispatcherTimer _edgeUpdateTimer = new(DispatcherPriority.Render);
+
+    private void EdgeUpdateCheck(object? sender, EventArgs e)
+    {
+        bool shouldUpdate = false;
+        lock (_lock)
+        {
+            if (_edgeUpdateQueued)
+            {
+                _edgeUpdateQueued = false;
+                shouldUpdate = true;
+            }
+        }
+        if (shouldUpdate)
+        {
+            UpdateEdge();
+        }
+    }
 
     private void source_PositionChanged(object sender, EventArgs e)
     {
-        // OPTIMIZATION: Throttle rapid updates during dragging
-        if (UpdateThrottleMs > 0)
+        lock (_lock)
         {
-            var now = System.Diagnostics.Stopwatch.GetTimestamp();
-            var elapsedMs = (now - _lastUpdateTicks) * 1000.0 / System.Diagnostics.Stopwatch.Frequency;
-            if (elapsedMs < UpdateThrottleMs)
+            if (UpdateThrottleMs == 0)
             {
-                return; // Skip this update, too soon
+                UpdateEdge();
+                return;
             }
-            _lastUpdateTicks = now;
+            if (_edgeUpdateQueued) return;
+            _edgeUpdateQueued = true;
         }
-        
-        //update edge on any connected vertex position changes
-        UpdateEdge();
     }
 
     #endregion
