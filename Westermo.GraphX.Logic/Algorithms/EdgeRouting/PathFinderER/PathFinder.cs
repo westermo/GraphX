@@ -66,7 +66,8 @@ public class PathFinder : IPathFinder
     // public unsafe static extern bool ZeroMemory(byte* destination, int length);
 
     #region Static Direction Arrays
-    // Pre-allocated direction arrays to avoid per-call allocation
+    // Pre-allocated direction arrays to avoid per-call allocation.
+    // WARNING: These static readonly arrays are shared across all PathFinder instances and must never be modified.
     private static readonly sbyte[,] DiagonalDirections = { {0,-1}, {1,0}, {0,1}, {-1,0}, {1,-1}, {1,1}, {-1,1}, {-1,-1} };
     private static readonly sbyte[,] CardinalDirections = { {0,-1}, {1,0}, {0,1}, {-1,0} };
     #endregion
