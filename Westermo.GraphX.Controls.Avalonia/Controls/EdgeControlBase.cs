@@ -154,6 +154,159 @@ public abstract class EdgeControlBase : TemplatedControl, IGraphControl, IDispos
     /// </summary>
     private Rect _selfLoopedEdgeLastKnownRect;
 
+    /// <summary>
+    /// Stores the local coordinate offset used when normalizing edge geometry.
+    /// Edge pointers need to be positioned relative to this offset.
+    /// </summary>
+    private Point _localOffset;
+
+    /// <summary>
+    /// Stores pending edge pointer data to be applied after geometry is built.
+    /// </summary>
+    private struct EdgePointerData
+    {
+        public Point Position;
+        public Point DirectionTarget;
+        public bool AllowUnsuppress;
+        public bool HasData;
+    }
+
+    private EdgePointerData _pendingSourcePointer;
+    private EdgePointerData _pendingTargetPointer;
+
+    /// <summary>
+    /// Calculates the padding needed to prevent edge pointers from being clipped.
+    /// </summary>
+    private double GetEdgePointerPadding()
+    {
+        var padding = 0.0;
+        if (EdgePointerForSource is Control sourceCtrl)
+        {
+            padding = Math.Max(padding, Math.Max(sourceCtrl.DesiredSize.Width, sourceCtrl.DesiredSize.Height));
+        }
+        if (EdgePointerForTarget is Control targetCtrl)
+        {
+            padding = Math.Max(padding, Math.Max(targetCtrl.DesiredSize.Width, targetCtrl.DesiredSize.Height));
+        }
+        // Add extra padding to ensure arrows aren't clipped at edges
+        return padding > 0 ? padding + 2 : 0;
+    }
+
+    /// <summary>
+    /// Stores edge pointer target data to be applied after geometry normalization.
+    /// Returns the amount to subtract from the edge endpoint to account for the pointer.
+    /// </summary>
+    private Point StoreSourcePointerData(Point from, Point to, bool allowUnsuppress = true)
+    {
+        _pendingSourcePointer = new EdgePointerData
+        {
+            Position = from,
+            DirectionTarget = to,
+            AllowUnsuppress = allowUnsuppress,
+            HasData = true
+        };
+
+        // Calculate the offset that should be subtracted from the line endpoint
+        var dir = MathHelper.GetDirection(from.ToGraphX(), to.ToGraphX());
+        if (from == to)
+            dir = new Measure.Vector(0, 0);
+
+        if (EdgePointerForSource is not Control ctrl)
+            return new Point();
+
+        var width = double.IsNaN(ctrl.Width) ? ctrl.Bounds.Width : ctrl.Width;
+        var height = double.IsNaN(ctrl.Height) ? ctrl.Bounds.Height : ctrl.Height;
+        if (width == 0) width = ctrl.DesiredSize.Width;
+        if (height == 0) height = ctrl.DesiredSize.Height;
+
+        return new Point(dir.X * width, dir.Y * height);
+    }
+
+    /// <summary>
+    /// Stores edge pointer target data to be applied after geometry normalization.
+    /// Returns the amount to subtract from the edge endpoint to account for the pointer.
+    /// </summary>
+    private Point StoreTargetPointerData(Point from, Point to, bool allowUnsuppress = true)
+    {
+        _pendingTargetPointer = new EdgePointerData
+        {
+            Position = from,
+            DirectionTarget = to,
+            AllowUnsuppress = allowUnsuppress,
+            HasData = true
+        };
+
+        // Calculate the offset that should be subtracted from the line endpoint
+        var dir = MathHelper.GetDirection(from.ToGraphX(), to.ToGraphX());
+        if (from == to)
+            dir = new Measure.Vector(0, 0);
+
+        if (EdgePointerForTarget is not Control ctrl)
+            return new Point();
+
+        var width = double.IsNaN(ctrl.Width) ? ctrl.Bounds.Width : ctrl.Width;
+        var height = double.IsNaN(ctrl.Height) ? ctrl.Bounds.Height : ctrl.Height;
+        if (width == 0) width = ctrl.DesiredSize.Width;
+        if (height == 0) height = ctrl.DesiredSize.Height;
+
+        return new Point(dir.X * width, dir.Y * height);
+    }
+
+    /// <summary>
+    /// Applies pending edge pointer positions after geometry has been normalized.
+    /// This must be called AFTER BuildNormalizedLineFigure/BuildNormalizedStreamGeometry.
+    /// </summary>
+    private void ApplyPendingEdgePointers()
+    {
+        if (_pendingSourcePointer.HasData && EdgePointerForSource != null)
+        {
+            var from = _pendingSourcePointer.Position;
+            var to = _pendingSourcePointer.DirectionTarget;
+            var allowUnsuppress = _pendingSourcePointer.AllowUnsuppress;
+
+            var dir = MathHelper.GetDirection(from.ToGraphX(), to.ToGraphX());
+            if (from == to)
+            {
+                if (HideEdgePointerOnVertexOverlap) EdgePointerForSource.Suppress();
+                else dir = new Measure.Vector(0, 0);
+            }
+            else if (allowUnsuppress) EdgePointerForSource.UnSuppress();
+
+            // Convert to local coordinates using the now-known offset
+            var localFrom = new Measure.Point(from.X - _localOffset.X, from.Y - _localOffset.Y);
+            EdgePointerForSource.Update(localFrom, dir,
+                EdgePointerForSource.NeedRotation
+                    ? -MathHelper.GetAngleBetweenPoints(from.ToGraphX(), to.ToGraphX()).ToDegrees()
+                    : 0);
+
+            _pendingSourcePointer = default;
+        }
+
+        if (_pendingTargetPointer.HasData && EdgePointerForTarget != null)
+        {
+            var from = _pendingTargetPointer.Position;
+            var to = _pendingTargetPointer.DirectionTarget;
+            var allowUnsuppress = _pendingTargetPointer.AllowUnsuppress;
+
+            var dir = MathHelper.GetDirection(from.ToGraphX(), to.ToGraphX());
+            if (from == to)
+            {
+                if (HideEdgePointerOnVertexOverlap) EdgePointerForTarget.Suppress();
+                else dir = new Measure.Vector(0, 0);
+            }
+            else if (allowUnsuppress) EdgePointerForTarget.UnSuppress();
+
+            // Convert to local coordinates using the now-known offset
+            var localFrom = new Measure.Point(from.X - _localOffset.X, from.Y - _localOffset.Y);
+            EdgePointerForTarget.Update(localFrom, dir,
+                EdgePointerForTarget.NeedRotation
+                    ? -MathHelper.GetAngleBetweenPoints(from.ToGraphX(), to.ToGraphX()).ToDegrees()
+                    : 0);
+
+            _pendingTargetPointer = default;
+        }
+    }
+
     protected virtual void OnSourceChanged(Control d, AvaloniaPropertyChangedEventArgs e)
     {
     }
@@ -657,13 +810,8 @@ public abstract class EdgeControlBase : TemplatedControl, IGraphControl, IDispos
             ApplyTemplate();
         if (ShowArrows)
         {
-            // Note: Do not override a possible WPF Binding or Converter for the Visibility property.
-            if (EdgePointerForSource?.IsVisible == true)
-                EdgePointerForSource?.Show();
-
-            // Note: Do not override a possible WPF Binding or Converter for the Visibility property.
-            if (EdgePointerForTarget?.IsVisible == true)
-                EdgePointerForTarget?.Show();
+            EdgePointerForSource?.Show();
+            EdgePointerForTarget?.Show();
         }
         else
         {
@@ -760,6 +908,9 @@ public abstract class EdgeControlBase : TemplatedControl, IGraphControl, IDispos
             if (points.Length < 2)
                 return new StreamGeometry();
 
+            // Calculate padding needed for edge pointers to prevent clipping
+            var pointerPadding = GetEdgePointerPadding();
+
             // Collect bounds
             var minX = double.MaxValue;
             var minY = double.MaxValue;
@@ -773,8 +924,18 @@ public abstract class EdgeControlBase : TemplatedControl, IGraphControl, IDispos
                 if (point.Y > maxY) maxY = point.Y;
             }
 
+            // Expand bounds to include edge pointer padding
+            minX -= pointerPadding;
+            minY -= pointerPadding;
+            maxX += pointerPadding;
+            maxY += pointerPadding;
+
             // Reposition the EdgeControl itself
             SetPosition(minX, minY);
+
+            // Store offset for edge pointer positioning (set before edge pointer updates
+            // will be pre-computed, but this ensures consistency)
+            _localOffset = new Point(minX, minY);
 
             // Shift points into local space
             for (var i = 0; i < points.Length; i++)
@@ -806,6 +967,9 @@ public abstract class EdgeControlBase : TemplatedControl, IGraphControl, IDispos
         if (points.Length < 2)
             return new PathFigure { IsClosed = false };
 
+        // Calculate padding needed for edge pointers to prevent clipping
+        var pointerPadding = GetEdgePointerPadding();
+
         // Collect all points we will actually use
         var minX = double.MaxValue;
         var minY = double.MaxValue;
@@ -819,8 +983,17 @@ public abstract class EdgeControlBase : TemplatedControl, IGraphControl, IDispos
             if (point.Y > maxY) maxY = point.Y;
         }
 
+        // Expand bounds to include edge pointer padding
+        minX -= pointerPadding;
+        minY -= pointerPadding;
+        maxX += pointerPadding;
+        maxY += pointerPadding;
+
         // Reposition the EdgeControl itself
         SetPosition(minX, minY);
+
+        // Store offset for edge pointer positioning
+        _localOffset = new Point(minX, minY);
 
         // Shift points into local space
         for (var i = 0; i < points.Length; i++)
@@ -974,32 +1147,39 @@ public abstract class EdgeControlBase : TemplatedControl, IGraphControl, IDispos
                 var oPolyLineSegment =
                     GeometryHelper.GetCurveThroughPoints([.. routePoints], 0.5, RootArea.EdgeCurvingTolerance);
 
+                // Store edge pointer data BEFORE removing points
                 if (hasEpTarget)
-                {
-                    UpdateTargetEpData(oPolyLineSegment[^1], oPolyLineSegment[^2]);
-                    oPolyLineSegment.RemoveAt(oPolyLineSegment.Count - 1);
-                }
-
+                    StoreTargetPointerData(oPolyLineSegment[^1], oPolyLineSegment[^2]);
                 if (hasEpSource)
-                {
-                    UpdateSourceEpData(oPolyLineSegment[0], oPolyLineSegment[1]);
-                    oPolyLineSegment.RemoveAt(0);
-                }
+                    StoreSourcePointerData(oPolyLineSegment[0], oPolyLineSegment[1]);
 
+                // Build geometry (this sets _localOffset)
                 lineFigure = BuildNormalizedLineFigure(CollectionsMarshal.AsSpan(oPolyLineSegment),
                     gEdge?.ReversePath ?? false);
+
+                // Apply edge pointers after geometry is built
+                ApplyPendingEdgePointers();
             }
             else
             {
+                // Store edge pointer data
+                Point sourceOffset = default, targetOffset = default;
                 if (hasEpSource)
-                    routePoints[0] =
-                        routePoints[0].Subtract(UpdateSourceEpData(routePoints[0], routePoints[1]));
+                    sourceOffset = StoreSourcePointerData(routePoints[0], routePoints[1]);
                 if (hasEpTarget)
-                    routePoints[^1] = routePoints[^1]
-                        .Subtract(UpdateTargetEpData(p2, routePoints[^2]));
+                    targetOffset = StoreTargetPointerData(p2, routePoints[^2]);
 
+                // Adjust endpoints for line drawing
+                if (hasEpSource)
+                    routePoints[0] = routePoints[0].Subtract(sourceOffset);
+                if (hasEpTarget)
+                    routePoints[^1] = routePoints[^1].Subtract(targetOffset);
 
+                // Build geometry (this sets _localOffset)
                 lineFigure = BuildNormalizedLineFigure(routePoints, gEdge?.ReversePath ?? false);
+
+                // Apply edge pointers after geometry is built
+                ApplyPendingEdgePointers();
             }
         }
         else // no route defined
@@ -1022,12 +1202,22 @@ public abstract class EdgeControlBase : TemplatedControl, IGraphControl, IDispos
                 }
             }
 
+            // Store edge pointer data
+            Point sourceOffset = default, targetOffset = default;
             if (hasEpSource)
-                p1 = p1.Subtract(UpdateSourceEpData(p1, p2, remainHidden));
+                sourceOffset = StoreSourcePointerData(p1, p2, remainHidden);
             if (hasEpTarget)
-                p2 = p2.Subtract(UpdateTargetEpData(p2, p1, remainHidden));
+                targetOffset = StoreTargetPointerData(p2, p1, remainHidden);
 
+            // Adjust endpoints for line drawing
+            p1 = p1.Subtract(sourceOffset);
+            p2 = p2.Subtract(targetOffset);
+
+            // Build geometry (this sets _localOffset)
             lineFigure = BuildNormalizedLineFigure(TransformFinalPath([p1, p2]), gEdge?.ReversePath ?? false);
+
+            // Apply edge pointers after geometry is built
+            ApplyPendingEdgePointers();
         }
 
             ((PathGeometry)LineGeometry).Figures!.Add(lineFigure);
@@ -1161,37 +1351,37 @@ public abstract class EdgeControlBase : TemplatedControl, IGraphControl, IDispos
 
                 if (!RootArea.EdgeCurvingEnabled)
                 {
-                    routePoints[0] = hasEpSource switch
-                    {
-                        true => routePoints[0].Subtract(UpdateSourceEpData(routePoints[0], routePoints[1])),
-                        _ => routePoints[0]
-                    };
-                    routePoints[^1] = hasEpTarget switch
-                    {
-                        true => routePoints[^1].Subtract(UpdateTargetEpData(p2, routePoints[^2])),
-                        _ => routePoints[^1]
-                    };
+                    // Store edge pointer data
+                    Point sourceOffset = default, targetOffset = default;
+                    if (hasEpSource)
+                        sourceOffset = StoreSourcePointerData(routePoints[0], routePoints[1]);
+                    if (hasEpTarget)
+                        targetOffset = StoreTargetPointerData(p2, routePoints[^2]);
 
-                    return BuildNormalizedStreamGeometry(routePoints, gEdge?.ReversePath ?? false);
+                    // Adjust endpoints
+                    if (hasEpSource)
+                        routePoints[0] = routePoints[0].Subtract(sourceOffset);
+                    if (hasEpTarget)
+                        routePoints[^1] = routePoints[^1].Subtract(targetOffset);
+
+                    var result = BuildNormalizedStreamGeometry(routePoints, gEdge?.ReversePath ?? false);
+                    ApplyPendingEdgePointers();
+                    return result;
                 }
 
                 var oPolyLineSegment =
                     GeometryHelper.GetCurveThroughPoints(routePoints, 0.5, RootArea.EdgeCurvingTolerance);
 
+                // Store edge pointer data
                 if (hasEpTarget)
-                {
-                    UpdateTargetEpData(oPolyLineSegment[^1], oPolyLineSegment[^2]);
-                    oPolyLineSegment.RemoveAt(oPolyLineSegment.Count - 1);
-                }
-
+                    StoreTargetPointerData(oPolyLineSegment[^1], oPolyLineSegment[^2]);
                 if (hasEpSource)
-                {
-                    UpdateSourceEpData(oPolyLineSegment[0], oPolyLineSegment[1]);
-                    oPolyLineSegment.RemoveAt(0);
-                }
+                    StoreSourcePointerData(oPolyLineSegment[0], oPolyLineSegment[1]);
 
-                return BuildNormalizedStreamGeometry(CollectionsMarshal.AsSpan(oPolyLineSegment),
+                var curvedResult = BuildNormalizedStreamGeometry(CollectionsMarshal.AsSpan(oPolyLineSegment),
                     gEdge?.ReversePath ?? false);
+                ApplyPendingEdgePointers();
+                return curvedResult;
             }
 
             // no route defined
@@ -1213,12 +1403,20 @@ public abstract class EdgeControlBase : TemplatedControl, IGraphControl, IDispos
                 }
             }
 
+            // Store edge pointer data
+            Point srcOffset = default, tgtOffset = default;
             if (hasEpSource)
-                p1 = p1.Subtract(UpdateSourceEpData(p1, p2, allowUpdateEpDataToUnsuppress));
+                srcOffset = StoreSourcePointerData(p1, p2, allowUpdateEpDataToUnsuppress);
             if (hasEpTarget)
-                p2 = p2.Subtract(UpdateTargetEpData(p2, p1, allowUpdateEpDataToUnsuppress));
+                tgtOffset = StoreTargetPointerData(p2, p1, allowUpdateEpDataToUnsuppress);
 
-            return BuildNormalizedStreamGeometry(TransformFinalPath([p1, p2]), gEdge?.ReversePath ?? false);
+            // Adjust endpoints
+            p1 = p1.Subtract(srcOffset);
+            p2 = p2.Subtract(tgtOffset);
+
+            var unroutedResult = BuildNormalizedStreamGeometry(TransformFinalPath([p1, p2]), gEdge?.ReversePath ?? false);
+            ApplyPendingEdgePointers();
+            return unroutedResult;
         }
 
         private PathFigure CreateFigure(Measure.Point[]? externalRoutingPoints, bool hasRouteInfo,
@@ -1244,38 +1442,37 @@ public abstract class EdgeControlBase : TemplatedControl, IGraphControl, IDispos
 
             if (!RootArea.EdgeCurvingEnabled)
             {
-                routePoints[0] = hasEpSource switch
-                {
-                    true => routePoints[0].Subtract(UpdateSourceEpData(routePoints[0], routePoints[1])),
-                    _ => routePoints[0]
-                };
-                routePoints[^1] = hasEpTarget switch
-                {
-                    true => routePoints[^1].Subtract(UpdateTargetEpData(p2, routePoints[^2])),
-                    _ => routePoints[^1]
-                };
+                // Store edge pointer data
+                Point sourceOffset = default, targetOffset = default;
+                if (hasEpSource)
+                    sourceOffset = StoreSourcePointerData(routePoints[0], routePoints[1]);
+                if (hasEpTarget)
+                    targetOffset = StoreTargetPointerData(p2, routePoints[^2]);
 
-                return BuildNormalizedLineFigure(routePoints, gEdge?.ReversePath ?? false);
+                // Adjust endpoints
+                if (hasEpSource)
+                    routePoints[0] = routePoints[0].Subtract(sourceOffset);
+                if (hasEpTarget)
+                    routePoints[^1] = routePoints[^1].Subtract(targetOffset);
+
+                var result = BuildNormalizedLineFigure(routePoints, gEdge?.ReversePath ?? false);
+                ApplyPendingEdgePointers();
+                return result;
             }
 
             var oPolyLineSegment =
                 GeometryHelper.GetCurveThroughPoints(routePoints, 0.5, RootArea.EdgeCurvingTolerance);
 
+            // Store edge pointer data
             if (hasEpTarget)
-            {
-                UpdateTargetEpData(oPolyLineSegment[^1],
-                    oPolyLineSegment[^2]);
-                oPolyLineSegment.RemoveAt(oPolyLineSegment.Count - 1);
-            }
-
+                StoreTargetPointerData(oPolyLineSegment[^1], oPolyLineSegment[^2]);
             if (hasEpSource)
-            {
-                UpdateSourceEpData(oPolyLineSegment[0], oPolyLineSegment[1]);
-                oPolyLineSegment.RemoveAt(0);
-            }
+                StoreSourcePointerData(oPolyLineSegment[0], oPolyLineSegment[1]);
 
-            return BuildNormalizedLineFigure(CollectionsMarshal.AsSpan(oPolyLineSegment),
+            var curvedResult = BuildNormalizedLineFigure(CollectionsMarshal.AsSpan(oPolyLineSegment),
                 gEdge?.ReversePath ?? false);
+            ApplyPendingEdgePointers();
+            return curvedResult;
         }
 
         // no route defined
@@ -1297,12 +1494,20 @@ public abstract class EdgeControlBase : TemplatedControl, IGraphControl, IDispos
             }
         }
 
+        // Store edge pointer data
+        Point srcOffset = default, tgtOffset = default;
         if (hasEpSource)
-            p1 = p1.Subtract(UpdateSourceEpData(p1, p2, allowUpdateEpDataToUnsuppress));
+            srcOffset = StoreSourcePointerData(p1, p2, allowUpdateEpDataToUnsuppress);
         if (hasEpTarget)
-            p2 = p2.Subtract(UpdateTargetEpData(p2, p1, allowUpdateEpDataToUnsuppress));
+            tgtOffset = StoreTargetPointerData(p2, p1, allowUpdateEpDataToUnsuppress);
 
-        return BuildNormalizedLineFigure(TransformFinalPath([p1, p2]), gEdge?.ReversePath ?? false);
+        // Adjust endpoints
+        p1 = p1.Subtract(srcOffset);
+        p2 = p2.Subtract(tgtOffset);
+
+        var unroutedResult = BuildNormalizedLineFigure(TransformFinalPath([p1, p2]), gEdge?.ReversePath ?? false);
+        ApplyPendingEdgePointers();
+        return unroutedResult;
     }
 
     [MemberNotNullWhen(true, nameof(Source))]
@@ -1455,41 +1660,6 @@ public abstract class EdgeControlBase : TemplatedControl, IGraphControl, IDispos
     {
         return original;
     }
-
-    private Point UpdateSourceEpData(Point from, Point to, bool allowUnsuppress = true)
-    {
-        var dir = MathHelper.GetDirection(from.ToGraphX(), to.ToGraphX());
-        if (from == to)
-        {
-            if (HideEdgePointerOnVertexOverlap) EdgePointerForSource!.Suppress();
-            else dir = new Measure.Vector(0, 0);
-        }
-        else if (allowUnsuppress) EdgePointerForSource!.UnSuppress();
-
-        var result = EdgePointerForSource!.Update(from.ToGraphX(), dir,
-            EdgePointerForSource.NeedRotation
-                ? -MathHelper.GetAngleBetweenPoints(from.ToGraphX(), to.ToGraphX()).ToDegrees()
-                : 0);
-        return EdgePointerForSource.IsVisible == IsVisible ? result.ToAvalonia() : new Point();
-    }
-
-    private Point UpdateTargetEpData(Point from, Point to, bool allowUnsuppress = true)
-    {
-        var dir = MathHelper.GetDirection(from.ToGraphX(), to.ToGraphX());
-        if (from == to)
-        {
-            if (HideEdgePointerOnVertexOverlap) EdgePointerForTarget!.Suppress();
-            else dir = new Measure.Vector(0, 0);
-        }
-        else if (allowUnsuppress) EdgePointerForTarget!.UnSuppress();
-
-        var result = EdgePointerForTarget!.Update(from.ToGraphX(), dir,
-            EdgePointerForTarget.NeedRotation
-                ? -MathHelper.GetAngleBetweenPoints(from.ToGraphX(), to.ToGraphX()).ToDegrees()
-                : 0);
-        return EdgePointerForTarget.IsVisible == IsVisible ? result.ToAvalonia() : new Point();
-    }
-
 
     /// <summary>
     /// Searches and returns template part by name if found

@@ -119,7 +119,11 @@ public class DefaultEdgePointer : ContentControl, IEdgePointer
     /// </summary>
     private static bool CoerceVisibility(AvaloniaObject @object, bool baseValue)
     {
-        return @object is not DefaultEdgePointer ecb ? baseValue : ecb.IsSuppressed;
+        // When not suppressed, return the base visibility value; when suppressed, return false to hide the pointer
+        if (@object is not DefaultEdgePointer ecb || !ecb.IsSuppressed)
+            return baseValue;
+
+        return false;
     }
 
     private static EdgeControl? GetEdgeControl(Control? parent)
@@ -153,18 +157,16 @@ public class DefaultEdgePointer : ContentControl, IEdgePointer
     public virtual Measure.Point Update(Measure.Point? position, Measure.Vector direction, double angle = 0d)
     {
         if (DesiredSize.Width == 0 || DesiredSize.Height == 0 || !position.HasValue) return new Measure.Point();
-        position = new Measure.Point(position.Value.X - direction.X,
-            position.Value.Y - direction.Y);
+        // Calculate the offset to move the pointer along the direction by half its size
+        var vecMove = new Measure.Vector(direction.X * DesiredSize.Width * .5, direction.Y * DesiredSize.Height * .5);
+        position = new Measure.Point(position.Value.X - vecMove.X, position.Value.Y - vecMove.Y);
         if (!double.IsNaN(DesiredSize.Width) && DesiredSize.Width != 0 && !double.IsNaN(position.Value.X))
         {
-            if (!double.IsNaN(DesiredSize.Width) && DesiredSize.Width != 0 && !double.IsNaN(position.Value.X))
-            {
-                LastKnownRectSize =
-                    new Rect(
-                        new Point(position.Value.X - DesiredSize.Width * .5,
-                            position.Value.Y - DesiredSize.Height * .5), DesiredSize);
-                Arrange(LastKnownRectSize);
-            }
+            LastKnownRectSize =
+                new Rect(
+                    new Point(position.Value.X - DesiredSize.Width * .5,
+                        position.Value.Y - DesiredSize.Height * .5), DesiredSize);
+            Arrange(LastKnownRectSize);
         }
 
         RenderTransform = new RotateTransform { Angle = double.IsNaN(angle) ? 0 : angle, CenterX = 0, CenterY = 0 };
