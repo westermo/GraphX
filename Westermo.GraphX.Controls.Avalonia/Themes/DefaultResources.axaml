@@ -260,14 +260,14 @@
                         <Path Stroke="{TemplateBinding Foreground}"
                               StrokeThickness="{TemplateBinding StrokeThickness}"
                               x:Name="PART_edgePath" />
-                        <edgePointers:DefaultEdgePointer NeedRotation="true" x:Name="PART_EdgePointerForTarget">
+                        <edgePointers:DefaultEdgePointer NeedRotation="true" x:Name="PART_EdgePointerForTarget" IsVisible="False">
                             <Path Data="M0,0.5 L1,1 1,0"
                                   Fill="{TemplateBinding Foreground}"
                                   Stretch="Uniform"
                                   Width="10"
                                   Height="10" />
                         </edgePointers:DefaultEdgePointer>
-                        <edgePointers:DefaultEdgePointer NeedRotation="true" x:Name="PART_EdgePointerForSource">
+                        <edgePointers:DefaultEdgePointer NeedRotation="true" x:Name="PART_EdgePointerForSource" IsVisible="False">
                             <Path Data="M0,0.5 L1,1 1,0"
                                   Fill="{TemplateBinding Foreground}"
                                   Stretch="Uniform"

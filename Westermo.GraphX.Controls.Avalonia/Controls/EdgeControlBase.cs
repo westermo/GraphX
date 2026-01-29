@@ -278,6 +278,9 @@ public abstract class EdgeControlBase : TemplatedControl, IGraphControl, IDispos
                 EdgePointerForSource.NeedRotation
                     ? -MathHelper.GetAngleBetweenPoints(from.ToGraphX(), to.ToGraphX()).ToDegrees()
                     : 0);
+            
+            // Show pointer now that it's properly positioned
+            if (ShowArrows) EdgePointerForSource.Show();
 
             _pendingSourcePointer = default;
         }
@@ -302,6 +305,9 @@ public abstract class EdgeControlBase : TemplatedControl, IGraphControl, IDispos
                 EdgePointerForTarget.NeedRotation
                     ? -MathHelper.GetAngleBetweenPoints(from.ToGraphX(), to.ToGraphX()).ToDegrees()
                     : 0);
+            
+            // Show pointer now that it's properly positioned
+            if (ShowArrows) EdgePointerForTarget.Show();
 
             _pendingTargetPointer = default;
         }
@@ -732,13 +738,24 @@ public abstract class EdgeControlBase : TemplatedControl, IGraphControl, IDispos
 
         UpdateSelfLoopedEdgeData();
 
-        UpdateEdge();
+        // Defer edge update until after layout is complete to ensure proper positioning
+        // Use forceUpdate:true because geometry may have been built before template was applied,
+        // but edge pointers need to be positioned and shown now that they exist.
+        Avalonia.Threading.Dispatcher.UIThread.Post(() => UpdateEdge(forceUpdate: true), Avalonia.Threading.DispatcherPriority.Loaded);
     }
 
     // Re-added after edit: measure template child once with unlimited size so DesiredSize is initialized
     protected void MeasureChild(Control? child)
     {
-        child?.Measure(new Size(double.PositiveInfinity, double.PositiveInfinity));
+        if (child == null) return;
+        
+        // Ensure the child's template is applied so content is available for measuring
+        if (child is TemplatedControl templated)
+        {
+            templated.ApplyTemplate();
+        }
+        
+        child.Measure(new Size(double.PositiveInfinity, double.PositiveInfinity));
     }
 
     // Provide a desired size for layout based on current geometry bounds so edge is not collapsed to 0x0.
@@ -808,12 +825,10 @@ public abstract class EdgeControlBase : TemplatedControl, IGraphControl, IDispos
     {
         if (!IsTemplateLoaded)
             ApplyTemplate();
-        if (ShowArrows)
-        {
-            EdgePointerForSource?.Show();
-            EdgePointerForTarget?.Show();
-        }
-        else
+        
+        // Note: Edge pointer visibility is now handled in ApplyPendingEdgePointers() after they are positioned
+        // This prevents pointers from appearing at (0,0) before geometry is built
+        if (!ShowArrows)
         {
             EdgePointerForSource?.Hide();
             EdgePointerForTarget?.Hide();
@@ -1134,10 +1149,20 @@ public abstract class EdgeControlBase : TemplatedControl, IGraphControl, IDispos
         PathFigure lineFigure;
 
         //if we have route and route consist of 2 or more points
-        if (hasRouteInfo)
+        if (hasRouteInfo && routeInformation != null)
         {
-            //replace start and end points with accurate ones
-            Span<Point> routePoints = [p1, p2];
+            //replace start and end points with accurate ones while preserving intermediate route points
+            const int StackallocThreshold = 256;
+            int pointsLength = routeInformation.Length < 2 ? 2 : routeInformation.Length;
+            Span<Point> routePoints = pointsLength <= StackallocThreshold
+                ? stackalloc Point[pointsLength]
+                : new Point[pointsLength];
+            for (var i = 0; i < routeInformation.Length; i++)
+            {
+                routePoints[i] = routeInformation[i].ToAvalonia();
+            }
+            routePoints[0] = p1;
+            routePoints[^1] = p2;
 
             if (routedEdge.RoutingPoints != null)
                 routedEdge.RoutingPoints = routePoints.ToArray().ToGraphX();
@@ -1195,8 +1220,9 @@ public abstract class EdgeControlBase : TemplatedControl, IGraphControl, IDispos
                     EdgePointerForTarget?.Hide();
                     remainHidden = true;
                 }
-                else
+                else if (ShowArrows)
                 {
+                    // Only show if ShowArrows is true
                     EdgePointerForSource?.Show();
                     EdgePointerForTarget?.Show();
                 }

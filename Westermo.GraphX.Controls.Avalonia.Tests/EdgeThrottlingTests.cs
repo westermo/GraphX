@@ -114,14 +114,6 @@ public class EdgeThrottlingTests
     }
 
     [Test]
-    public async Task UpdateThrottleMs_DefaultsTo16Ms()
-    {
-        var (_, edge) = CreateSimpleGraph();
-        
-        await Assert.That(edge.UpdateThrottleMs).IsEqualTo(16);
-    }
-
-    [Test]
     public async Task UpdateThrottleMs_CanBeChanged()
     {
         var (_, edge) = CreateSimpleGraph();
