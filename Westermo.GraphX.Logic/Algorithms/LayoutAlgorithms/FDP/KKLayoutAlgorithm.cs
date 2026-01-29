@@ -198,7 +198,9 @@ public class KKLayoutAlgorithm<TVertex, TEdge, TGraph>(
     }
 
     /// <summary>
-    /// Computes shortest paths using BFS (O(V*(V+E)) instead of Dijkstra (O(V*(V+E)*log V)).
+    /// Computes all-pairs unweighted shortest paths using BFS.
+    /// BFS runs in O(V + E) per source (O(V * (V + E)) for all sources), compared to
+    /// Dijkstra with a binary heap at O((V + E) * log V) per source (O(V * (V + E) * log V) in total).
     /// Returns the graph diameter.
     /// </summary>
     private double ComputeShortestPathsAndDiameter(Dictionary<TVertex, int> vertexToIndex, CancellationToken cancellationToken)
