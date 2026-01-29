@@ -81,8 +81,9 @@ public sealed class ViewportCulling : IDisposable
         if (_isDisposed || !_isEnabled) return;
         if (_currentViewport.Width <= 0 || _currentViewport.Height <= 0) return;
 
-        // Expand viewport by margin
-        var expandedViewport = _currentViewport.Inflate(_cullingMargin);
+        // Expand viewport by margin; ensure margin is non-negative even if field is modified directly
+        var margin = _cullingMargin < 0 ? 0 : _cullingMargin;
+        var expandedViewport = _currentViewport.Inflate(margin);
 
         foreach (var child in _graphArea.Children)
         {
