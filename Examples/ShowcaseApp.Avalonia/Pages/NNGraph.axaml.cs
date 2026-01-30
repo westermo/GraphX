@@ -7,10 +7,8 @@ using Avalonia.Input;
 using Avalonia.Interactivity;
 using ShowcaseApp.Avalonia.ExampleModels;
 using ShowcaseApp.Avalonia.Models;
-using Westermo.GraphX;
 using Westermo.GraphX.Common.Enums;
 using Westermo.GraphX.Controls;
-using Westermo.GraphX.Controls.Behaviours;
 using Westermo.GraphX.Controls.Controls;
 using Westermo.GraphX.Controls.Models;
 
@@ -21,11 +19,6 @@ namespace ShowcaseApp.Avalonia.Pages;
 /// </summary>
 public partial class NNGraph : UserControl, IDisposable
 {
-    /// <summary>
-    /// tmp collection to speedup selected vertices search
-    /// </summary>
-    private readonly List<VertexControl> _selectedVertices = [];
-
     private EditorOperationMode _opMode = EditorOperationMode.Select;
     private VertexControl? _ecFrom;
     private readonly EditorObjectManager _editorManager;
@@ -36,6 +29,11 @@ public partial class NNGraph : UserControl, IDisposable
         _editorManager = new EditorObjectManager(graphArea, zoomCtrl);
         var dgLogic = new LogicCoreExample();
         graphArea.LogicCore = dgLogic;
+
+        // Initialize selection tracking with Multiple selection mode
+        graphArea.SelectedVertices = new HashSet<DataVertex>();
+        graphArea.SelectionMode = SelectionMode.Multiple;
+
         graphArea.VertexSelected += graphArea_VertexSelected;
         graphArea.EdgeSelected += graphArea_EdgeSelected;
         graphArea.SetVerticesMathShape(VertexShape.Circle);
@@ -82,25 +80,15 @@ public partial class NNGraph : UserControl, IDisposable
             case EditorOperationMode.Delete:
                 SafeRemoveVertex(args.VertexControl);
                 break;
-            case EditorOperationMode.Select when args.Modifiers.HasFlag(KeyModifiers.Control):
-                SelectVertex(args.VertexControl);
+            case EditorOperationMode.Select:
+            default:
+                // Selection is now handled automatically by GraphArea via SelectedVertices
+                // The IsSelected property on VertexControl is set by the GraphArea
+                // and DragBehaviour now uses IsSelected for group dragging
                 break;
         }
     }
 
-    private void SelectVertex(VertexControl vc)
-    {
-        if (_selectedVertices.Contains(vc))
-        {
-            _selectedVertices.Remove(vc);
-            DragBehaviour.SetIsTagged(vc, false);
-        }
-        else
-        {
-            _selectedVertices.Add(vc);
-            DragBehaviour.SetIsTagged(vc, true);
-        }
-    }
 
     private void zoomCtrl_MouseDown(object? sender, PointerPressedEventArgs e)
     {
@@ -160,11 +148,9 @@ public partial class NNGraph : UserControl, IDisposable
 
     private void ClearSelectMode(bool soft = false)
     {
-        if (_selectedVertices.Count != 0)
-        {
-            _selectedVertices.ForEach(a => { DragBehaviour.SetIsTagged(a, false); });
-            _selectedVertices.Clear();
-        }
+        // Clear the selection using the new SelectedVertices mechanism
+        graphArea.SelectedVertices?.Clear();
+        graphArea.SyncVertexSelectionState();
 
         if (!soft)
         {
@@ -226,8 +212,6 @@ public partial class NNGraph : UserControl, IDisposable
         if (vc.Vertex is not DataVertex dataVertex) return;
         graphArea.LogicCore!.Graph.RemoveVertex(dataVertex);
         graphArea.RemoveVertex(dataVertex);
-        if (removeFromSelected && _selectedVertices.Contains(vc))
-            _selectedVertices.Remove(vc);
     }
 
     public void Dispose()

@@ -39,22 +39,63 @@ public class SimpleEdgeRouting<TVertex, TEdge, TGraph> : EdgeRoutingAlgorithmBas
     public override void Compute(CancellationToken cancellationToken)
     {
         EdgeRoutes.Clear();
+        // Pre-compute inflated vertex sizes once for all edges
+        BuildInflatedSizesCache();
         foreach (var item in Graph.Edges)
             EdgeRoutingTest(item, cancellationToken);
+        // Clear cache after computation to free memory
+        _inflatedSizesCache = null;
     }
 
     private readonly double drawback_distance = 10;
     private readonly double side_distance = 5;
     private readonly double vertex_margin_distance = 35;
 
-    private IDictionary<TVertex, KeyValuePair<TVertex, Rect>> getSizesCollection(TEdge ctrl, Point end_point)
+    // Cached inflated sizes to avoid repeated dictionary allocations per edge
+    private Dictionary<TVertex, Rect> _inflatedSizesCache;
+
+    /// <summary>
+    /// Pre-builds the inflated sizes cache once per Compute() call.
+    /// </summary>
+    private void BuildInflatedSizesCache()
     {
-        var list = VertexSizes.Where(a => a.Key.ID != ctrl.Source.ID && a.Key.ID != ctrl.Target.ID)
-            .OrderByDescending(a => GetDistance(VertexPositions[a.Key], end_point))
-            .ToDictionary(a => a.Key); // new Dictionary<TVertex, Rect>();
-        foreach (var item in list.Values)
-            item.Value.Inflate(vertex_margin_distance * 2, vertex_margin_distance * 2);
-        return list;
+        var inflateAmount = vertex_margin_distance * 2;
+        _inflatedSizesCache = new Dictionary<TVertex, Rect>(VertexSizes.Count);
+        foreach (var kvp in VertexSizes)
+        {
+            var inflated = kvp.Value;
+            inflated.Inflate(inflateAmount, inflateAmount);
+            _inflatedSizesCache[kvp.Key] = inflated;
+        }
+    }
+
+    /// <summary>
+    /// Gets vertices to check for intersection, excluding source and target.
+    /// Uses cached inflated sizes instead of creating new dictionaries per edge.
+    /// </summary>
+    private IEnumerable<TVertex> GetVerticesToCheck(TEdge ctrl)
+    {
+        var sourceId = ctrl.Source.ID;
+        var targetId = ctrl.Target.ID;
+        foreach (var vertex in VertexSizes.Keys)
+        {
+            if (vertex.ID != sourceId && vertex.ID != targetId)
+                yield return vertex;
+        }
+    }
+
+    /// <summary>
+    /// Gets the inflated rect for a vertex from cache, or computes it for single edge routing.
+    /// </summary>
+    private Rect GetInflatedRect(TVertex vertex)
+    {
+        if (_inflatedSizesCache != null && _inflatedSizesCache.TryGetValue(vertex, out var cached))
+            return cached;
+        
+        // Fallback for ComputeSingle - compute on demand
+        var rect = VertexSizes[vertex];
+        rect.Inflate(vertex_margin_distance * 2, vertex_margin_distance * 2);
+        return rect;
     }
 
     private void EdgeRoutingTest(TEdge ctrl, CancellationToken cancellationToken)
@@ -71,10 +112,9 @@ public class SimpleEdgeRouting<TVertex, TEdge, TGraph> : EdgeRoutingAlgorithmBas
 
         if (startPoint == endPoint) return;
 
-        var originalSizes = getSizesCollection(ctrl, endPoint);
-        var checklist = new Dictionary<TVertex, KeyValuePair<TVertex, Rect>>(originalSizes);
-        var leftSizes = new Dictionary<TVertex, KeyValuePair<TVertex, Rect>>(originalSizes);
-
+        // Use HashSet to track checked/remaining vertices instead of dictionary copies
+        var verticesToCheck = new HashSet<TVertex>(GetVerticesToCheck(ctrl));
+        var remainingVertices = new HashSet<TVertex>(verticesToCheck);
 
         var tempList = new List<Point> { startPoint };
 
@@ -88,9 +128,16 @@ public class SimpleEdgeRouting<TVertex, TEdge, TGraph> : EdgeRoutingAlgorithmBas
             {
                 cancellationToken.ThrowIfCancellationRequested();
 
-                var item = checklist.Keys.FirstOrDefault();
+                // Get first vertex from checklist using enumerator (avoids LINQ allocation)
+                TVertex item = default;
+                foreach (var v in verticesToCheck)
+                {
+                    item = v;
+                    break;
+                }
+                
                 //set last route point as current start point
-                startPoint = tempList.Last();
+                startPoint = tempList[tempList.Count - 1];
                 if (item == null)
                 {
                     //checked all vertices and no intersection was found - quit
@@ -98,12 +145,12 @@ public class SimpleEdgeRouting<TVertex, TEdge, TGraph> : EdgeRoutingAlgorithmBas
                     break;
                 }
 
-                var r = originalSizes[item].Value;
+                var r = GetInflatedRect(item);
                 Point checkpoint;
                 //check for intersection point. if none found - remove vertex from checklist
                 if (GetIntersectionPoint(r, startPoint, endPoint, out checkpoint) == -1)
                 {
-                    checklist.Remove(item);
+                    verticesToCheck.Remove(item);
                     continue;
                 }
 
@@ -143,16 +190,20 @@ public class SimpleEdgeRouting<TVertex, TEdge, TGraph> : EdgeRoutingAlgorithmBas
                     //now check if new point is in some other vertex
                     var iresult = false;
                     var forcedBreak = false;
-                    if (originalSizes.Any(sz => sz.Value.Value.Contains(joint)))
+                    foreach (var vertex in remainingVertices)
                     {
-                        iresult = true;
-                        //block this side direction
-                        if (blocked_direction == null)
-                            blocked_direction = viceVersa;
-                        else
+                        if (GetInflatedRect(vertex).Contains(joint))
                         {
-                            //both sides blocked - need to drawback
-                            forcedBreak = true;
+                            iresult = true;
+                            //block this side direction
+                            if (blocked_direction == null)
+                                blocked_direction = viceVersa;
+                            else
+                            {
+                                //both sides blocked - need to drawback
+                                forcedBreak = true;
+                            }
+                            break;
                         }
                     }
 
@@ -191,16 +242,20 @@ public class SimpleEdgeRouting<TVertex, TEdge, TGraph> : EdgeRoutingAlgorithmBas
                     //add new route point if we found it
                     // if(routeFound) 
                     tempList.Add(joint);
-                    leftSizes.Remove(item);
+                    remainingVertices.Remove(item);
                 }
 
                 //remove currently evaded obstacle vertex from the checklist
-                checklist.Remove(item);
+                verticesToCheck.Remove(item);
             }
 
             //assign possible left vertices as a new checklist if any intersections was found
             if (haveIntersections)
-                checklist = new Dictionary<TVertex, KeyValuePair<TVertex, Rect>>(leftSizes);
+            {
+                verticesToCheck.Clear();
+                foreach (var v in remainingVertices)
+                    verticesToCheck.Add(v);
+            }
         }
         //finally, add an end route point
 

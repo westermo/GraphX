@@ -119,7 +119,11 @@ public class DefaultEdgePointer : ContentControl, IEdgePointer
     /// </summary>
     private static bool CoerceVisibility(AvaloniaObject @object, bool baseValue)
     {
-        return @object is not DefaultEdgePointer ecb ? baseValue : ecb.IsSuppressed;
+        // When not suppressed, return the base visibility value; when suppressed, return false to hide the pointer
+        if (@object is not DefaultEdgePointer ecb || !ecb.IsSuppressed)
+            return baseValue;
+
+        return false;
     }
 
     private static EdgeControl? GetEdgeControl(Control? parent)
@@ -152,24 +156,32 @@ public class DefaultEdgePointer : ContentControl, IEdgePointer
     /// </summary>
     public virtual Measure.Point Update(Measure.Point? position, Measure.Vector direction, double angle = 0d)
     {
-        if (DesiredSize.Width == 0 || DesiredSize.Height == 0 || !position.HasValue) return new Measure.Point();
-        position = new Measure.Point(position.Value.X - direction.X,
-            position.Value.Y - direction.Y);
-        if (!double.IsNaN(DesiredSize.Width) && DesiredSize.Width != 0 && !double.IsNaN(position.Value.X))
+        // Get the size to use - prefer DesiredSize, fallback to explicit Width/Height, then Bounds
+        var width = DesiredSize.Width;
+        var height = DesiredSize.Height;
+        
+        if (width == 0 || height == 0)
         {
-            if (!double.IsNaN(DesiredSize.Width) && DesiredSize.Width != 0 && !double.IsNaN(position.Value.X))
-            {
-                LastKnownRectSize =
-                    new Rect(
-                        new Point(position.Value.X - DesiredSize.Width * .5,
-                            position.Value.Y - DesiredSize.Height * .5), DesiredSize);
-                Arrange(LastKnownRectSize);
-            }
+            // Fallback to explicit Width/Height if DesiredSize not available yet
+            width = double.IsNaN(Width) ? Bounds.Width : Width;
+            height = double.IsNaN(Height) ? Bounds.Height : Height;
+        }
+        
+        if (width == 0 || height == 0 || !position.HasValue) return new Measure.Point();
+        
+        // Calculate the offset to move the pointer along the direction by half its size
+        var vecMove = new Measure.Vector(direction.X * width * .5, direction.Y * height * .5);
+        position = new Measure.Point(position.Value.X - vecMove.X, position.Value.Y - vecMove.Y);
+        if (!double.IsNaN(width) && width != 0 && !double.IsNaN(position.Value.X))
+        {
+            LastKnownRectSize =
+                new Rect(
+                    new Point(position.Value.X - width * .5,
+                        position.Value.Y - height * .5), new Size(width, height));
+            Arrange(LastKnownRectSize);
         }
 
         RenderTransform = new RotateTransform { Angle = double.IsNaN(angle) ? 0 : angle, CenterX = 0, CenterY = 0 };
-        var width = double.IsNaN(Width) ? Bounds.Width : Width;
-        var height = double.IsNaN(Height) ? Bounds.Height : Height;
         return new Measure.Point(direction.X * width, direction.Y * height);
     }
 

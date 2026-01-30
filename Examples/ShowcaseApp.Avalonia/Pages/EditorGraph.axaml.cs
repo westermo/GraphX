@@ -1,5 +1,5 @@
 ﻿using System;
-using System.Linq;
+using System.Collections.Generic;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Input;
@@ -8,7 +8,6 @@ using ShowcaseApp.Avalonia.ExampleModels;
 using ShowcaseApp.Avalonia.Models;
 using Westermo.GraphX.Common.Enums;
 using Westermo.GraphX.Controls;
-using Westermo.GraphX.Controls.Behaviours;
 using Westermo.GraphX.Controls.Controls;
 using Westermo.GraphX.Controls.Models;
 
@@ -29,6 +28,11 @@ public partial class EditorGraph : UserControl, IDisposable
         _editorManager = new EditorObjectManager(graphArea, zoomCtrl);
         var dgLogic = new LogicCoreExample();
         graphArea.LogicCore = dgLogic;
+
+        // Initialize selection tracking with Multiple selection mode
+        graphArea.SelectedVertices = new HashSet<DataVertex>();
+        graphArea.SelectionMode = SelectionMode.Multiple;
+
         graphArea.VertexSelected += graphArea_VertexSelected;
         graphArea.EdgeSelected += graphArea_EdgeSelected;
         graphArea.SetVerticesMathShape(VertexShape.Circle);
@@ -75,16 +79,13 @@ public partial class EditorGraph : UserControl, IDisposable
                 break;
             case EditorOperationMode.Select:
             default:
-                if (_opMode == EditorOperationMode.Select && args.Modifiers.HasFlag(KeyModifiers.Control))
-                    SelectVertex(args.VertexControl);
+                // Selection is now handled automatically by GraphArea via SelectedVertices
+                // The IsSelected property on VertexControl is set by the GraphArea
+                // and DragBehaviour now uses IsSelected for group dragging
                 break;
         }
     }
 
-    private static void SelectVertex(Control vc)
-    {
-        DragBehaviour.SetIsTagged(vc, !DragBehaviour.GetIsTagged(vc));
-    }
 
     private void zoomCtrl_MouseDown(object? sender, PointerPressedEventArgs e)
     {
@@ -148,10 +149,9 @@ public partial class EditorGraph : UserControl, IDisposable
 
     private void ClearSelectMode(bool soft = false)
     {
-        graphArea.VertexList.Values
-            .Where(DragBehaviour.GetIsTagged)
-            .ToList()
-            .ForEach(a => { DragBehaviour.SetIsTagged(a, false); });
+        // Clear the selection using the new SelectedVertices mechanism
+        graphArea.SelectedVertices?.Clear();
+        graphArea.SyncVertexSelectionState();
 
         if (!soft)
             graphArea.SetVerticesDrag(false);

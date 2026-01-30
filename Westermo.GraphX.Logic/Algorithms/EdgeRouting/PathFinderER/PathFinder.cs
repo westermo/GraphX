@@ -65,6 +65,13 @@ public class PathFinder : IPathFinder
     // [System.Runtime.InteropServices.DllImport("KERNEL32.DLL", EntryPoint="RtlZeroMemory")]
     // public unsafe static extern bool ZeroMemory(byte* destination, int length);
 
+    #region Static Direction Arrays
+    // Pre-allocated direction arrays to avoid per-call allocation.
+    // WARNING: These static readonly arrays are shared across all PathFinder instances and must never be modified.
+    private static readonly sbyte[,] DiagonalDirections = { {0,-1}, {1,0}, {0,1}, {-1,0}, {1,-1}, {1,1}, {-1,1}, {-1,-1} };
+    private static readonly sbyte[,] CardinalDirections = { {0,-1}, {1,0}, {0,1}, {-1,0} };
+    #endregion
+
     #region Events
     public event PathFinderDebugHandler PathFinderDebug;
     #endregion
@@ -73,6 +80,12 @@ public class PathFinder : IPathFinder
     private readonly MatrixItem[,] mGrid;
     private readonly PriorityQueueB<PathFinderNode>  mOpen                   = new(new ComparePFNode());
     private readonly List<PathFinderNode>            mClose                  = [];
+    // 2D arrays for O(1) grid-indexed lookup (much faster than HashSet tuple hashing)
+    private byte[,] mNodeStatus;  // 0 = unvisited, 1 = open, 2 = closed
+    private int[,] mGScores;      // Best G score for each grid cell
+    private const byte STATUS_UNVISITED = 0;
+    private const byte STATUS_OPEN = 1;
+    private const byte STATUS_CLOSED = 2;
     private bool                            mStop;
     private bool                            mStopped                = true;
     private int                             mHoriz;
@@ -181,6 +194,18 @@ public class PathFinder : IPathFinder
         mStopped    = false;
         mOpen.Clear();
         mClose.Clear();
+        
+        // Initialize or clear the lookup arrays
+        if (mNodeStatus == null || mNodeStatus.GetLength(0) != gridX + 1 || mNodeStatus.GetLength(1) != gridY + 1)
+        {
+            mNodeStatus = new byte[gridX + 1, gridY + 1];
+            mGScores = new int[gridX + 1, gridY + 1];
+        }
+        else
+        {
+            Array.Clear(mNodeStatus);
+            // No need to clear mGScores - we only read it when mNodeStatus indicates open
+        }
 
 #if DEBUGON
         if (mDebugProgress && PathFinderDebug != null)
@@ -189,11 +214,8 @@ public class PathFinder : IPathFinder
             PathFinderDebug(0, 0, (int)end.X, (int)end.Y, PathFinderNodeType.End, -1, -1);
 #endif
 
-        sbyte[,] direction;
-        if (mDiagonals)
-            direction = new sbyte[8,2]{ {0,-1} , {1,0}, {0,1}, {-1,0}, {1,-1}, {1,1}, {-1,1}, {-1,-1}};
-        else
-            direction = new sbyte[4,2]{ {0,-1} , {1,0}, {0,1}, {-1,0}};
+        // Use pre-allocated static direction arrays
+        var direction = mDiagonals ? DiagonalDirections : CardinalDirections;
 
         parentNode.G         = 0;
         parentNode.H         = mHEstimate;
@@ -203,6 +225,8 @@ public class PathFinder : IPathFinder
         parentNode.PX        = parentNode.X;
         parentNode.PY        = parentNode.Y;
         mOpen.Push(parentNode);
+        mNodeStatus[parentNode.X, parentNode.Y] = STATUS_OPEN;
+        mGScores[parentNode.X, parentNode.Y] = parentNode.G;
         while(mOpen.Count > 0 && !mStop)
         {
             parentNode = mOpen.Pop();
@@ -266,28 +290,15 @@ public class PathFinder : IPathFinder
                     }
                 }
 
-                var     foundInOpenIndex = -1;
-                for(var j=0; j<mOpen.Count; j++)
-                {
-                    if (mOpen[j].X == newNode.X && mOpen[j].Y == newNode.Y)
-                    {
-                        foundInOpenIndex = j;
-                        break;
-                    }
-                }
-                if (foundInOpenIndex != -1 && mOpen[foundInOpenIndex].G <= newG)
+                // O(1) lookup using 2D arrays - direct grid indexing (no hashing overhead)
+                var status = mNodeStatus[newNode.X, newNode.Y];
+                
+                // Check if already closed
+                if (status == STATUS_CLOSED)
                     continue;
-
-                var     foundInCloseIndex = -1;
-                for(var j=0; j<mClose.Count; j++)
-                {
-                    if (mClose[j].X == newNode.X && mClose[j].Y == newNode.Y)
-                    {
-                        foundInCloseIndex = j;
-                        break;
-                    }
-                }
-                if (foundInCloseIndex != -1 && mClose[foundInCloseIndex].G <= newG)
+                
+                // Check if already in open set with better or equal G score
+                if (status == STATUS_OPEN && mGScores[newNode.X, newNode.Y] <= newG)
                     continue;
 
                 newNode.PX      = parentNode.X;
@@ -340,14 +351,13 @@ public class PathFinder : IPathFinder
 
                 //It is faster if we leave the open node in the priority queue
                 //When it is removed, all nodes around will be closed, it will be ignored automatically
-                //if (foundInOpenIndex != -1)
-                //    mOpen.RemoveAt(foundInOpenIndex);
-
-                //if (foundInOpenIndex == -1)
                 mOpen.Push(newNode);
+                mNodeStatus[newNode.X, newNode.Y] = STATUS_OPEN;
+                mGScores[newNode.X, newNode.Y] = newG;
             }
 
             mClose.Add(parentNode);
+            mNodeStatus[parentNode.X, parentNode.Y] = STATUS_CLOSED;
 
 #if DEBUGON
             if (mDebugProgress && PathFinderDebug != null)

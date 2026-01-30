@@ -41,8 +41,19 @@ public class PathFinderEdgeRouting<TVertex, TEdge, TGraph> : EdgeRoutingAlgorith
 
     public override Point[] ComputeSingle(TEdge edge)
     {
-        CalculateMatrix(CancellationToken.None);//maybe shouldnt do this cause can be used from algo storage and already inited
-        SetupPathFinder();//
+        // Initialize min/max bounds from vertex positions (needed for CalculateMatrix)
+        _minPoint = new Point(double.PositiveInfinity, double.PositiveInfinity);
+        _maxPoint = new Point(double.NegativeInfinity, double.NegativeInfinity);
+        foreach (var item in VertexPositions.Values)
+        {
+            _minPoint.X = Math.Min(item.X, _minPoint.X);
+            _minPoint.Y = Math.Min(item.Y, _minPoint.Y);
+            _maxPoint.X = Math.Max(item.X, _maxPoint.X);
+            _maxPoint.Y = Math.Max(item.Y, _maxPoint.Y);
+        }
+        
+        CalculateMatrix(CancellationToken.None);
+        SetupPathFinder();
         ComputeER(edge, CancellationToken.None);
         return EdgeRoutes.TryGetValue(edge, out Point[] value) ? value : null;
     }

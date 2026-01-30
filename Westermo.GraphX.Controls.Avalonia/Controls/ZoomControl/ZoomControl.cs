@@ -13,6 +13,19 @@ using Westermo.GraphX.Controls.Models;
 
 namespace Westermo.GraphX.Controls.Controls.ZoomControl;
 
+/// <summary>
+/// A control that provides zoom and pan functionality for graph content.
+/// Supports smooth zooming, panning with mouse/touch, and zoom box selection.
+/// </summary>
+/// <remarks>
+/// The ZoomControl wraps a GraphArea or other content and provides interactive
+/// navigation capabilities. It supports:
+/// - Mouse wheel zooming (with optional Ctrl key requirement)
+/// - Pan by dragging
+/// - Zoom box selection (Alt+click or Alt+Ctrl+click)
+/// - Programmatic zoom to content, fill, or original size
+/// - Viewport change notifications for culling optimization
+/// </remarks>
 [TemplatePart(Name = PART_PRESENTER, Type = typeof(ZoomContentPresenter))]
 public sealed class ZoomControl : ContentControl, IZoomControl, INotifyPropertyChanged
 {
@@ -28,29 +41,104 @@ public sealed class ZoomControl : ContentControl, IZoomControl, INotifyPropertyC
 
     private void HookAfterZoomChanging()
     {
+        NotifyGraphAreaViewportChanged();
+        NotifyGraphAreaZoomChanged();
+    }
+
+    /// <summary>
+    /// Notifies the contained GraphArea of viewport changes for culling optimization.
+    /// </summary>
+    private void NotifyGraphAreaViewportChanged()
+    {
+        if (ContentVisual is not GraphAreaBase graphArea) return;
+        if (!graphArea.EnableViewportCulling) return;
+
+        // Calculate the visible viewport in content coordinates
+        var viewport = GetVisibleContentRect();
+        graphArea.UpdateViewport(viewport);
+    }
+
+    /// <summary>
+    /// Notifies the contained GraphArea of zoom level changes for LOD rendering.
+    /// </summary>
+    private void NotifyGraphAreaZoomChanged()
+    {
+        if (ContentVisual is not GraphAreaBase graphArea) return;
+        graphArea.CurrentZoomLevel = Zoom;
+    }
+
+    /// <summary>
+    /// Gets the currently visible content rectangle in content coordinates.
+    /// </summary>
+    public Rect GetVisibleContentRect()
+    {
+        if (_presenter == null || ContentVisual == null)
+            return default;
+
+        // The visible area in screen coordinates is the ZoomControl bounds
+        var screenRect = new Rect(0, 0, ActualWidth, ActualHeight);
+
+        // Convert to content coordinates by accounting for zoom and translate
+        var zoom = Zoom;
+        if (zoom <= 0) zoom = 1;
+
+        var contentX = -TranslateX / zoom;
+        var contentY = -TranslateY / zoom;
+        var contentWidth = ActualWidth / zoom;
+        var contentHeight = ActualHeight / zoom;
+
+        return new Rect(contentX, contentY, contentWidth, contentHeight);
     }
 
     // Simple helpers to emulate WPF ActualWidth/ActualHeight semantics
     private double ActualWidth => Bounds.Width;
     private double ActualHeight => Bounds.Height;
 
+    
     // Public mode properties (moved earlier to ensure availability)
+    /// <summary>
+    /// Gets or sets the current zoom mode of the control.
+    /// </summary>
+    /// <value>
+    /// <see cref="ZoomControlModes.Fill"/> - Automatically zoom to fit all content.
+    /// <see cref="ZoomControlModes.Original"/> - Display content at 1:1 zoom.
+    /// <see cref="ZoomControlModes.Custom"/> - User-defined zoom level.
+    /// </value>
     public ZoomControlModes Mode
     {
         get => GetValue(ModeProperty);
         set => SetValue(ModeProperty, value);
     }
 
+    /// <summary>
+    /// Gets or sets the current view modifier mode for mouse interaction.
+    /// </summary>
+    /// <value>
+    /// <see cref="ZoomViewModifierMode.None"/> - No modifier active.
+    /// <see cref="ZoomViewModifierMode.Pan"/> - Panning mode.
+    /// <see cref="ZoomViewModifierMode.ZoomBox"/> - Zoom box selection mode.
+    /// <see cref="ZoomViewModifierMode.ZoomIn"/> - Zoom in mode.
+    /// <see cref="ZoomViewModifierMode.ZoomOut"/> - Zoom out mode.
+    /// </value>
     public ZoomViewModifierMode ModifierMode
     {
         get => GetValue(ModifierModeProperty);
         set => SetValue(ModifierModeProperty, value);
     }
 
-    // Utility methods restored
+    /// <summary>
+    /// Zooms the content to its original (1:1) zoom level, centered in the viewport.
+    /// </summary>
     public void ZoomToOriginal() => DoZoomToOriginal();
+    
+    /// <summary>
+    /// Zooms the content to fill the entire viewport while maintaining aspect ratio.
+    /// </summary>
     public void ZoomToFill() => DoZoomToFill();
 
+    /// <summary>
+    /// Centers the content within the viewport at the current zoom level.
+    /// </summary>
     public void CenterContent()
     {
         if (_presenter == null) return;
@@ -58,6 +146,11 @@ public sealed class ZoomControl : ContentControl, IZoomControl, INotifyPropertyC
         DoZoomAnimation(Zoom, initialTranslate.X * Zoom, initialTranslate.Y * Zoom, false);
     }
 
+    /// <summary>
+    /// Converts a screen-space rectangle to content-space coordinates.
+    /// </summary>
+    /// <param name="screenRectangle">The rectangle in screen coordinates.</param>
+    /// <returns>The rectangle in content coordinates, accounting for current zoom and translation.</returns>
     public Rect ToContentRectangle(Rect screenRectangle)
     {
         if (ContentVisual == null) return default;
@@ -124,9 +217,31 @@ public sealed class ZoomControl : ContentControl, IZoomControl, INotifyPropertyC
 
     #region Properties
 
-    public bool IsAnimationEnabled { get; set; } = true;
+    public static readonly StyledProperty<bool> IsAnimationEnabledProperty =
+        AvaloniaProperty.Register<ZoomControl, bool>(nameof(IsAnimationEnabled), true);
+
+    /// <summary>
+    /// Gets or sets whether zoom and pan animations are enabled. Default is true.
+    /// </summary>
+    public bool IsAnimationEnabled
+    {
+        get => GetValue(IsAnimationEnabledProperty);
+        set => SetValue(IsAnimationEnabledProperty, value);
+    }
+
+    /// <summary>
+    /// Gets or sets whether the Ctrl key must be held for mouse wheel zooming. Default is true.
+    /// </summary>
     public bool UseCtrlForMouseWheel { get; set; } = true;
+    
+    /// <summary>
+    /// Gets or sets the mouse wheel zooming behavior mode.
+    /// </summary>
     public MouseWheelZoomingMode MouseWheelZoomingMode { get; set; }
+    
+    /// <summary>
+    /// Occurs when an area is selected using the zoom box selection feature.
+    /// </summary>
     public event AreaSelectedEventHandler? AreaSelected;
     private void OnAreaSelected(Rect selection) => AreaSelected?.Invoke(this, new AreaSelectedEventArgs(selection));
 
@@ -185,6 +300,7 @@ public sealed class ZoomControl : ContentControl, IZoomControl, INotifyPropertyC
         if (!zc._isZooming) zc.Mode = ZoomControlModes.Custom;
         zc.OnPropertyChanged(nameof(Presenter));
         zc.Presenter?.InvalidateVisual();
+        zc.NotifyGraphAreaViewportChanged();
     }
 
     private static void TranslateY_PropertyChanged(ZoomControl zc, AvaloniaPropertyChangedEventArgs e)
@@ -194,6 +310,7 @@ public sealed class ZoomControl : ContentControl, IZoomControl, INotifyPropertyC
         if (!zc._isZooming) zc.Mode = ZoomControlModes.Custom;
         zc.OnPropertyChanged(nameof(Presenter));
         zc.Presenter?.InvalidateVisual();
+        zc.NotifyGraphAreaViewportChanged();
     }
 
     public static readonly StyledProperty<IBrush> ZoomBoxBackgroundProperty =
@@ -248,86 +365,136 @@ public sealed class ZoomControl : ContentControl, IZoomControl, INotifyPropertyC
     private TranslateTransform? _translateTransform;
     private bool _isZooming;
 
+    /// <summary>
+    /// Gets or sets the background brush used for the zoom box selection rectangle.
+    /// </summary>
     public IBrush ZoomBoxBackground
     {
         get => GetValue(ZoomBoxBackgroundProperty);
         set => SetValue(ZoomBoxBackgroundProperty, value);
     }
 
+    /// <summary>
+    /// Gets or sets the border brush used for the zoom box selection rectangle.
+    /// </summary>
     public IBrush ZoomBoxBorderBrush
     {
         get => GetValue(ZoomBoxBorderBrushProperty);
         set => SetValue(ZoomBoxBorderBrushProperty, value);
     }
 
+    /// <summary>
+    /// Gets or sets the border thickness for the zoom box selection rectangle. Default is 1.0.
+    /// </summary>
     public Thickness ZoomBoxBorderThickness
     {
         get => GetValue(ZoomBoxBorderThicknessProperty);
         set => SetValue(ZoomBoxBorderThicknessProperty, value);
     }
 
+    /// <summary>
+    /// Gets or sets the opacity of the zoom box selection rectangle. Default is 0.5.
+    /// </summary>
     public double ZoomBoxOpacity
     {
         get => GetValue(ZoomBoxOpacityProperty);
         set => SetValue(ZoomBoxOpacityProperty, value);
     }
 
+    /// <summary>
+    /// Gets or sets the current zoom box selection rectangle in screen coordinates.
+    /// </summary>
     public Rect ZoomBox
     {
         get => GetValue(ZoomBoxProperty);
         set => SetValue(ZoomBoxProperty, value);
     }
 
+    /// <summary>
+    /// Gets the center position of the ZoomControl in screen coordinates.
+    /// </summary>
     public Point OrigoPosition => new(ActualWidth / 2, ActualHeight / 2);
 
+    /// <summary>
+    /// Gets or sets the horizontal translation offset of the content in screen coordinates.
+    /// </summary>
     public double TranslateX
     {
         get => GetValue(TranslateXProperty);
         set => SetValue(TranslateXProperty, value);
     }
 
+    /// <summary>
+    /// Gets or sets the vertical translation offset of the content in screen coordinates.
+    /// </summary>
     public double TranslateY
     {
         get => GetValue(TranslateYProperty);
         set => SetValue(TranslateYProperty, value);
     }
 
+    /// <summary>
+    /// Gets or sets the duration of zoom and pan animations. Default is 500 milliseconds.
+    /// </summary>
     public TimeSpan AnimationLength
     {
         get => GetValue(AnimationLengthProperty);
         set => SetValue(AnimationLengthProperty, value);
     }
 
+    /// <summary>
+    /// Gets or sets whether drag-to-select (zoom box) is the default mouse behavior instead of pan.
+    /// When true, clicking and dragging creates a zoom box. When false (default), clicking and dragging pans the content.
+    /// </summary>
     public bool IsDragSelectByDefault
     {
         get => GetValue(IsDragSelectByDefaultProperty);
         set => SetValue(IsDragSelectByDefaultProperty, value);
     }
 
+    /// <summary>
+    /// Gets or sets the minimum allowed zoom level. Default is 0.01.
+    /// </summary>
     public double MinZoom
     {
         get => GetValue(MinZoomProperty);
         set => SetValue(MinZoomProperty, value);
     }
 
+    /// <summary>
+    /// Gets or sets the maximum allowed zoom level. Default is 100.0.
+    /// </summary>
     public double MaxZoom
     {
         get => GetValue(MaxZoomProperty);
         set => SetValue(MaxZoomProperty, value);
     }
 
+    /// <summary>
+    /// Gets or sets the zoom step multiplier for mouse wheel zooming. Default is 5.0.
+    /// Higher values result in faster zoom changes per wheel tick.
+    /// </summary>
     public double ZoomStep
     {
         get => GetValue(ZoomStepProperty);
         set => SetValue(ZoomStepProperty, value);
     }
 
+    /// <summary>
+    /// Gets or sets the sensitivity of mouse wheel zooming. Default is 1000.0.
+    /// Higher values make zooming more responsive to small wheel movements.
+    /// </summary>
     public double ZoomSensitivity
     {
         get => GetValue(ZoomSensitivityProperty);
         set => SetValue(ZoomSensitivityProperty, value);
     }
 
+    /// <summary>
+    /// Gets or sets the current zoom level. 1.0 represents original size.
+    /// Values less than 1.0 zoom out, values greater than 1.0 zoom in.
+    /// Constrained between <see cref="MinZoom"/> and <see cref="MaxZoom"/>.
+    /// </summary>
     public double Zoom
     {
         get => GetValue(ZoomProperty);
@@ -338,11 +505,25 @@ public sealed class ZoomControl : ContentControl, IZoomControl, INotifyPropertyC
         }
     }
 
+    /// <summary>
+    /// Gets the content as a Control, if it is one.
+    /// </summary>
     public Control? ContentVisual => Content as Control;
+    
+    /// <summary>
+    /// Gets the content as an ITrackableContent, if it implements that interface.
+    /// </summary>
     public ITrackableContent? TrackableContent => Content as ITrackableContent;
     private bool _isga;
+    
+    /// <summary>
+    /// Gets whether the content implements ITrackableContent for automatic size tracking.
+    /// </summary>
     public bool IsContentTrackable => _isga;
 
+    /// <summary>
+    /// Gets or sets the zoom content presenter used for rendering the zoomed content.
+    /// </summary>
     public new ZoomContentPresenter? Presenter
     {
         get => _presenter;

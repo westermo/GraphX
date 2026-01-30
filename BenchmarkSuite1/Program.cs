@@ -12,7 +12,13 @@ namespace GraphXBenchmarks
                 .WithOptions(ConfigOptions.DisableOptimizationsValidator)
                 .AddExporter(JsonExporter.Full)
                 .AddExporter(JsonExporter.FullCompressed);
-            var _ = BenchmarkRunner.Run<GraphRenderingBenchmarks>(config);
+
+            // Run all benchmark suites
+            BenchmarkRunner.Run<GraphRenderingBenchmarks>(config);
+            // BenchmarkRunner.Run<OptimizationBenchmarks>(config);
+            // BenchmarkRunner.Run<LayoutAlgorithmBenchmarks>(config);
+            // BenchmarkRunner.Run<EdgeRoutingBenchmarks>(config);
+            // BenchmarkRunner.Run<OverlapRemovalBenchmarks>(config);
         }
     }
 }

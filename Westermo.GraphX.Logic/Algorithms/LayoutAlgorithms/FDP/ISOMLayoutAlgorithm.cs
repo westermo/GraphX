@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Threading;
 using Westermo.GraphX.Measure;
 using Westermo.GraphX.Common;
@@ -14,11 +15,18 @@ public class ISOMLayoutAlgorithm<TVertex, TEdge, TGraph> : DefaultParameterizedL
 	where TGraph : IBidirectionalGraph<TVertex, TEdge>, IMutableVertexAndEdgeSet<TVertex, TEdge>
 {
 	#region Private fields
-	private Queue<TVertex> _queue;
-	private Dictionary<TVertex, ISOMData> _isomDataDict;
+	private Queue<int> _queue = null!;
 	private Point _tempPos;
 	private double _adaptation;
 	private int _radius;
+	
+	// Array-based storage for better performance
+	private TVertex[] _vertices = null!;
+	private Point[] _positions = null!;
+	private bool[] _visited = null!;
+	private int[] _distance = null!;
+	private Dictionary<TVertex, int> _vertexToIndex = null!;
+	private List<int>[] _adjacency = null!;
 	#endregion
 
 	#region Constructors
@@ -40,16 +48,17 @@ public class ISOMLayoutAlgorithm<TVertex, TEdge, TGraph> : DefaultParameterizedL
 	{
 		//init _parameters
 		InitParameters( oldParameters );
-
-		_queue = new Queue<TVertex>();
-		_isomDataDict = [];
 		_adaptation = Parameters.InitialAdaption;
 	}
 	#endregion
 
 	public override void Compute(CancellationToken cancellationToken)
 	{
-		if (VisitedGraph.VertexCount == 1)
+		var n = VisitedGraph.VertexCount;
+		if (n == 0)
+			return;
+			
+		if (n == 1)
 		{
 			if(!VertexPositions.ContainsKey(VisitedGraph.Vertices.First()))
 				VertexPositions.Add(VisitedGraph.Vertices.First(), new Point(0, 0));
@@ -59,38 +68,62 @@ public class ISOMLayoutAlgorithm<TVertex, TEdge, TGraph> : DefaultParameterizedL
 		//initialize vertex positions
 		InitializeWithRandomPositions( Parameters.Width, Parameters.Height );
 
-		//initialize ISOM data
-		foreach ( var vertex in VisitedGraph.Vertices )
+		// Initialize arrays once
+		_vertices = new TVertex[n];
+		_positions = new Point[n];
+		_visited = new bool[n];
+		_distance = new int[n];
+		_vertexToIndex = new Dictionary<TVertex, int>(n);
+		_adjacency = new List<int>[n];
+		_queue = new Queue<int>(n);
+
+		var idx = 0;
+		foreach (var vertex in VisitedGraph.Vertices)
 		{
-			ISOMData isomData;
-			if ( !_isomDataDict.TryGetValue( vertex, out isomData ) )
-			{
-				isomData = new ISOMData();
-				_isomDataDict[vertex] = isomData;
-			}
+			_vertices[idx] = vertex;
+			_positions[idx] = VertexPositions[vertex];
+			_vertexToIndex[vertex] = idx;
+			_adjacency[idx] = new List<int>();
+			idx++;
+		}
+
+		// Build adjacency list
+		foreach (var edge in VisitedGraph.Edges)
+		{
+			var srcIdx = _vertexToIndex[edge.Source];
+			var tgtIdx = _vertexToIndex[edge.Target];
+			_adjacency[srcIdx].Add(tgtIdx);
+			_adjacency[tgtIdx].Add(srcIdx);
 		}
 
 		_radius = Parameters.InitialRadius;
 		var rnd = new Random(Parameters.Seed);
-		for ( var epoch = 0; epoch < Parameters.MaxEpoch; epoch++ )
+		var maxEpoch = Parameters.MaxEpoch;
+		var coolingFactor = Parameters.CoolingFactor;
+		var minAdaption = Parameters.MinAdaption;
+		var initialAdaption = Parameters.InitialAdaption;
+		var radiusConstantTime = Parameters.RadiusConstantTime;
+		var minRadius = Parameters.MinRadius;
+		
+		for ( var epoch = 0; epoch < maxEpoch; epoch++ )
 		{
 			cancellationToken.ThrowIfCancellationRequested();
 
-			Adjust(cancellationToken,rnd);
+			Adjust(rnd);
 
 			//Update Parameters
-			var factor = Math.Exp( -1 * Parameters.CoolingFactor * ( 1.0 * epoch / Parameters.MaxEpoch ) );
-			_adaptation = Math.Max( Parameters.MinAdaption, factor * Parameters.InitialAdaption );
-			if ( _radius > Parameters.MinRadius && epoch % Parameters.RadiusConstantTime == 0 )
+			var factor = Math.Exp( -coolingFactor * ( 1.0 * epoch / maxEpoch ) );
+			_adaptation = Math.Max( minAdaption, factor * initialAdaption );
+			if ( _radius > minRadius && epoch % radiusConstantTime == 0 )
 			{
 				_radius--;
 			}
+		}
 
-			//report
-			/*if ( ReportOnIterationEndNeeded )
-				OnIterationEnded( epoch, (double)epoch / (double)Parameters.MaxEpoch, "Iteration " + epoch + " finished.", true );
-            else if (ReportOnProgressChangedNeeded)
-                OnProgressChanged( (double)epoch / (double)Parameters.MaxEpoch * 100 );*/
+		// Copy positions back
+		for (var i = 0; i < n; i++)
+		{
+			VertexPositions[_vertices[i]] = _positions[i];
 		}
 	}
 
@@ -102,66 +135,59 @@ public class ISOMLayoutAlgorithm<TVertex, TEdge, TGraph> : DefaultParameterizedL
 	}
 
 	/// <summary>
-	/// R�ntsunk egyet az �sszes ponton.
+	/// Adjust all vertices once per epoch.
 	/// </summary>
-	protected void Adjust(CancellationToken cancellationToken, Random rnd)
+	protected void Adjust(Random rnd)
 	{
 		_tempPos = new Point {
 			X = 0.1 * Parameters.Width + rnd.NextDouble() * 0.8 * Parameters.Width, 
 			Y = 0.1 * Parameters.Height + rnd.NextDouble() * 0.8 * Parameters.Height
 		};
 
-		//get a random point in the container
+		//find the closest vertex index to this random point
+		var closestIdx = GetClosestIndex(_tempPos);
 
-		//find the closest vertex to this random point
-		var closest = GetClosest( _tempPos );
-
-		//adjust the vertices to the selected vertex
-		foreach ( var v in VisitedGraph.Vertices )
-		{
-			var vid = _isomDataDict[v];
-			vid.Distance = 0;
-			vid.Visited = false;
-		}
-		AdjustVertex( closest, cancellationToken );
+		//reset visited and distance arrays
+		Array.Clear(_visited, 0, _visited.Length);
+		Array.Clear(_distance, 0, _distance.Length);
+		
+		AdjustVertex(closestIdx);
 	}
 
-	private void AdjustVertex( TVertex closest, CancellationToken cancellationToken )
+	private void AdjustVertex(int closestIdx)
 	{
 		_queue.Clear();
-		var vid = _isomDataDict[closest];
-		vid.Distance = 0;
-		vid.Visited = true;
-		_queue.Enqueue( closest );
+		_distance[closestIdx] = 0;
+		_visited[closestIdx] = true;
+		_queue.Enqueue(closestIdx);
 
-		while ( _queue.Count > 0 )
+		while (_queue.Count > 0)
 		{
-			cancellationToken.ThrowIfCancellationRequested();
+			var currentIdx = _queue.Dequeue();
+			var currentDist = _distance[currentIdx];
+			var pos = _positions[currentIdx];
 
-			var current = _queue.Dequeue();
-			var currentVid = _isomDataDict[current];
-			var pos = VertexPositions[current];
+			var forceX = _tempPos.X - pos.X;
+			var forceY = _tempPos.Y - pos.Y;
+			
+			// Use bit shift for power of 2: 2^distance
+			var divisor = 1 << currentDist;
+			var factor = _adaptation / divisor;
 
-			var force = _tempPos - pos;
-			var factor = _adaptation / Math.Pow( 2, currentVid.Distance );
+			pos.X += factor * forceX;
+			pos.Y += factor * forceY;
+			_positions[currentIdx] = pos;
 
-			pos += factor * force;
-			VertexPositions[current] = pos;
-
-			//ha m�g a hat�k�r�n bel�l van
-			if ( currentVid.Distance < _radius )
+			// If still within radius, propagate to neighbors
+			if (currentDist < _radius)
 			{
-				//akkor a szomszedokra is hatassal vagyunk
-				foreach ( var neighbour in VisitedGraph.GetNeighbours( current ) )
+				foreach (var neighborIdx in _adjacency[currentIdx])
 				{
-					cancellationToken.ThrowIfCancellationRequested();
-
-					var nvid = _isomDataDict[neighbour];
-					if ( !nvid.Visited )
+					if (!_visited[neighborIdx])
 					{
-						nvid.Visited = true;
-						nvid.Distance = currentVid.Distance + 1;
-						_queue.Enqueue( neighbour );
+						_visited[neighborIdx] = true;
+						_distance[neighborIdx] = currentDist + 1;
+						_queue.Enqueue(neighborIdx);
 					}
 				}
 			}
@@ -169,34 +195,25 @@ public class ISOMLayoutAlgorithm<TVertex, TEdge, TGraph> : DefaultParameterizedL
 	}
 
 	/// <summary>
-	/// Finds the the closest vertex to the given position.
+	/// Finds the closest vertex index to the given position.
 	/// </summary>
-	/// <param name="tempPos">The position.</param>
-	/// <returns>Returns with the reference of the closest vertex.</returns>
-	private TVertex GetClosest( Point tempPos )
+	[MethodImpl(MethodImplOptions.AggressiveInlining)]
+	private int GetClosestIndex(Point tempPos)
 	{
-		var vertex = default( TVertex );
-		var distance = double.MaxValue;
+		var closestIdx = 0;
+		var minDistSq = double.MaxValue;
 
-		//find the closest vertex
-		foreach ( var v in VisitedGraph.Vertices )
+		for (var i = 0; i < _positions.Length; i++)
 		{
-			var d = ( tempPos - VertexPositions[v] ).Length;
-			if ( d < distance )
+			var dx = tempPos.X - _positions[i].X;
+			var dy = tempPos.Y - _positions[i].Y;
+			var distSq = dx * dx + dy * dy;  // Compare squared distances to avoid sqrt
+			if (distSq < minDistSq)
 			{
-				vertex = v;
-				distance = d;
+				closestIdx = i;
+				minDistSq = distSq;
 			}
 		}
-		return vertex;
+		return closestIdx;
 	}
-
-#pragma warning disable CS0414 // Field is assigned but its value is never used
-	private class ISOMData
-	{
-		public Vector Force = new();
-		public bool Visited;
-		public double Distance;
-	}
-#pragma warning restore CS0414 // Field is assigned but its value is never used
 }

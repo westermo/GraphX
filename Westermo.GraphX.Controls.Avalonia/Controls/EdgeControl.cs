@@ -1,8 +1,10 @@
-﻿using System;
+﻿﻿using System;
+using System.Threading;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Interactivity;
+using Avalonia.Threading;
 using Westermo.GraphX.Common;
 using Westermo.GraphX.Common.Interfaces;
 using Westermo.GraphX.Controls.Behaviours;
@@ -11,8 +13,17 @@ using Westermo.GraphX.Controls.Controls.Interfaces;
 namespace Westermo.GraphX.Controls.Controls;
 
 /// <summary>
-/// Visual edge control
+/// Visual edge control representing a connection between two vertices in the graph.
 /// </summary>
+/// <remarks>
+/// EdgeControl provides:
+/// - Visual representation of graph edges with customizable line styles
+/// - Support for self-looping edges (connecting a vertex to itself)
+/// - Edge pointer (arrow) rendering at source and/or target endpoints
+/// - Position tracking and automatic updates when connected vertices move
+/// - Throttled updates for performance during rapid position changes
+/// - Drag support via <see cref="IDraggable"/>
+/// </remarks>
 [Serializable]
 public class EdgeControl : EdgeControlBase, IDraggable
 {
@@ -133,11 +144,72 @@ public class EdgeControl : EdgeControlBase, IDraggable
         UpdateSelfLoopedEdgeData();
     }
 
+    #region Edge Update Throttling
+
+    /// <summary>
+    /// Minimum interval between edge updates in milliseconds during rapid position changes.
+    /// Set to 0 to disable throttling. Default is 16ms (~60 FPS).
+    /// </summary>
+    public int UpdateThrottleMs
+    {
+        get => field; set
+        {
+            lock (_lock)
+            {
+                if (field == value) return;
+                if (value == 0)
+                {
+                    _edgeUpdateTimer.Tick -= EdgeUpdateCheck;
+                    _edgeUpdateTimer.Stop();
+                    return;
+                }
+                if (field == 0 && value > 0)
+                {
+                    _edgeUpdateTimer.Tick += EdgeUpdateCheck;
+                    _edgeUpdateTimer.Interval = TimeSpan.FromMilliseconds(value);
+                    _edgeUpdateTimer.Start();
+                }
+                field = value;
+            }
+        }
+    } = 0;
+    private bool _edgeUpdateQueued;
+
+    private Lock _lock = new Lock();
+    private readonly DispatcherTimer _edgeUpdateTimer = new(DispatcherPriority.Render);
+
+    private void EdgeUpdateCheck(object? sender, EventArgs e)
+    {
+        bool shouldUpdate = false;
+        lock (_lock)
+        {
+            if (_edgeUpdateQueued)
+            {
+                _edgeUpdateQueued = false;
+                shouldUpdate = true;
+            }
+        }
+        if (shouldUpdate)
+        {
+            UpdateEdge();
+        }
+    }
+
     private void source_PositionChanged(object sender, EventArgs e)
     {
-        //update edge on any connected vertex position changes
-        UpdateEdge();
+        lock (_lock)
+        {
+            if (UpdateThrottleMs == 0)
+            {
+                UpdateEdge();
+                return;
+            }
+            if (_edgeUpdateQueued) return;
+            _edgeUpdateQueued = true;
+        }
     }
+
+    #endregion
 
     private void Source_SizeChanged(object? sender, SizeChangedEventArgs e)
     {

@@ -7,6 +7,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Avalonia;
 using Avalonia.Controls;
+using Avalonia.Input;
 using Avalonia.Media;
 using Avalonia.Platform.Storage;
 using Avalonia.Threading;
@@ -24,6 +25,22 @@ using Westermo.GraphX.Controls.Models.Interfaces;
 
 namespace Westermo.GraphX.Controls.Controls;
 
+/// <summary>
+/// Generic graph visualization control that displays vertices and edges using a customizable layout algorithm.
+/// </summary>
+/// <typeparam name="TVertex">The type of vertex data objects. Must implement <see cref="IGraphXVertex"/>.</typeparam>
+/// <typeparam name="TEdge">The type of edge data objects. Must implement <see cref="IGraphXEdge{TVertex}"/>.</typeparam>
+/// <typeparam name="TGraph">The type of the graph data structure. Must be a mutable bidirectional graph.</typeparam>
+/// <remarks>
+/// GraphArea is the main visualization control for graphs. It provides:
+/// - Automatic vertex and edge layout using configurable algorithms
+/// - Support for vertex and edge selection
+/// - Event handling for user interactions
+/// - Integration with ZoomControl for pan/zoom functionality
+/// - State storage for saving and restoring graph layouts
+/// - Level-of-detail rendering for large graphs
+/// - Custom control factories for vertices and edges
+/// </remarks>
 public class GraphArea<TVertex, TEdge, TGraph> : GraphAreaBase, IDisposable
     where TVertex : class, IGraphXVertex
     where TEdge : class, IGraphXEdge<TVertex>
@@ -50,6 +67,36 @@ public class GraphArea<TVertex, TEdge, TGraph> : GraphAreaBase, IDisposable
     /// Gets or sets in which order GraphX controls are drawn
     /// </summary>
     public ControlDrawOrder ControlsDrawOrder { get; set; }
+
+
+    public static readonly StyledProperty<ISet<TVertex>?> SelectedVerticesProperty =
+        AvaloniaProperty.Register<GraphAreaBase, ISet<TVertex>?>(
+            nameof(SelectedVertices));
+
+    /// <summary>
+    /// Gets or sets the collection of currently selected vertex data objects.
+    /// Bind to this property to track and control vertex selection state.
+    /// </summary>
+    public ISet<TVertex>? SelectedVertices
+    {
+        get => GetValue(SelectedVerticesProperty);
+        set => SetValue(SelectedVerticesProperty, value);
+    }
+
+    public static readonly StyledProperty<SelectionMode> SelectionModeProperty =
+        AvaloniaProperty.Register<GraphAreaBase, SelectionMode>(
+            nameof(SelectionMode), SelectionMode.Multiple);
+
+    /// <summary>
+    /// Gets or sets the vertex selection mode.
+    /// <see cref="Avalonia.Controls.SelectionMode.Single"/> allows only one vertex to be selected at a time.
+    /// <see cref="Avalonia.Controls.SelectionMode.Multiple"/> allows multiple vertices to be selected. Default is Multiple.
+    /// </summary>
+    public SelectionMode SelectionMode
+    {
+        get => GetValue(SelectionModeProperty);
+        set => SetValue(SelectionModeProperty, value);
+    }
 
     public static readonly StyledProperty<IGXLogicCore<TVertex, TEdge, TGraph>?> LogicCoreProperty =
         AvaloniaProperty.Register<GraphAreaBase, IGXLogicCore<TVertex, TEdge, TGraph>?>(
@@ -129,6 +176,10 @@ public class GraphArea<TVertex, TEdge, TGraph> : GraphAreaBase, IDisposable
         return (T)LogicCore!;
     }
 
+    /// <summary>
+    /// Sets the logic core that controls layout algorithms and graph operations.
+    /// </summary>
+    /// <param name="core">The logic core instance to use.</param>
     public void SetLogicCore(IGXLogicCore<TVertex, TEdge, TGraph> core)
     {
         LogicCore = core;
@@ -243,6 +294,41 @@ public class GraphArea<TVertex, TEdge, TGraph> : GraphAreaBase, IDisposable
 
     #endregion
 
+    #region Level of Detail Implementation
+
+    /// <inheritdoc/>
+    protected override void ApplyEdgeLodSettings(bool showArrows, bool showLabels)
+    {
+        foreach (var edge in _edgesList.Values)
+        {
+            // Apply arrow visibility based on LOD
+            edge.SetCurrentValue(EdgeControlBase.ShowArrowsProperty, showArrows);
+
+            // Apply label visibility based on LOD
+            foreach (var label in edge.EdgeLabelControls)
+            {
+                if (label is Control control)
+                {
+                    control.IsVisible = showLabels && label.ShowLabel;
+                }
+            }
+        }
+    }
+
+    /// <inheritdoc/>
+    protected override void ApplyVertexLodSettings(bool showLabels)
+    {
+        foreach (var vertex in _vertexList.Values)
+        {
+            if (vertex.VertexLabelControl is Control label)
+            {
+                label.IsVisible = showLabels && vertex.ShowLabel;
+            }
+        }
+    }
+
+    #endregion
+
     public GraphArea()
     {
         EnableVisualPropsRecovery = true;
@@ -342,10 +428,12 @@ public class GraphArea<TVertex, TEdge, TGraph> : GraphAreaBase, IDisposable
     {
         if (VertexList.TryGetValue(vertexData, out VertexControl? value))
         {
-            GetRelatedControls(value, GraphControlType.Edge, eType).ToList().ForEach(a =>
+            // OPTIMIZATION: Avoid ToList() allocation by using foreach directly
+            var relatedControls = GetRelatedControls(value, GraphControlType.Edge, eType);
+            foreach (var a in relatedControls)
             {
                 RemoveEdge((TEdge)((EdgeControl)a).Edge!, removeEdgesFromDataGraph);
-            });
+            }
         }
 
         RemoveVertex(vertexData, removeVertexFromDataGraph);
@@ -357,11 +445,19 @@ public class GraphArea<TVertex, TEdge, TGraph> : GraphAreaBase, IDisposable
         if (vertexData == null || !_vertexList.TryGetValue(vertexData, out VertexControl? ctrl)) return;
         if (removeFromList)
             _vertexList.Remove(vertexData);
-        else RemoveVertexInternal(ctrl, removeVertexFromDataGraph);
+        // Always perform control cleanup (selection state, labels, children removal)
+        RemoveVertexInternal(ctrl, removeVertexFromDataGraph);
     }
 
     private void RemoveVertexInternal(VertexControl ctrl, bool removeVertexFromDataGraph = false)
     {
+        // Remove from selection if selected
+        if (ctrl.Vertex is TVertex vertex)
+        {
+            SelectedVertices?.Remove(vertex);
+            ctrl.IsSelected = false;
+        }
+
         if (ctrl.VertexLabelControl != null)
         {
             Children.Remove((Control)ctrl.VertexLabelControl);
@@ -601,40 +697,93 @@ public class GraphArea<TVertex, TEdge, TGraph> : GraphAreaBase, IDisposable
     protected virtual void GenerateVertexLabels()
     {
         if (VertexLabelFactory == null) return;
-        Children.OfType<IVertexLabelControl>().Cast<Control>().ToList().ForEach(a => Children.Remove(a));
-        VertexList.ForEach(a => { GenerateVertexLabel(a.Value); });
+        // OPTIMIZATION: Collect items to remove first to avoid modifying collection during iteration
+        var toRemove = ListPool<Control>.Rent();
+        try
+        {
+            foreach (var child in Children)
+            {
+                if (child is IVertexLabelControl)
+                    toRemove.Add(child);
+            }
+
+            foreach (var item in toRemove)
+            {
+                Children.Remove(item);
+            }
+        }
+        finally
+        {
+            ListPool<Control>.Return(toRemove);
+        }
+
+        foreach (var kvp in VertexList)
+        {
+            GenerateVertexLabel(kvp.Value);
+        }
     }
 
     protected virtual void GenerateVertexLabel(VertexControl vertexControl)
     {
         var labels = VertexLabelFactory!.CreateLabel(vertexControl);
         var uiElements = labels as Control[] ?? [.. labels];
-        if (uiElements.Any(l => l is not IVertexLabelControl))
-            throw new GX_InvalidDataException(
-                "Generated vertex label should implement IVertexLabelControl interface");
-        uiElements.ForEach(l =>
+        // OPTIMIZATION: Check interface implementation without LINQ
+        foreach (var l in uiElements)
+        {
+            if (l is not IVertexLabelControl)
+                throw new GX_InvalidDataException(
+                    "Generated vertex label should implement IVertexLabelControl interface");
+        }
+
+        foreach (var l in uiElements)
         {
             if (_svVertexLabelShow == false || !IsVisible)
                 l.IsVisible = false;
             AddCustomChildControl(l);
             l.Measure(new Size(double.MaxValue, double.MaxValue));
             ((IVertexLabelControl)l).UpdatePosition();
-        });
+        }
     }
 
     protected virtual void GenerateEdgeLabels()
     {
         if (EdgeLabelFactory == null) return;
-        Children.OfType<IEdgeLabelControl>().Cast<Control>().ToList().ForEach(a => Children.Remove(a));
-        EdgesList.ForEach(a => { GenerateEdgeLabel(a.Value); });
+        // OPTIMIZATION: Collect items to remove first to avoid modifying collection during iteration
+        var toRemove = ListPool<Control>.Rent();
+        try
+        {
+            foreach (var child in Children)
+            {
+                if (child is IEdgeLabelControl)
+                    toRemove.Add(child);
+            }
+
+            foreach (var item in toRemove)
+            {
+                Children.Remove(item);
+            }
+        }
+        finally
+        {
+            ListPool<Control>.Return(toRemove);
+        }
+
+        foreach (var kvp in EdgesList)
+        {
+            GenerateEdgeLabel(kvp.Value);
+        }
     }
 
     protected virtual void GenerateEdgeLabel(EdgeControl edgeControl)
     {
         var labels = EdgeLabelFactory!.CreateLabel(edgeControl);
         var uiElements = labels as Control[] ?? [.. labels];
-        if (uiElements.Any(a => a is not IEdgeLabelControl))
-            throw new GX_InvalidDataException("Generated edge label should implement IEdgeLabelControl interface");
+        // OPTIMIZATION: Check interface implementation without LINQ
+        foreach (var a in uiElements)
+        {
+            if (a is not IEdgeLabelControl)
+                throw new GX_InvalidDataException("Generated edge label should implement IEdgeLabelControl interface");
+        }
 
         uiElements.ForEach(l =>
         {
@@ -709,7 +858,7 @@ public class GraphArea<TVertex, TEdge, TGraph> : GraphAreaBase, IDisposable
     /// </summary>
     /// <param name="positions">Optional vertex positions</param>
     /// <param name="showObjectsIfPosSpecified">If True, all objects will be made visible when positions are specified</param>
-    /// <param name="autoresolveIds">Automaticaly assign unique Ids to data objects. Can be vital for different GraphX logic parts such as parallel edges.</param>
+    /// <param name="autoresolveIds">Automatically assign unique Ids to data objects. Can be vital for different GraphX logic parts such as parallel edges.</param>
     public virtual void PreloadGraph(Dictionary<TVertex, Point>? positions = null,
         bool showObjectsIfPosSpecified = true, bool autoresolveIds = true)
     {
@@ -1326,82 +1475,97 @@ public class GraphArea<TVertex, TEdge, TGraph> : GraphAreaBase, IDisposable
             edge.IsParallel = false;
         }
 
+        // OPTIMIZATION: Use pooled dictionary to reduce allocations
+        var edgeGroups = DictionaryPool<(long, long), List<KeyValuePair<TEdge, EdgeControl>>>.Rent();
+        var rentedLists = ListPool<List<KeyValuePair<TEdge, EdgeControl>>>.Rent();
 
-        // Group edges by their vertex pair (using a struct key to avoid Tuple allocations)
-        var edgeGroups = new Dictionary<(long, long), List<KeyValuePair<TEdge, EdgeControl>>>();
-
-        foreach (var edge in edgeList)
+        try
         {
-            // Skip edges that can't be parallel
-            if (!edge.Value.CanBeParallel || edge.Key.IsSelfLoop) continue;
-            if (edge.Key is { SourceConnectionPointId: not null, TargetConnectionPointId: not null }) continue;
-
-            // Create a normalized key (smaller ID first)
-            var sourceId = edge.Key.Source.ID;
-            var targetId = edge.Key.Target.ID;
-            var key = sourceId < targetId ? (sourceId, targetId) : (targetId, sourceId);
-
-            if (!edgeGroups.TryGetValue(key, out var group))
+            foreach (var edge in edgeList)
             {
-                group = new List<KeyValuePair<TEdge, EdgeControl>>(4); // Pre-size for typical case
-                edgeGroups[key] = group;
+                // Skip edges that can't be parallel
+                if (!edge.Value.CanBeParallel || edge.Key.IsSelfLoop) continue;
+                if (edge.Key is { SourceConnectionPointId: not null, TargetConnectionPointId: not null }) continue;
+
+                // Create a normalized key (smaller ID first)
+                var sourceId = edge.Key.Source.ID;
+                var targetId = edge.Key.Target.ID;
+                var key = sourceId < targetId ? (sourceId, targetId) : (targetId, sourceId);
+
+                if (!edgeGroups.TryGetValue(key, out var group))
+                {
+                    group = ListPool<KeyValuePair<TEdge, EdgeControl>>.Rent();
+                    rentedLists.Add(group);
+                    edgeGroups[key] = group;
+                }
+
+                group.Add(edge);
             }
 
-            group.Add(edge);
+            foreach (var groupKvp in edgeGroups)
+            {
+                var list = groupKvp.Value;
+                if (list.Count <= 1) continue; // Single edges don't need parallel processing
+
+                // Sort in place: edges with connection points go to the end
+                list.Sort((a, b) =>
+                {
+                    var aHasCp = a.Key.SourceConnectionPointId.HasValue || a.Key.TargetConnectionPointId.HasValue;
+                    var bHasCp = b.Key.SourceConnectionPointId.HasValue || b.Key.TargetConnectionPointId.HasValue;
+                    return aHasCp.CompareTo(bHasCp);
+                });
+
+                var first = list[0];
+
+                // Alternate sides with each step
+                var viceversa = 1;
+
+                // Count edges without connection points (optimized: avoid TakeWhile/Count)
+                var countWithoutCp = 0;
+                foreach (var e in list)
+                {
+                    if (e.Key.SourceConnectionPointId.HasValue || e.Key.TargetConnectionPointId.HasValue)
+                        break;
+                    countWithoutCp++;
+                }
+
+                var even = countWithoutCp % 2 == 0;
+
+                // For even numbers of edges, initial offset is a half step from the center
+                var initialOffset = even ? LogicCore!.ParallelEdgeDistance / 2 : 0;
+
+                for (var i = 0; i < list.Count; i++)
+                {
+                    var kvp = list[i];
+                    kvp.Value.IsParallel = true;
+
+                    var offset = viceversa *
+                                 (initialOffset + LogicCore!.ParallelEdgeDistance * ((i + (even ? 0 : 1)) / 2));
+                    //if source to target edge
+                    if (kvp.Key.Source == first.Key.Source)
+                    {
+                        kvp.Value.ParallelEdgeOffset = offset;
+                    }
+                    else //if target to source edge - just switch offsets
+                    {
+                        kvp.Value.ParallelEdgeOffset = -offset;
+                    }
+
+                    //change trigger to opposite
+                    viceversa = -viceversa;
+                }
+            }
         }
-
-        foreach (var groupKvp in edgeGroups)
+        finally
         {
-            var list = groupKvp.Value;
-            if (list.Count <= 1) continue; // Single edges don't need parallel processing
-
-            // Sort in place: edges with connection points go to the end
-            list.Sort((a, b) =>
+            // Return all pooled lists
+            foreach (var list in rentedLists)
             {
-                var aHasCp = a.Key.SourceConnectionPointId.HasValue || a.Key.TargetConnectionPointId.HasValue;
-                var bHasCp = b.Key.SourceConnectionPointId.HasValue || b.Key.TargetConnectionPointId.HasValue;
-                return aHasCp.CompareTo(bHasCp);
-            });
-
-            var first = list[0];
-
-            // Alternate sides with each step
-            var viceversa = 1;
-
-            // Count edges without connection points (optimized: avoid TakeWhile/Count)
-            var countWithoutCp = 0;
-            foreach (var e in list)
-            {
-                if (e.Key.SourceConnectionPointId.HasValue || e.Key.TargetConnectionPointId.HasValue)
-                    break;
-                countWithoutCp++;
+                ListPool<KeyValuePair<TEdge, EdgeControl>>.Return(list);
             }
 
-            var even = countWithoutCp % 2 == 0;
-
-            // For even numbers of edges, initial offset is a half step from the center
-            var initialOffset = even ? LogicCore!.ParallelEdgeDistance / 2 : 0;
-
-            for (var i = 0; i < list.Count; i++)
-            {
-                var kvp = list[i];
-                kvp.Value.IsParallel = true;
-
-                var offset = viceversa *
-                             (initialOffset + LogicCore!.ParallelEdgeDistance * ((i + (even ? 0 : 1)) / 2));
-                //if source to target edge
-                if (kvp.Key.Source == first.Key.Source)
-                {
-                    kvp.Value.ParallelEdgeOffset = offset;
-                }
-                else //if target to source edge - just switch offsets
-                {
-                    kvp.Value.ParallelEdgeOffset = -offset;
-                }
-
-                //change trigger to opposite
-                viceversa = -viceversa;
-            }
+            ListPool<List<KeyValuePair<TEdge, EdgeControl>>>.Return(rentedLists);
+            DictionaryPool<(long, long), List<KeyValuePair<TEdge, EdgeControl>>>.Return(edgeGroups);
         }
     }
 
@@ -1470,7 +1634,8 @@ public class GraphArea<TVertex, TEdge, TGraph> : GraphAreaBase, IDisposable
     /// Update visual appearance for all possible visual edges
     /// </summary>
     /// <param name="performFullUpdate">If True - perform full edge update including all children checks such as pointers & labels. If False - update only edge routing and edge visual</param>
-    public virtual void UpdateAllEdges(bool performFullUpdate = false)
+    /// <param name="skipHiddenEdges">If True - skip updating edges that are not visible (useful with viewport culling). Default is true.</param>
+    public virtual void UpdateAllEdges(bool performFullUpdate = false, bool skipHiddenEdges = true)
     {
         if (LogicCore == null)
             throw new GX_InvalidDataException("LogicCore -> Not initialized!");
@@ -1488,6 +1653,10 @@ public class GraphArea<TVertex, TEdge, TGraph> : GraphAreaBase, IDisposable
         {
             foreach (var ec in _edgesList.Values)
             {
+                // OPTIMIZATION: Skip hidden edges when culling is enabled
+                if (skipHiddenEdges && !ec.IsVisible)
+                    continue;
+
                 if (!performFullUpdate) ec.UpdateEdgeRendering();
                 else ec.UpdateEdge();
             }
@@ -1504,6 +1673,41 @@ public class GraphArea<TVertex, TEdge, TGraph> : GraphAreaBase, IDisposable
             InvalidateMeasure();
         }
     }
+
+    #region Batch Update Support
+
+    /// <summary>
+    /// Begins a batch update scope where multiple edge updates are batched into a single layout pass.
+    /// Use this when updating many edges at once to improve performance.
+    /// </summary>
+    /// <returns>A disposable scope that triggers layout when disposed.</returns>
+    /// <example>
+    /// <code>
+    /// using (graphArea.BeginBatchUpdate())
+    /// {
+    ///     foreach (var edge in edges)
+    ///         edge.UpdateEdge();
+    /// }
+    /// </code>
+    /// </example>
+    public BatchUpdateScope BeginBatchUpdate()
+    {
+        return new BatchUpdateScope(this, [.. _edgesList.Values]);
+    }
+
+    /// <summary>
+    /// Begins a deferred position update scope where vertex position changes don't trigger immediate edge updates.
+    /// Use this when moving many vertices at once to avoid redundant edge recalculations.
+    /// </summary>
+    /// <returns>A disposable scope that triggers a single edge update when disposed.</returns>
+    public DeferredPositionUpdateScope BeginDeferredPositionUpdate()
+    {
+        return new DeferredPositionUpdateScope(
+            [.. _vertexList.Values],
+            () => UpdateAllEdges());
+    }
+
+    #endregion
 
     #endregion
 
@@ -1573,25 +1777,28 @@ public class GraphArea<TVertex, TEdge, TGraph> : GraphAreaBase, IDisposable
         }
 
         var list = new List<IGraphControl>();
-        if (ctrl is EdgeControl) return list;
-        if (ctrl is VertexControl vc)
+        switch (ctrl)
         {
-            var vData = (TVertex)vc.Vertex!;
-            var eList = new List<TEdge>();
-            switch (edgesType)
+            case VertexControl vc:
             {
-                case EdgesType.All:
-                    eList = [.. LogicCore.Graph.GetAllEdges(vData)];
-                    break;
-                case EdgesType.In:
-                    eList = [.. LogicCore.Graph.GetInEdges(vData)];
-                    break;
-                case EdgesType.Out:
-                    eList = [.. LogicCore.Graph.GetOutEdges(vData)];
-                    break;
-            }
+                var vData = (TVertex)vc.Vertex!;
+                var eList = new List<TEdge>();
+                switch (edgesType)
+                {
+                    case EdgesType.All:
+                        eList = [.. LogicCore.Graph.GetAllEdges(vData)];
+                        break;
+                    case EdgesType.In:
+                        eList = [.. LogicCore.Graph.GetInEdges(vData)];
+                        break;
+                    case EdgesType.Out:
+                        eList = [.. LogicCore.Graph.GetOutEdges(vData)];
+                        break;
+                }
 
-            list.AddRange(EdgesList.Where(a => eList.Contains(a.Key)).Select(a => a.Value));
+                list.AddRange(EdgesList.Where(a => eList.Contains(a.Key)).Select(a => a.Value));
+                break;
+            }
         }
 
         return list;
@@ -1852,7 +2059,7 @@ public class GraphArea<TVertex, TEdge, TGraph> : GraphAreaBase, IDisposable
     private Size _oldSizeExpansion;
 
     /// <summary>
-    /// Sets GraphArea into printing mode when its size will be recalculated on each measuer and child controls will be arranged accordingly.
+    /// Sets GraphArea into printing mode when its size will be recalculated on each measure and child controls will be arranged accordingly.
     /// Use with caution. Can spoil normal work while active but is essential to set before printing or grabbing an image.
     /// </summary>
     /// <param name="value">True or False</param>
@@ -1886,7 +2093,7 @@ public class GraphArea<TVertex, TEdge, TGraph> : GraphAreaBase, IDisposable
             var offset = new Point(ContentSize.TopLeft.X - (margin == 0 ? 0 : margin * .5),
                 ContentSize.TopLeft.Y - (margin == 0 ? 0 : margin * .5));
 
-            foreach (Control child in Children)
+            foreach (var child in Children)
             {
                 //skip edge controls
                 if (child is EdgeControl) continue;
@@ -2046,4 +2253,138 @@ public class GraphArea<TVertex, TEdge, TGraph> : GraphAreaBase, IDisposable
     }
 
     #endregion
+
+    /// <summary>
+    /// Synchronizes the IsSelected property on all vertex controls based on SelectedVertices collection.
+    /// Call this method after programmatically modifying SelectedVertices to update visual states.
+    /// </summary>
+    public void SyncVertexSelectionState()
+    {
+        if (SelectedVertices is null)
+        {
+            // No selection tracking - clear all selection states
+            foreach (var kvp in _vertexList)
+            {
+                kvp.Value.IsSelected = false;
+            }
+            return;
+        }
+
+        // Update IsSelected for each vertex control based on whether it's in the selection set
+        foreach (var kvp in _vertexList)
+        {
+            kvp.Value.IsSelected = SelectedVertices.Contains(kvp.Key);
+        }
+    }
+
+    internal override void OnVertexSelected(VertexControl vc, PointerEventArgs e, KeyModifiers keys)
+    {
+        base.OnVertexSelected(vc, e, keys);
+        if (SelectedVertices is null) return;
+        switch (SelectionMode)
+        {
+            case SelectionMode.Single:
+            {
+                // Single selection mode: always replace selection with the clicked vertex
+                if (vc.Vertex is TVertex v)
+                {
+                    ClearSelectionState();
+                    SelectedVertices.Clear();
+                    SelectedVertices.Add(v);
+                    vc.IsSelected = true;
+                }
+
+                break;
+            }
+            case SelectionMode.AlwaysSelected:
+            {
+                // AlwaysSelected mode: at least one item must remain selected
+                // Clicking a vertex selects it; if already selected and it's the only one, keep it selected
+                if (vc.Vertex is TVertex v)
+                {
+                    if (SelectedVertices.Contains(v) && SelectedVertices.Count == 1)
+                    {
+                        // Cannot deselect the only selected vertex - keep it selected
+                        break;
+                    }
+
+                    ClearSelectionState();
+                    SelectedVertices.Clear();
+                    SelectedVertices.Add(v);
+                    vc.IsSelected = true;
+                }
+
+                break;
+            }
+            case SelectionMode.Toggle:
+            {
+                // Toggle mode: clicking always toggles selection state without requiring modifier keys
+                if (vc.Vertex is TVertex v)
+                {
+                    if (!SelectedVertices.Add(v))
+                    {
+                        SelectedVertices.Remove(v);
+                        vc.IsSelected = false;
+                    }
+                    else
+                    {
+                        vc.IsSelected = true;
+                    }
+                }
+
+                break;
+            }
+            default:
+            case SelectionMode.Multiple:
+            {
+                // Multiple selection mode: requires modifier keys to extend/toggle selection
+                if (vc.Vertex is not TVertex v) return;
+                if (keys.HasFlag(KeyModifiers.Control))
+                {
+                    // Ctrl+Click: toggle selection of the clicked vertex
+                    if (!SelectedVertices.Add(v))
+                    {
+                        SelectedVertices.Remove(v);
+                        vc.IsSelected = false;
+                    }
+                    else
+                    {
+                        vc.IsSelected = true;
+                    }
+                }
+                else if (keys.HasFlag(KeyModifiers.Shift))
+                {
+                    // Shift+Click: add to selection
+                    SelectedVertices.Add(v);
+                    vc.IsSelected = true;
+                }
+                else if (SelectedVertices.Contains(v))
+                {
+                    // Click on already selected vertex without modifiers: keep selection intact
+                    // This allows dragging a group of selected vertices
+                }
+                else
+                {
+                    // Click on unselected vertex without modifiers: replace selection
+                    ClearSelectionState();
+                    SelectedVertices.Clear();
+                    SelectedVertices.Add(v);
+                    vc.IsSelected = true;
+                }
+
+                break;
+            }
+        }
+    }
+
+    /// <summary>
+    /// Clears IsSelected on all vertex controls. Used internally when replacing selection.
+    /// </summary>
+    private void ClearSelectionState()
+    {
+        foreach (var kvp in _vertexList)
+        {
+            kvp.Value.IsSelected = false;
+        }
+    }
 }

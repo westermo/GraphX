@@ -6,6 +6,7 @@ using Avalonia.Controls;
 using Avalonia.Controls.Metadata;
 using Avalonia.Controls.Primitives;
 using Westermo.GraphX.Common.Enums;
+using Westermo.GraphX.Controls.Behaviours;
 using Westermo.GraphX.Controls.Controls.Misc;
 using Westermo.GraphX.Controls.Models;
 using Westermo.GraphX.Controls.Models.Interfaces;
@@ -13,6 +14,17 @@ using Rect = Westermo.GraphX.Measure.Rect;
 
 namespace Westermo.GraphX.Controls.Controls;
 
+/// <summary>
+/// Base class for vertex controls that provides common functionality for visual representation of graph vertices.
+/// </summary>
+/// <remarks>
+/// This abstract class provides:
+/// - Position management via attached properties (X, Y)
+/// - Label attachment and management
+/// - Vertex connection points for custom edge routing
+/// - Selection state tracking
+/// - Integration with GraphAreaBase for event handling
+/// </remarks>
 [TemplatePart(Name = "PART_vertexLabel", Type = typeof(IVertexLabelControl))]
 [TemplatePart(Name = "PART_vcproot", Type = typeof(Panel))]
 public abstract class VertexControlBase : TemplatedControl, IGraphControl
@@ -56,10 +68,7 @@ public abstract class VertexControlBase : TemplatedControl, IGraphControl
     {
         SetCurrentValue(IsVisibleProperty, false);
         SetConnectionPointsVisibility(false);
-        RootArea?.GetRelatedControls(this, GraphControlType.Edge, EdgesType.All).ForEach(a =>
-        {
-            a.IsVisible = false;
-        });
+        RootArea?.GetRelatedControls(this, GraphControlType.Edge, EdgesType.All).ForEach(a => { a.IsVisible = false; });
     }
 
     /// <summary>
@@ -152,10 +161,37 @@ public abstract class VertexControlBase : TemplatedControl, IGraphControl
         else obj.VertexLabelControl.Hide();
     }
 
+    /// <summary>
+    /// Gets or sets whether the vertex label should be visible. Default is false.
+    /// </summary>
     public bool ShowLabel
     {
         get => GetValue(ShowLabelProperty);
         set => SetValue(ShowLabelProperty, value);
+    }
+
+    /// <summary>
+    /// Gets or sets whether this vertex is currently selected.
+    /// This property is typically managed by the GraphArea based on SelectedVertices collection.
+    /// </summary>
+    public static readonly StyledProperty<bool> IsSelectedProperty =
+        AvaloniaProperty.Register<VertexControlBase, bool>(nameof(IsSelected));
+
+    /// <summary>
+    /// Gets or sets whether this vertex is currently selected.
+    /// Use this property in ControlThemes to style selected vertices differently.
+    /// </summary>
+    public bool IsSelected
+    {
+        get => GetValue(IsSelectedProperty);
+        set
+        {
+            SetValue(IsSelectedProperty, value);
+            if (DragBehaviour.GetIsDragEnabled(this))
+            {
+                DragBehaviour.SetIsTagged(this, value);
+            }
+        }
     }
 
     #endregion

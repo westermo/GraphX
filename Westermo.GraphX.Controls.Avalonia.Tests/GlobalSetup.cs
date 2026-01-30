@@ -5,6 +5,8 @@
 using System.Diagnostics;
 using Avalonia;
 using Avalonia.Headless;
+using Avalonia.Markup.Xaml.Styling;
+using Avalonia.Styling;
 using Avalonia.Threading;
 using TUnit.Core.Executors;
 using TUnit.Core.Interfaces;
@@ -71,9 +73,17 @@ public class GlobalHooks
             var initialized = new TaskCompletionSource<Dispatcher>();
             _thread = new Thread(() =>
             {
-                AppBuilder.Configure<Application>()
+                var app = AppBuilder.Configure<Application>()
                     .UseHeadless(new AvaloniaHeadlessPlatformOptions())
                     .SetupWithoutStarting();
+                
+                // Load GraphX control themes so edge pointers and other template parts work
+                var graphXStyles = new StyleInclude(new Uri("avares://Westermo.GraphX.Controls.Avalonia/"))
+                {
+                    Source = new Uri("avares://Westermo.GraphX.Controls.Avalonia/Themes/DefaultStyles.axaml")
+                };
+                Application.Current!.Styles.Add(graphXStyles);
+                
                 initialized.TrySetResult(Dispatcher.UIThread);
                 // Run the dispatcher - this keeps the UI thread alive
                 Dispatcher.UIThread.MainLoop(CancellationToken.None);
