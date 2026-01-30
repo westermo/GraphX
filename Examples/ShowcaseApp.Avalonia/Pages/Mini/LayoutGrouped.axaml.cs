@@ -7,7 +7,6 @@ using Avalonia.Media;
 using QuikGraph;
 using ShowcaseApp.Avalonia.ExampleModels;
 using ShowcaseApp.Avalonia.Models;
-using Westermo.GraphX;
 using Westermo.GraphX.Common;
 using Westermo.GraphX.Common.Enums;
 using Westermo.GraphX.Controls.Controls;

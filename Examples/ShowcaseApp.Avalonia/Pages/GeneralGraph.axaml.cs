@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using Avalonia.Controls;
 using Avalonia.Input;
@@ -30,6 +31,10 @@ public partial class GeneralGraph : UserControl
         gg_vertexCount.Text = "30";
         var ggLogic = new LogicCoreExample();
         gg_Area.LogicCore = ggLogic;
+
+        // Initialize selection tracking with Multiple selection mode
+        gg_Area.SelectedVertices = new HashSet<DataVertex>();
+        gg_Area.SelectionMode = SelectionMode.Multiple;
 
         gg_layalgo.SelectionChanged += gg_layalgo_SelectionChanged;
         gg_oralgo.SelectionChanged += gg_oralgo_SelectionChanged;

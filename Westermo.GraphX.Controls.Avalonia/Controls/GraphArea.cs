@@ -7,6 +7,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Avalonia;
 using Avalonia.Controls;
+using Avalonia.Input;
 using Avalonia.Media;
 using Avalonia.Platform.Storage;
 using Avalonia.Threading;
@@ -50,6 +51,27 @@ public class GraphArea<TVertex, TEdge, TGraph> : GraphAreaBase, IDisposable
     /// Gets or sets in which order GraphX controls are drawn
     /// </summary>
     public ControlDrawOrder ControlsDrawOrder { get; set; }
+
+
+    public static readonly StyledProperty<ISet<TVertex>?> SelectedVerticesProperty =
+        AvaloniaProperty.Register<GraphAreaBase, ISet<TVertex>?>(
+            nameof(SelectedVertices));
+
+    public ISet<TVertex>? SelectedVertices
+    {
+        get => GetValue(SelectedVerticesProperty);
+        set => SetValue(SelectedVerticesProperty, value);
+    }
+
+    public static readonly StyledProperty<SelectionMode> SelectionModeProperty =
+        AvaloniaProperty.Register<GraphAreaBase, SelectionMode>(
+            nameof(SelectionMode), SelectionMode.Multiple);
+
+    public SelectionMode SelectionMode
+    {
+        get => GetValue(SelectionModeProperty);
+        set => SetValue(SelectionModeProperty, value);
+    }
 
     public static readonly StyledProperty<IGXLogicCore<TVertex, TEdge, TGraph>?> LogicCoreProperty =
         AvaloniaProperty.Register<GraphAreaBase, IGXLogicCore<TVertex, TEdge, TGraph>?>(
@@ -252,7 +274,7 @@ public class GraphArea<TVertex, TEdge, TGraph> : GraphAreaBase, IDisposable
         {
             // Apply arrow visibility based on LOD
             edge.SetCurrentValue(EdgeControlBase.ShowArrowsProperty, showArrows);
-            
+
             // Apply label visibility based on LOD
             foreach (var label in edge.EdgeLabelControls)
             {
@@ -394,11 +416,19 @@ public class GraphArea<TVertex, TEdge, TGraph> : GraphAreaBase, IDisposable
         if (vertexData == null || !_vertexList.TryGetValue(vertexData, out VertexControl? ctrl)) return;
         if (removeFromList)
             _vertexList.Remove(vertexData);
-        else RemoveVertexInternal(ctrl, removeVertexFromDataGraph);
+        // Always perform control cleanup (selection state, labels, children removal)
+        RemoveVertexInternal(ctrl, removeVertexFromDataGraph);
     }
 
     private void RemoveVertexInternal(VertexControl ctrl, bool removeVertexFromDataGraph = false)
     {
+        // Remove from selection if selected
+        if (ctrl.Vertex is TVertex vertex)
+        {
+            SelectedVertices?.Remove(vertex);
+            ctrl.IsSelected = false;
+        }
+
         if (ctrl.VertexLabelControl != null)
         {
             Children.Remove((Control)ctrl.VertexLabelControl);
@@ -647,6 +677,7 @@ public class GraphArea<TVertex, TEdge, TGraph> : GraphAreaBase, IDisposable
                 if (child is IVertexLabelControl)
                     toRemove.Add(child);
             }
+
             foreach (var item in toRemove)
             {
                 Children.Remove(item);
@@ -656,7 +687,7 @@ public class GraphArea<TVertex, TEdge, TGraph> : GraphAreaBase, IDisposable
         {
             ListPool<Control>.Return(toRemove);
         }
-        
+
         foreach (var kvp in VertexList)
         {
             GenerateVertexLabel(kvp.Value);
@@ -674,6 +705,7 @@ public class GraphArea<TVertex, TEdge, TGraph> : GraphAreaBase, IDisposable
                 throw new GX_InvalidDataException(
                     "Generated vertex label should implement IVertexLabelControl interface");
         }
+
         foreach (var l in uiElements)
         {
             if (_svVertexLabelShow == false || !IsVisible)
@@ -696,6 +728,7 @@ public class GraphArea<TVertex, TEdge, TGraph> : GraphAreaBase, IDisposable
                 if (child is IEdgeLabelControl)
                     toRemove.Add(child);
             }
+
             foreach (var item in toRemove)
             {
                 Children.Remove(item);
@@ -705,7 +738,7 @@ public class GraphArea<TVertex, TEdge, TGraph> : GraphAreaBase, IDisposable
         {
             ListPool<Control>.Return(toRemove);
         }
-        
+
         foreach (var kvp in EdgesList)
         {
             GenerateEdgeLabel(kvp.Value);
@@ -796,7 +829,7 @@ public class GraphArea<TVertex, TEdge, TGraph> : GraphAreaBase, IDisposable
     /// </summary>
     /// <param name="positions">Optional vertex positions</param>
     /// <param name="showObjectsIfPosSpecified">If True, all objects will be made visible when positions are specified</param>
-    /// <param name="autoresolveIds">Automaticaly assign unique Ids to data objects. Can be vital for different GraphX logic parts such as parallel edges.</param>
+    /// <param name="autoresolveIds">Automatically assign unique Ids to data objects. Can be vital for different GraphX logic parts such as parallel edges.</param>
     public virtual void PreloadGraph(Dictionary<TVertex, Point>? positions = null,
         bool showObjectsIfPosSpecified = true, bool autoresolveIds = true)
     {
@@ -1501,6 +1534,7 @@ public class GraphArea<TVertex, TEdge, TGraph> : GraphAreaBase, IDisposable
             {
                 ListPool<KeyValuePair<TEdge, EdgeControl>>.Return(list);
             }
+
             ListPool<List<KeyValuePair<TEdge, EdgeControl>>>.Return(rentedLists);
             DictionaryPool<(long, long), List<KeyValuePair<TEdge, EdgeControl>>>.Return(edgeGroups);
         }
@@ -1593,7 +1627,7 @@ public class GraphArea<TVertex, TEdge, TGraph> : GraphAreaBase, IDisposable
                 // OPTIMIZATION: Skip hidden edges when culling is enabled
                 if (skipHiddenEdges && !ec.IsVisible)
                     continue;
-                    
+
                 if (!performFullUpdate) ec.UpdateEdgeRendering();
                 else ec.UpdateEdge();
             }
@@ -1714,25 +1748,28 @@ public class GraphArea<TVertex, TEdge, TGraph> : GraphAreaBase, IDisposable
         }
 
         var list = new List<IGraphControl>();
-        if (ctrl is EdgeControl) return list;
-        if (ctrl is VertexControl vc)
+        switch (ctrl)
         {
-            var vData = (TVertex)vc.Vertex!;
-            var eList = new List<TEdge>();
-            switch (edgesType)
+            case VertexControl vc:
             {
-                case EdgesType.All:
-                    eList = [.. LogicCore.Graph.GetAllEdges(vData)];
-                    break;
-                case EdgesType.In:
-                    eList = [.. LogicCore.Graph.GetInEdges(vData)];
-                    break;
-                case EdgesType.Out:
-                    eList = [.. LogicCore.Graph.GetOutEdges(vData)];
-                    break;
-            }
+                var vData = (TVertex)vc.Vertex!;
+                var eList = new List<TEdge>();
+                switch (edgesType)
+                {
+                    case EdgesType.All:
+                        eList = [.. LogicCore.Graph.GetAllEdges(vData)];
+                        break;
+                    case EdgesType.In:
+                        eList = [.. LogicCore.Graph.GetInEdges(vData)];
+                        break;
+                    case EdgesType.Out:
+                        eList = [.. LogicCore.Graph.GetOutEdges(vData)];
+                        break;
+                }
 
-            list.AddRange(EdgesList.Where(a => eList.Contains(a.Key)).Select(a => a.Value));
+                list.AddRange(EdgesList.Where(a => eList.Contains(a.Key)).Select(a => a.Value));
+                break;
+            }
         }
 
         return list;
@@ -1993,7 +2030,7 @@ public class GraphArea<TVertex, TEdge, TGraph> : GraphAreaBase, IDisposable
     private Size _oldSizeExpansion;
 
     /// <summary>
-    /// Sets GraphArea into printing mode when its size will be recalculated on each measuer and child controls will be arranged accordingly.
+    /// Sets GraphArea into printing mode when its size will be recalculated on each measure and child controls will be arranged accordingly.
     /// Use with caution. Can spoil normal work while active but is essential to set before printing or grabbing an image.
     /// </summary>
     /// <param name="value">True or False</param>
@@ -2027,7 +2064,7 @@ public class GraphArea<TVertex, TEdge, TGraph> : GraphAreaBase, IDisposable
             var offset = new Point(ContentSize.TopLeft.X - (margin == 0 ? 0 : margin * .5),
                 ContentSize.TopLeft.Y - (margin == 0 ? 0 : margin * .5));
 
-            foreach (Control child in Children)
+            foreach (var child in Children)
             {
                 //skip edge controls
                 if (child is EdgeControl) continue;
@@ -2187,4 +2224,138 @@ public class GraphArea<TVertex, TEdge, TGraph> : GraphAreaBase, IDisposable
     }
 
     #endregion
+
+    /// <summary>
+    /// Synchronizes the IsSelected property on all vertex controls based on SelectedVertices collection.
+    /// Call this method after programmatically modifying SelectedVertices to update visual states.
+    /// </summary>
+    public void SyncVertexSelectionState()
+    {
+        if (SelectedVertices is null)
+        {
+            // No selection tracking - clear all selection states
+            foreach (var kvp in _vertexList)
+            {
+                kvp.Value.IsSelected = false;
+            }
+            return;
+        }
+
+        // Update IsSelected for each vertex control based on whether it's in the selection set
+        foreach (var kvp in _vertexList)
+        {
+            kvp.Value.IsSelected = SelectedVertices.Contains(kvp.Key);
+        }
+    }
+
+    internal override void OnVertexSelected(VertexControl vc, PointerEventArgs e, KeyModifiers keys)
+    {
+        base.OnVertexSelected(vc, e, keys);
+        if (SelectedVertices is null) return;
+        switch (SelectionMode)
+        {
+            case SelectionMode.Single:
+            {
+                // Single selection mode: always replace selection with the clicked vertex
+                if (vc.Vertex is TVertex v)
+                {
+                    ClearSelectionState();
+                    SelectedVertices.Clear();
+                    SelectedVertices.Add(v);
+                    vc.IsSelected = true;
+                }
+
+                break;
+            }
+            case SelectionMode.AlwaysSelected:
+            {
+                // AlwaysSelected mode: at least one item must remain selected
+                // Clicking a vertex selects it; if already selected and it's the only one, keep it selected
+                if (vc.Vertex is TVertex v)
+                {
+                    if (SelectedVertices.Contains(v) && SelectedVertices.Count == 1)
+                    {
+                        // Cannot deselect the only selected vertex - keep it selected
+                        break;
+                    }
+
+                    ClearSelectionState();
+                    SelectedVertices.Clear();
+                    SelectedVertices.Add(v);
+                    vc.IsSelected = true;
+                }
+
+                break;
+            }
+            case SelectionMode.Toggle:
+            {
+                // Toggle mode: clicking always toggles selection state without requiring modifier keys
+                if (vc.Vertex is TVertex v)
+                {
+                    if (!SelectedVertices.Add(v))
+                    {
+                        SelectedVertices.Remove(v);
+                        vc.IsSelected = false;
+                    }
+                    else
+                    {
+                        vc.IsSelected = true;
+                    }
+                }
+
+                break;
+            }
+            default:
+            case SelectionMode.Multiple:
+            {
+                // Multiple selection mode: requires modifier keys to extend/toggle selection
+                if (vc.Vertex is not TVertex v) return;
+                if (keys.HasFlag(KeyModifiers.Control))
+                {
+                    // Ctrl+Click: toggle selection of the clicked vertex
+                    if (!SelectedVertices.Add(v))
+                    {
+                        SelectedVertices.Remove(v);
+                        vc.IsSelected = false;
+                    }
+                    else
+                    {
+                        vc.IsSelected = true;
+                    }
+                }
+                else if (keys.HasFlag(KeyModifiers.Shift))
+                {
+                    // Shift+Click: add to selection
+                    SelectedVertices.Add(v);
+                    vc.IsSelected = true;
+                }
+                else if (SelectedVertices.Contains(v))
+                {
+                    // Click on already selected vertex without modifiers: keep selection intact
+                    // This allows dragging a group of selected vertices
+                }
+                else
+                {
+                    // Click on unselected vertex without modifiers: replace selection
+                    ClearSelectionState();
+                    SelectedVertices.Clear();
+                    SelectedVertices.Add(v);
+                    vc.IsSelected = true;
+                }
+
+                break;
+            }
+        }
+    }
+
+    /// <summary>
+    /// Clears IsSelected on all vertex controls. Used internally when replacing selection.
+    /// </summary>
+    private void ClearSelectionState()
+    {
+        foreach (var kvp in _vertexList)
+        {
+            kvp.Value.IsSelected = false;
+        }
+    }
 }

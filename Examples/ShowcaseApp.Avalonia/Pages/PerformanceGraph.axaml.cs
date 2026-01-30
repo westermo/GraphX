@@ -1,18 +1,15 @@
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Interactivity;
 using Avalonia.Threading;
-using QuikGraph;
 using ShowcaseApp.Avalonia.ExampleModels;
-using ShowcaseApp.Avalonia.Models;
 using Westermo.GraphX.Common.Enums;
-using Westermo.GraphX.Controls;
 using Westermo.GraphX.Controls.Controls;
 using Westermo.GraphX.Controls.Models;
-using Westermo.GraphX.Logic.Algorithms.LayoutAlgorithms;
 
 namespace ShowcaseApp.Avalonia.Pages;
 
@@ -49,6 +46,10 @@ public partial class PerformanceGraph : UserControl
         graphArea.LogicCore = logic;
         graphArea.SetVerticesDrag(true, true);
         graphArea.VertexLabelFactory = new DefaultVertexLabelFactory();
+        
+        // Initialize selection tracking with Multiple selection mode
+        graphArea.SelectedVertices = new HashSet<DataVertex>();
+        graphArea.SelectionMode = SelectionMode.Multiple;
         
         // Setup zoom control
         zoomCtrl.IsAnimationEnabled = false;

@@ -30,6 +30,17 @@
 
     </Style>
 
+    <!-- Selected vertex style - provides visual feedback for selection -->
+    <Style Selector="controls|VertexControl[IsSelected=True]">
+        <Setter Property="Opacity" Value="1" />
+        <Setter Property="BorderBrush" Value="DodgerBlue" />
+        <Setter Property="Effect">
+            <Setter.Value>
+                <DropShadowEffect Color="DodgerBlue" BlurRadius="8" OffsetX="0" OffsetY="0" />
+            </Setter.Value>
+        </Setter>
+    </Style>
+
 
     <!-- EDGE CONTROL -->
     <Style Selector="controls|EdgeControl">

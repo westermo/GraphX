@@ -6,6 +6,7 @@ using Avalonia.Controls;
 using Avalonia.Controls.Metadata;
 using Avalonia.Controls.Primitives;
 using Westermo.GraphX.Common.Enums;
+using Westermo.GraphX.Controls.Behaviours;
 using Westermo.GraphX.Controls.Controls.Misc;
 using Westermo.GraphX.Controls.Models;
 using Westermo.GraphX.Controls.Models.Interfaces;
@@ -56,10 +57,7 @@ public abstract class VertexControlBase : TemplatedControl, IGraphControl
     {
         SetCurrentValue(IsVisibleProperty, false);
         SetConnectionPointsVisibility(false);
-        RootArea?.GetRelatedControls(this, GraphControlType.Edge, EdgesType.All).ForEach(a =>
-        {
-            a.IsVisible = false;
-        });
+        RootArea?.GetRelatedControls(this, GraphControlType.Edge, EdgesType.All).ForEach(a => { a.IsVisible = false; });
     }
 
     /// <summary>
@@ -156,6 +154,30 @@ public abstract class VertexControlBase : TemplatedControl, IGraphControl
     {
         get => GetValue(ShowLabelProperty);
         set => SetValue(ShowLabelProperty, value);
+    }
+
+    /// <summary>
+    /// Gets or sets whether this vertex is currently selected.
+    /// This property is typically managed by the GraphArea based on SelectedVertices collection.
+    /// </summary>
+    public static readonly StyledProperty<bool> IsSelectedProperty =
+        AvaloniaProperty.Register<VertexControlBase, bool>(nameof(IsSelected));
+
+    /// <summary>
+    /// Gets or sets whether this vertex is currently selected.
+    /// Use this property in ControlThemes to style selected vertices differently.
+    /// </summary>
+    public bool IsSelected
+    {
+        get => GetValue(IsSelectedProperty);
+        set
+        {
+            SetValue(IsSelectedProperty, value);
+            if (DragBehaviour.GetIsDragEnabled(this))
+            {
+                DragBehaviour.SetIsTagged(this, value);
+            }
+        }
     }
 
     #endregion

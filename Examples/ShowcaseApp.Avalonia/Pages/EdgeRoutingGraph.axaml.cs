@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using Avalonia;
 using Avalonia.Controls;
@@ -6,7 +7,6 @@ using Avalonia.Input;
 using Avalonia.Interactivity;
 using ShowcaseApp.Avalonia.ExampleModels;
 using ShowcaseApp.Avalonia.Models;
-using Westermo.GraphX;
 using Westermo.GraphX.Common.Enums;
 using Westermo.GraphX.Controls;
 using Westermo.GraphX.Controls.Behaviours;
@@ -42,6 +42,10 @@ public partial class EdgeRoutingGraph : UserControl
         erg_Area.LogicCore.ParallelEdgeDistance = 20;
         erg_Area.EdgeLabelFactory = new DefaultEdgeLabelFactory();
         erg_Area.ControlFactory = new FunnyExampleFactory();
+
+        // Initialize selection tracking with Multiple selection mode
+        erg_Area.SelectedVertices = new HashSet<DataVertex>();
+        erg_Area.SelectionMode = SelectionMode.Multiple;
 
         erg_showEdgeArrows.IsChecked = true;
         BundleEdgeRoutingParameters =

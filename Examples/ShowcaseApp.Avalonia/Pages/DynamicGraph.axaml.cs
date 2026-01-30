@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using Avalonia;
 using Avalonia.Controls;
@@ -27,6 +28,10 @@ public partial class DynamicGraph : UserControl
         InitializeComponent();
         var dgLogic = new LogicCoreExample();
         dg_Area.LogicCore = dgLogic;
+
+        // Initialize selection tracking with Multiple selection mode
+        dg_Area.SelectedVertices = new HashSet<DataVertex>();
+        dg_Area.SelectionMode = SelectionMode.Multiple;
 
         dg_addvertex.Click += AddVertex;
         dg_remvertex.Click += RemoveVertex;
@@ -108,7 +113,12 @@ public partial class DynamicGraph : UserControl
                  where irect.IntersectsWith(r.ToGraphX())
                  select item)
         {
-            SelectVertex(item.Value);
+            // Add to selection using SelectedVertices
+            if (item.Key is DataVertex dv)
+            {
+                dg_Area.SelectedVertices?.Add(dv);
+                item.Value.IsSelected = true;
+            }
         }
     }
 
@@ -148,17 +158,17 @@ public partial class DynamicGraph : UserControl
         if (args.MouseArgs is not PointerEventArgs pea) return;
         if (pea.Properties.IsLeftButtonPressed)
         {
-            if (pea.KeyModifiers.HasFlag(KeyModifiers.Control))
-                SelectVertex(args.VertexControl);
+            // Selection is now handled automatically by GraphArea via SelectedVertices
+            // The IsSelected property on VertexControl is set by the GraphArea
         }
         else if (pea.Properties.IsRightButtonPressed)
         {
-            var countTagged = dg_Area.VertexList.Values.Count(DragBehaviour.GetIsTagged);
-            var isTagged = DragBehaviour.GetIsTagged(args.VertexControl);
+            var countSelected = dg_Area.SelectedVertices?.Count ?? 0;
+            var isSelected = args.VertexControl.IsSelected;
             args.VertexControl.ContextMenu = new ContextMenu();
             var mi = new MenuItem
             {
-                Header = "Delete item" + (isTagged && countTagged > 1 ? "s" : ""), Tag = args.VertexControl,
+                Header = "Delete item" + (isSelected && countSelected > 1 ? "s" : ""), Tag = args.VertexControl,
                 Margin = new Thickness(5)
             };
             mi.Click += mi_Click;
@@ -171,10 +181,10 @@ public partial class DynamicGraph : UserControl
     {
         if (sender is not MenuItem menuItem) return;
         if (menuItem.Tag is not VertexControl vc) return;
-        //if clicked vertex is tagged then remove all tagged vertices
-        if (DragBehaviour.GetIsTagged(vc))
-            RemoveVertex(null, null);
-        else //else remove only selected vertex
+        // If clicked vertex is selected then remove all selected vertices
+        if (vc.IsSelected)
+            RemoveSelectedVertices();
+        else // Else remove only the clicked vertex
             SafeRemoveVertex(vc);
     }
 
@@ -198,13 +208,21 @@ public partial class DynamicGraph : UserControl
         dg_Area.InsertEdgeAndData(dataEdge, ec);
     }
 
-    private void RemoveVertex(object? sender, RoutedEventArgs? e)
+    private void RemoveSelectedVertices()
     {
-        //remove all tagged vertices from the graph entirely
-        dg_Area.VertexList.Values
-            .Where(DragBehaviour.GetIsTagged)
-            .ToList()
-            .ForEach(SafeRemoveVertex);
+        // Remove all selected vertices from the graph entirely
+        if (dg_Area.SelectedVertices == null) return;
+        var verticesToRemove = dg_Area.SelectedVertices.ToList();
+        foreach (var vertex in verticesToRemove)
+        {
+            dg_Area.RemoveVertexAndEdges(vertex);
+        }
+        dg_zoomctrl.ZoomToFill();
+    }
+
+    private void RemoveVertex(object? sender, RoutedEventArgs e)
+    {
+        RemoveSelectedVertices();
     }
 
     private void AddVertex(object? sender, RoutedEventArgs e)
@@ -249,20 +267,27 @@ public partial class DynamicGraph : UserControl
     }
 
     /// <summary>
-    /// Select vertex by setting its tag and highlight value
+    /// Select vertex by setting its IsSelected property and adding to SelectedVertices.
+    /// Also applies custom snapping modifiers for selected vertices.
     /// </summary>
     /// <param name="vc">VertexControl object</param>
-    private void SelectVertex(Control vc)
+    private void SelectVertex(VertexControl vc)
     {
-        if (DragBehaviour.GetIsTagged(vc))
+        if (vc.Vertex is not DataVertex dv) return;
+        
+        if (vc.IsSelected)
         {
-            DragBehaviour.SetIsTagged(vc, false);
+            // Deselect
+            dg_Area.SelectedVertices?.Remove(dv);
+            vc.IsSelected = false;
             vc.ClearValue(DragBehaviour.XSnapModifierProperty);
             vc.ClearValue(DragBehaviour.YSnapModifierProperty);
         }
         else
         {
-            DragBehaviour.SetIsTagged(vc, true);
+            // Select
+            dg_Area.SelectedVertices?.Add(dv);
+            vc.IsSelected = true;
             DragBehaviour.SetXSnapModifier(vc, ExaggeratedSnappingXModifier);
             DragBehaviour.SetYSnapModifier(vc, ExaggeratedSnappingYModifier);
         }

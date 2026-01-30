@@ -1,7 +1,7 @@
 ﻿<Styles
     xmlns="https://github.com/avaloniaui"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-    
+
     xmlns:pages="clr-namespace:ShowcaseApp.Avalonia.Pages"
     xmlns:edgePointers="clr-namespace:Westermo.GraphX.Controls.Controls.EdgePointers;assembly=Westermo.GraphX.Controls.Avalonia"
     xmlns:controls="clr-namespace:Westermo.GraphX.Controls.Controls;assembly=Westermo.GraphX.Controls.Avalonia"
@@ -56,6 +56,15 @@
         <!-- VERTEX DRAGGING CONTROL -->
         <Setter Property="behaviours:DragBehaviour.IsDragEnabled" Value="True" />
         <Setter Property="behaviours:DragBehaviour.UpdateEdgesOnMove" Value="True" />
+    </Style>
+
+    <!-- Selected vertex style - provides visual feedback for selection -->
+    <Style Selector="controls|VertexControl[IsSelected=True]">
+        <Setter Property="Effect">
+            <Setter.Value>
+                <DropShadowEffect Color="DodgerBlue" BlurRadius="8" OffsetX="0" OffsetY="0" />
+            </Setter.Value>
+        </Setter>
     </Style>
 
     <!-- EDGE CONTROL -->

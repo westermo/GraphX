@@ -18,6 +18,20 @@
                 Value="True" />
     </Style>
 
+    <!-- Selected vertex style - provides visual feedback for selection -->
+    <Style Selector="controls|VertexControl[IsSelected=True]">
+        <Setter Property="RenderTransform">
+            <Setter.Value>
+                <ScaleTransform ScaleX="1.1" ScaleY="1.1" />
+            </Setter.Value>
+        </Setter>
+        <Setter Property="Effect">
+            <Setter.Value>
+                <DropShadowEffect Color="DodgerBlue" BlurRadius="10" OffsetX="0" OffsetY="0" />
+            </Setter.Value>
+        </Setter>
+    </Style>
+
 
     <Style Selector="vertexLabels|AttachableVertexLabelControl">
         <Setter Property="Background" Value="Transparent" />

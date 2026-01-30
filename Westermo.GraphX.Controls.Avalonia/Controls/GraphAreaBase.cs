@@ -96,10 +96,10 @@ public abstract class GraphAreaBase : Canvas, ITrackableContent, IGraphAreaBase
         // Check if LOD thresholds were crossed
         var showArrowsOld = _lodSettings.ShouldShowArrows(oldZoom);
         var showArrowsNew = _lodSettings.ShouldShowArrows(newZoom);
-        
+
         var showEdgeLabelsOld = _lodSettings.ShouldShowEdgeLabels(oldZoom);
         var showEdgeLabelsNew = _lodSettings.ShouldShowEdgeLabels(newZoom);
-        
+
         var showVertexLabelsOld = _lodSettings.ShouldShowVertexLabels(oldZoom);
         var showVertexLabelsNew = _lodSettings.ShouldShowVertexLabels(newZoom);
 
@@ -156,6 +156,7 @@ public abstract class GraphAreaBase : Canvas, ITrackableContent, IGraphAreaBase
     {
         LogicCoreChangeAction = LogicCoreChangedAction.None;
     }
+
 
     #region Attached Dependency Property registrations
 

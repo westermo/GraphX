@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Interactivity;
@@ -24,6 +25,11 @@ public partial class ThemedGraph : UserControl
 
         var logic = new LogicCoreExample();
         tg_Area.LogicCore = logic;
+        
+        // Initialize selection tracking with Multiple selection mode
+        tg_Area.SelectedVertices = new HashSet<DataVertex>();
+        tg_Area.SelectionMode = SelectionMode.Multiple;
+        
         logic.DefaultLayoutAlgorithm = LayoutAlgorithmTypeEnum.KK;
         logic.DefaultOverlapRemovalAlgorithm = OverlapRemovalAlgorithmTypeEnum.FSA;
         logic.DefaultOverlapRemovalAlgorithmParams.HorizontalGap = 50;
