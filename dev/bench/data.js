@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1769506470574,
+  "lastUpdate": 1769777474541,
   "repoUrl": "https://github.com/westermo/GraphX",
   "entries": {
     "Benchmark.Net Benchmark": [
@@ -120,6 +120,126 @@ window.BENCHMARK_DATA = {
             "value": 14283224.04715909,
             "unit": "ns",
             "range": "± 603633.3547477374"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "142813963+carl-andersson-at-westermo@users.noreply.github.com",
+            "name": "Caran",
+            "username": "carl-andersson-at-westermo"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "1fc4bf45368075e24e0e0da7cd3c4ac4ae13f0a1",
+          "message": "Performance Optimizations (#13)\n\n* copilot instr.\n\n* global.json\n\n* Add unit tests and implement features for geometry caching, level of detail, object pooling, and viewport culling\n\n- Implemented GeometryCachingTests to validate edge geometry caching functionality.\n- Added LevelOfDetailTests to ensure reasonable defaults and behavior for LOD settings.\n- Created ObjectPoolTests to verify the functionality of object pooling for lists and dictionaries.\n- Developed ViewportCullingTests to test viewport-based visibility culling for graph elements.\n- Introduced BatchUpdateScope and DeferredPositionUpdateScope for efficient edge and vertex updates.\n- Added LevelOfDetailSettings to manage LOD rendering settings for optimizing graph display.\n- Implemented SimplePool for generic object pooling to reduce allocations.\n- Created ViewportCulling class to manage visibility of graph elements based on viewport.\n\n* Established benchmarks for Layout algorithms\n\n* Optimized some layout algss\n\n* Refactor edge routing algorithms for performance improvements and memory efficiency\n\n* Update .github/copilot-instructions.md\n\nCo-authored-by: Copilot <175728472+Copilot@users.noreply.github.com>\n\n* Update Westermo.GraphX.Controls.Avalonia/Controls/ViewportCulling.cs\n\nCo-authored-by: Copilot <175728472+Copilot@users.noreply.github.com>\n\n* Update Westermo.GraphX.Logic/Algorithms/LayoutAlgorithms/FDP/KKLayoutAlgorithm.cs\n\nCo-authored-by: Copilot <175728472+Copilot@users.noreply.github.com>\n\n* Update Westermo.GraphX.Logic/Algorithms/EdgeRouting/PathFinderER/PathFinder.cs\n\nCo-authored-by: Copilot <175728472+Copilot@users.noreply.github.com>\n\n* Refactor edge update throttling mechanism for improved performance and responsiveness\n\n* Enhance edge pointer handling and visibility logic for improved rendering and positioning\n\n* Fix for edge pointers\n\n* Add Avalonia test job to NuGet workflow for improved CI process\n\n* Fix command syntax for running Avalonia tests in CI workflow\n\n* Implement multiple selection mode for graph vertices and update selection handling logic\n\n* Enhance documentation for graph controls and view model, adding detailed summaries and remarks for better clarity and maintainability\n\n---------\n\nCo-authored-by: Copilot <175728472+Copilot@users.noreply.github.com>",
+          "timestamp": "2026-01-30T13:45:02+01:00",
+          "tree_id": "ff0fde8e258b04bfd0890e07c35e81c6178e226f",
+          "url": "https://github.com/westermo/GraphX/commit/1fc4bf45368075e24e0e0da7cd3c4ac4ae13f0a1"
+        },
+        "date": 1769777469410,
+        "tool": "benchmarkdotnet",
+        "benches": [
+          {
+            "name": "GraphXBenchmarks.GraphRenderingBenchmarks.SmallGraph_PreloadVertexes",
+            "value": 314652.5071466619,
+            "unit": "ns",
+            "range": "± 9859.268026299726"
+          },
+          {
+            "name": "GraphXBenchmarks.GraphRenderingBenchmarks.MediumGraph_PreloadVertexes",
+            "value": 3211857.7864583335,
+            "unit": "ns",
+            "range": "± 58819.46441479788"
+          },
+          {
+            "name": "GraphXBenchmarks.GraphRenderingBenchmarks.LargeGraph_PreloadVertexes",
+            "value": 20885976.41964286,
+            "unit": "ns",
+            "range": "± 269864.7856463961"
+          },
+          {
+            "name": "GraphXBenchmarks.GraphRenderingBenchmarks.SmallGraph_PreloadAndGenerateEdges",
+            "value": 1086013.3493381077,
+            "unit": "ns",
+            "range": "± 36142.93018310405"
+          },
+          {
+            "name": "GraphXBenchmarks.GraphRenderingBenchmarks.MediumGraph_PreloadAndGenerateEdges",
+            "value": 15419534.615234375,
+            "unit": "ns",
+            "range": "± 279390.8824463941"
+          },
+          {
+            "name": "GraphXBenchmarks.GraphRenderingBenchmarks.LargeGraph_PreloadAndGenerateEdges",
+            "value": 104644718.23913044,
+            "unit": "ns",
+            "range": "± 3969605.626737794"
+          },
+          {
+            "name": "GraphXBenchmarks.GraphRenderingBenchmarks.SmallGraph_UpdateAllEdges",
+            "value": 1033294.4990425858,
+            "unit": "ns",
+            "range": "± 41700.48739111799"
+          },
+          {
+            "name": "GraphXBenchmarks.GraphRenderingBenchmarks.MediumGraph_UpdateAllEdges",
+            "value": 15407030.754375,
+            "unit": "ns",
+            "range": "± 394929.94046522793"
+          },
+          {
+            "name": "GraphXBenchmarks.GraphRenderingBenchmarks.LargeGraph_UpdateAllEdges",
+            "value": 88227427.49180327,
+            "unit": "ns",
+            "range": "± 3571294.775216302"
+          },
+          {
+            "name": "GraphXBenchmarks.GraphRenderingBenchmarks.LargeGraph_VertexCreationOnly",
+            "value": 19315006.47421875,
+            "unit": "ns",
+            "range": "± 679386.4035630865"
+          },
+          {
+            "name": "GraphXBenchmarks.GraphRenderingBenchmarks.LargeGraph_EdgeGenerationOnly",
+            "value": 101275987.09189188,
+            "unit": "ns",
+            "range": "± 3376392.558271177"
+          },
+          {
+            "name": "GraphXBenchmarks.GraphRenderingBenchmarks.LargeGraph_UpdateEdgesRenderingOnly",
+            "value": 102649650.37931034,
+            "unit": "ns",
+            "range": "± 2981218.297313825"
+          },
+          {
+            "name": "GraphXBenchmarks.GraphRenderingBenchmarks.LargeGraph_UpdateEdges_WithParallelEdges",
+            "value": 104028665.21875,
+            "unit": "ns",
+            "range": "± 1997016.2833654773"
+          },
+          {
+            "name": "GraphXBenchmarks.GraphRenderingBenchmarks.LargeGraph_UpdateEdges_WithCurving",
+            "value": 105363945.01724137,
+            "unit": "ns",
+            "range": "± 3043798.13739217"
+          },
+          {
+            "name": "GraphXBenchmarks.GraphRenderingBenchmarks.LargeGraph_PositionUpdatesCost",
+            "value": 20129069.995535713,
+            "unit": "ns",
+            "range": "± 271351.3163467085"
+          },
+          {
+            "name": "GraphXBenchmarks.GraphRenderingBenchmarks.MediumGraph_WithSelfLoops_UpdateAllEdges",
+            "value": 13450680.27845982,
+            "unit": "ns",
+            "range": "± 380638.05552342837"
           }
         ]
       }
