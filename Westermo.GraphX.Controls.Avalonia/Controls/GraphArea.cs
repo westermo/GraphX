@@ -25,6 +25,22 @@ using Westermo.GraphX.Controls.Models.Interfaces;
 
 namespace Westermo.GraphX.Controls.Controls;
 
+/// <summary>
+/// Generic graph visualization control that displays vertices and edges using a customizable layout algorithm.
+/// </summary>
+/// <typeparam name="TVertex">The type of vertex data objects. Must implement <see cref="IGraphXVertex"/>.</typeparam>
+/// <typeparam name="TEdge">The type of edge data objects. Must implement <see cref="IGraphXEdge{TVertex}"/>.</typeparam>
+/// <typeparam name="TGraph">The type of the graph data structure. Must be a mutable bidirectional graph.</typeparam>
+/// <remarks>
+/// GraphArea is the main visualization control for graphs. It provides:
+/// - Automatic vertex and edge layout using configurable algorithms
+/// - Support for vertex and edge selection
+/// - Event handling for user interactions
+/// - Integration with ZoomControl for pan/zoom functionality
+/// - State storage for saving and restoring graph layouts
+/// - Level-of-detail rendering for large graphs
+/// - Custom control factories for vertices and edges
+/// </remarks>
 public class GraphArea<TVertex, TEdge, TGraph> : GraphAreaBase, IDisposable
     where TVertex : class, IGraphXVertex
     where TEdge : class, IGraphXEdge<TVertex>
@@ -57,6 +73,10 @@ public class GraphArea<TVertex, TEdge, TGraph> : GraphAreaBase, IDisposable
         AvaloniaProperty.Register<GraphAreaBase, ISet<TVertex>?>(
             nameof(SelectedVertices));
 
+    /// <summary>
+    /// Gets or sets the collection of currently selected vertex data objects.
+    /// Bind to this property to track and control vertex selection state.
+    /// </summary>
     public ISet<TVertex>? SelectedVertices
     {
         get => GetValue(SelectedVerticesProperty);
@@ -67,6 +87,11 @@ public class GraphArea<TVertex, TEdge, TGraph> : GraphAreaBase, IDisposable
         AvaloniaProperty.Register<GraphAreaBase, SelectionMode>(
             nameof(SelectionMode), SelectionMode.Multiple);
 
+    /// <summary>
+    /// Gets or sets the vertex selection mode.
+    /// <see cref="Avalonia.Controls.SelectionMode.Single"/> allows only one vertex to be selected at a time.
+    /// <see cref="Avalonia.Controls.SelectionMode.Multiple"/> allows multiple vertices to be selected. Default is Multiple.
+    /// </summary>
     public SelectionMode SelectionMode
     {
         get => GetValue(SelectionModeProperty);
@@ -151,6 +176,10 @@ public class GraphArea<TVertex, TEdge, TGraph> : GraphAreaBase, IDisposable
         return (T)LogicCore!;
     }
 
+    /// <summary>
+    /// Sets the logic core that controls layout algorithms and graph operations.
+    /// </summary>
+    /// <param name="core">The logic core instance to use.</param>
     public void SetLogicCore(IGXLogicCore<TVertex, TEdge, TGraph> core)
     {
         LogicCore = core;

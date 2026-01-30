@@ -3,117 +3,254 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
-             
              xmlns:exampleModels="clr-namespace:ShowcaseApp.Avalonia.ExampleModels"
+             xmlns:viewModels="clr-namespace:ShowcaseApp.Avalonia.ViewModels"
              xmlns:zoomControl="clr-namespace:Westermo.GraphX.Controls.Controls.ZoomControl;assembly=Westermo.GraphX.Controls.Avalonia"
              mc:Ignorable="d"
-             d:DesignHeight="300" d:DesignWidth="600">
+             d:DesignHeight="300" d:DesignWidth="600"
+             x:DataType="viewModels:GeneralGraphViewModel">
+    
+    <Design.DataContext>
+        <viewModels:GeneralGraphViewModel />
+    </Design.DataContext>
+    
     <UserControl.Styles>
         <StyleInclude Source="/Templates/GeneralTemplate.axaml" />
     </UserControl.Styles>
+    
     <UserControl.DataTemplates>
         <DataTemplate DataType="exampleModels:DataVertex">
             <Image Width="80"
                    Margin="0"
-                   Source="{Binding ImageId,
-                                                Converter={StaticResource ImageConverter}}"
+                   Source="{Binding ImageId, Converter={StaticResource ImageConverter}}"
                    Stretch="UniformToFill" />
         </DataTemplate>
     </UserControl.DataTemplates>
-    <Grid RowDefinitions=" Auto,*">
+    
+    <Grid RowDefinitions="Auto,*">
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="*" MinWidth="100" />
             <ColumnDefinition Width="Auto" />
             <ColumnDefinition Width="Auto" MinWidth="170" />
         </Grid.ColumnDefinitions>
 
-        <Border CornerRadius="2" BorderBrush="{DynamicResource ButtonBorder}"
-                Background="{DynamicResource ButtonBackground}" Margin="2" BorderThickness="1">
-            <TextBlock Margin="1" TextWrapping="Wrap" TextAlignment="Center"
+        <!-- Header -->
+        <Border CornerRadius="2" 
+                BorderBrush="{DynamicResource ButtonBorder}"
+                Background="{DynamicResource ButtonBackground}" 
+                Margin="2" 
+                BorderThickness="1">
+            <TextBlock Margin="1" 
+                       TextWrapping="Wrap" 
+                       TextAlignment="Center"
                        Text="Along with the main algorithms showcase this example shows how to save/load and export data." />
         </Border>
 
-        <Border Grid.Row="1" Grid.Column="0" BorderBrush="{DynamicResource ButtonBorder}" BorderThickness="1"
+        <!-- Graph Area -->
+        <Border Grid.Row="1" 
+                Grid.Column="0" 
+                BorderBrush="{DynamicResource ButtonBorder}" 
+                BorderThickness="1"
                 Margin="2">
-            <zoomControl:ZoomControl x:Name="gg_zoomctrl"
-                                  Foreground="{DynamicResource ButtonText}">
-                <exampleModels:GraphAreaExample x:Name="gg_Area" />
+            <zoomControl:ZoomControl x:Name="zoomCtrl"
+                                     Foreground="{DynamicResource ButtonText}"
+                                     IsAnimationEnabled="{Binding IsZoomAnimationEnabled}"
+                                     ZoomStep="{Binding ZoomStep}">
+                <exampleModels:GraphAreaExample x:Name="graphArea"
+                                                LogicCore="{Binding LogicCore}"
+                                                SelectedVertices="{Binding SelectedVertices}"
+                                                SelectionMode="{Binding SelectionMode}" />
             </zoomControl:ZoomControl>
         </Border>
 
-        <Border Name="gg_loader" IsVisible="False" CornerRadius="4" BorderBrush="{DynamicResource ButtonBorder}"
-                BorderThickness="1" HorizontalAlignment="Center" VerticalAlignment="Center"
-                Background="{DynamicResource ButtonBackground}" Grid.Row="1" Grid.Column="0">
-            <Label VerticalAlignment="Center" Content="Async loading graph..." Margin="10" />
+        <!-- Loading Overlay -->
+        <Border x:Name="loaderOverlay" 
+                IsVisible="{Binding IsLoading}" 
+                CornerRadius="4" 
+                BorderBrush="{DynamicResource ButtonBorder}"
+                BorderThickness="1" 
+                HorizontalAlignment="Center" 
+                VerticalAlignment="Center"
+                Background="{DynamicResource ButtonBackground}" 
+                Grid.Row="1" 
+                Grid.Column="0">
+            <Label VerticalAlignment="Center" 
+                   Content="Async loading graph..." 
+                   Margin="10" />
         </Border>
 
-        <GridSplitter VerticalAlignment="Stretch" Width="2" Grid.Row="0" Grid.RowSpan="2" Grid.Column="1" />
+        <!-- Splitter -->
+        <GridSplitter VerticalAlignment="Stretch" 
+                      Width="2" 
+                      Grid.Row="0" 
+                      Grid.RowSpan="2" 
+                      Grid.Column="1" />
 
-        <DockPanel Grid.Column="2" Grid.Row="0" Grid.RowSpan="2">
-            <StackPanel Orientation="Horizontal" DockPanel.Dock="Top" HorizontalAlignment="Center">
-                <Button Height="50" Margin="3" Name="gg_but_randomgraph" DockPanel.Dock="Top" UseLayoutRounding="True"
-                        BorderBrush="{DynamicResource ModernButtonBorder}">
-                    <Image Width="44" Source="/Assets/dice.png" Stretch="Uniform" />
+        <!-- Settings Panel -->
+        <DockPanel Grid.Column="2" 
+                   Grid.Row="0" 
+                   Grid.RowSpan="2">
+            
+            <!-- Toolbar Buttons -->
+            <StackPanel Orientation="Horizontal" 
+                        DockPanel.Dock="Top" 
+                        HorizontalAlignment="Center">
+                <!-- Generate Random Graph Button -->
+                <Button Height="50" 
+                        Margin="3" 
+                        DockPanel.Dock="Top" 
+                        UseLayoutRounding="True"
+                        BorderBrush="{DynamicResource ModernButtonBorder}"
+                        Command="{Binding GenerateGraphCommand}"
+                        ToolTip.Tip="Generate random graph">
+                    <Image Width="44" 
+                           Source="/Assets/dice.png" 
+                           Stretch="Uniform" />
                 </Button>
-                <Button Height="50" Margin="3" Name="gg_but_relayout" DockPanel.Dock="Top" UseLayoutRounding="True"
-                        BorderBrush="{DynamicResource ModernButtonBorder}">
-                    <Path Width="43.8333" Height="41.1667" Stretch="Fill" Fill="{DynamicResource ButtonText}"
+                
+                <!-- Relayout Button -->
+                <Button Height="50" 
+                        Margin="3" 
+                        DockPanel.Dock="Top" 
+                        UseLayoutRounding="True"
+                        BorderBrush="{DynamicResource ModernButtonBorder}"
+                        Command="{Binding RelayoutCommand}"
+                        ToolTip.Tip="Relayout graph">
+                    <Path Width="43.8333" 
+                          Height="41.1667" 
+                          Stretch="Fill" 
+                          Fill="{DynamicResource ButtonText}"
                           Data="F1 M 38,20.5833C 42.9908,20.5833 47.4912,22.6825 50.6667,26.046L 50.6667,17.4167L 55.4166,22.1667L 55.4167,34.8333L 42.75,34.8333L 38,30.0833L 46.8512,30.0833C 44.6768,27.6539 41.517,26.125 38,26.125C 31.9785,26.125 27.0037,30.6068 26.2296,36.4167L 20.6543,36.4167C 21.4543,27.5397 28.9148,20.5833 38,20.5833 Z M 38,49.875C 44.0215,49.875 48.9963,45.3932 49.7703,39.5833L 55.3457,39.5833C 54.5457,48.4603 47.0852,55.4167 38,55.4167C 33.0092,55.4167 28.5088,53.3175 25.3333,49.954L 25.3333,58.5833L 20.5833,53.8333L 20.5833,41.1667L 33.25,41.1667L 38,45.9167L 29.1487,45.9167C 31.3231,48.3461 34.483,49.875 38,49.875 Z " />
                 </Button>
             </StackPanel>
-            <TextBlock DockPanel.Dock="Top" TextAlignment="Center" Text="SETTINGS" FontWeight="Bold" />
+            
+            <TextBlock DockPanel.Dock="Top" 
+                       TextAlignment="Center" 
+                       Text="SETTINGS" 
+                       FontWeight="Bold" />
 
-            <ItemsControl DockPanel.Dock="Top" HorizontalAlignment="Stretch">
-                <Expander IsExpanded="True" Header="Algorithms">
-                    <DockPanel LastChildFill="False">
-                        <TextBlock Text="Common settings" DockPanel.Dock="Top" FontWeight="Bold"
-                                   HorizontalAlignment="Center" />
-                        <DockPanel DockPanel.Dock="Top">
-                            <TextBlock Text="Vertex count" DockPanel.Dock="Left" TextAlignment="Center"
-                                       VerticalAlignment="Center" />
-                            <TextBox Name="gg_vertexCount" Margin="3" TextInput="gg_vertexCount_PreviewTextInput" />
+            <!-- Settings Expanders -->
+            <ScrollViewer DockPanel.Dock="Top">
+                <ItemsControl>
+                    <!-- Algorithms Expander -->
+                    <Expander IsExpanded="True" Header="Algorithms">
+                        <DockPanel LastChildFill="False">
+                            <TextBlock Text="Common settings" 
+                                       DockPanel.Dock="Top" 
+                                       FontWeight="Bold"
+                                       HorizontalAlignment="Center" />
+                            
+                            <!-- Vertex Count -->
+                            <DockPanel DockPanel.Dock="Top">
+                                <TextBlock Text="Vertex count" 
+                                           DockPanel.Dock="Left" 
+                                           TextAlignment="Center"
+                                           VerticalAlignment="Center" />
+                                <NumericUpDown Margin="3" 
+                                               Value="{Binding VertexCount}"
+                                               Minimum="1"
+                                               Maximum="1000"
+                                               Increment="10" />
+                            </DockPanel>
+                            
+                            <!-- Async Computation -->
+                            <CheckBox Margin="3" 
+                                      Content="Use async computation" 
+                                      DockPanel.Dock="Top"
+                                      IsChecked="{Binding IsAsyncComputation}" />
+                            
+                            <!-- Layout Algorithm -->
+                            <TextBlock Text="Layout" 
+                                       DockPanel.Dock="Top" 
+                                       HorizontalAlignment="Center" 
+                                       FontWeight="Bold" />
+                            <ComboBox Margin="3" 
+                                      DockPanel.Dock="Top"
+                                      ItemsSource="{Binding LayoutAlgorithms}"
+                                      SelectedItem="{Binding SelectedLayoutAlgorithm}" />
+                            <CheckBox DockPanel.Dock="Top"
+                                      Margin="3" 
+                                      Content="Use external algorithm"
+                                      IsChecked="{Binding UseExternalLayoutAlgorithm}" />
+                            
+                            <!-- Overlap Removal Algorithm -->
+                            <TextBlock Text="Overlap removal" 
+                                       DockPanel.Dock="Top" 
+                                       HorizontalAlignment="Center"
+                                       FontWeight="Bold" />
+                            <ComboBox Margin="3" 
+                                      DockPanel.Dock="Top"
+                                      ItemsSource="{Binding OverlapRemovalAlgorithms}"
+                                      SelectedItem="{Binding SelectedOverlapRemovalAlgorithm}" />
+                            <CheckBox DockPanel.Dock="Top"
+                                      Margin="3" 
+                                      Content="Use external algorithm"
+                                      IsChecked="{Binding UseExternalOverlapRemovalAlgorithm}" />
+                            
+                            <!-- Edge Routing Algorithm -->
+                            <TextBlock Text="Edge routing" 
+                                       DockPanel.Dock="Top" 
+                                       HorizontalAlignment="Center"
+                                       FontWeight="Bold" />
+                            <ComboBox Margin="3" 
+                                      DockPanel.Dock="Top"
+                                      ItemsSource="{Binding EdgeRoutingAlgorithms}"
+                                      SelectedItem="{Binding SelectedEdgeRoutingAlgorithm}" />
+                            <CheckBox DockPanel.Dock="Top"
+                                      Margin="3" 
+                                      Content="Use external algorithm"
+                                      IsChecked="{Binding UseExternalEdgeRoutingAlgorithm}" />
                         </DockPanel>
-                        <CheckBox Name="gg_async" Margin="3" Content="Use async computation" DockPanel.Dock="Top" />
-                        <TextBlock Text="Layout" DockPanel.Dock="Top" HorizontalAlignment="Center" FontWeight="Bold" />
-                        <ComboBox Name="gg_layalgo" Margin="3" DockPanel.Dock="Top" />
-                        <CheckBox DockPanel.Dock="Top" Name="gg_useExternalLayAlgo"
-                                  IsCheckedChanged="gg_useExternalLayAlgo_Checked"
-                                  Margin="3" Content="Use external algorithm" />
-                        <TextBlock Text="Overlap removal" DockPanel.Dock="Top" HorizontalAlignment="Center"
-                                   FontWeight="Bold" />
-                        <ComboBox Name="gg_oralgo" Margin="3" DockPanel.Dock="Top" />
-                        <CheckBox DockPanel.Dock="Top" Name="gg_useExternalORAlgo"
-                                  IsCheckedChanged="gg_useExternalORAlgo_Checked"
-                                  Margin="3" Content="Use external algorithm" />
-                        <TextBlock Text="Edge routing" DockPanel.Dock="Top" HorizontalAlignment="Center"
-                                   FontWeight="Bold" />
-                        <ComboBox Name="gg_eralgo" Margin="3" DockPanel.Dock="Top" />
-                        <CheckBox DockPanel.Dock="Top" Name="gg_useExternalERAlgo"
-                                  IsCheckedChanged="gg_useExternalERAlgo_Checked"
-                                  Margin="3" Content="Use external algorithm" />
-                    </DockPanel>
-                </Expander>
-                <Expander Header="Layout serialization">
-                    <DockPanel LastChildFill="False">
-                        <TextBlock Text="Export to file" DockPanel.Dock="Top" HorizontalAlignment="Center" />
-                        <DockPanel DockPanel.Dock="Top">
-                            <Button Margin="3" DockPanel.Dock="Left" Width="80" Content="SAVE" Name="gg_saveLayout" />
-                            <Button Margin="3" DockPanel.Dock="Right" Width="80" Content="LOAD" Name="gg_loadLayout" />
+                    </Expander>
+                    
+                    <!-- Layout Serialization Expander -->
+                    <Expander Header="Layout serialization">
+                        <DockPanel LastChildFill="False">
+                            <TextBlock Text="Export to file" 
+                                       DockPanel.Dock="Top" 
+                                       HorizontalAlignment="Center" />
+                            <DockPanel DockPanel.Dock="Top">
+                                <Button Margin="3" 
+                                        DockPanel.Dock="Left" 
+                                        Width="80" 
+                                        Content="SAVE"
+                                        Command="{Binding SaveLayoutCommand}" />
+                                <Button Margin="3" 
+                                        DockPanel.Dock="Right" 
+                                        Width="80" 
+                                        Content="LOAD"
+                                        Command="{Binding LoadLayoutCommand}" />
+                            </DockPanel>
+                            
+                            <TextBlock Text="State management" 
+                                       DockPanel.Dock="Top" 
+                                       HorizontalAlignment="Center" />
+                            <DockPanel DockPanel.Dock="Top">
+                                <Button Margin="3" 
+                                        DockPanel.Dock="Left" 
+                                        Width="80" 
+                                        Content="SAVE"
+                                        Command="{Binding SaveStateCommand}" />
+                                <Button Margin="3" 
+                                        DockPanel.Dock="Right" 
+                                        Width="80" 
+                                        Content="LOAD"
+                                        Command="{Binding LoadStateCommand}" />
+                            </DockPanel>
                         </DockPanel>
-                        <TextBlock Text="State management" DockPanel.Dock="Top" HorizontalAlignment="Center" />
-                        <DockPanel DockPanel.Dock="Top">
-                            <Button Margin="3" DockPanel.Dock="Left" Width="80" Content="SAVE" Name="gg_saveState" />
-                            <Button Margin="3" DockPanel.Dock="Right" Width="80" Content="LOAD" Name="gg_loadState" />
+                    </Expander>
+                    
+                    <!-- Imaging and Printing Expander -->
+                    <Expander Header="Imaging and printing">
+                        <DockPanel LastChildFill="False">
+                            <Button Margin="3" 
+                                    DockPanel.Dock="Top" 
+                                    Content="Save as PNG image"
+                                    Command="{Binding ExportAsImageCommand}" />
                         </DockPanel>
-                    </DockPanel>
-                </Expander>
-                <Expander Header="Imaging and printing">
-                    <DockPanel LastChildFill="False">
-                        <Button Margin="3" DockPanel.Dock="Top" Content="Save as PNG image"
-                                Click="gg_saveAsPngImage_Click" />
-                    </DockPanel>
-                </Expander>
-            </ItemsControl>
+                    </Expander>
+                </ItemsControl>
+            </ScrollViewer>
         </DockPanel>
     </Grid>
 </UserControl>

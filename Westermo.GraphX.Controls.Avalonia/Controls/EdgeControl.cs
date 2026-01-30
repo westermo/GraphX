@@ -1,4 +1,4 @@
-﻿using System;
+﻿﻿using System;
 using System.Threading;
 using Avalonia;
 using Avalonia.Controls;
@@ -13,8 +13,17 @@ using Westermo.GraphX.Controls.Controls.Interfaces;
 namespace Westermo.GraphX.Controls.Controls;
 
 /// <summary>
-/// Visual edge control
+/// Visual edge control representing a connection between two vertices in the graph.
 /// </summary>
+/// <remarks>
+/// EdgeControl provides:
+/// - Visual representation of graph edges with customizable line styles
+/// - Support for self-looping edges (connecting a vertex to itself)
+/// - Edge pointer (arrow) rendering at source and/or target endpoints
+/// - Position tracking and automatic updates when connected vertices move
+/// - Throttled updates for performance during rapid position changes
+/// - Drag support via <see cref="IDraggable"/>
+/// </remarks>
 [Serializable]
 public class EdgeControl : EdgeControlBase, IDraggable
 {

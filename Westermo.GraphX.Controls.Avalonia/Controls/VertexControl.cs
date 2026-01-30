@@ -16,8 +16,16 @@ using Westermo.GraphX.Controls.Controls.ZoomControl.Helpers;
 namespace Westermo.GraphX.Controls.Controls;
 
 /// <summary>
-/// Visual vertex control
+/// Visual vertex control representing a node in the graph.
 /// </summary>
+/// <remarks>
+/// VertexControl provides:
+/// - Visual representation of graph vertices
+/// - Drag and drop support via <see cref="IDraggable"/>
+/// - Mouse event handling for selection and interaction
+/// - Label display support via template parts
+/// - Vertex connection points for custom edge routing
+/// </remarks>
 [Serializable]
 [TemplatePart(Name = "PART_vertexLabel", Type = typeof(IVertexLabelControl))]
 [TemplatePart(Name = "PART_vcproot", Type = typeof(Panel))]
@@ -219,8 +227,15 @@ public class VertexControl : VertexControlBase, IXYReactive, IDraggable
         return true;
     }
 
+    /// <summary>
+    /// Gets whether this vertex is currently being dragged.
+    /// </summary>
     public bool IsDragging { get; private set; }
 
+    /// <summary>
+    /// Moves the vertex during a drag operation.
+    /// </summary>
+    /// <param name="current">The current pointer event args containing the new position.</param>
     public void Drag(PointerEventArgs current)
     {
         if (RootArea is null) return;
@@ -233,6 +248,11 @@ public class VertexControl : VertexControlBase, IXYReactive, IDraggable
         SetPosition(newPos);
     }
 
+    /// <summary>
+    /// Ends a drag operation and sets the final position.
+    /// </summary>
+    /// <param name="pointerReleasedEventArgs">The pointer released event args.</param>
+    /// <returns>True if the drag was successfully ended; false if no drag was in progress.</returns>
     public bool EndDrag(PointerReleasedEventArgs pointerReleasedEventArgs)
     {
         if (m_dragOrigin is null) return false;
@@ -247,11 +267,17 @@ public class VertexControl : VertexControlBase, IXYReactive, IDraggable
         return true;
     }
 
+    /// <summary>
+    /// Cancels a drag operation without applying any position changes.
+    /// </summary>
     public void EndDrag()
     {
         m_dragOrigin = null;
         IsDragging = false;
     }
 
+    /// <summary>
+    /// Gets the container visual (the parent GraphArea) for this vertex control.
+    /// </summary>
     public Visual? Container => RootArea;
 }

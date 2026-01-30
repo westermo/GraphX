@@ -13,6 +13,17 @@ using Westermo.GraphX.Controls.Models;
 
 namespace Westermo.GraphX.Controls.Controls;
 
+/// <summary>
+/// Abstract base class for GraphArea controls that provides common functionality for visual representation of graphs.
+/// </summary>
+/// <remarks>
+/// GraphAreaBase provides:
+/// - Attached properties for positioning vertices (X, Y, FinalX, FinalY)
+/// - Viewport culling optimization for large graphs
+/// - Level-of-detail (LOD) settings for zoom-dependent rendering
+/// - Event handling for vertex and edge interactions
+/// - Content size tracking for zoom controls
+/// </remarks>
 public abstract class GraphAreaBase : Canvas, ITrackableContent, IGraphAreaBase
 {
     static GraphAreaBase()

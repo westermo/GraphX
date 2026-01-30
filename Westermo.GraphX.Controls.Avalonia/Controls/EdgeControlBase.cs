@@ -1,4 +1,4 @@
-﻿using System;
+﻿﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
@@ -22,6 +22,18 @@ using Westermo.GraphX.Controls.Models.Interfaces;
 
 namespace Westermo.GraphX.Controls.Controls;
 
+/// <summary>
+/// Base class for edge controls that provides common functionality for visual representation of graph edges.
+/// </summary>
+/// <remarks>
+/// This abstract class provides:
+/// - Edge geometry generation and caching for performance optimization
+/// - Edge pointer (arrow) management for source and target endpoints
+/// - Self-loop edge support for edges connecting a vertex to itself
+/// - Dash style and stroke customization
+/// - Label attachment for edge annotations
+/// - Integration with GraphAreaBase for event handling
+/// </remarks>
 [TemplatePart(Name = "PART_edgePath", Type = typeof(Path))]
 [TemplatePart(Name = "PART_SelfLoopedEdge", Type = typeof(Control))]
 [TemplatePart(Name = "PART_edgeLabel", Type = typeof(IEdgeLabelControl))] //obsolete, present for exception
@@ -131,10 +143,19 @@ public abstract class EdgeControlBase : TemplatedControl, IGraphControl, IDispos
     /// </summary>
     public double HideEdgePointerByEdgeLength { get; set; } = 0.0d;
 
+    /// <summary>
+    /// Gets whether this edge is a self-loop (connects a vertex to itself).
+    /// </summary>
     public abstract bool IsSelfLooped { get; protected set; }
 
+    /// <summary>
+    /// Disposes of this edge control and releases any resources.
+    /// </summary>
     public abstract void Dispose();
 
+    /// <summary>
+    /// Cleans up all references and resources held by this edge control.
+    /// </summary>
     public abstract void Clean();
 
     protected AvaloniaList<double>? StrokeDashArray { get; set; }

@@ -1,279 +1,392 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
+using System.Text.Json;
+using System.Text.Json.Serialization;
 using Avalonia.Controls;
-using Avalonia.Input;
 using Avalonia.Interactivity;
-using QuikGraph;
+using Avalonia.Platform.Storage;
 using ShowcaseApp.Avalonia.ExampleModels;
-using ShowcaseApp.Avalonia.Models;
+using ShowcaseApp.Avalonia.ViewModels;
 using Westermo.GraphX.Common.Enums;
+using Westermo.GraphX.Common.Models;
 using Westermo.GraphX.Controls;
-
 using Westermo.GraphX.Controls.Controls.ZoomControl.SupportClasses;
-using Westermo.GraphX.Controls.Models;
-using Westermo.GraphX.Logic.Algorithms.EdgeRouting;
-using Westermo.GraphX.Logic.Algorithms.LayoutAlgorithms;
-using Rect = Westermo.GraphX.Measure.Rect;
 
 namespace ShowcaseApp.Avalonia.Pages;
 
 /// <summary>
-/// Interaction logic for GeneralGraph.xaml
+/// GeneralGraph page demonstrating MVVM pattern with GraphX.
+/// The code-behind is minimal - only used for view-specific operations
+/// that cannot be done in XAML or the ViewModel.
 /// </summary>
 public partial class GeneralGraph : UserControl
 {
+    private readonly GeneralGraphViewModel? _viewModel;
+
     public GeneralGraph()
     {
         InitializeComponent();
-        DataContext = this;
 
-        gg_vertexCount.Text = "30";
-        var ggLogic = new LogicCoreExample();
-        gg_Area.LogicCore = ggLogic;
+        // Create and set the ViewModel
+        _viewModel = new GeneralGraphViewModel();
+        DataContext = _viewModel;
 
-        // Initialize selection tracking with Multiple selection mode
-        gg_Area.SelectedVertices = new HashSet<DataVertex>();
-        gg_Area.SelectionMode = SelectionMode.Multiple;
-
-        gg_layalgo.SelectionChanged += gg_layalgo_SelectionChanged;
-        gg_oralgo.SelectionChanged += gg_oralgo_SelectionChanged;
-        gg_eralgo.SelectionChanged += gg_eralgo_SelectionChanged;
-
-        gg_layalgo.ItemsSource = Enum.GetValues<LayoutAlgorithmTypeEnum>();
-        gg_layalgo.SelectedItem = LayoutAlgorithmTypeEnum.KK;
-
-        gg_oralgo.ItemsSource = Enum.GetValues<OverlapRemovalAlgorithmTypeEnum>();
-        gg_oralgo.SelectedIndex = 0;
-
-        gg_eralgo.ItemsSource = Enum.GetValues<EdgeRoutingAlgorithmTypeEnum>();
-        gg_eralgo.SelectedItem = EdgeRoutingAlgorithmTypeEnum.SimpleER;
-
-        gg_but_randomgraph.Click += gg_but_randomgraph_Click;
-        gg_async.IsCheckedChanged += gg_async_Checked;
-        gg_Area.RelayoutFinished += gg_Area_RelayoutFinished;
-        gg_Area.GenerateGraphFinished += gg_Area_GenerateGraphFinished;
-        gg_Area.VertexLabelFactory = new DefaultVertexLabelFactory();
-        gg_Area.SetEdgesDrag(true);
-
-        ggLogic.DefaultEdgeRoutingAlgorithm = EdgeRoutingAlgorithmTypeEnum.SimpleER;
-        ggLogic.EdgeCurvingEnabled = true;
-        gg_Area.ShowAllEdgesArrows();
-
-        gg_zoomctrl.IsAnimationEnabled = true;
-        gg_zoomctrl.ZoomStep = 2;
-
-        Loaded += GG_Loaded;
+        Loaded += OnLoaded;
+        Unloaded += OnUnloaded;
     }
 
-    private void GG_Loaded(object? sender, RoutedEventArgs e)
+    private void OnLoaded(object? sender, RoutedEventArgs e)
     {
-        GG_RegisterCommands();
+        if (_viewModel == null) return;
+
+        // Pass the GraphArea reference to the ViewModel for operations that require it
+        _viewModel.SetGraphArea(graphArea);
+
+        // Subscribe to ViewModel events for view-specific operations
+        _viewModel.RelayoutFinished += OnRelayoutFinished;
+        _viewModel.GenerateGraphFinished += OnGenerateGraphFinished;
+        _viewModel.SaveLayoutRequested += OnSaveLayoutRequested;
+        _viewModel.LoadLayoutRequested += OnLoadLayoutRequested;
+        _viewModel.ExportAsImageRequested += OnExportAsImageRequested;
     }
 
-    #region Commands
-
-    #region GGRelayoutCommand
-
-    private bool GGRelayoutCommandCanExecute(object? sender)
+    private void OnUnloaded(object? sender, RoutedEventArgs e)
     {
-        return true;
-    }
+        if (_viewModel == null) return;
 
-    private void GgRelayoutCommandExecute(object? sender)
-    {
-        if (gg_Area.LogicCore!.AsyncAlgorithmCompute)
-            gg_loader.IsVisible = true;
-        gg_Area.RelayoutGraph(true);
-    }
-
-    #endregion
-
-    private void GG_RegisterCommands()
-    {
-        gg_but_relayout.Command = new SimpleCommand(GGRelayoutCommandCanExecute, GgRelayoutCommandExecute);
-    }
-
-    #endregion
-
-    private void gg_async_Checked(object? sender, RoutedEventArgs e)
-    {
-        gg_Area.LogicCore!.AsyncAlgorithmCompute = gg_async.IsChecked != null;
-    }
-
-    private void gg_saveAsPngImage_Click(object sender, RoutedEventArgs e)
-    {
-        _ = gg_Area.ExportAsImageDialog(ImageType.PNG, true);
-    }
-
-
-    private void gg_vertexCount_PreviewTextInput(object? sender, TextInputEventArgs e)
-    {
-        e.Handled = CustomHelper.IsIntegerInput(e.Text) &&
-                    Convert.ToInt32(e.Text) <= ShowcaseHelper.DATASOURCE_SIZE;
-    }
-
-    private void gg_layalgo_SelectionChanged(object? sender, SelectionChangedEventArgs e)
-    {
-        if (gg_layalgo.SelectedItem is not LayoutAlgorithmTypeEnum late) return;
-        if (gg_Area.LogicCore == null) return;
-        gg_Area.LogicCore.DefaultLayoutAlgorithm = late;
-        if (late == LayoutAlgorithmTypeEnum.EfficientSugiyama)
-        {
-            if (gg_Area.LogicCore.AlgorithmFactory.CreateLayoutParameters(LayoutAlgorithmTypeEnum
-                    .EfficientSugiyama)
-                is EfficientSugiyamaLayoutParameters prms)
-            {
-                prms.EdgeRouting = SugiyamaEdgeRoutings.Orthogonal;
-                prms.LayerDistance = prms.VertexDistance = 100;
-                gg_Area.LogicCore.EdgeCurvingEnabled = false;
-                gg_Area.LogicCore.DefaultLayoutAlgorithmParams = prms;
-            }
-
-            gg_eralgo.SelectedItem = EdgeRoutingAlgorithmTypeEnum.None;
-        }
-        else
-        {
-            gg_Area.LogicCore.EdgeCurvingEnabled = true;
-        }
-
-        gg_Area.LogicCore.DefaultLayoutAlgorithmParams = late switch
-        {
-            LayoutAlgorithmTypeEnum.BoundedFR => gg_Area.LogicCore.AlgorithmFactory.CreateLayoutParameters(
-                LayoutAlgorithmTypeEnum.BoundedFR),
-            LayoutAlgorithmTypeEnum.FR => gg_Area.LogicCore.AlgorithmFactory.CreateLayoutParameters(
-                LayoutAlgorithmTypeEnum.FR),
-            _ => gg_Area.LogicCore.DefaultLayoutAlgorithmParams
-        };
-    }
-
-    private void gg_useExternalLayAlgo_Checked(object? sender, RoutedEventArgs routedEventArgs)
-    {
-        if (gg_Area.LogicCore is null) return;
-        if (gg_useExternalLayAlgo.IsChecked == true)
-        {
-            var graph = gg_Area.LogicCore.Graph ??
-                        ShowcaseHelper.GenerateDataGraph(Convert.ToInt32(gg_vertexCount.Text));
-            gg_Area.LogicCore.Graph = graph;
-            AssignExternalLayoutAlgorithm(graph);
-        }
-        else gg_Area.LogicCore.ExternalLayoutAlgorithm = null;
-    }
-
-    private void AssignExternalLayoutAlgorithm(BidirectionalGraph<DataVertex, DataEdge> graph)
-    {
-        if (gg_Area.LogicCore is null) return;
-        gg_Area.LogicCore.ExternalLayoutAlgorithm =
-            gg_Area.LogicCore.AlgorithmFactory.CreateLayoutAlgorithm(LayoutAlgorithmTypeEnum.ISOM, graph);
-    }
-
-    private void gg_oralgo_SelectionChanged(object? sender, SelectionChangedEventArgs e)
-    {
-        var core = gg_Area.LogicCore;
-        if (core == null) return;
-        if (gg_oralgo.SelectedItem is not OverlapRemovalAlgorithmTypeEnum oralgo) return;
-        core.DefaultOverlapRemovalAlgorithm = oralgo;
-        switch (oralgo)
-        {
-            case OverlapRemovalAlgorithmTypeEnum.FSA:
-            case OverlapRemovalAlgorithmTypeEnum.OneWayFSA:
-                core.DefaultOverlapRemovalAlgorithmParams.HorizontalGap = 30;
-                core.DefaultOverlapRemovalAlgorithmParams.VerticalGap = 30;
-                break;
-        }
-    }
-
-    private void gg_useExternalORAlgo_Checked(object sender, RoutedEventArgs e)
-    {
-        if (gg_Area.LogicCore is null) return;
-        gg_Area.LogicCore.ExternalOverlapRemovalAlgorithm = gg_useExternalORAlgo.IsChecked == true
-            ? gg_Area.LogicCore.AlgorithmFactory.CreateOverlapRemovalAlgorithm(OverlapRemovalAlgorithmTypeEnum.FSA,
-                null)
-            : null;
-    }
-
-    private void gg_eralgo_SelectionChanged(object? sender, SelectionChangedEventArgs e)
-    {
-        if (gg_Area.LogicCore is null) return;
-        if (gg_eralgo.SelectedItem is not EdgeRoutingAlgorithmTypeEnum eralgo) return;
-        gg_Area.LogicCore.DefaultEdgeRoutingAlgorithm = eralgo;
-        if (eralgo == EdgeRoutingAlgorithmTypeEnum.Bundling)
-        {
-            var prm = new BundleEdgeRoutingParameters();
-            gg_Area.LogicCore.DefaultEdgeRoutingAlgorithmParams = prm;
-            prm.Iterations = 200;
-            prm.SpringConstant = 5;
-            prm.Threshold = .1f;
-            gg_Area.LogicCore.EdgeCurvingEnabled = true;
-        }
-        else
-            gg_Area.LogicCore.EdgeCurvingEnabled = false;
-    }
-
-    private void gg_useExternalERAlgo_Checked(object sender, RoutedEventArgs e)
-    {
-        if (gg_useExternalERAlgo.IsChecked == true)
-        {
-            var graph = gg_Area.LogicCore?.Graph ??
-                        ShowcaseHelper.GenerateDataGraph(Convert.ToInt32(gg_vertexCount.Text));
-            gg_Area.LogicCore!.Graph = graph;
-            gg_Area.GetLogicCore<LogicCoreExample>().ExternalEdgeRoutingAlgorithm =
-                gg_Area.LogicCore.AlgorithmFactory.CreateEdgeRoutingAlgorithm(EdgeRoutingAlgorithmTypeEnum.SimpleER,
-                    new Rect(gg_Area.DesiredSize.ToGraphX()), graph, null, null);
-        }
-        else gg_Area.GetLogicCore<LogicCoreExample>().ExternalEdgeRoutingAlgorithm = null;
-    }
-
-    private void gg_Area_RelayoutFinished(object? sender, EventArgs e)
-    {
-        if (gg_Area.LogicCore!.AsyncAlgorithmCompute)
-            gg_loader.IsVisible = false;
-        gg_zoomctrl.ZoomToFill();
-        gg_zoomctrl.Mode = ZoomControlModes.Custom;
+        // Unsubscribe from events
+        _viewModel.RelayoutFinished -= OnRelayoutFinished;
+        _viewModel.GenerateGraphFinished -= OnGenerateGraphFinished;
+        _viewModel.SaveLayoutRequested -= OnSaveLayoutRequested;
+        _viewModel.LoadLayoutRequested -= OnLoadLayoutRequested;
+        _viewModel.ExportAsImageRequested -= OnExportAsImageRequested;
     }
 
     /// <summary>
-    /// Use this event in case we have chosen async computation
+    /// Handles zoom to fill after relayout - this is view-specific behavior.
     /// </summary>
-    private void gg_Area_GenerateGraphFinished(object? sender, EventArgs e)
+    private void OnRelayoutFinished(object? sender, EventArgs e)
     {
-        if (!gg_Area.EdgesList.Any())
-            gg_Area.GenerateAllEdges();
-        if (gg_Area.LogicCore!.AsyncAlgorithmCompute)
-            gg_loader.IsVisible = false;
-
-        gg_zoomctrl.ZoomToFill();
-        gg_zoomctrl.Mode = ZoomControlModes.Custom;
+        zoomCtrl.ZoomToFill();
+        zoomCtrl.Mode = ZoomControlModes.Custom;
     }
 
-    private void gg_but_randomgraph_Click(object? sender, RoutedEventArgs e)
+    /// <summary>
+    /// Handles zoom to fill after graph generation - this is view-specific behavior.
+    /// </summary>
+    private void OnGenerateGraphFinished(object? sender, EventArgs e)
     {
-        gg_Area.ClearLayout();
-        var mult = 25;
-        switch (gg_Area.LogicCore!.DefaultLayoutAlgorithm)
+        zoomCtrl.ZoomToFill();
+        zoomCtrl.Mode = ZoomControlModes.Custom;
+    }
+
+    /// <summary>
+    /// Handles save layout request by showing a file save dialog.
+    /// Uses JSON serialization which is AOT-compatible.
+    /// </summary>
+    private async void OnSaveLayoutRequested(object? sender, EventArgs e)
+    {
+        var topLevel = TopLevel.GetTopLevel(this);
+        if (topLevel == null) return;
+
+        var file = await topLevel.StorageProvider.SaveFilePickerAsync(new FilePickerSaveOptions
         {
-            case LayoutAlgorithmTypeEnum.LinLog:
-                mult = 45;
-                break;
-            case LayoutAlgorithmTypeEnum.EfficientSugiyama:
-            case LayoutAlgorithmTypeEnum.Sugiyama:
-                break;
+            Title = "Save Layout",
+            SuggestedFileName = "layout.json",
+            FileTypeChoices = new[]
+            {
+                new FilePickerFileType("JSON Files") { Patterns = new[] { "*.json" } },
+                new FilePickerFileType("All Files") { Patterns = new[] { "*.*" } }
+            }
+        });
+
+        if (file != null)
+        {
+            try
+            {
+                await using var stream = await file.OpenWriteAsync();
+                var data = graphArea.ExtractSerializationData();
+
+                // Convert to a portable format that includes type information
+                var portableData = ConvertToPortableFormat(data);
+                await JsonSerializer.SerializeAsync(stream, portableData,
+                    LayoutSerializationContext.Default.ListPortableSerializationData);
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Failed to save layout: {ex.Message}");
+            }
+        }
+    }
+
+    /// <summary>
+    /// Handles load layout request by showing a file open dialog.
+    /// Uses JSON deserialization which is AOT-compatible.
+    /// </summary>
+    private async void OnLoadLayoutRequested(object? sender, EventArgs e)
+    {
+        var topLevel = TopLevel.GetTopLevel(this);
+        if (topLevel == null) return;
+
+        var files = await topLevel.StorageProvider.OpenFilePickerAsync(new FilePickerOpenOptions
+        {
+            Title = "Load Layout",
+            AllowMultiple = false,
+            FileTypeFilter = new[]
+            {
+                new FilePickerFileType("JSON Files") { Patterns = new[] { "*.json" } },
+                new FilePickerFileType("All Files") { Patterns = new[] { "*.*" } }
+            }
+        });
+
+        if (files.Count > 0)
+        {
+            try
+            {
+                await using var stream = await files[0].OpenReadAsync();
+                var portableData = await JsonSerializer.DeserializeAsync(
+                    stream,
+                    LayoutSerializationContext.Default.ListPortableSerializationData);
+
+                if (portableData != null)
+                {
+                    var data = ConvertFromPortableFormat(portableData);
+                    graphArea.RebuildFromSerializationData(data);
+                    graphArea.SetVerticesDrag(true, true);
+                    graphArea.UpdateAllEdges();
+                    zoomCtrl.ZoomToFill();
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Failed to load layout: {ex.Message}");
+            }
+        }
+    }
+
+    /// <summary>
+    /// Handles export as image request.
+    /// </summary>
+    private async void OnExportAsImageRequested(object? sender, EventArgs e)
+    {
+        await graphArea.ExportAsImageDialog(ImageType.PNG, true);
+    }
+
+    #region JSON Serialization Helpers
+
+    /// <summary>
+    /// Converts GraphSerializationData list to a portable format for JSON serialization.
+    /// </summary>
+    private static List<PortableSerializationData> ConvertToPortableFormat(List<GraphSerializationData> data)
+    {
+        var result = new List<PortableSerializationData>();
+        foreach (var item in data)
+        {
+            var portable = new PortableSerializationData
+            {
+                PositionX = item.Position.X,
+                PositionY = item.Position.Y,
+                IsVisible = item.IsVisible,
+                HasLabel = item.HasLabel
+            };
+
+            // Serialize based on the actual type of Data
+            if (item.Data is DataVertex vertex)
+            {
+                portable.DataType = "Vertex";
+                portable.VertexData = new PortableVertexData
+                {
+                    Id = vertex.ID,
+                    Text = vertex.Text,
+                    Name = vertex.Name,
+                    Profession = vertex.Profession,
+                    Gender = vertex.Gender,
+                    Age = vertex.Age,
+                    ImageId = vertex.ImageId,
+                    IsBlue = vertex.IsBlue
+                };
+            }
+            else if (item.Data is DataEdge edge)
+            {
+                portable.DataType = "Edge";
+                portable.EdgeData = new PortableEdgeData
+                {
+                    Id = edge.ID,
+                    SourceId = edge.Source?.ID ?? 0,
+                    TargetId = edge.Target?.ID ?? 0,
+                    Weight = edge.Weight,
+                    Text = edge.Text,
+                    ToolTipText = edge.ToolTipText,
+                    ArrowTarget = edge.ArrowTarget,
+                    Angle = edge.Angle
+                };
+            }
+
+            result.Add(portable);
         }
 
-        var graph = ShowcaseHelper.GenerateDataGraph(Convert.ToInt32(gg_vertexCount.Text), true, mult);
-
-        //add self loop
-        graph.AddEdge(new DataEdge(graph.Vertices.First(), graph.Vertices.First()));
-
-
-        //assign graph again as we need to update Graph param inside and i have no independent examples
-        if (gg_Area.LogicCore.ExternalLayoutAlgorithm != null)
-            AssignExternalLayoutAlgorithm(graph);
-
-        if (gg_Area.LogicCore.AsyncAlgorithmCompute)
-            gg_loader.IsVisible = true;
-
-        //supplied graph will be automaticaly be assigned to GraphArea::LogicCore.Graph property
-        gg_Area.GenerateGraph(graph);
+        return result;
     }
+
+    /// <summary>
+    /// Converts portable format back to GraphSerializationData list.
+    /// </summary>
+    private static List<GraphSerializationData> ConvertFromPortableFormat(List<PortableSerializationData> portableData)
+    {
+        var result = new List<GraphSerializationData>();
+
+        // First pass: create all vertices and build a lookup dictionary
+        var vertexLookup = new Dictionary<long, DataVertex>();
+        foreach (var item in portableData)
+        {
+            if (item is { DataType: "Vertex", VertexData: not null })
+            {
+                var vertex = new DataVertex(item.VertexData.Text)
+                {
+                    ID = item.VertexData.Id,
+                    Name = item.VertexData.Name,
+                    Profession = item.VertexData.Profession,
+                    Gender = item.VertexData.Gender,
+                    Age = item.VertexData.Age,
+                    ImageId = item.VertexData.ImageId,
+                    IsBlue = item.VertexData.IsBlue
+                };
+                vertexLookup[vertex.ID] = vertex;
+
+                result.Add(new GraphSerializationData
+                {
+                    Data = vertex,
+                    Position = new Westermo.GraphX.Measure.Point(item.PositionX, item.PositionY),
+                    IsVisible = item.IsVisible,
+                    HasLabel = item.HasLabel
+                });
+            }
+        }
+
+        // Second pass: create edges with proper vertex references
+        foreach (var item in portableData)
+        {
+            if (item is { DataType: "Edge", EdgeData: not null })
+            {
+                // Get source and target vertices from lookup
+                vertexLookup.TryGetValue(item.EdgeData.SourceId, out var source);
+                vertexLookup.TryGetValue(item.EdgeData.TargetId, out var target);
+
+                if (source != null && target != null)
+                {
+                    var edge = new DataEdge(source, target, item.EdgeData.Weight)
+                    {
+                        ID = item.EdgeData.Id,
+                        Text = item.EdgeData.Text,
+                        ToolTipText = item.EdgeData.ToolTipText,
+                        ArrowTarget = item.EdgeData.ArrowTarget,
+                        Angle = item.EdgeData.Angle
+                    };
+
+                    result.Add(new GraphSerializationData
+                    {
+                        Data = edge,
+                        Position = new Westermo.GraphX.Measure.Point(item.PositionX, item.PositionY),
+                        IsVisible = item.IsVisible,
+                        HasLabel = item.HasLabel
+                    });
+                }
+            }
+        }
+
+        return result;
+    }
+
+    #endregion
 }
+
+#region Portable Serialization Classes
+
+/// <summary>
+/// AOT-compatible serialization data that avoids polymorphic object references.
+/// </summary>
+public class PortableSerializationData
+{
+    /// <summary>
+    /// Type discriminator: "Vertex" or "Edge"
+    /// </summary>
+    public string DataType { get; set; } = string.Empty;
+
+    /// <summary>
+    /// X coordinate of the control position
+    /// </summary>
+    public double PositionX { get; set; }
+
+    /// <summary>
+    /// Y coordinate of the control position
+    /// </summary>
+    public double PositionY { get; set; }
+
+    /// <summary>
+    /// Control visibility
+    /// </summary>
+    public bool IsVisible { get; set; } = true;
+
+    /// <summary>
+    /// Control label availability
+    /// </summary>
+    public bool HasLabel { get; set; }
+
+    /// <summary>
+    /// Vertex data (populated when DataType is "Vertex")
+    /// </summary>
+    public PortableVertexData? VertexData { get; set; }
+
+    /// <summary>
+    /// Edge data (populated when DataType is "Edge")
+    /// </summary>
+    public PortableEdgeData? EdgeData { get; set; }
+}
+
+/// <summary>
+/// Serializable vertex data.
+/// </summary>
+public class PortableVertexData
+{
+    public long Id { get; set; }
+    public string Text { get; set; } = string.Empty;
+    public string? Name { get; set; }
+    public string? Profession { get; set; }
+    public string? Gender { get; set; }
+    public int Age { get; set; }
+    public int ImageId { get; set; }
+    public bool IsBlue { get; set; }
+}
+
+/// <summary>
+/// Serializable edge data.
+/// </summary>
+public class PortableEdgeData
+{
+    public long Id { get; set; }
+    public long SourceId { get; set; }
+    public long TargetId { get; set; }
+    public double Weight { get; set; }
+    public string Text { get; set; } = string.Empty;
+    public string ToolTipText { get; set; } = string.Empty;
+    public bool ArrowTarget { get; set; }
+    public double Angle { get; set; }
+}
+
+#endregion
+
+#region JSON Serialization Context
+
+/// <summary>
+/// Source-generated JSON serialization context for AOT compatibility.
+/// </summary>
+[JsonSourceGenerationOptions(WriteIndented = true, PropertyNamingPolicy = JsonKnownNamingPolicy.CamelCase)]
+[JsonSerializable(typeof(List<PortableSerializationData>))]
+[JsonSerializable(typeof(PortableSerializationData))]
+[JsonSerializable(typeof(PortableVertexData))]
+[JsonSerializable(typeof(PortableEdgeData))]
+internal partial class LayoutSerializationContext : JsonSerializerContext
+{
+}
+
+#endregion

@@ -14,6 +14,17 @@ using Rect = Westermo.GraphX.Measure.Rect;
 
 namespace Westermo.GraphX.Controls.Controls;
 
+/// <summary>
+/// Base class for vertex controls that provides common functionality for visual representation of graph vertices.
+/// </summary>
+/// <remarks>
+/// This abstract class provides:
+/// - Position management via attached properties (X, Y)
+/// - Label attachment and management
+/// - Vertex connection points for custom edge routing
+/// - Selection state tracking
+/// - Integration with GraphAreaBase for event handling
+/// </remarks>
 [TemplatePart(Name = "PART_vertexLabel", Type = typeof(IVertexLabelControl))]
 [TemplatePart(Name = "PART_vcproot", Type = typeof(Panel))]
 public abstract class VertexControlBase : TemplatedControl, IGraphControl
@@ -150,6 +161,9 @@ public abstract class VertexControlBase : TemplatedControl, IGraphControl
         else obj.VertexLabelControl.Hide();
     }
 
+    /// <summary>
+    /// Gets or sets whether the vertex label should be visible. Default is false.
+    /// </summary>
     public bool ShowLabel
     {
         get => GetValue(ShowLabelProperty);
