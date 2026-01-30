@@ -38,7 +38,7 @@ jobs:
       - name: Build
         run: dotnet build Westermo.GraphX.Controls.Avalonia.Tests/Westermo.GraphX.Controls.Avalonia.Tests.csproj --configuration Release --no-restore
       - name: Run Avalonia Tests
-        run: dotnet test Westermo.GraphX.Controls.Avalonia.Tests/Westermo.GraphX.Controls.Avalonia.Tests.csproj --configuration Release --no-build --verbosity normal
+        run: dotnet test --project Westermo.GraphX.Controls.Avalonia.Tests/Westermo.GraphX.Controls.Avalonia.Tests.csproj --configuration Release --no-build --verbosity normal
 
   create_nuget:
     runs-on: windows-latest
