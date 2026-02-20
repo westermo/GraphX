@@ -81,7 +81,7 @@ public abstract class VertexControlBase : TemplatedControl, IGraphControl
         RootArea?.GetRelatedControls(this, GraphControlType.Edge, EdgesType.All).ForEach(a =>
         {
             if (a is EdgeControlBase @base)
-                @base.IsVisible = true;
+                @base.SetCurrentValue(IsVisibleProperty, true);
             else a.IsVisible = true;
         });
     }

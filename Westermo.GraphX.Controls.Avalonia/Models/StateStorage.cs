@@ -110,11 +110,12 @@ public class StateStorage<TVertex, TEdge, TGraph>(GraphArea<TVertex, TEdge, TGra
             _area.InsertEdge(item, edgectrl);
         }
 
-        _area.UpdateLayout();
         foreach (var item in _area.EdgesList.Values)
         {
             item.InvalidateMeasure();
         }
+
+        _area.UpdateLayout();
     }
 
     /// <summary>

@@ -1289,7 +1289,7 @@ public class GraphArea<TVertex, TEdge, TGraph> : GraphAreaBase, IDisposable
     {
         // Use SetCurrentValue to avoid breaking any existing bindings on the ShowLabel styled property.
         foreach (var label in _edgesList.Values.SelectMany(item => item.EdgeLabelControls))
-            label.SetCurrentValue(EdgeLabelControl.ShowLabelProperty, isEnabled);
+            (label as Control)?.SetCurrentValue(EdgeLabelControl.ShowLabelProperty, isEnabled);
 
         InvalidateVisual();
     }
@@ -1584,7 +1584,7 @@ public class GraphArea<TVertex, TEdge, TGraph> : GraphAreaBase, IDisposable
                     _svShowEdgeArrows ?? true,
                     isVisibleByDefault);
                 InsertEdge(item, ctrl);
-                ctrl.PrepareEdgePath();
+                ctrl.InvalidateMeasure();
                 if (item.Source == item.Target) gotSelfLoop = true;
             }
 
@@ -1596,7 +1596,7 @@ public class GraphArea<TVertex, TEdge, TGraph> : GraphAreaBase, IDisposable
                     _svShowEdgeArrows ?? true,
                     isVisibleByDefault);
                 InsertEdge(item, ctrl);
-                ctrl.PrepareEdgePath();
+                ctrl.InvalidateMeasure();
                 if (item.Source == item.Target) gotSelfLoop = true;
             }
     }

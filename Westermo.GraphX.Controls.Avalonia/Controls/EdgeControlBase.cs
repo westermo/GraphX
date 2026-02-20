@@ -232,7 +232,7 @@ public abstract class EdgeControlBase : TemplatedControl, IGraphControl, IDispos
 
             // Convert to local coordinates using the now-known offset
             var localFrom = new Measure.Point(from.X - _localOffset.X, from.Y - _localOffset.Y);
-            MeasureChild(EdgePointerForSource as Control);
+            MeasureChild(EdgePointerForTarget as Control);
             EdgePointerForTarget.Update(localFrom, dir,
                 EdgePointerForTarget.NeedRotation
                     ? -MathHelper.GetAngleBetweenPoints(from.ToGraphX(), to.ToGraphX()).ToDegrees()
@@ -704,6 +704,12 @@ public abstract class EdgeControlBase : TemplatedControl, IGraphControl, IDispos
 
         //use final vertex coordinates (layout results) instead of current to avoid drawing collapsed edges before animation/position commit
         LineGeometry = PrepareEdgePath();
+        foreach (var l in EdgeLabelControls)
+        {
+            if (l.ShowLabel)
+                l.UpdatePosition();
+        }
+
         if (LinePathObject == null) return base.ArrangeOverride(finalSize);
         LinePathObject.Data = LineGeometry;
         LinePathObject.StrokeDashArray = StrokeDashArray;
@@ -887,7 +893,7 @@ public abstract class EdgeControlBase : TemplatedControl, IGraphControl, IDispos
     /// </summary>
     /// <param name="useCurrentCoords">Use current vertices coordinates or final coorfinates (for.ex if move animation is active final coords will be its destination)</param>
     /// <param name="externalRoutingPoints">Provided custom routing points will be used instead of stored ones.</param>
-    public virtual Geometry? PrepareEdgePath(bool useCurrentCoords = false,
+    private Geometry? PrepareEdgePath(bool useCurrentCoords = false,
         Measure.Point[]? externalRoutingPoints = null)
     {
         if (!TryGetSourcePoints(useCurrentCoords, out var sourceRect))
@@ -920,12 +926,6 @@ public abstract class EdgeControlBase : TemplatedControl, IGraphControl, IDispos
 
         var p1 = SourceConnectionPoint.Value;
         var p2 = TargetConnectionPoint.Value;
-        foreach (var l in EdgeLabelControls)
-        {
-            if (l.ShowLabel)
-                l.UpdatePosition();
-        }
-
         // Use StreamGeometry for better performance (as recommended by Avalonia docs)
         return CreateStreamGeometry(externalRoutingPoints, hasRouteInfo, routeInformation, p1, p2, routedEdge,
             gEdge);
