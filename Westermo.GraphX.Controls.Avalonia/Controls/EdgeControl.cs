@@ -268,7 +268,13 @@ public class EdgeControl : EdgeControlBase, IDraggable
     {
         if (IsDragging)
         {
-            OverrideEndpoint = current.GetPosition(this);
+            // During drag, store the override endpoint in the same coordinate space
+            // as vertex positions (the graph area / RootArea). This avoids coordinate
+            // mismatches when the edge path is calculated relative to the graph area.
+            var graphAreaBase = RootArea;
+            OverrideEndpoint = graphAreaBase != null
+                ? current.GetPosition(graphAreaBase)
+                : current.GetPosition(this);
         }
     }
 
