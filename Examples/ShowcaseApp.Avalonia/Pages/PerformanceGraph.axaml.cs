@@ -262,7 +262,9 @@ public partial class PerformanceGraph : UserControl
 
     private void OnInvalidateCacheClick(object? sender, RoutedEventArgs e)
     {
-        txtStats.Text = "Caches invalidated\n" + txtStats.Text;
+        // Note: Cache invalidation is not implemented here. We report this explicitly
+        // to avoid misleading users into thinking any caches were actually cleared.
+        txtStats.Text = "Cache invalidation is not available in this configuration.\n" + txtStats.Text;
     }
 
     private void OnCullingChanged(object? sender, RoutedEventArgs e)
