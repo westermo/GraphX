@@ -1249,18 +1249,9 @@ public class GraphArea<TVertex, TEdge, TGraph> : GraphAreaBase, IDisposable
         if (_svEdgeDashStyle != null) item.DashStyle = _svEdgeDashStyle.Value;
         if (_svShowEdgeArrows != null)
             item.SetCurrentValue(EdgeControlBase.ShowArrowsProperty, _svShowEdgeArrows.Value);
-        if (_svUpdateLabelPosition != null) item.UpdateLabelPosition = _svUpdateLabelPosition.Value;
         CustomReapplySingleEdgeVisualProperties(item);
     }
 
-    private bool? _svUpdateLabelPosition;
-
-    public void UpdateEdgeLabelPosition(bool value)
-    {
-        _svUpdateLabelPosition = value;
-        foreach (var item in EdgesList)
-            item.Value.UpdateLabelPosition = value;
-    }
 
     private EdgeDashStyle? _svEdgeDashStyle; // EdgeDashStyle.Solid;
 
@@ -1285,7 +1276,8 @@ public class GraphArea<TVertex, TEdge, TGraph> : GraphAreaBase, IDisposable
     {
         _svShowEdgeArrows = isEnabled;
         foreach (var item in _edgesList.Values)
-            item.SetCurrentValue(EdgeControlBase.ShowArrowsProperty, isEnabled);
+            item.ShowArrows = isEnabled;
+        InvalidateMeasure();
     }
 
     //private bool? _svShowEdgeLabels;
@@ -1295,9 +1287,10 @@ public class GraphArea<TVertex, TEdge, TGraph> : GraphAreaBase, IDisposable
     /// <param name="isEnabled">Boolean value</param>
     public void ShowAllEdgesLabels(bool isEnabled = true)
     {
-        foreach (var item in _edgesList.Values)
-            item.EdgeLabelControls.Cast<Control>().ForEach(l =>
-                l.SetCurrentValue(EdgeLabelControl.ShowLabelProperty, isEnabled));
+        // Use SetCurrentValue to avoid breaking any existing bindings on the ShowLabel styled property.
+        foreach (var label in _edgesList.Values.SelectMany(item => item.EdgeLabelControls))
+            (label as Control)?.SetCurrentValue(EdgeLabelControl.ShowLabelProperty, isEnabled);
+
         InvalidateVisual();
     }
 
@@ -1422,28 +1415,8 @@ public class GraphArea<TVertex, TEdge, TGraph> : GraphAreaBase, IDisposable
         if (LogicCore.EnableParallelEdges)
             UpdateParallelEdgesData();
 
-        foreach (var item in _edgesList)
-        {
-            item.Value.SuppressLayoutUpdates = true;
-        }
-
-        try
-        {
-            foreach (var item in _edgesList)
-            {
-                item.Value.PrepareEdgePath();
-            }
-        }
-        finally
-        {
-            foreach (var item in _edgesList)
-            {
-                item.Value.SuppressLayoutUpdates = false;
-            }
-
-            // Single layout update for all edges
-            InvalidateMeasure();
-        }
+        // Single layout update for all edges
+        InvalidateMeasure();
 
         GenerateEdgeLabels();
     }
@@ -1611,7 +1584,7 @@ public class GraphArea<TVertex, TEdge, TGraph> : GraphAreaBase, IDisposable
                     _svShowEdgeArrows ?? true,
                     isVisibleByDefault);
                 InsertEdge(item, ctrl);
-                ctrl.PrepareEdgePath();
+                ctrl.InvalidateMeasure();
                 if (item.Source == item.Target) gotSelfLoop = true;
             }
 
@@ -1623,7 +1596,7 @@ public class GraphArea<TVertex, TEdge, TGraph> : GraphAreaBase, IDisposable
                     _svShowEdgeArrows ?? true,
                     isVisibleByDefault);
                 InsertEdge(item, ctrl);
-                ctrl.PrepareEdgePath();
+                ctrl.InvalidateMeasure();
                 if (item.Source == item.Target) gotSelfLoop = true;
             }
     }
@@ -1643,11 +1616,6 @@ public class GraphArea<TVertex, TEdge, TGraph> : GraphAreaBase, IDisposable
         if (LogicCore.EnableParallelEdges)
             UpdateParallelEdgesData();
 
-        // Suppress individual InvalidateMeasure calls during batch update
-        foreach (var ec in _edgesList.Values)
-        {
-            ec.SuppressLayoutUpdates = true;
-        }
 
         try
         {
@@ -1656,19 +1624,11 @@ public class GraphArea<TVertex, TEdge, TGraph> : GraphAreaBase, IDisposable
                 // OPTIMIZATION: Skip hidden edges when culling is enabled
                 if (skipHiddenEdges && !ec.IsVisible)
                     continue;
-
-                if (!performFullUpdate) ec.UpdateEdgeRendering();
-                else ec.UpdateEdge();
+                ec.InvalidateMeasure();
             }
         }
         finally
         {
-            // Re-enable layout updates and do a single layout pass
-            foreach (var ec in _edgesList.Values)
-            {
-                ec.SuppressLayoutUpdates = false;
-            }
-
             // Single layout update for all edges at once
             InvalidateMeasure();
         }
@@ -2109,7 +2069,6 @@ public class GraphArea<TVertex, TEdge, TGraph> : GraphAreaBase, IDisposable
 
         InvalidateMeasure();
         UpdateLayout();
-        EdgesList.Values.ForEach(a => a.UpdateEdge());
     }
 
     /// <summary>
@@ -2267,6 +2226,7 @@ public class GraphArea<TVertex, TEdge, TGraph> : GraphAreaBase, IDisposable
             {
                 kvp.Value.IsSelected = false;
             }
+
             return;
         }
 

@@ -7,7 +7,6 @@ using ShowcaseApp.Avalonia.ExampleModels;
 using ShowcaseApp.Avalonia.Models;
 using Westermo.GraphX.Common;
 using Westermo.GraphX.Common.Enums;
-
 using Westermo.GraphX.Controls.Controls;
 using Westermo.GraphX.Controls.Controls.VertexConnectionPoints;
 
@@ -50,7 +49,7 @@ public partial class LayoutVCP : UserControl
             (ec.Edge as DataEdge)!.SourceConnectionPointId = newId;
         }
 
-        graphArea.EdgesList[(ec.Edge as DataEdge)!].UpdateEdge();
+        graphArea.EdgesList[(ec.Edge as DataEdge)!].InvalidateMeasure();
     }
 
     private void CbMathShapeOnChecked(object? sender, RoutedEventArgs routedEventArgs)

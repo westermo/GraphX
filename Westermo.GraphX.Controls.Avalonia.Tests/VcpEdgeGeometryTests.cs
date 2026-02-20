@@ -39,7 +39,7 @@ public class VcpEdgeGeometryTests
             content.Children.Add(path);
             var ns = new NameScope();
             ns.Register("PART_edgePath", path);
-            var functor = new Func<IServiceProvider?, object?>(provider => new TemplateResult<Control>(content, ns));
+            var functor = new Func<IServiceProvider?, object?>(_ => new TemplateResult<Control>(content, ns));
             ec.Template = new ControlTemplate
             {
                 TargetType = typeof(EdgeControl),
@@ -68,7 +68,7 @@ public class VcpEdgeGeometryTests
             content.Children.Add(panel);
             var ns = new NameScope();
             ns.Register("PART_vcproot", panel);
-            var functor = new Func<IServiceProvider?, object?>(provider => new TemplateResult<Control>(content, ns));
+            var functor = new Func<IServiceProvider?, object?>(_ => new TemplateResult<Control>(content, ns));
             vc.Template = new ControlTemplate
             {
                 TargetType = typeof(VertexControl),
@@ -134,7 +134,7 @@ public class VcpEdgeGeometryTests
                 var ns = new NameScope();
                 ns.Register("PART_vcproot", panel);
                 var functor =
-                    new Func<IServiceProvider?, object?>(provider => new TemplateResult<Control>(content, ns));
+                    new Func<IServiceProvider?, object?>(_ => new TemplateResult<Control>(content, ns));
                 vc2.Template = new ControlTemplate
                 {
                     TargetType = typeof(VertexControl),
@@ -149,7 +149,7 @@ public class VcpEdgeGeometryTests
         var ec = area.ControlFactory.CreateEdgeControl(vc1, vc2, e);
         EnsureEdgeTemplate(ec);
         area.AddEdge(e, ec);
-        ec.UpdateEdge();
+        ec.UpdateLayout();
 
         return (area, vc1, vc2, cp1, cp2, e, ec);
     }
@@ -157,11 +157,13 @@ public class VcpEdgeGeometryTests
     [Test]
     public async Task EdgeGeometry_UsesConnectionPointCirclePerimeter()
     {
-        var data =  CreateAreaWithVcp(VertexShape.Circle, VertexShape.Circle, bothEndpoints: true);
+        var data = CreateAreaWithVcp(VertexShape.Circle, VertexShape.Circle, bothEndpoints: true);
         var cp1 = data.cp1;
         var cp2 = data.cp2;
         var ec = data.ec;
-
+        var measureSize = new Size(double.PositiveInfinity, double.PositiveInfinity);
+        ec.Measure(measureSize);
+        ec.Arrange(new Rect(0, 0, ec.DesiredSize.Width, ec.DesiredSize.Height));
         var sourceCenter = new Point(data.vc1.GetPosition().X + cp1.Width / 2,
             data.vc1.GetPosition().Y + cp1.Height / 2);
         var targetCenter = new Point(data.vc2.GetPosition().X + cp2.Width / 2,
@@ -188,11 +190,13 @@ public class VcpEdgeGeometryTests
     [Test]
     public async Task EdgeGeometry_UsesConnectionPointCenterWhenShapeNone()
     {
-        var data =  CreateAreaWithVcp(VertexShape.None, VertexShape.None, bothEndpoints: true);
+        var data = CreateAreaWithVcp(VertexShape.None, VertexShape.None, bothEndpoints: true);
         var cp1 = data.cp1;
         var cp2 = data.cp2;
         var ec = data.ec;
-
+        var measureSize = new Size(double.PositiveInfinity, double.PositiveInfinity);
+        ec.Measure(measureSize);
+        ec.Arrange(new Rect(0, 0, ec.DesiredSize.Width, ec.DesiredSize.Height));
         var sourceCenter = new Point(data.vc1.GetPosition().X + cp1.Width / 2,
             data.vc1.GetPosition().Y + cp1.Height / 2);
         var targetCenter = new Point(data.vc2.GetPosition().X + cp2.Width / 2,

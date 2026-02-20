@@ -30,24 +30,12 @@ public sealed class BatchUpdateScope : IDisposable
     {
         _graphArea = graphArea;
         _edges = edges;
-        
-        // Suppress layout updates on all edges
-        foreach (var edge in _edges)
-        {
-            edge.SuppressLayoutUpdates = true;
-        }
     }
 
     public void Dispose()
     {
         if (_isDisposed) return;
         _isDisposed = true;
-
-        // Re-enable layout updates on all edges
-        foreach (var edge in _edges)
-        {
-            edge.SuppressLayoutUpdates = false;
-        }
 
         // Trigger a single layout pass
         _graphArea.InvalidateMeasure();
@@ -70,7 +58,7 @@ public sealed class DeferredPositionUpdateScope : IDisposable
         _vertices = vertices;
         _originalUpdateEdges = new bool[vertices.Length];
         _onDispose = onDispose;
-        
+
         // Store original UpdateEdgesOnMove state and disable during batch
         for (var i = 0; i < _vertices.Length; i++)
         {

@@ -67,12 +67,12 @@ public class DefaultEdgePointer : ContentControl, IEdgePointer
 
     public void Show()
     {
-        SetCurrentValue(IsVisibleProperty, true);
+        IsVisible = true;
     }
 
     public void Hide()
     {
-        SetCurrentValue(IsVisibleProperty, false);
+        IsVisible = false;
     }
 
     /// <summary>
@@ -159,16 +159,16 @@ public class DefaultEdgePointer : ContentControl, IEdgePointer
         // Get the size to use - prefer DesiredSize, fallback to explicit Width/Height, then Bounds
         var width = DesiredSize.Width;
         var height = DesiredSize.Height;
-        
+
         if (width == 0 || height == 0)
         {
             // Fallback to explicit Width/Height if DesiredSize not available yet
             width = double.IsNaN(Width) ? Bounds.Width : Width;
             height = double.IsNaN(Height) ? Bounds.Height : Height;
         }
-        
+
         if (width == 0 || height == 0 || !position.HasValue) return new Measure.Point();
-        
+
         // Calculate the offset to move the pointer along the direction by half its size
         var vecMove = new Measure.Vector(direction.X * width * .5, direction.Y * height * .5);
         position = new Measure.Point(position.Value.X - vecMove.X, position.Value.Y - vecMove.Y);

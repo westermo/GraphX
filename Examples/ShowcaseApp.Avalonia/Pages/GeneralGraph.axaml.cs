@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using Avalonia.Controls;
+using Avalonia.Controls.Primitives;
 using Avalonia.Interactivity;
 using Avalonia.Platform.Storage;
 using ShowcaseApp.Avalonia.ExampleModels;
@@ -298,6 +299,11 @@ public partial class GeneralGraph : UserControl
     }
 
     #endregion
+
+    private void ToggleButton_OnIsCheckedChanged(object? sender, RoutedEventArgs e)
+    {
+        graphArea.ShowAllEdgesArrows((sender as ToggleButton)?.IsChecked ?? false);
+    }
 }
 
 #region Portable Serialization Classes

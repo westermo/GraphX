@@ -107,7 +107,7 @@ public class EdgeControlAdvancedTests
         var ec = area.ControlFactory.CreateEdgeControl(v1c, v2c, e);
         EnsureEdgeTemplate(ec);
         area.AddEdge(e, ec);
-        ec.UpdateEdge(true);
+        ec.InvalidateMeasure();
         return (area, v1c, v2c, e, ec);
     }
 
@@ -160,7 +160,9 @@ public class EdgeControlAdvancedTests
     [Test]
     public async Task Edge_CurvingEnabled_StillProducesGeometry()
     {
-        var data =  CreateSimpleArea(curving: true);
+        var data = CreateSimpleArea(curving: true);
+        data.ec.Measure(new Size(double.PositiveInfinity, double.PositiveInfinity));
+        data.ec.Arrange(new Rect(0, 0, data.ec.DesiredSize.Width, data.ec.DesiredSize.Height));
         var geom = data.ec.GetLineGeometry();
         // We don't assert exact segment types; just ensure geometry exists under curving mode
         await Assert.That(geom).IsNotNull();

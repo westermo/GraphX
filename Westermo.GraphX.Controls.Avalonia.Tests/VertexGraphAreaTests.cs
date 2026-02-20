@@ -103,7 +103,7 @@ public class VertexGraphAreaTests
             var ec = area.ControlFactory.CreateEdgeControl(area.VertexList[e.Source], area.VertexList[e.Target], e);
             EnsureEdgeTemplate(ec);
             area.AddEdge(e, ec);
-            ec.UpdateEdge(true);
+            ec.UpdateLayout();
         }
 
         return area;

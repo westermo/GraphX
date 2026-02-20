@@ -1,10 +1,8 @@
-﻿﻿using System;
-using System.Threading;
+﻿using System;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Interactivity;
-using Avalonia.Threading;
 using Westermo.GraphX.Common;
 using Westermo.GraphX.Common.Interfaces;
 using Westermo.GraphX.Controls.Behaviours;
@@ -93,130 +91,45 @@ public class EdgeControl : EdgeControlBase, IDraggable
 
     #region Vertex position tracing
 
-    private VertexControl? _oldSource;
-    private VertexControl? _oldTarget;
-
     protected override void OnSourceChanged(Control d, AvaloniaPropertyChangedEventArgs e)
     {
-        SourceChanged();
+        EndpointChanged(e);
     }
 
     protected override void OnTargetChanged(Control d, AvaloniaPropertyChangedEventArgs e)
     {
-        TargetChanged();
+        EndpointChanged(e);
     }
 
-    private void SourceChanged()
+    private void EndpointChanged(AvaloniaPropertyChangedEventArgs e)
     {
-        if (_oldSource != null)
+        if (e.OldValue is VertexControl oldTarget)
         {
-            _oldSource.PositionChanged -= source_PositionChanged;
-            _oldSource.SizeChanged -= Source_SizeChanged;
+            oldTarget.PositionChanged -= OnEndpointMoved;
+            oldTarget.SizeChanged -= OnEndpointResized;
         }
 
-        _oldSource = Source;
-        if (Source != null)
+        if (e.NewValue is VertexControl newTarget)
         {
-            Source.PositionChanged += source_PositionChanged;
-            Source.SizeChanged += Source_SizeChanged;
+            newTarget.PositionChanged += OnEndpointMoved;
+            newTarget.SizeChanged += OnEndpointResized;
         }
 
         IsSelfLooped = IsSelfLoopedInternal;
-        UpdateSelfLoopedEdgeData();
+        InvalidateMeasure();
     }
 
-    private void TargetChanged()
+    private void OnEndpointMoved(object sender, EventArgs e)
     {
-        if (_oldTarget != null)
-        {
-            _oldTarget.PositionChanged -= source_PositionChanged;
-            _oldTarget.SizeChanged -= Source_SizeChanged;
-        }
-
-        _oldTarget = Target;
-        if (Target != null)
-        {
-            Target.PositionChanged += source_PositionChanged;
-            Target.SizeChanged += Source_SizeChanged;
-        }
-
-        IsSelfLooped = IsSelfLoopedInternal;
-        UpdateSelfLoopedEdgeData();
-    }
-
-    #region Edge Update Throttling
-
-    /// <summary>
-    /// Minimum interval between edge updates in milliseconds during rapid position changes.
-    /// Set to 0 to disable throttling. Default is 16ms (~60 FPS).
-    /// </summary>
-    public int UpdateThrottleMs
-    {
-        get => field; set
-        {
-            lock (_lock)
-            {
-                if (field == value) return;
-                if (value == 0)
-                {
-                    _edgeUpdateTimer.Tick -= EdgeUpdateCheck;
-                    _edgeUpdateTimer.Stop();
-                    return;
-                }
-                if (field == 0 && value > 0)
-                {
-                    _edgeUpdateTimer.Tick += EdgeUpdateCheck;
-                    _edgeUpdateTimer.Interval = TimeSpan.FromMilliseconds(value);
-                    _edgeUpdateTimer.Start();
-                }
-                field = value;
-            }
-        }
-    } = 0;
-    private bool _edgeUpdateQueued;
-
-    private Lock _lock = new Lock();
-    private readonly DispatcherTimer _edgeUpdateTimer = new(DispatcherPriority.Render);
-
-    private void EdgeUpdateCheck(object? sender, EventArgs e)
-    {
-        bool shouldUpdate = false;
-        lock (_lock)
-        {
-            if (_edgeUpdateQueued)
-            {
-                _edgeUpdateQueued = false;
-                shouldUpdate = true;
-            }
-        }
-        if (shouldUpdate)
-        {
-            UpdateEdge();
-        }
-    }
-
-    private void source_PositionChanged(object sender, EventArgs e)
-    {
-        lock (_lock)
-        {
-            if (UpdateThrottleMs == 0)
-            {
-                UpdateEdge();
-                return;
-            }
-            if (_edgeUpdateQueued) return;
-            _edgeUpdateQueued = true;
-        }
+        InvalidateMeasure();
     }
 
     #endregion
 
-    private void Source_SizeChanged(object? sender, SizeChangedEventArgs e)
+    private void OnEndpointResized(object? sender, SizeChangedEventArgs e)
     {
-        UpdateEdge();
+        InvalidateMeasure();
     }
-
-    #endregion
 
     static EdgeControl()
     {
@@ -241,13 +154,6 @@ public class EdgeControl : EdgeControlBase, IDraggable
         DataContext = edge;
         SetCurrentValue(ShowArrowsProperty, showArrows);
         IsHiddenEdgesUpdated = true;
-
-        if (!Design.IsDesignMode)
-        {
-            // Trigger initial state
-            SourceChanged();
-            TargetChanged();
-        }
 
         DoubleTapped += EdgeControl_MouseDoubleClick;
         IsSelfLooped = IsSelfLoopedInternal;
@@ -360,12 +266,25 @@ public class EdgeControl : EdgeControlBase, IDraggable
 
     public void Drag(PointerEventArgs current)
     {
-        if (IsDragging) PrepareEdgePathFromMousePointer(current);
+        if (IsDragging)
+        {
+            // During drag, store the override endpoint in the same coordinate space
+            // as vertex positions (the graph area / RootArea). This avoids coordinate
+            // mismatches when the edge path is calculated relative to the graph area.
+            var graphAreaBase = RootArea;
+            OverrideEndpoint = graphAreaBase != null
+                ? current.GetPosition(graphAreaBase)
+                : current.GetPosition(this);
+        }
     }
 
     public bool EndDrag(PointerReleasedEventArgs e)
     {
-        if (!IsDragging) return true;
+        OverrideEndpoint = null;
+        if (!IsDragging)
+            return true;
+
+
         var graphAreaBase = RootArea;
 
         var vertexControl = graphAreaBase?.GetVertexControlAt(e.GetPosition(graphAreaBase));
@@ -389,7 +308,6 @@ public class EdgeControl : EdgeControlBase, IDraggable
             }
         }
 
-        UpdateEdge();
         IsDragging = false;
         return true;
     }
