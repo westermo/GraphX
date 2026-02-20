@@ -280,13 +280,16 @@ public class EdgeControl : EdgeControlBase, IDraggable
 
     public bool EndDrag(PointerReleasedEventArgs e)
     {
-        if (!IsDragging) return true;
+        OverrideEndpoint = null;
+        if (!IsDragging)
+            return true;
+
+
         var graphAreaBase = RootArea;
 
         var vertexControl = graphAreaBase?.GetVertexControlAt(e.GetPosition(graphAreaBase));
 
         if (vertexControl == null) return true;
-        OverrideEndpoint = null;
         Target = vertexControl;
 
         if (vertexControl.VertexConnectionPointsList.Count > 0)
