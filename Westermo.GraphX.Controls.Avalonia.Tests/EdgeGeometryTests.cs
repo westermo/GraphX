@@ -4,6 +4,7 @@ using QuikGraph;
 using Westermo.GraphX.Common.Models;
 using Westermo.GraphX.Logic.Models;
 using Avalonia.Media;
+using Avalonia.Threading;
 using Westermo.GraphX.Controls.Controls;
 
 namespace Westermo.GraphX.Controls.Avalonia.Tests;
@@ -69,7 +70,10 @@ public class EdgeGeometryTests
     public async Task EdgeGeometry_IsCreated_ForSimpleEdge()
     {
         var area = CreateArea(out var v1, out var v2);
+
         var ec = area.EdgesList.Values.First();
+        ec.Measure(new Size(double.PositiveInfinity, double.PositiveInfinity));
+        ec.Arrange(new Rect(0, 0, ec.DesiredSize.Width, ec.DesiredSize.Height));
         var geom = ec.GetLineGeometry();
         await Assert.That(geom).IsNotNull();
         // For StreamGeometry, we verify the bounds and type instead of path data
@@ -97,6 +101,9 @@ public class EdgeGeometryTests
     {
         var area = CreateArea(out var v1, out var v2, selfLoop: true);
         var ec = area.EdgesList.Values.First();
+        ec.Measure(new Size(double.PositiveInfinity, double.PositiveInfinity));
+        ec.Arrange(new Rect(0, 0, ec.DesiredSize.Width, ec.DesiredSize.Height));
+
         var geom = ec.GetLineGeometry();
         var ellipse = geom as EllipseGeometry;
         await Assert.That(ellipse).IsNotNull();
@@ -110,6 +117,12 @@ public class EdgeGeometryTests
         var list = area.EdgesList.Values.ToList();
         // Force update
         area.UpdateAllEdges(true);
+        foreach (var edge in list)
+        {
+            edge.Measure(new Size(double.PositiveInfinity, double.PositiveInfinity));
+            edge.Arrange(new Rect(0, 0, edge.DesiredSize.Width, edge.DesiredSize.Height));
+        }
+
         // Capture connection points; parallel edges should not all share identical connection point pairs
         var pairs = list.Select(e => (e.SourceConnectionPoint, e.TargetConnectionPoint)).ToList();
         // At least one pair should differ if parallel offsets applied

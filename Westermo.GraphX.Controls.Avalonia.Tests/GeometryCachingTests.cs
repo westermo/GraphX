@@ -42,6 +42,7 @@ public class GeometryCachingTests
                 Content = functor
             };
         }
+
         vc.ApplyTemplate();
     }
 
@@ -66,11 +67,12 @@ public class GeometryCachingTests
                 Content = functor
             };
         }
+
         ec.ApplyTemplate();
     }
 
-    private (GraphArea<TVertex, TEdge, BidirectionalGraph<TVertex, TEdge>> area, 
-             VertexControl sourceVc, VertexControl targetVc, EdgeControl edge) CreateSimpleGraph()
+    private (GraphArea<TVertex, TEdge, BidirectionalGraph<TVertex, TEdge>> area,
+        VertexControl sourceVc, VertexControl targetVc, EdgeControl edge) CreateSimpleGraph()
     {
         var graph = new BidirectionalGraph<TVertex, TEdge>();
         var v1 = new TVertex("A") { ID = 1 };
@@ -107,7 +109,7 @@ public class GeometryCachingTests
         sourceVc.Height = 30;
         targetVc.Width = 40;
         targetVc.Height = 30;
-        
+
         EnsureVertexTemplate(sourceVc);
         EnsureVertexTemplate(targetVc);
 
@@ -115,138 +117,6 @@ public class GeometryCachingTests
         EnsureEdgeTemplate(edge);
 
         return (area, sourceVc, targetVc, edge);
-    }
-
-    [Test]
-    public async Task EnableGeometryCaching_DefaultsToTrue()
-    {
-        var (_, _, _, edge) = CreateSimpleGraph();
-        
-        await Assert.That(edge.EnableGeometryCaching).IsTrue();
-    }
-
-    [Test]
-    public async Task EnableGeometryCaching_CanBeEnabled()
-    {
-        var (_, _, _, edge) = CreateSimpleGraph();
-        
-        edge.EnableGeometryCaching = true;
-        
-        await Assert.That(edge.EnableGeometryCaching).IsTrue();
-    }
-
-    [Test]
-    public async Task InvalidateGeometryCache_ForcesNextUpdate()
-    {
-        var (_, sourceVc, targetVc, edge) = CreateSimpleGraph();
-        edge.EnableGeometryCaching = true;
-        
-        // Update edge to populate cache
-        edge.UpdateEdge();
-        var boundsAfterFirstUpdate = edge.GeometryBounds;
-        
-        // Invalidate cache
-        edge.InvalidateGeometryCache();
-        
-        // Update again - should recompute even though positions haven't changed
-        edge.UpdateEdge();
-        var boundsAfterInvalidate = edge.GeometryBounds;
-        
-        // Should have valid bounds (geometry was recomputed)
-        await Assert.That(boundsAfterInvalidate).IsNotNull();
-    }
-
-    [Test]
-    public async Task GeometryCache_RecomputesAfterUpdate()
-    {
-        var (_, sourceVc, targetVc, edge) = CreateSimpleGraph();
-        edge.EnableGeometryCaching = true;
-        
-        // Update edge
-        edge.UpdateEdge();
-        
-        // Geometry should be computed
-        await Assert.That(edge.GeometryBounds).IsNotNull();
-        await Assert.That(edge.GeometryBounds!.Value.Width).IsGreaterThan(0);
-    }
-
-    [Test]
-    public async Task GeometryCache_UpdatesWhenSourceMoves()
-    {
-        var (_, sourceVc, targetVc, edge) = CreateSimpleGraph();
-        edge.EnableGeometryCaching = true;
-        
-        // Update to populate cache
-        edge.UpdateEdge();
-        var boundsBeforeMove = edge.GeometryBounds;
-        
-        // Move source vertex
-        sourceVc.SetPosition(new Point(100, 150));
-        
-        // Force update
-        edge.UpdateEdge(forceUpdate: true);
-        var boundsAfterMove = edge.GeometryBounds;
-        
-        // Geometry should be recomputed with different bounds
-        await Assert.That(boundsAfterMove).IsNotNull();
-    }
-
-    [Test]
-    public async Task GeometryCache_UpdatesWhenTargetMoves()
-    {
-        var (_, sourceVc, targetVc, edge) = CreateSimpleGraph();
-        edge.EnableGeometryCaching = true;
-        
-        // Update to populate cache
-        edge.UpdateEdge();
-        var boundsBeforeMove = edge.GeometryBounds;
-        
-        // Move target vertex
-        targetVc.SetPosition(new Point(300, 200));
-        
-        // Force update
-        edge.UpdateEdge(forceUpdate: true);
-        var boundsAfterMove = edge.GeometryBounds;
-        
-        // Geometry should be recomputed
-        await Assert.That(boundsAfterMove).IsNotNull();
-    }
-
-    [Test]
-    public async Task GeometryCache_RemainsValidIfPositionsUnchanged()
-    {
-        var (_, sourceVc, targetVc, edge) = CreateSimpleGraph();
-        edge.EnableGeometryCaching = true;
-        
-        // Update to populate cache
-        edge.UpdateEdge();
-        var boundsAfterFirstUpdate = edge.GeometryBounds;
-        
-        // Call UpdateEdge again without moving vertices
-        edge.UpdateEdge();
-        var boundsAfterSecondUpdate = edge.GeometryBounds;
-        
-        // Bounds should be the same (geometry was cached)
-        await Assert.That(boundsAfterSecondUpdate).IsNotNull();
-        await Assert.That(boundsAfterSecondUpdate!.Value.Width).IsEqualTo(boundsAfterFirstUpdate!.Value.Width);
-        await Assert.That(boundsAfterSecondUpdate!.Value.Height).IsEqualTo(boundsAfterFirstUpdate!.Value.Height);
-    }
-
-    [Test]
-    public async Task GeometryCache_MultipleUpdates_WorksCorrectly()
-    {
-        var (_, sourceVc, targetVc, edge) = CreateSimpleGraph();
-        
-        // Caching is enabled by default
-        await Assert.That(edge.EnableGeometryCaching).IsTrue();
-        
-        // Update edge multiple times - should work with caching
-        edge.UpdateEdge();
-        edge.UpdateEdge();
-        edge.UpdateEdge();
-        
-        // Should not throw and geometry should exist
-        await Assert.That(edge.GeometryBounds).IsNotNull();
     }
 
     [Test]
@@ -270,10 +140,10 @@ public class GeometryCachingTests
             Width = 500,
             Height = 400
         };
-        
+
         // Create edge without updating
         var edge = new EdgeControl(null, null, e);
-        
+
         // Before any update, geometry bounds should be null
         await Assert.That(edge.GeometryBounds).IsNull();
     }
@@ -282,9 +152,9 @@ public class GeometryCachingTests
     public async Task GeometryBounds_HasValueAfterUpdate()
     {
         var (_, _, _, edge) = CreateSimpleGraph();
-        
-        edge.UpdateEdge();
-        
+        edge.Measure(new Size(double.PositiveInfinity, double.PositiveInfinity));
+        edge.Arrange(new Rect(0, 0, edge.DesiredSize.Width, edge.DesiredSize.Height));
+
         await Assert.That(edge.GeometryBounds).IsNotNull();
         await Assert.That(edge.GeometryBounds!.Value.Width).IsGreaterThan(0);
     }

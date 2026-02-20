@@ -1,4 +1,4 @@
-﻿﻿using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
@@ -9,7 +9,6 @@ using Avalonia.Controls;
 using Avalonia.Controls.Metadata;
 using Avalonia.Controls.Primitives;
 using Avalonia.Controls.Shapes;
-using Avalonia.Input;
 using Avalonia.Interactivity;
 using Avalonia.Media;
 using Westermo.GraphX.Common;
@@ -41,98 +40,6 @@ namespace Westermo.GraphX.Controls.Controls;
 [TemplatePart(Name = "PART_EdgePointerForTarget", Type = typeof(IEdgePointer))]
 public abstract class EdgeControlBase : TemplatedControl, IGraphControl, IDisposable
 {
-    /// <summary>
-    /// When true, InvalidateMeasure calls are suppressed during batch operations.
-    /// This improves performance when updating many edges at once.
-    /// </summary>
-    internal bool SuppressLayoutUpdates { get; set; }
-
-    #region Geometry Caching
-
-    /// <summary>
-    /// Cached source position for detecting when geometry needs recalculation.
-    /// </summary>
-    private Point _cachedSourcePosition;
-    
-    /// <summary>
-    /// Cached target position for detecting when geometry needs recalculation.
-    /// </summary>
-    private Point _cachedTargetPosition;
-    
-    /// <summary>
-    /// Cached source size for detecting when geometry needs recalculation.
-    /// </summary>
-    private Size _cachedSourceSize;
-    
-    /// <summary>
-    /// Cached target size for detecting when geometry needs recalculation.
-    /// </summary>
-    private Size _cachedTargetSize;
-
-    /// <summary>
-    /// Indicates whether geometry caching is enabled. When enabled, edge paths are only
-    /// recalculated when source/target positions or sizes actually change.
-    /// Default is true for performance optimization.
-    /// </summary>
-    public bool EnableGeometryCaching { get; set; } = true;
-
-    /// <summary>
-    /// Forces the next geometry update regardless of cache state.
-    /// </summary>
-    public void InvalidateGeometryCache()
-    {
-        _cachedSourcePosition = new Point(double.NaN, double.NaN);
-        _cachedTargetPosition = new Point(double.NaN, double.NaN);
-    }
-
-    /// <summary>
-    /// Checks if the geometry cache is still valid (source/target haven't moved).
-    /// </summary>
-    private bool IsGeometryCacheValid()
-    {
-        if (!EnableGeometryCaching) return false;
-        if (Source == null || Target == null) return false;
-
-        var sourcePos = Source.GetPosition();
-        var targetPos = Target.GetPosition();
-        var sourceSize = new Size(Source.Bounds.Width, Source.Bounds.Height);
-        var targetSize = new Size(Target.Bounds.Width, Target.Bounds.Height);
-
-        // Check if positions and sizes are unchanged
-        if (Math.Abs(sourcePos.X - _cachedSourcePosition.X) > 0.1 ||
-            Math.Abs(sourcePos.Y - _cachedSourcePosition.Y) > 0.1 ||
-            Math.Abs(targetPos.X - _cachedTargetPosition.X) > 0.1 ||
-            Math.Abs(targetPos.Y - _cachedTargetPosition.Y) > 0.1 ||
-            Math.Abs(sourceSize.Width - _cachedSourceSize.Width) > 0.1 ||
-            Math.Abs(sourceSize.Height - _cachedSourceSize.Height) > 0.1 ||
-            Math.Abs(targetSize.Width - _cachedTargetSize.Width) > 0.1 ||
-            Math.Abs(targetSize.Height - _cachedTargetSize.Height) > 0.1)
-        {
-            return false;
-        }
-
-        return true;
-    }
-
-    /// <summary>
-    /// Updates the geometry cache with current positions.
-    /// </summary>
-    private void UpdateGeometryCache()
-    {
-        if (Source != null)
-        {
-            _cachedSourcePosition = Source.GetPosition();
-            _cachedSourceSize = new Size(Source.Bounds.Width, Source.Bounds.Height);
-        }
-        if (Target != null)
-        {
-            _cachedTargetPosition = Target.GetPosition();
-            _cachedTargetSize = new Size(Target.Bounds.Width, Target.Bounds.Height);
-        }
-    }
-
-    #endregion
-    
     /// <summary>
     /// Gets or sets if edge pointer should be hidden when source and target vertices are overlapped making the 0 length edge. Default value is True.
     /// </summary>
@@ -205,10 +112,12 @@ public abstract class EdgeControlBase : TemplatedControl, IGraphControl, IDispos
         {
             padding = Math.Max(padding, Math.Max(sourceCtrl.DesiredSize.Width, sourceCtrl.DesiredSize.Height));
         }
+
         if (EdgePointerForTarget is Control targetCtrl)
         {
             padding = Math.Max(padding, Math.Max(targetCtrl.DesiredSize.Width, targetCtrl.DesiredSize.Height));
         }
+
         // Add extra padding to ensure arrows aren't clipped at edges
         return padding > 0 ? padding + 2 : 0;
     }
@@ -295,11 +204,12 @@ public abstract class EdgeControlBase : TemplatedControl, IGraphControl, IDispos
 
             // Convert to local coordinates using the now-known offset
             var localFrom = new Measure.Point(from.X - _localOffset.X, from.Y - _localOffset.Y);
+            MeasureChild(EdgePointerForSource as Control);
             EdgePointerForSource.Update(localFrom, dir,
                 EdgePointerForSource.NeedRotation
                     ? -MathHelper.GetAngleBetweenPoints(from.ToGraphX(), to.ToGraphX()).ToDegrees()
                     : 0);
-            
+
             // Show pointer now that it's properly positioned
             if (ShowArrows) EdgePointerForSource.Show();
 
@@ -322,11 +232,12 @@ public abstract class EdgeControlBase : TemplatedControl, IGraphControl, IDispos
 
             // Convert to local coordinates using the now-known offset
             var localFrom = new Measure.Point(from.X - _localOffset.X, from.Y - _localOffset.Y);
+            MeasureChild(EdgePointerForSource as Control);
             EdgePointerForTarget.Update(localFrom, dir,
                 EdgePointerForTarget.NeedRotation
                     ? -MathHelper.GetAngleBetweenPoints(from.ToGraphX(), to.ToGraphX()).ToDegrees()
                     : 0);
-            
+
             // Show pointer now that it's properly positioned
             if (ShowArrows) EdgePointerForTarget.Show();
 
@@ -397,23 +308,12 @@ public abstract class EdgeControlBase : TemplatedControl, IGraphControl, IDispos
 
     static EdgeControlBase()
     {
+        AffectsMeasure<EdgeControlBase>(SourceProperty, TargetProperty, ShowArrowsProperty, DashStyleProperty,
+            ShowSelfLoopIndicatorProperty, SelfLoopIndicatorRadiusProperty, SelfLoopIndicatorOffsetProperty);
         SourceProperty.Changed.AddClassHandler<EdgeControlBase>(OnSourceChangedInternal);
         TargetProperty.Changed.AddClassHandler<EdgeControlBase>(OnTargetChangedInternal);
         DashStyleProperty.Changed.AddClassHandler<EdgeControlBase>(DashStyleChanged);
         ShowArrowsProperty.Changed.AddClassHandler<EdgeControlBase>(ShowArrowsChanged);
-        ShowSelfLoopIndicatorProperty.Changed.AddClassHandler<EdgeControlBase>(ShowSelfLoopIndicatorChanged);
-        SelfLoopIndicatorOffsetProperty.Changed.AddClassHandler<EdgeControlBase>(SelfLoopDataChanged);
-        SelfLoopIndicatorRadiusProperty.Changed.AddClassHandler<EdgeControlBase>(SelfLoopDataChanged);
-    }
-
-    private static void SelfLoopDataChanged(EdgeControlBase arg1, AvaloniaPropertyChangedEventArgs arg2)
-    {
-        arg1.UpdateEdgeRendering();
-    }
-
-    private static void ShowSelfLoopIndicatorChanged(EdgeControlBase arg1, AvaloniaPropertyChangedEventArgs arg2)
-    {
-        arg1.UpdateSelfLoopedEdgeData();
     }
 
     private static void OnSourceChangedInternal(EdgeControlBase control,
@@ -449,7 +349,6 @@ public abstract class EdgeControlBase : TemplatedControl, IGraphControl, IDispos
             EdgeDashStyle.DashDotDot => [4.0, 2.0, 1.0, 2.0, 1.0, 2.0],
             _ => null,
         };
-        edgeControlBase.UpdateEdge(false);
     }
 
     /// <summary>
@@ -470,7 +369,6 @@ public abstract class EdgeControlBase : TemplatedControl, IGraphControl, IDispos
 
     protected EdgeControlBase()
     {
-        _updateLabelPosition = true;
         Loaded += EdgeControlBase_Loaded;
     }
 
@@ -478,17 +376,6 @@ public abstract class EdgeControlBase : TemplatedControl, IGraphControl, IDispos
     private void EdgeControlBase_Loaded(object? sender, RoutedEventArgs e)
     {
         Loaded -= EdgeControlBase_Loaded;
-    }
-
-    private bool _updateLabelPosition;
-
-    /// <summary>
-    /// Gets or sets if label position should be updated on edge update
-    /// </summary>
-    public bool UpdateLabelPosition
-    {
-        get => _updateLabelPosition;
-        set => _updateLabelPosition = value;
     }
 
 
@@ -503,7 +390,16 @@ public abstract class EdgeControlBase : TemplatedControl, IGraphControl, IDispos
     private static void ShowArrowsChanged(EdgeControlBase edgeControlBase,
         AvaloniaPropertyChangedEventArgs avaloniaPropertyChangedEventArgs)
     {
-        edgeControlBase.UpdateEdge(false);
+        if (edgeControlBase.ShowArrows)
+        {
+            edgeControlBase.EdgePointerForSource?.Show();
+            edgeControlBase.EdgePointerForTarget?.Show();
+        }
+        else
+        {
+            edgeControlBase.EdgePointerForSource?.Hide();
+            edgeControlBase.EdgePointerForTarget?.Hide();
+        }
     }
 
     /// <summary>
@@ -698,23 +594,6 @@ public abstract class EdgeControlBase : TemplatedControl, IGraphControl, IDispos
     {
         if (!ManualDrawing) return;
         LineGeometry = geo;
-        UpdateEdge();
-    }
-
-
-    internal void SetVisibility(bool value)
-    {
-        SetCurrentValue(IsVisibleProperty, value);
-    }
-
-    internal virtual void InvalidateChildren()
-    {
-        EdgeLabelControls.ForEach(l => l.UpdateLayout());
-        if (LinePathObject != null)
-        {
-            var pos = Source!.GetPosition();
-            Source.SetPosition(pos.X, pos.Y);
-        }
     }
 
     /// <summary>
@@ -747,122 +626,88 @@ public abstract class EdgeControlBase : TemplatedControl, IGraphControl, IDispos
 
         SelfLoopIndicator = GetTemplatePart(e, "PART_SelfLoopedEdge") as Control;
         if (SelfLoopIndicator != null)
-            SelfLoopIndicator.LayoutUpdated += (_, _) =>
-            {
-                SelfLoopIndicator?.Arrange(_selfLoopedEdgeLastKnownRect);
-            };
+            SelfLoopIndicator.LayoutUpdated += (_, _) => { SelfLoopIndicator?.Arrange(_selfLoopedEdgeLastKnownRect); };
         // var x = ShowLabel;
         MeasureChild(EdgePointerForSource as Control);
         MeasureChild(EdgePointerForTarget as Control);
         MeasureChild(SelfLoopIndicator);
-        //TODO measure label?
-
-        UpdateSelfLoopedEdgeData();
-
-        // Defer edge update until after layout is complete to ensure proper positioning
-        // Use forceUpdate:true because geometry may have been built before template was applied,
-        // but edge pointers need to be positioned and shown now that they exist.
-        Avalonia.Threading.Dispatcher.UIThread.Post(() => UpdateEdge(forceUpdate: true), Avalonia.Threading.DispatcherPriority.Loaded);
     }
 
     // Re-added after edit: measure template child once with unlimited size so DesiredSize is initialized
     protected void MeasureChild(Control? child)
     {
         if (child == null) return;
-        
+
         // Ensure the child's template is applied so content is available for measuring
         if (child is TemplatedControl templated)
         {
             templated.ApplyTemplate();
         }
-        
+
         child.Measure(new Size(double.PositiveInfinity, double.PositiveInfinity));
+    }
+
+    private static Size Sum(params ReadOnlySpan<Size> sizes)
+    {
+        var totalWidth = 0.0;
+        var totalHeight = 0.0;
+        foreach (var size in sizes)
+        {
+            totalWidth += double.IsNaN(size.Width) ? 0 : size.Width;
+            totalHeight += double.IsNaN(size.Height) ? 0 : size.Height;
+        }
+
+        return new Size(totalWidth, totalHeight);
     }
 
     // Provide a desired size for layout based on current geometry bounds so edge is not collapsed to 0x0.
     protected override Size MeasureOverride(Size availableSize)
     {
-        // If we have geometry use its bounds; otherwise fall back to explicitly set Width/Height (may be NaN).
-        if (LineGeometry != null)
-        {
-            var b = LineGeometry.Bounds;
-            var w = double.IsNaN(b.Width) || b.Width <= 0 ? 1 : b.Width;
-            var h = double.IsNaN(b.Height) || b.Height <= 0 ? 1 : b.Height;
-            // Respect MinWidth/MinHeight from styles.
-            w = Math.Max(w, MinWidth);
-            h = Math.Max(h, MinHeight);
-            return new Size(w, h);
-        }
-
-        var fw = double.IsNaN(Width) ? 0 : Width;
-        var fh = double.IsNaN(Height) ? 0 : Height;
-        fw = Math.Max(fw, MinWidth);
-        fh = Math.Max(fh, MinHeight);
-        if (fw <= 0) fw = 1; // never let it be 0 so Path can render
-        if (fh <= 0) fh = 1;
-        return new Size(fw, fh);
-    }
-
-        /// <summary>
-        /// Complete edge update pass. Don't needed to be run manualy until some edge related modifications are done requiring full edge update.
-        /// </summary>
-        /// <param name="updateLabel">Update label data</param>
-        /// <param name="forceUpdate">Force geometry recalculation even if cached position is valid</param>
-        public virtual void UpdateEdge(bool updateLabel = true, bool forceUpdate = false)
-        {
-            if (!IsVisible && !IsHiddenEdgesUpdated) return;
-            
-            // OPTIMIZATION: Skip if geometry cache is still valid and not forcing update
-            if (!forceUpdate && IsGeometryCacheValid())
-            {
-                // Only update labels if needed
-                if (updateLabel && _updateLabelPosition)
-                {
-                    foreach (var l in EdgeLabelControls)
-                    {
-                        if (l.ShowLabel) l.UpdatePosition();
-                    }
-                }
-                return;
-            }
-            
-            //first show label to get DesiredSize - optimized: avoid LINQ allocation
-            foreach (var l in EdgeLabelControls)
-            {
-                if (l.ShowLabel) l.Show();
-                else l.Hide();
-            }
-            UpdateEdgeRendering(updateLabel);
-            
-            // Update cache after successful geometry update
-            UpdateGeometryCache();
-        }
-
-    /// <summary>
-    /// Internal. Update only edge points andge edge line visual
-    /// </summary>
-    /// <param name="updateLabel"></param>
-    internal virtual void UpdateEdgeRendering(bool updateLabel = true)
-    {
         if (!IsTemplateLoaded)
             ApplyTemplate();
-        
-        // Note: Edge pointer visibility is now handled in ApplyPendingEdgePointers() after they are positioned
-        // This prevents pointers from appearing at (0,0) before geometry is built
-        if (!ShowArrows)
+        var sourcePos = Source?.GetPosition() ?? new Point();
+        var targetPos = OverrideEndpoint ?? Target?.GetPosition() ?? new Point();
+        var selfLoopSize = IsSelfLooped
+            ? new Size(SelfLoopIndicatorRadius * 2 + SelfLoopIndicatorOffset.X,
+                SelfLoopIndicatorRadius * 2 + SelfLoopIndicatorOffset.Y)
+            : new Size();
+        var sourceSize = Source?.DesiredSize ?? new Size();
+        var targetSize = Target?.DesiredSize ?? new Size();
+        var sourceIsLeftOfTarget = sourcePos.X < targetPos.X;
+        var sourceIsAboveTarget = sourcePos.Y < targetPos.Y;
+        var bottom = sourceIsAboveTarget ? targetPos.Y + targetSize.Height : sourcePos.Y + sourceSize.Height;
+        var right = sourceIsLeftOfTarget ? targetPos.X + targetSize.Width : sourcePos.X + sourceSize.Width;
+        var top = sourceIsAboveTarget ? sourcePos.Y : targetPos.Y;
+        var left = sourceIsLeftOfTarget ? sourcePos.X : targetPos.X;
+        if (EdgePointerForSource is Control pointerForSource) pointerForSource.Measure(availableSize);
+        if (EdgePointerForTarget is Control pointerForTarget) pointerForTarget.Measure(availableSize);
+        if (SelfLoopIndicator is { } selfLoopIndicator) selfLoopIndicator.Measure(availableSize);
+        return Sum(new Size(right - left, bottom - top), selfLoopSize);
+    }
+
+    protected override Size ArrangeOverride(Size finalSize)
+    {
+        //first show label to get DesiredSize - optimized: avoid LINQ allocation
+        foreach (var l in EdgeLabelControls)
         {
-            EdgePointerForSource?.Hide();
-            EdgePointerForTarget?.Hide();
+            switch (l.ShowLabel)
+            {
+                case true:
+                    l.UpdatePosition();
+                    l.Show();
+                    break;
+                default:
+                    l.Hide();
+                    break;
+            }
         }
 
         //use final vertex coordinates (layout results) instead of current to avoid drawing collapsed edges before animation/position commit
-        PrepareEdgePath(false, null, updateLabel);
-        if (LinePathObject == null) return;
+        LineGeometry = PrepareEdgePath();
+        if (LinePathObject == null) return base.ArrangeOverride(finalSize);
         LinePathObject.Data = LineGeometry;
         LinePathObject.StrokeDashArray = StrokeDashArray;
-        // OPTIMIZATION: Skip InvalidateMeasure during batch updates
-        if (!SuppressLayoutUpdates)
-            InvalidateMeasure(); // ensure layout re-queries our desired size after geometry change
+        return base.ArrangeOverride(finalSize);
     }
 
     internal int ParallelEdgeOffset;
@@ -893,6 +738,16 @@ public abstract class EdgeControlBase : TemplatedControl, IGraphControl, IDispos
     /// </summary>
     protected internal Point? TargetConnectionPoint;
 
+    protected Point? OverrideEndpoint
+    {
+        get;
+        set
+        {
+            field = value;
+            InvalidateMeasure();
+        }
+    }
+
     // Added for testing & diagnostics: public read-only accessors for connection points
     public Point? SourceEndpoint => SourceConnectionPoint;
     public Point? TargetEndpoint => TargetConnectionPoint;
@@ -917,96 +772,37 @@ public abstract class EdgeControlBase : TemplatedControl, IGraphControl, IDispos
             //return if we don't need to show edge loops
             if (!ShowSelfLoopIndicator) return;
 
-                //pregenerate built-in indicator geometry if template PART is absent
-                if (!HasSelfLoopedEdgeTemplate)
-                    LineGeometry = new EllipseGeometry();
-                else SelfLoopIndicator!.SetCurrentValue(IsVisibleProperty, true);
-            }
-            else
-            {
-                if (HasSelfLoopedEdgeTemplate)
-                    SelfLoopIndicator!.SetCurrentValue(IsVisibleProperty, false);
-            }
+            //pregenerate built-in indicator geometry if template PART is absent
+            if (!HasSelfLoopedEdgeTemplate)
+                LineGeometry = new EllipseGeometry();
+            else SelfLoopIndicator?.IsVisible = true;
         }
-
-        /// <summary>
-        /// Builds a <see cref="StreamGeometry"/> from normalized points. <see cref="StreamGeometry"/> is more performant than <see cref="PathGeometry"/>
-        /// as recommended by Avalonia documentation.
-        /// </summary>
-        /// <param name="points">A span of points, in control coordinates, that define the polyline of the edge. The span may be modified in place (e.g. reversed).</param>
-        /// <param name="reverse">If <c>true</c>, reverses the order of <paramref name="points"/> before building the geometry.</param>
-        /// <returns>A <see cref="StreamGeometry"/> representing a polyline passing through the specified <paramref name="points"/> in the control's local space.</returns>
-        private StreamGeometry BuildNormalizedStreamGeometry(Span<Point> points, bool reverse)
+        else
         {
-            // Handle edge case gracefully: if fewer than 2 points, return an empty geometry
-            // This can occur temporarily during rapid vertex dragging or when edge endpoints
-            // are removed due to arrow pointer adjustments on very short edges.
-            if (points.Length < 2)
-                return new StreamGeometry();
-
-            // Calculate padding needed for edge pointers to prevent clipping
-            var pointerPadding = GetEdgePointerPadding();
-
-            // Collect bounds
-            var minX = double.MaxValue;
-            var minY = double.MaxValue;
-            var maxX = double.MinValue;
-            var maxY = double.MinValue;
-            foreach (var point in points)
-            {
-                if (point.X < minX) minX = point.X;
-                if (point.Y < minY) minY = point.Y;
-                if (point.X > maxX) maxX = point.X;
-                if (point.Y > maxY) maxY = point.Y;
-            }
-
-            // Expand bounds to include edge pointer padding
-            minX -= pointerPadding;
-            minY -= pointerPadding;
-            maxX += pointerPadding;
-            maxY += pointerPadding;
-
-            // Reposition the EdgeControl itself
-            SetPosition(minX, minY);
-
-            // Store offset for edge pointer positioning (set before edge pointer updates
-            // will be pre-computed, but this ensures consistency)
-            _localOffset = new Point(minX, minY);
-
-            // Shift points into local space
-            for (var i = 0; i < points.Length; i++)
-                points[i] = new Point(points[i].X - minX, points[i].Y - minY);
-
-            Width = Math.Max(1, maxX - minX);
-            Height = Math.Max(1, maxY - minY);
-
-            // Build StreamGeometry - more performant than PathGeometry
-            if (reverse) points.Reverse();
-
-            var geometry = new StreamGeometry();
-            using (var ctx = geometry.Open())
-            {
-                ctx.BeginFigure(points[0], false);
-                for (var i = 1; i < points.Length; i++)
-                    ctx.LineTo(points[i]);
-                ctx.EndFigure(false);
-            }
-
-            return geometry;
+            if (HasSelfLoopedEdgeTemplate)
+                SelfLoopIndicator?.IsVisible = false;
         }
+    }
 
-    private PathFigure BuildNormalizedLineFigure(Span<Point> points, bool reverse)
+    /// <summary>
+    /// Builds a <see cref="StreamGeometry"/> from normalized points. <see cref="StreamGeometry"/> is more performant than <see cref="PathGeometry"/>
+    /// as recommended by Avalonia documentation.
+    /// </summary>
+    /// <param name="points">A span of points, in control coordinates, that define the polyline of the edge. The span may be modified in place (e.g. reversed).</param>
+    /// <param name="reverse">If <c>true</c>, reverses the order of <paramref name="points"/> before building the geometry.</param>
+    /// <returns>A <see cref="StreamGeometry"/> representing a polyline passing through the specified <paramref name="points"/> in the control's local space.</returns>
+    private StreamGeometry BuildNormalizedStreamGeometry(Span<Point> points, bool reverse)
     {
-        // Handle edge case gracefully: if fewer than 2 points, return an empty figure
+        // Handle edge case gracefully: if fewer than 2 points, return an empty geometry
         // This can occur temporarily during rapid vertex dragging or when edge endpoints
         // are removed due to arrow pointer adjustments on very short edges.
         if (points.Length < 2)
-            return new PathFigure { IsClosed = false };
+            return new StreamGeometry();
 
         // Calculate padding needed for edge pointers to prevent clipping
         var pointerPadding = GetEdgePointerPadding();
 
-        // Collect all points we will actually use
+        // Collect bounds
         var minX = double.MaxValue;
         var minY = double.MaxValue;
         var maxX = double.MinValue;
@@ -1028,7 +824,8 @@ public abstract class EdgeControlBase : TemplatedControl, IGraphControl, IDispos
         // Reposition the EdgeControl itself
         SetPosition(minX, minY);
 
-        // Store offset for edge pointer positioning
+        // Store offset for edge pointer positioning (set before edge pointer updates
+        // will be pre-computed, but this ensures consistency)
         _localOffset = new Point(minX, minY);
 
         // Shift points into local space
@@ -1038,261 +835,50 @@ public abstract class EdgeControlBase : TemplatedControl, IGraphControl, IDispos
         Width = Math.Max(1, maxX - minX);
         Height = Math.Max(1, maxY - minY);
 
-            // Build figure
-            if (reverse) points.Reverse();
-            var start = points[0];
+        // Build StreamGeometry - more performant than PathGeometry
+        if (reverse) points.Reverse();
 
-            // Create new PolyLineSegment with points
-            // Note: We create new instances because Avalonia collections don't support Clear()
-            // when change tracking is enabled
-            var segPoints = new Points();
-            for (var i = 1; i < points.Length; i++)
-                segPoints.Add(points[i]);
+        var geometry = new StreamGeometry();
+        using var ctx = geometry.Open();
+        ctx.BeginFigure(points[0], false);
+        for (var i = 1; i < points.Length; i++)
+            ctx.LineTo(points[i]);
+        ctx.EndFigure(false);
 
-        return new PathFigure
-        {
-            StartPoint = start,
-            Segments = [new PolyLineSegment { Points = segPoints }],
-            IsClosed = false
-        };
+        return geometry;
     }
-
 
     /// <summary>
     /// Process self looped edge positioning
     /// </summary>
     /// <param name="sourcePos">Left-top vertex position</param>
-    protected virtual void PrepareSelfLoopedEdge(Point sourcePos)
+    protected virtual EllipseGeometry? PrepareSelfLoopedEdge(Point sourcePos)
     {
         if (!ShowSelfLoopIndicator)
-            return;
+            return null;
 
         var hasNoTemplate = !HasSelfLoopedEdgeTemplate;
-        var pt =
-            new Point(
-                sourcePos.X + SelfLoopIndicatorOffset.X -
-                (hasNoTemplate ? SelfLoopIndicatorRadius : SelfLoopIndicator!.DesiredSize.Width),
-                sourcePos.Y + SelfLoopIndicatorOffset.Y -
-                (hasNoTemplate ? SelfLoopIndicatorRadius : SelfLoopIndicator!.DesiredSize.Height));
+        var pt = new Point(
+            sourcePos.X + SelfLoopIndicatorOffset.X -
+            (hasNoTemplate ? SelfLoopIndicatorRadius : SelfLoopIndicator!.DesiredSize.Width),
+            sourcePos.Y + SelfLoopIndicatorOffset.Y -
+            (hasNoTemplate ? SelfLoopIndicatorRadius : SelfLoopIndicator!.DesiredSize.Height));
 
         //if we has no self looped edge template defined we'll use default built-in indicator
         if (hasNoTemplate)
         {
-            // Generate default ellipse geometry centered relative to calculated top-left point
-            if (LineGeometry is not EllipseGeometry ellipse)
+            var ellipse = new EllipseGeometry
             {
-                ellipse = new EllipseGeometry();
-                LineGeometry = ellipse;
-            }
-
-            // Position ellipse so that (pt) represents its top-left corner
-            ellipse.Center = new Point(pt.X + SelfLoopIndicatorRadius, pt.Y + SelfLoopIndicatorRadius);
-            ellipse.RadiusX = SelfLoopIndicatorRadius;
-            ellipse.RadiusY = SelfLoopIndicatorRadius;
-        }
-        else _selfLoopedEdgeLastKnownRect = new Rect(pt, SelfLoopIndicator!.DesiredSize);
-    }
-
-    public virtual void PrepareEdgePathFromMousePointer(PointerEventArgs pointerEventArgs,
-        bool useCurrentCoords = false)
-    {
-        if (RootArea is null) return;
-        if (!TryGetSourcePoints(useCurrentCoords, out var sourceRect)) return;
-
-
-        //get the size of the source
-        var sourceSize = sourceRect.Size;
-
-        //get the position center of the source
-        var sourcePos = sourceRect.Center;
-
-        //get the size of the target
-        var targetSize = new Size(1, 1);
-
-        //get the position center of the target
-        var targetPos = pointerEventArgs.GetPosition(RootArea);
-
-        if (Edge is not IRoutingInfo routedEdge)
-            throw new GX_InvalidDataException("Edge must implement IRoutingInfo interface");
-
-        //get the route informations
-        var routeInformation = routedEdge.RoutingPoints;
-
-        // Get the TopLeft position of the Source Vertex.
-        var sourcePos1 = new Point(useCurrentCoords ? GraphAreaBase.GetX(Source) : GraphAreaBase.GetFinalX(Source),
-            useCurrentCoords ? GraphAreaBase.GetY(Source) : GraphAreaBase.GetFinalY(Source));
-        // Get the TopLeft position of the Target Vertex.
-
-        var hasEpSource = EdgePointerForSource != null;
-        var hasEpTarget = EdgePointerForTarget != null;
-
-        //if self looped edge
-        if (IsSelfLooped)
-        {
-            PrepareSelfLoopedEdge(sourcePos1);
-            return;
+                // Position ellipse so that (pt) represents its top-left corner
+                Center = new Point(pt.X + SelfLoopIndicatorRadius, pt.Y + SelfLoopIndicatorRadius),
+                RadiusX = SelfLoopIndicatorRadius,
+                RadiusY = SelfLoopIndicatorRadius
+            };
+            return ellipse;
         }
 
-        //check if we have some edge route data
-        var hasRouteInfo = routeInformation is { Length: > 1 };
-
-        var gEdge = Edge as IGraphXCommonEdge;
-        Point p1;
-
-        //calculate edge source (p1) and target (p2) endpoints based on different settings
-        if (gEdge?.SourceConnectionPointId != null)
-        {
-            var sourceCp = Source.GetConnectionPointById(gEdge.SourceConnectionPointId.Value, true) ??
-                           throw new GX_ObjectNotFoundException(string.Format(
-                               "Can't find source vertex VCP by edge source connection point Id({1}) : {0}", Source,
-                               gEdge.SourceConnectionPointId));
-            if (sourceCp.Shape == VertexShape.None) p1 = sourceCp.RectangularSize.Center();
-            else
-            {
-                var targetCpPos = hasRouteInfo ? routeInformation![1].ToAvalonia() : targetPos;
-                p1 = GeometryHelper.GetEdgeEndpoint(sourceCp.RectangularSize.Center(), sourceCp.RectangularSize,
-                    targetCpPos, sourceCp.Shape);
-            }
-        }
-        else
-            p1 = GeometryHelper.GetEdgeEndpoint(sourcePos, new Rect(sourcePos1, sourceSize),
-                hasRouteInfo ? routeInformation![1].ToAvalonia() : targetPos, Source.VertexShape);
-
-        var p2 = GeometryHelper.GetEdgeEndpoint(
-            targetPos, new Rect(targetPos, targetSize),
-            hasRouteInfo ? routeInformation![^2].ToAvalonia() : sourcePos,
-            VertexShape.None);
-
-        SourceConnectionPoint = p1;
-        TargetConnectionPoint = p2;
-
-        LineGeometry = new PathGeometry();
-        PathFigure lineFigure;
-
-        //if we have route and route consist of 2 or more points
-        if (hasRouteInfo && routeInformation != null)
-        {
-            //replace start and end points with accurate ones while preserving intermediate route points
-            const int StackallocThreshold = 256;
-            int pointsLength = routeInformation.Length < 2 ? 2 : routeInformation.Length;
-            Span<Point> routePoints = pointsLength <= StackallocThreshold
-                ? stackalloc Point[pointsLength]
-                : new Point[pointsLength];
-            for (var i = 0; i < routeInformation.Length; i++)
-            {
-                routePoints[i] = routeInformation[i].ToAvalonia();
-            }
-            routePoints[0] = p1;
-            routePoints[^1] = p2;
-
-            if (routedEdge.RoutingPoints != null)
-                routedEdge.RoutingPoints = routePoints.ToArray().ToGraphX();
-
-            if (RootArea.EdgeCurvingEnabled)
-            {
-                var oPolyLineSegment =
-                    GeometryHelper.GetCurveThroughPoints([.. routePoints], 0.5, RootArea.EdgeCurvingTolerance);
-
-                // Store edge pointer data BEFORE removing points
-                if (hasEpTarget)
-                    StoreTargetPointerData(oPolyLineSegment[^1], oPolyLineSegment[^2]);
-                if (hasEpSource)
-                    StoreSourcePointerData(oPolyLineSegment[0], oPolyLineSegment[1]);
-
-                // Build geometry (this sets _localOffset)
-                lineFigure = BuildNormalizedLineFigure(CollectionsMarshal.AsSpan(oPolyLineSegment),
-                    gEdge?.ReversePath ?? false);
-
-                // Apply edge pointers after geometry is built
-                ApplyPendingEdgePointers();
-            }
-            else
-            {
-                // Store edge pointer data
-                Point sourceOffset = default, targetOffset = default;
-                if (hasEpSource)
-                    sourceOffset = StoreSourcePointerData(routePoints[0], routePoints[1]);
-                if (hasEpTarget)
-                    targetOffset = StoreTargetPointerData(p2, routePoints[^2]);
-
-                // Adjust endpoints for line drawing
-                if (hasEpSource)
-                    routePoints[0] = routePoints[0].Subtract(sourceOffset);
-                if (hasEpTarget)
-                    routePoints[^1] = routePoints[^1].Subtract(targetOffset);
-
-                // Build geometry (this sets _localOffset)
-                lineFigure = BuildNormalizedLineFigure(routePoints, gEdge?.ReversePath ?? false);
-
-                // Apply edge pointers after geometry is built
-                ApplyPendingEdgePointers();
-            }
-        }
-        else // no route defined
-        {
-            var remainHidden = false;
-            //check for hide only if prop is not 0
-            if (HideEdgePointerByEdgeLength != 0d)
-            {
-                if (MathHelper.GetDistanceBetweenPoints(p1.ToGraphX(), p2.ToGraphX()) <=
-                    HideEdgePointerByEdgeLength)
-                {
-                    EdgePointerForSource?.Hide();
-                    EdgePointerForTarget?.Hide();
-                    remainHidden = true;
-                }
-                else if (ShowArrows)
-                {
-                    // Only show if ShowArrows is true
-                    EdgePointerForSource?.Show();
-                    EdgePointerForTarget?.Show();
-                }
-            }
-
-            // Store edge pointer data
-            Point sourceOffset = default, targetOffset = default;
-            if (hasEpSource)
-                sourceOffset = StoreSourcePointerData(p1, p2, remainHidden);
-            if (hasEpTarget)
-                targetOffset = StoreTargetPointerData(p2, p1, remainHidden);
-
-            // Adjust endpoints for line drawing
-            p1 = p1.Subtract(sourceOffset);
-            p2 = p2.Subtract(targetOffset);
-
-            // Build geometry (this sets _localOffset)
-            lineFigure = BuildNormalizedLineFigure(TransformFinalPath([p1, p2]), gEdge?.ReversePath ?? false);
-
-            // Apply edge pointers after geometry is built
-            ApplyPendingEdgePointers();
-        }
-
-            ((PathGeometry)LineGeometry).Figures!.Add(lineFigure);
-            if (_updateLabelPosition)
-            {
-                // Optimized: avoid LINQ allocation by using foreach
-                foreach (var l in EdgeLabelControls)
-                {
-                    if (l.ShowLabel)
-                        l.UpdatePosition();
-                }
-            }
-
-        if (ShowArrows)
-        {
-            EdgePointerForSource?.Show();
-            EdgePointerForTarget?.Show();
-        }
-        else
-        {
-            EdgePointerForSource?.Hide();
-            EdgePointerForTarget?.Hide();
-        }
-
-        if (LinePathObject == null) return;
-        LinePathObject.Data = LineGeometry;
-        LinePathObject.StrokeDashArray = StrokeDashArray;
-        InvalidateMeasure();
+        _selfLoopedEdgeLastKnownRect = new Rect(pt, SelfLoopIndicator!.DesiredSize);
+        return null;
     }
 
 
@@ -1301,14 +887,13 @@ public abstract class EdgeControlBase : TemplatedControl, IGraphControl, IDispos
     /// </summary>
     /// <param name="useCurrentCoords">Use current vertices coordinates or final coorfinates (for.ex if move animation is active final coords will be its destination)</param>
     /// <param name="externalRoutingPoints">Provided custom routing points will be used instead of stored ones.</param>
-    /// <param name="updateLabel">Should edge label be updated in this pass</param>
-    public virtual void PrepareEdgePath(bool useCurrentCoords = false,
-        Measure.Point[]? externalRoutingPoints = null, bool updateLabel = true)
+    public virtual Geometry? PrepareEdgePath(bool useCurrentCoords = false,
+        Measure.Point[]? externalRoutingPoints = null)
     {
         if (!TryGetSourcePoints(useCurrentCoords, out var sourceRect))
-            return;
+            return null;
         if (!TryGetTargetPoints(useCurrentCoords, out var targetRect))
-            return;
+            return null;
 
         if (Edge is not IRoutingInfo routedEdge)
             throw new GX_InvalidDataException("Edge must implement IRoutingInfo interface");
@@ -1318,10 +903,10 @@ public abstract class EdgeControlBase : TemplatedControl, IGraphControl, IDispos
 
 
         //if self looped edge
+        UpdateSelfLoopedEdgeData();
         if (IsSelfLooped)
         {
-            PrepareSelfLoopedEdge(sourceRect.TopLeft);
-            return;
+            return PrepareSelfLoopedEdge(sourceRect.TopLeft);
         }
 
         //check if we have some edge route data
@@ -1335,152 +920,53 @@ public abstract class EdgeControlBase : TemplatedControl, IGraphControl, IDispos
 
         var p1 = SourceConnectionPoint.Value;
         var p2 = TargetConnectionPoint.Value;
-
-            // Use StreamGeometry for better performance (as recommended by Avalonia docs)
-            LineGeometry = CreateStreamGeometry(externalRoutingPoints, hasRouteInfo, routeInformation, p1, p2, routedEdge,
-                gEdge);
-
-            if (_updateLabelPosition && updateLabel)
-            {
-                // Optimized: avoid LINQ allocation by using foreach
-                foreach (var l in EdgeLabelControls)
-                {
-                    if (l.ShowLabel)
-                        l.UpdatePosition();
-                }
-            }
-            // OPTIMIZATION: Skip InvalidateMeasure during batch updates
-            if (!SuppressLayoutUpdates)
-                InvalidateMeasure();
+        foreach (var l in EdgeLabelControls)
+        {
+            if (l.ShowLabel)
+                l.UpdatePosition();
         }
 
-        /// <summary>
-        /// Creates a <see cref="StreamGeometry"/> for the edge path as an optimized alternative to
-        /// <c>CreateFigure</c>. Using <see cref="StreamGeometry"/> is more performant than
-        /// <see cref="PathGeometry"/> for dynamically generated edge visuals.
-        /// </summary>
-        /// <param name="externalRoutingPoints">Optional external routing points provided by the routing algorithm, if any.</param>
-        /// <param name="hasRouteInfo">Indicates whether valid route information is available in <paramref name="routeInformation"/>.</param>
-        /// <param name="routeInformation">The route points describing the edge path when routing is enabled.</param>
-        /// <param name="p1">The initial source connection point of the edge before pointer adjustments.</param>
-        /// <param name="p2">The initial target connection point of the edge before pointer adjustments.</param>
-        /// <param name="routedEdge">The routing metadata associated with the edge.</param>
-        /// <param name="gEdge">The graph edge instance used to determine additional edge settings such as path reversal.</param>
-        /// <returns>
-        /// A normalized <see cref="StreamGeometry"/> instance representing the final edge path, ready to be
-        /// rendered by the control.
-        /// </returns>
-        private Geometry CreateStreamGeometry(Measure.Point[]? externalRoutingPoints, bool hasRouteInfo,
-            Measure.Point[]? routeInformation, Point p1,
-            Point p2, IRoutingInfo routedEdge, IGraphXCommonEdge? gEdge)
+        // Use StreamGeometry for better performance (as recommended by Avalonia docs)
+        return CreateStreamGeometry(externalRoutingPoints, hasRouteInfo, routeInformation, p1, p2, routedEdge,
+            gEdge);
+    }
+
+    /// <summary>
+    /// Creates a <see cref="StreamGeometry"/> for the edge path as an optimized alternative to
+    /// <c>CreateFigure</c>. Using <see cref="StreamGeometry"/> is more performant than
+    /// <see cref="PathGeometry"/> for dynamically generated edge visuals.
+    /// </summary>
+    /// <param name="externalRoutingPoints">Optional external routing points provided by the routing algorithm, if any.</param>
+    /// <param name="hasRouteInfo">Indicates whether valid route information is available in <paramref name="routeInformation"/>.</param>
+    /// <param name="routeInformation">The route points describing the edge path when routing is enabled.</param>
+    /// <param name="p1">The initial source connection point of the edge before pointer adjustments.</param>
+    /// <param name="p2">The initial target connection point of the edge before pointer adjustments.</param>
+    /// <param name="routedEdge">The routing metadata associated with the edge.</param>
+    /// <param name="gEdge">The graph edge instance used to determine additional edge settings such as path reversal.</param>
+    /// <returns>
+    /// A normalized <see cref="StreamGeometry"/> instance representing the final edge path, ready to be
+    /// rendered by the control.
+    /// </returns>
+    private StreamGeometry CreateStreamGeometry(Measure.Point[]? externalRoutingPoints, bool hasRouteInfo,
+        Measure.Point[]? routeInformation, Point p1,
+        Point p2, IRoutingInfo routedEdge, IGraphXCommonEdge? gEdge)
+    {
+        var hasEpSource = EdgePointerForSource != null;
+        var hasEpTarget = EdgePointerForTarget != null;
+
+        //if we have route and route consist of 2 or more points
+        if (RootArea != null && hasRouteInfo && routeInformation != null)
         {
-            var hasEpSource = EdgePointerForSource != null;
-            var hasEpTarget = EdgePointerForTarget != null;
-
-            //if we have route and route consist of 2 or more points
-            if (RootArea != null && hasRouteInfo && routeInformation != null)
+            //replace start and end points with accurate ones
+            const int stackallocThreshold = 256;
+            int pointsLength = routeInformation.Length < 2 ? 2 : routeInformation.Length;
+            Span<Point> routePoints = pointsLength <= stackallocThreshold
+                ? stackalloc Point[pointsLength]
+                : new Point[pointsLength];
+            for (var i = 0; i < routeInformation.Length; i++)
             {
-                //replace start and end points with accurate ones
-                const int StackallocThreshold = 256;
-                int pointsLength = routeInformation.Length < 2 ? 2 : routeInformation.Length;
-                Span<Point> routePoints = pointsLength <= StackallocThreshold
-                    ? stackalloc Point[pointsLength]
-                    : new Point[pointsLength];
-                for (var i = 0; i < routeInformation.Length; i++)
-                {
-                    routePoints[i] = routeInformation[i].ToAvalonia();
-                }
-
-                routePoints[0] = p1;
-                routePoints[^1] = p2;
-                if (externalRoutingPoints == null && routedEdge.RoutingPoints != null)
-                    routedEdge.RoutingPoints = routePoints.ToArray().ToGraphX();
-
-                if (!RootArea.EdgeCurvingEnabled)
-                {
-                    // Store edge pointer data
-                    Point sourceOffset = default, targetOffset = default;
-                    if (hasEpSource)
-                        sourceOffset = StoreSourcePointerData(routePoints[0], routePoints[1]);
-                    if (hasEpTarget)
-                        targetOffset = StoreTargetPointerData(p2, routePoints[^2]);
-
-                    // Adjust endpoints
-                    if (hasEpSource)
-                        routePoints[0] = routePoints[0].Subtract(sourceOffset);
-                    if (hasEpTarget)
-                        routePoints[^1] = routePoints[^1].Subtract(targetOffset);
-
-                    var result = BuildNormalizedStreamGeometry(routePoints, gEdge?.ReversePath ?? false);
-                    ApplyPendingEdgePointers();
-                    return result;
-                }
-
-                var oPolyLineSegment =
-                    GeometryHelper.GetCurveThroughPoints(routePoints, 0.5, RootArea.EdgeCurvingTolerance);
-
-                // Store edge pointer data
-                if (hasEpTarget)
-                    StoreTargetPointerData(oPolyLineSegment[^1], oPolyLineSegment[^2]);
-                if (hasEpSource)
-                    StoreSourcePointerData(oPolyLineSegment[0], oPolyLineSegment[1]);
-
-                var curvedResult = BuildNormalizedStreamGeometry(CollectionsMarshal.AsSpan(oPolyLineSegment),
-                    gEdge?.ReversePath ?? false);
-                ApplyPendingEdgePointers();
-                return curvedResult;
+                routePoints[i] = routeInformation[i].ToAvalonia();
             }
-
-            // no route defined
-            var allowUpdateEpDataToUnsuppress = true;
-            //check for hide only if prop is not 0
-            if (HideEdgePointerByEdgeLength != 0d)
-            {
-                if (MathHelper.GetDistanceBetweenPoints(p1.ToGraphX(), p2.ToGraphX()) <=
-                    HideEdgePointerByEdgeLength)
-                {
-                    EdgePointerForSource?.Suppress();
-                    EdgePointerForTarget?.Suppress();
-                    allowUpdateEpDataToUnsuppress = false;
-                }
-                else
-                {
-                    EdgePointerForSource?.UnSuppress();
-                    EdgePointerForTarget?.UnSuppress();
-                }
-            }
-
-            // Store edge pointer data
-            Point srcOffset = default, tgtOffset = default;
-            if (hasEpSource)
-                srcOffset = StoreSourcePointerData(p1, p2, allowUpdateEpDataToUnsuppress);
-            if (hasEpTarget)
-                tgtOffset = StoreTargetPointerData(p2, p1, allowUpdateEpDataToUnsuppress);
-
-            // Adjust endpoints
-            p1 = p1.Subtract(srcOffset);
-            p2 = p2.Subtract(tgtOffset);
-
-            var unroutedResult = BuildNormalizedStreamGeometry(TransformFinalPath([p1, p2]), gEdge?.ReversePath ?? false);
-            ApplyPendingEdgePointers();
-            return unroutedResult;
-        }
-
-        private PathFigure CreateFigure(Measure.Point[]? externalRoutingPoints, bool hasRouteInfo,
-            Measure.Point[]? routeInformation, Point p1,
-            Point p2, IRoutingInfo routedEdge, IGraphXCommonEdge? gEdge)
-        {
-            var hasEpSource = EdgePointerForSource != null;
-            var hasEpTarget = EdgePointerForTarget != null;
-            //if we have route and route consist of 2 or more points
-            if (RootArea != null && hasRouteInfo && routeInformation != null)
-            {
-                //replace start and end points with accurate ones
-                Span<Point> routePoints = stackalloc Point[routeInformation.Length < 2 ? 2 : routeInformation.Length];
-                for (var i = 0; i < routeInformation.Length; i++)
-                {
-                    routePoints[i] = routeInformation[i].ToAvalonia();
-                }
 
             routePoints[0] = p1;
             routePoints[^1] = p2;
@@ -1502,7 +988,7 @@ public abstract class EdgeControlBase : TemplatedControl, IGraphControl, IDispos
                 if (hasEpTarget)
                     routePoints[^1] = routePoints[^1].Subtract(targetOffset);
 
-                var result = BuildNormalizedLineFigure(routePoints, gEdge?.ReversePath ?? false);
+                var result = BuildNormalizedStreamGeometry(routePoints, gEdge?.ReversePath ?? false);
                 ApplyPendingEdgePointers();
                 return result;
             }
@@ -1516,7 +1002,7 @@ public abstract class EdgeControlBase : TemplatedControl, IGraphControl, IDispos
             if (hasEpSource)
                 StoreSourcePointerData(oPolyLineSegment[0], oPolyLineSegment[1]);
 
-            var curvedResult = BuildNormalizedLineFigure(CollectionsMarshal.AsSpan(oPolyLineSegment),
+            var curvedResult = BuildNormalizedStreamGeometry(CollectionsMarshal.AsSpan(oPolyLineSegment),
                 gEdge?.ReversePath ?? false);
             ApplyPendingEdgePointers();
             return curvedResult;
@@ -1552,7 +1038,7 @@ public abstract class EdgeControlBase : TemplatedControl, IGraphControl, IDispos
         p1 = p1.Subtract(srcOffset);
         p2 = p2.Subtract(tgtOffset);
 
-        var unroutedResult = BuildNormalizedLineFigure(TransformFinalPath([p1, p2]), gEdge?.ReversePath ?? false);
+        var unroutedResult = BuildNormalizedStreamGeometry(TransformFinalPath([p1, p2]), gEdge?.ReversePath ?? false);
         ApplyPendingEdgePointers();
         return unroutedResult;
     }
@@ -1657,10 +1143,10 @@ public abstract class EdgeControlBase : TemplatedControl, IGraphControl, IDispos
                 //calculate source and target edge attach points
                 if (NeedParallelCalc(hasRouteInfo))
                 {
-                    var origSC = sourceCenter;
-                    var origTC = targetCenter;
-                    sourceCenter = GetParallelOffset(origSC, origTC, ParallelEdgeOffset);
-                    targetCenter = GetParallelOffset(origTC, origSC, -ParallelEdgeOffset);
+                    var origSc = sourceCenter;
+                    var origTc = targetCenter;
+                    sourceCenter = GetParallelOffset(origSc, origTc, ParallelEdgeOffset);
+                    targetCenter = GetParallelOffset(origTc, origSc, -ParallelEdgeOffset);
                 }
 
                 SourceConnectionPoint = GeometryHelper.GetEdgeEndpoint(sourceCenter,
@@ -1719,10 +1205,10 @@ public abstract class EdgeControlBase : TemplatedControl, IGraphControl, IDispos
         return args.NameScope.Find(name);
     }
 
-        public virtual IList<Rect> GetLabelSizes()
-        {
-            return [.. EdgeLabelControls.Select(l => l.GetSize())];
-        }
+    public virtual IList<Rect> GetLabelSizes()
+    {
+        return [.. EdgeLabelControls.Select(l => l.GetSize())];
+    }
 
     // Internal test accessor
     internal Geometry? GetLineGeometry() => LineGeometry;

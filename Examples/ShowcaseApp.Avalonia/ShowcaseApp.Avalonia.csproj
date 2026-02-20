@@ -6,7 +6,7 @@
         <BuiltInComInteropSupport>true</BuiltInComInteropSupport>
         <ApplicationManifest>app.manifest</ApplicationManifest>
         <AvaloniaUseCompiledBindingsByDefault>true</AvaloniaUseCompiledBindingsByDefault>
-        <PublishAot>true</PublishAot>
+<!--        <PublishAot>true</PublishAot>-->
         <IsPackable>false</IsPackable>
     </PropertyGroup>
 
