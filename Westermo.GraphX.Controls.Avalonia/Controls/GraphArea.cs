@@ -1287,8 +1287,9 @@ public class GraphArea<TVertex, TEdge, TGraph> : GraphAreaBase, IDisposable
     /// <param name="isEnabled">Boolean value</param>
     public void ShowAllEdgesLabels(bool isEnabled = true)
     {
+        // Use SetCurrentValue to avoid breaking any existing bindings on the ShowLabel styled property.
         foreach (var label in _edgesList.Values.SelectMany(item => item.EdgeLabelControls))
-            label.ShowLabel = isEnabled;
+            label.SetCurrentValue(EdgeLabelControl.ShowLabelProperty, isEnabled);
 
         InvalidateVisual();
     }
