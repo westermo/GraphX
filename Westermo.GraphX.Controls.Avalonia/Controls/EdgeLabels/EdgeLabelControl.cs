@@ -28,8 +28,8 @@ public abstract class EdgeLabelControl : ContentControl, IEdgeLabelControl
     {
         RenderTransformOrigin = new RelativePoint(.5, .5, RelativeUnit.Relative);
         LayoutUpdated += EdgeLabelControl_LayoutUpdated;
-        HorizontalAlignment = global::Avalonia.Layout.HorizontalAlignment.Left;
-        VerticalAlignment = global::Avalonia.Layout.VerticalAlignment.Top;
+        HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Left;
+        VerticalAlignment = Avalonia.Layout.VerticalAlignment.Top;
         SizeChanged += EdgeLabelControl_SizeChanged;
         Loaded += EdgeLabelControl_Loaded;
         UpdateLabelOnSizeChange = true;
@@ -59,7 +59,7 @@ public abstract class EdgeLabelControl : ContentControl, IEdgeLabelControl
 
     private static void ShowLabelChanged(EdgeLabelControl elc, AvaloniaPropertyChangedEventArgs e)
     {
-        elc.EdgeControl?.UpdateEdge();
+        elc.EdgeControl?.InvalidateArrange();
     }
 
     public static readonly StyledProperty<bool> AlignToEdgeProperty =

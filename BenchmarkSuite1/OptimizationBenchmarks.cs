@@ -28,7 +28,10 @@ public class OptimizationBenchmarks
 
     private class BenchEdge : EdgeBase<BenchVertex>
     {
-        public BenchEdge(BenchVertex source, BenchVertex target) : base(source, target) { }
+        public BenchEdge(BenchVertex source, BenchVertex target) : base(source, target)
+        {
+        }
+
         public override Measure.Point[] RoutingPoints { get; set; } = null!;
     }
 
@@ -37,7 +40,7 @@ public class OptimizationBenchmarks
 
     private BidirectionalGraph<BenchVertex, BenchEdge> _largeGraph = null!;
     private Dictionary<BenchVertex, Point> _largePositions = null!;
-    
+
     // Pre-loaded areas for isolated benchmarks
     private GraphArea<BenchVertex, BenchEdge, BidirectionalGraph<BenchVertex, BenchEdge>> _cachingTestArea = null!;
     private GraphArea<BenchVertex, BenchEdge, BidirectionalGraph<BenchVertex, BenchEdge>> _cullingTestArea = null!;
@@ -58,15 +61,11 @@ public class OptimizationBenchmarks
 
         _largeGraph = CreateGraph(1000, 2000);
         _largePositions = GenerateGridPositions([.. _largeGraph.Vertices], 100);
-        
+
         // Pre-create areas for caching tests - first update populates cache
         _cachingTestArea = CreateAndPreloadArea(_largeGraph, _largePositions);
-        foreach (var edge in _cachingTestArea.EdgesList.Values)
-        {
-            edge.EnableGeometryCaching = true;
-        }
         _cachingTestArea.UpdateAllEdges(true, skipHiddenEdges: false);
-        
+
         // Pre-create area for culling tests with culling enabled and viewport set
         _cullingTestArea = CreateAndPreloadArea(_largeGraph, _largePositions);
         _cullingTestArea.EnableViewportCulling = true;
@@ -77,7 +76,7 @@ public class OptimizationBenchmarks
     {
         var graph = new BidirectionalGraph<BenchVertex, BenchEdge>();
         var vertices = new List<BenchVertex>();
-        
+
         for (int i = 0; i < vertexCount; i++)
         {
             var v = new BenchVertex { ID = i, Name = $"V{i}" };
@@ -103,7 +102,7 @@ public class OptimizationBenchmarks
     {
         var positions = new Dictionary<BenchVertex, Point>();
         int cols = (int)Math.Ceiling(Math.Sqrt(vertices.Count));
-        
+
         for (int i = 0; i < vertices.Count; i++)
         {
             int row = i / cols;
@@ -124,14 +123,14 @@ public class OptimizationBenchmarks
             EnableParallelEdges = false,
             EdgeCurvingEnabled = false
         };
-        
+
         var area = new GraphArea<BenchVertex, BenchEdge, BidirectionalGraph<BenchVertex, BenchEdge>>
         {
             LogicCore = lc,
             Width = 10000,
             Height = 10000
         };
-        
+
         area.PreloadGraph(positions, showObjectsIfPosSpecified: true);
         return area;
     }
@@ -146,7 +145,7 @@ public class OptimizationBenchmarks
     {
         var area = CreateAndPreloadArea(_largeGraph, _largePositions);
         area.EnableViewportCulling = true;
-        
+
         // Simulate viewport that covers only 25% of the graph
         var viewport = new Rect(0, 0, 2500, 2500);
         area.UpdateViewport(viewport);
@@ -160,7 +159,7 @@ public class OptimizationBenchmarks
     {
         var area = CreateAndPreloadArea(_largeGraph, _largePositions);
         area.EnableViewportCulling = true;
-        
+
         // Simulate 10 pan operations
         for (int i = 0; i < 10; i++)
         {
@@ -217,7 +216,7 @@ public class OptimizationBenchmarks
     {
         var area = CreateAndPreloadArea(_largeGraph, _largePositions);
         var vertices = new List<BenchVertex>(_largeGraph.Vertices);
-        
+
         for (int i = 0; i < 100 && i < vertices.Count; i++)
         {
             if (area.VertexList.TryGetValue(vertices[i], out var vc))
@@ -236,7 +235,7 @@ public class OptimizationBenchmarks
     {
         var area = CreateAndPreloadArea(_largeGraph, _largePositions);
         var vertices = new List<BenchVertex>(_largeGraph.Vertices);
-        
+
         using (area.BeginDeferredPositionUpdate())
         {
             for (int i = 0; i < 100 && i < vertices.Count; i++)
@@ -259,30 +258,7 @@ public class OptimizationBenchmarks
     public void NoCaching_UpdateAllEdges()
     {
         var area = CreateAndPreloadArea(_largeGraph, _largePositions);
-        
-        // Ensure caching is disabled
-        foreach (var edge in area.EdgesList.Values)
-        {
-            edge.EnableGeometryCaching = false;
-        }
-        
-        area.UpdateAllEdges(true, skipHiddenEdges: false);
-    }
 
-    /// <summary>
-    /// Update all edges with geometry caching enabled - first update populates cache.
-    /// </summary>
-    [Benchmark]
-    public void WithCaching_UpdateAllEdges_FirstPass()
-    {
-        var area = CreateAndPreloadArea(_largeGraph, _largePositions);
-        
-        foreach (var edge in area.EdgesList.Values)
-        {
-            edge.EnableGeometryCaching = true;
-        }
-        
-        // First pass - populates cache
         area.UpdateAllEdges(true, skipHiddenEdges: false);
     }
 
@@ -378,7 +354,7 @@ public class OptimizationBenchmarks
 
         var random = new Random(42);
         int visible = 0;
-        
+
         for (int i = 0; i < 1_000_000; i++)
         {
             var zoom = random.NextDouble() * 2.0; // 0.0 to 2.0
@@ -398,31 +374,32 @@ public class OptimizationBenchmarks
     {
         var graph = CreateGraphWithParallelEdges(200, 1000);
         var positions = GenerateGridPositions([.. graph.Vertices], 100);
-        
+
         var lc = new GXLogicCore<BenchVertex, BenchEdge, BidirectionalGraph<BenchVertex, BenchEdge>>
         {
             Graph = graph,
             EnableParallelEdges = true
         };
-        
+
         var area = new GraphArea<BenchVertex, BenchEdge, BidirectionalGraph<BenchVertex, BenchEdge>>
         {
             LogicCore = lc,
             Width = 5000,
             Height = 5000
         };
-        
+
         area.PreloadGraph(positions, showObjectsIfPosSpecified: true);
-        
+
         // This internally uses pooled collections
         area.UpdateAllEdges(true);
     }
 
-    private static BidirectionalGraph<BenchVertex, BenchEdge> CreateGraphWithParallelEdges(int vertexCount, int edgeCount)
+    private static BidirectionalGraph<BenchVertex, BenchEdge> CreateGraphWithParallelEdges(int vertexCount,
+        int edgeCount)
     {
         var graph = new BidirectionalGraph<BenchVertex, BenchEdge>(allowParallelEdges: true);
         var vertices = new List<BenchVertex>();
-        
+
         for (int i = 0; i < vertexCount; i++)
         {
             var v = new BenchVertex { ID = i, Name = $"V{i}" };
@@ -431,7 +408,7 @@ public class OptimizationBenchmarks
         }
 
         var random = new Random(42);
-        
+
         // Create edges with some parallel edges (same source/target)
         for (int i = 0; i < edgeCount; i++)
         {

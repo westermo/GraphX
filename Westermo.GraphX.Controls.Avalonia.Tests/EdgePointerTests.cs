@@ -28,7 +28,8 @@ public class EdgePointerTests
         public override Measure.Point[]? RoutingPoints { get; set; } = null;
     }
 
-    private (GraphArea<Vertex, Edge, BidirectionalGraph<Vertex, Edge>> area, EdgeControl edge, VertexControl sourceVc, VertexControl targetVc) 
+    private (GraphArea<Vertex, Edge, BidirectionalGraph<Vertex, Edge>> area, EdgeControl edge, VertexControl sourceVc,
+        VertexControl targetVc)
         CreateTestGraph(Point sourcePos, Point targetPos, bool showArrows = true)
     {
         var g = new BidirectionalGraph<Vertex, Edge>();
@@ -78,6 +79,7 @@ public class EdgePointerTests
                 targetVc = vc;
                 vc.SetPosition(targetPos);
             }
+
             GraphAreaBase.SetFinalX(vc, vc.GetPosition().X);
             GraphAreaBase.SetFinalY(vc, vc.GetPosition().Y);
         }
@@ -106,7 +108,7 @@ public class EdgePointerTests
         // Explicitly update all edges to ensure edge pointers are positioned
         foreach (var edgeControl in area.EdgesList.Values)
         {
-            edgeControl.UpdateEdge(true, forceUpdate: true);
+            edgeControl.UpdateLayout();
         }
 
         // Final layout pass
@@ -122,7 +124,7 @@ public class EdgePointerTests
         var (area, edge, sourceVc, targetVc) = CreateTestGraph(new Point(100, 100), new Point(400, 100));
 
         var targetPointer = edge.GetEdgePointerForTarget();
-        
+
         await Assert.That(targetPointer).IsNotNull();
         await Assert.That(targetPointer!.IsVisible).IsTrue()
             .Because("Target edge pointer should be visible after edge creation");
@@ -134,7 +136,7 @@ public class EdgePointerTests
         var (area, edge, sourceVc, targetVc) = CreateTestGraph(new Point(100, 100), new Point(400, 100));
 
         var sourcePointer = edge.GetEdgePointerForSource();
-        
+
         await Assert.That(sourcePointer).IsNotNull();
         await Assert.That(sourcePointer!.IsVisible).IsTrue()
             .Because("Source edge pointer should be visible when ShowArrows is enabled");
@@ -151,16 +153,16 @@ public class EdgePointerTests
         await Assert.That(targetPointer).IsNotNull();
 
         var pointerPos = targetPointer!.GetPosition();
-        
+
         // The pointer position is in LOCAL coordinates (relative to EdgeControl).
         // For a horizontal edge from (100,100) to (400,100), the edge is positioned
         // with its top-left at some minimum point. The target pointer should be
         // positioned at the right side of the edge geometry.
-        
+
         // First verify the pointer has a valid non-zero position
         await Assert.That(pointerPos.X).IsGreaterThan(0)
             .Because($"Target pointer should have positive X position, got {pointerPos.X}");
-        
+
         // For a horizontal left-to-right edge, the target pointer's local X should be 
         // greater than 0 (towards the right side of the edge geometry)
         await Assert.That(pointerPos.X).IsGreaterThan(100)
@@ -178,11 +180,11 @@ public class EdgePointerTests
         await Assert.That(sourcePointer).IsNotNull();
 
         var pointerPos = sourcePointer!.GetPosition();
-        
+
         // The pointer position is in LOCAL coordinates (relative to EdgeControl).
         // For a horizontal edge, the source pointer should be positioned at the 
         // left side of the edge geometry.
-        
+
         // First verify the pointer has a valid non-zero position
         await Assert.That(pointerPos.X).IsGreaterThanOrEqualTo(0)
             .Because($"Source pointer should have non-negative X position, got {pointerPos.X}");
@@ -197,16 +199,17 @@ public class EdgePointerTests
 
         var sourcePointer = edge.GetEdgePointerForSource();
         var targetPointer = edge.GetEdgePointerForTarget();
-        
+
         await Assert.That(sourcePointer).IsNotNull();
         await Assert.That(targetPointer).IsNotNull();
 
         var sourcePos2 = sourcePointer!.GetPosition();
         var targetPos2 = targetPointer!.GetPosition();
-        
+
         // For a left-to-right edge, the target pointer's X should be greater than source's
         await Assert.That(targetPos2.X).IsGreaterThan(sourcePos2.X)
-            .Because($"Target pointer X ({targetPos2.X:F1}) should be > source pointer X ({sourcePos2.X:F1}) for left-to-right edge");
+            .Because(
+                $"Target pointer X ({targetPos2.X:F1}) should be > source pointer X ({sourcePos2.X:F1}) for left-to-right edge");
     }
 
     [Test]
@@ -218,7 +221,7 @@ public class EdgePointerTests
         await Assert.That(targetPointer).IsNotNull();
 
         var pointerPos = targetPointer!.GetPosition();
-        
+
         // Position should not be at origin (0,0) which would indicate it wasn't properly positioned
         var isAtOrigin = Math.Abs(pointerPos.X) < 1 && Math.Abs(pointerPos.Y) < 1;
         await Assert.That(isAtOrigin).IsFalse()
@@ -244,7 +247,7 @@ public class EdgePointerTests
         GraphAreaBase.SetFinalY(targetVc, newTargetPos.Y);
 
         // Update the edge
-        edge.UpdateEdge();
+        edge.UpdateLayout();
         Dispatcher.UIThread.RunJobs();
 
         var updatedPos = targetPointer.GetPosition();
@@ -267,13 +270,13 @@ public class EdgePointerTests
         await Assert.That(targetPointer).IsNotNull();
 
         var rect = targetPointer!.LastKnownRectSize;
-        
+
         // The rect should have non-zero size
         await Assert.That(rect.Width).IsGreaterThan(0)
             .Because("LastKnownRectSize should have width after positioning");
         await Assert.That(rect.Height).IsGreaterThan(0)
             .Because("LastKnownRectSize should have height after positioning");
-        
+
         // The rect position should not be at origin for a properly positioned pointer
         var isNearOrigin = Math.Abs(rect.X) < 1 && Math.Abs(rect.Y) < 1;
         await Assert.That(isNearOrigin).IsFalse()
@@ -291,7 +294,7 @@ public class EdgePointerTests
             .Because("Edge should have ShowArrows=false as specified");
 
         var targetPointer = edge.GetEdgePointerForTarget();
-        
+
         // Pointer might be null or not visible
         if (targetPointer != null)
         {
@@ -308,7 +311,7 @@ public class EdgePointerTests
 
         var sourcePointer = edge.GetEdgePointerForSource();
         var targetPointer = edge.GetEdgePointerForTarget();
-        
+
         await Assert.That(sourcePointer).IsNotNull();
         await Assert.That(targetPointer).IsNotNull();
 
@@ -317,7 +320,8 @@ public class EdgePointerTests
 
         // For a horizontal edge, pointers should be at roughly the same Y coordinate
         await Assert.That(Math.Abs(sourcePos.Y - targetPos.Y)).IsLessThan(20)
-            .Because($"For horizontal edge, pointers at Y={sourcePos.Y:F1} and Y={targetPos.Y:F1} should be at similar heights");
+            .Because(
+                $"For horizontal edge, pointers at Y={sourcePos.Y:F1} and Y={targetPos.Y:F1} should be at similar heights");
 
         // Source pointer X should be less than target pointer X
         await Assert.That(sourcePos.X).IsLessThan(targetPos.X)
@@ -335,7 +339,7 @@ public class EdgePointerTests
         await Assert.That(targetPointer!.IsVisible).IsTrue();
 
         var pointerPos = targetPointer.GetPosition();
-        
+
         // Position should be somewhere along the diagonal
         await Assert.That(pointerPos.X).IsGreaterThan(100);
         await Assert.That(pointerPos.Y).IsGreaterThan(100);
@@ -352,15 +356,16 @@ public class EdgePointerTests
         await Assert.That(targetPointer!.IsVisible).IsTrue();
 
         var pointerPos = targetPointer.GetPosition();
-        
+
         // The pointer position is in LOCAL coordinates (relative to EdgeControl).
         // For a vertical edge, the pointer should have a valid position.
         // The exact X coordinate in local space depends on edge geometry bounds.
         await Assert.That(pointerPos.X).IsGreaterThanOrEqualTo(0)
             .Because($"Vertical edge pointer X ({pointerPos.X:F1}) should be non-negative in local coordinates");
-        
+
         // Y should be significant for a vertical edge (towards the bottom)
         await Assert.That(pointerPos.Y).IsGreaterThan(100)
-            .Because($"For vertical edge spanning Y 100-400, target pointer Y ({pointerPos.Y:F1}) should be towards bottom");
+            .Because(
+                $"For vertical edge spanning Y 100-400, target pointer Y ({pointerPos.Y:F1}) should be towards bottom");
     }
 }
