@@ -1276,7 +1276,7 @@ public class GraphArea<TVertex, TEdge, TGraph> : GraphAreaBase, IDisposable
     {
         _svShowEdgeArrows = isEnabled;
         foreach (var item in _edgesList.Values)
-            item.ShowArrows = isEnabled;
+            item.SetCurrentValue(EdgeControlBase.ShowArrowsProperty, isEnabled);
         InvalidateMeasure();
     }
 

@@ -19,7 +19,6 @@ namespace Westermo.GraphX.Controls.Controls;
 /// - Support for self-looping edges (connecting a vertex to itself)
 /// - Edge pointer (arrow) rendering at source and/or target endpoints
 /// - Position tracking and automatic updates when connected vertices move
-/// - Throttled updates for performance during rapid position changes
 /// - Drag support via <see cref="IDraggable"/>
 /// </remarks>
 [Serializable]
@@ -266,16 +265,9 @@ public class EdgeControl : EdgeControlBase, IDraggable
 
     public void Drag(PointerEventArgs current)
     {
-        if (IsDragging)
-        {
-            // During drag, store the override endpoint in the same coordinate space
-            // as vertex positions (the graph area / RootArea). This avoids coordinate
-            // mismatches when the edge path is calculated relative to the graph area.
-            var graphAreaBase = RootArea;
-            OverrideEndpoint = graphAreaBase != null
-                ? current.GetPosition(graphAreaBase)
-                : current.GetPosition(this);
-        }
+        if (!IsDragging) return;
+        var graphAreaBase = RootArea as Control ?? this;
+        OverrideEndpoint = current.GetPosition(graphAreaBase);
     }
 
     public bool EndDrag(PointerReleasedEventArgs e)

@@ -67,12 +67,12 @@ public class DefaultEdgePointer : ContentControl, IEdgePointer
 
     public void Show()
     {
-        IsVisible = true;
+        SetCurrentValue(IsVisibleProperty, true);
     }
 
     public void Hide()
     {
-        IsVisible = false;
+        SetCurrentValue(IsVisibleProperty, false);
     }
 
     /// <summary>

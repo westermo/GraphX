@@ -647,17 +647,17 @@ public abstract class EdgeControlBase : TemplatedControl, IGraphControl, IDispos
         child.Measure(new Size(double.PositiveInfinity, double.PositiveInfinity));
     }
 
-    private static Size Sum(params ReadOnlySpan<Size> sizes)
+    private static Size Union(params ReadOnlySpan<Size> sizes)
     {
-        var totalWidth = 0.0;
-        var totalHeight = 0.0;
+        var width = 0.0;
+        var height = 0.0;
         foreach (var size in sizes)
         {
-            totalWidth += double.IsNaN(size.Width) ? 0 : size.Width;
-            totalHeight += double.IsNaN(size.Height) ? 0 : size.Height;
+            width = Math.Max(double.IsNaN(size.Width) ? 0 : size.Width, width);
+            height = Math.Max(double.IsNaN(size.Height) ? 0 : size.Height, height);
         }
 
-        return new Size(totalWidth, totalHeight);
+        return new Size(width, height);
     }
 
     // Provide a desired size for layout based on current geometry bounds so edge is not collapsed to 0x0.
@@ -682,12 +682,31 @@ public abstract class EdgeControlBase : TemplatedControl, IGraphControl, IDispos
         if (EdgePointerForSource is Control pointerForSource) pointerForSource.Measure(availableSize);
         if (EdgePointerForTarget is Control pointerForTarget) pointerForTarget.Measure(availableSize);
         if (SelfLoopIndicator is { } selfLoopIndicator) selfLoopIndicator.Measure(availableSize);
-        return Sum(new Size(right - left, bottom - top), selfLoopSize);
+        Size routingBounds = new Size();
+        if (Edge is IRoutingInfo { RoutingPoints.Length: > 0 } routingInfo)
+        {
+            var minX = double.MaxValue;
+            var maxX = double.MinValue;
+            var minY = double.MaxValue;
+            var maxY = double.MinValue;
+            foreach (var point in routingInfo.RoutingPoints)
+            {
+                minX = Math.Min(minX, point.X);
+                maxX = Math.Max(maxX, point.X);
+                minY = Math.Min(minY, point.Y);
+                maxY = Math.Max(maxY, point.Y);
+            }
+
+            var dx = maxX - minX;
+            var dy = maxY - minY;
+            routingBounds = new Size(dx, dy);
+        }
+
+        return Union(new Size(right - left, bottom - top), selfLoopSize, routingBounds);
     }
 
     protected override Size ArrangeOverride(Size finalSize)
     {
-        //first show label to get DesiredSize - optimized: avoid LINQ allocation
         foreach (var l in EdgeLabelControls)
         {
             switch (l.ShowLabel)
@@ -891,21 +910,23 @@ public abstract class EdgeControlBase : TemplatedControl, IGraphControl, IDispos
     /// <summary>
     /// Create and apply edge path using calculated ER parameters stored in edge
     /// </summary>
-    /// <param name="useCurrentCoords">Use current vertices coordinates or final coorfinates (for.ex if move animation is active final coords will be its destination)</param>
-    /// <param name="externalRoutingPoints">Provided custom routing points will be used instead of stored ones.</param>
-    private Geometry? PrepareEdgePath(bool useCurrentCoords = false,
-        Measure.Point[]? externalRoutingPoints = null)
+    private Geometry? PrepareEdgePath()
     {
-        if (!TryGetSourcePoints(useCurrentCoords, out var sourceRect))
+        if (!TryGetSourcePoints(false, out var sourceRect))
             return null;
-        if (!TryGetTargetPoints(useCurrentCoords, out var targetRect))
+        Rect targetRect;
+        if (OverrideEndpoint.HasValue)
+        {
+            targetRect = new Rect(OverrideEndpoint.Value, new Size(10, 10));
+        }
+        else if (!TryGetTargetPoints(false, out targetRect))
             return null;
 
         if (Edge is not IRoutingInfo routedEdge)
             throw new GX_InvalidDataException("Edge must implement IRoutingInfo interface");
 
         //get the route informations
-        var routeInformation = externalRoutingPoints ?? routedEdge.RoutingPoints;
+        var routeInformation = routedEdge.RoutingPoints;
 
 
         //if self looped edge
@@ -927,7 +948,7 @@ public abstract class EdgeControlBase : TemplatedControl, IGraphControl, IDispos
         var p1 = SourceConnectionPoint.Value;
         var p2 = TargetConnectionPoint.Value;
         // Use StreamGeometry for better performance (as recommended by Avalonia docs)
-        return CreateStreamGeometry(externalRoutingPoints, hasRouteInfo, routeInformation, p1, p2, routedEdge,
+        return CreateStreamGeometry(hasRouteInfo, routeInformation, p1, p2, routedEdge,
             gEdge);
     }
 
@@ -947,7 +968,7 @@ public abstract class EdgeControlBase : TemplatedControl, IGraphControl, IDispos
     /// A normalized <see cref="StreamGeometry"/> instance representing the final edge path, ready to be
     /// rendered by the control.
     /// </returns>
-    private StreamGeometry CreateStreamGeometry(Measure.Point[]? externalRoutingPoints, bool hasRouteInfo,
+    private StreamGeometry CreateStreamGeometry(bool hasRouteInfo,
         Measure.Point[]? routeInformation, Point p1,
         Point p2, IRoutingInfo routedEdge, IGraphXCommonEdge? gEdge)
     {
@@ -970,7 +991,7 @@ public abstract class EdgeControlBase : TemplatedControl, IGraphControl, IDispos
 
             routePoints[0] = p1;
             routePoints[^1] = p2;
-            if (externalRoutingPoints == null && routedEdge.RoutingPoints != null)
+            if (routedEdge.RoutingPoints != null)
                 routedEdge.RoutingPoints = routePoints.ToArray().ToGraphX();
 
             if (!RootArea.EdgeCurvingEnabled)
@@ -1048,8 +1069,10 @@ public abstract class EdgeControlBase : TemplatedControl, IGraphControl, IDispos
         TryGetPoints(useCurrentCoords, Source, out result);
 
     [MemberNotNullWhen(true, nameof(Target))]
-    private bool TryGetTargetPoints(bool useCurrentCoords, out Rect result) =>
-        TryGetPoints(useCurrentCoords, Target, out result);
+    private bool TryGetTargetPoints(bool useCurrentCoords, out Rect result)
+    {
+        return TryGetPoints(useCurrentCoords, Target, out result);
+    }
 
     private static bool TryGetPoints(bool useCurrentCoords, VertexControl? control, out Rect result)
     {
