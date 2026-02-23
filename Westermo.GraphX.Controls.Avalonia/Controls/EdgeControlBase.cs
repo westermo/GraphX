@@ -136,18 +136,16 @@ public abstract class EdgeControlBase : TemplatedControl, IGraphControl, IDispos
             HasData = true
         };
 
+
+        if (EdgePointerForSource is not Control { IsVisible: true } ctrl)
+            return new Point();
         // Calculate the offset that should be subtracted from the line endpoint
         var dir = MathHelper.GetDirection(from.ToGraphX(), to.ToGraphX());
         if (from == to)
             dir = new Measure.Vector(0, 0);
 
-        if (EdgePointerForSource is not Control ctrl)
-            return new Point();
-
-        var width = double.IsNaN(ctrl.Width) ? ctrl.Bounds.Width : ctrl.Width;
-        var height = double.IsNaN(ctrl.Height) ? ctrl.Bounds.Height : ctrl.Height;
-        if (width == 0) width = ctrl.DesiredSize.Width;
-        if (height == 0) height = ctrl.DesiredSize.Height;
+        var width = ctrl.DesiredSize.Width;
+        var height = ctrl.DesiredSize.Height;
 
         return new Point(dir.X * width, dir.Y * height);
     }
@@ -166,18 +164,16 @@ public abstract class EdgeControlBase : TemplatedControl, IGraphControl, IDispos
             HasData = true
         };
 
+        if (EdgePointerForTarget is not Control { IsVisible: true } ctrl)
+            return new Point();
+
         // Calculate the offset that should be subtracted from the line endpoint
         var dir = MathHelper.GetDirection(from.ToGraphX(), to.ToGraphX());
         if (from == to)
             dir = new Measure.Vector(0, 0);
 
-        if (EdgePointerForTarget is not Control ctrl)
-            return new Point();
-
-        var width = double.IsNaN(ctrl.Width) ? ctrl.Bounds.Width : ctrl.Width;
-        var height = double.IsNaN(ctrl.Height) ? ctrl.Bounds.Height : ctrl.Height;
-        if (width == 0) width = ctrl.DesiredSize.Width;
-        if (height == 0) height = ctrl.DesiredSize.Height;
+        var width = ctrl.DesiredSize.Width;
+        var height = ctrl.DesiredSize.Height;
 
         return new Point(dir.X * width, dir.Y * height);
     }
@@ -666,19 +662,23 @@ public abstract class EdgeControlBase : TemplatedControl, IGraphControl, IDispos
         if (!IsTemplateLoaded)
             ApplyTemplate();
         var sourcePos = Source?.GetPosition() ?? new Point();
+        var sx = double.IsNaN(sourcePos.X) ? 0 : sourcePos.X;
+        var sy = double.IsNaN(sourcePos.Y) ? 0 : sourcePos.Y;
         var targetPos = OverrideEndpoint ?? Target?.GetPosition() ?? new Point();
+        var tx = double.IsNaN(targetPos.X) ? 0 : targetPos.X;
+        var ty = double.IsNaN(targetPos.Y) ? 0 : targetPos.Y;
         var selfLoopSize = IsSelfLooped
             ? new Size(SelfLoopIndicatorRadius * 2 + SelfLoopIndicatorOffset.X,
                 SelfLoopIndicatorRadius * 2 + SelfLoopIndicatorOffset.Y)
             : new Size();
         var sourceSize = Source?.DesiredSize ?? new Size();
         var targetSize = Target?.DesiredSize ?? new Size();
-        var sourceIsLeftOfTarget = sourcePos.X < targetPos.X;
-        var sourceIsAboveTarget = sourcePos.Y < targetPos.Y;
-        var bottom = sourceIsAboveTarget ? targetPos.Y + targetSize.Height : sourcePos.Y + sourceSize.Height;
-        var right = sourceIsLeftOfTarget ? targetPos.X + targetSize.Width : sourcePos.X + sourceSize.Width;
-        var top = sourceIsAboveTarget ? sourcePos.Y : targetPos.Y;
-        var left = sourceIsLeftOfTarget ? sourcePos.X : targetPos.X;
+        var sourceIsLeftOfTarget = sx < tx;
+        var sourceIsAboveTarget = sy < ty;
+        var bottom = sourceIsAboveTarget ? ty + targetSize.Height : sy + sourceSize.Height;
+        var right = sourceIsLeftOfTarget ? tx + targetSize.Width : sx + sourceSize.Width;
+        var top = sourceIsAboveTarget ? sy : ty;
+        var left = sourceIsLeftOfTarget ? sx : tx;
         if (EdgePointerForSource is Control pointerForSource) pointerForSource.Measure(availableSize);
         if (EdgePointerForTarget is Control pointerForTarget) pointerForTarget.Measure(availableSize);
         if (SelfLoopIndicator is { } selfLoopIndicator) selfLoopIndicator.Measure(availableSize);
@@ -948,8 +948,7 @@ public abstract class EdgeControlBase : TemplatedControl, IGraphControl, IDispos
         var p1 = SourceConnectionPoint.Value;
         var p2 = TargetConnectionPoint.Value;
         // Use StreamGeometry for better performance (as recommended by Avalonia docs)
-        return CreateStreamGeometry(hasRouteInfo, routeInformation, p1, p2, routedEdge,
-            gEdge);
+        return CreateStreamGeometry(hasRouteInfo, routeInformation, p1, p2, routedEdge, gEdge);
     }
 
     /// <summary>

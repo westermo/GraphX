@@ -181,9 +181,7 @@ public class KKLayoutAlgorithm<TVertex, TEdge, TGraph>(
                         var xenergy = CalcEnergyIfExchanged(i, j);
                         if (energy > xenergy)
                         {
-                            var p = _positions[i];
-                            _positions[i] = _positions[j];
-                            _positions[j] = p;
+                            (_positions[i], _positions[j]) = (_positions[j], _positions[i]);
                             return;
                         }
                     }

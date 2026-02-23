@@ -783,14 +783,8 @@ public class GraphArea<TVertex, TEdge, TGraph> : GraphAreaBase, IDisposable
         {
             if (a is not IEdgeLabelControl)
                 throw new GX_InvalidDataException("Generated edge label should implement IEdgeLabelControl interface");
+            AddCustomChildControl(a);
         }
-
-        uiElements.ForEach(l =>
-        {
-            AddCustomChildControl(l);
-            l.Measure(new Size(double.MaxValue, double.MaxValue));
-            ((IEdgeLabelControl)l).UpdatePosition();
-        });
     }
 
     #endregion
@@ -821,7 +815,6 @@ public class GraphArea<TVertex, TEdge, TGraph> : GraphAreaBase, IDisposable
         out IDictionary<TVertex, Point> vertexPositions)
     {
         //measure if needed and get all vertex sizes
-        Measure(new Size(double.PositiveInfinity, double.PositiveInfinity));
         var count = _vertexList.Count(a =>
             ((IGraphXVertex)a.Value.Vertex!).SkipProcessing != ProcessingOptionEnum.Exclude);
         var vertexSizes = new Dictionary<TVertex, Size>(count);
@@ -949,8 +942,8 @@ public class GraphArea<TVertex, TEdge, TGraph> : GraphAreaBase, IDisposable
         if (localLogicCore == null)
             throw new GX_InvalidDataException("LogicCore -> Not initialized!");
 
-        if (vertexSizes is null || vertexPositions is null || !localLogicCore.GenerateAlgorithmStorage(
-                vertexSizes.ToDictionary(s => s.Key, s => s.Value.ToGraphX()),
+        if (vertexPositions is null || !localLogicCore.GenerateAlgorithmStorage(
+                vertexSizes?.ToDictionary(s => s.Key, s => s.Value.ToGraphX()),
                 vertexPositions.ToDictionary(s => s.Key, s => s.Value.ToGraphX())))
             return;
 
@@ -969,17 +962,13 @@ public class GraphArea<TVertex, TEdge, TGraph> : GraphAreaBase, IDisposable
             foreach (var item in resultCoords)
             {
                 if (!_vertexList.TryGetValue(item.Key, out var vc)) continue;
-
-                SetFinalX(vc, item.Value.X);
-                SetFinalY(vc, item.Value.Y);
-
-                if (double.IsNaN(GetX(vc))) vc.SetPosition(item.Value.X, item.Value.Y, false);
+                vc.SetPosition(item.Value.X, item.Value.Y);
                 vc.SetCurrentValue(PositioningCompleteProperty,
                     true); // Style can show vertexes with layout positions assigned
             }
 
             SetCurrentValue(LogicCoreProperty, localLogicCore);
-            UpdateLayout(); //update all changes
+            InvalidateMeasure();
         }
 
         void PreUpdate()
@@ -1018,6 +1007,7 @@ public class GraphArea<TVertex, TEdge, TGraph> : GraphAreaBase, IDisposable
 
             UpdateLayout(); //update layout so we can get actual control sizes
 
+            Measure(new Size(double.PositiveInfinity, double.PositiveInfinity));
             if (LogicCore.AreVertexSizesNeeded())
                 vertexSizes = GetVertexSizesAndPositions(out vertexPositions);
             else
@@ -1047,7 +1037,7 @@ public class GraphArea<TVertex, TEdge, TGraph> : GraphAreaBase, IDisposable
         if (LogicCore.AsyncAlgorithmCompute)
         {
             // Launch _relayoutGraph on a background thread using the task thread pool
-            await Task.Factory.StartNew(() => RelayoutGraph(cancellation), cancellation);
+            await await Task.Factory.StartNew(() => RelayoutGraph(cancellation), cancellation);
         }
         else
         {

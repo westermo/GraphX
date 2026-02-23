@@ -159,6 +159,7 @@
                                       DockPanel.Dock="Top"
                                       IsChecked="{Binding IsAsyncComputation}" />
                             <ToggleButton
+                                IsChecked="True"
                                 Content="Show edge arrows"
                                 DockPanel.Dock="Top"
                                 IsCheckedChanged="ToggleButton_OnIsCheckedChanged">

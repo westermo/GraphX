@@ -28,6 +28,7 @@ public abstract class GraphAreaBase : Canvas, ITrackableContent, IGraphAreaBase
 {
     static GraphAreaBase()
     {
+        AffectsMeasure<GraphAreaBase>(XProperty, YProperty);
         XProperty.Changed.AddClassHandler<Control>(x_changed);
         YProperty.Changed.AddClassHandler<Control>(y_changed);
     }
@@ -236,7 +237,7 @@ public abstract class GraphAreaBase : Canvas, ITrackableContent, IGraphAreaBase
 
     public static void SetFinalX(Control obj, double value)
     {
-        obj.SetValue(FinalXProperty, value);
+        obj.SetCurrentValue(FinalXProperty, value);
     }
 
     public static double GetFinalY(Control obj)
@@ -246,7 +247,7 @@ public abstract class GraphAreaBase : Canvas, ITrackableContent, IGraphAreaBase
 
     public static void SetFinalY(Control obj, double value)
     {
-        obj.SetValue(FinalYProperty, value);
+        obj.SetCurrentValue(FinalYProperty, value);
     }
 
     public static bool GetPositioningComplete(Control obj)
@@ -256,7 +257,7 @@ public abstract class GraphAreaBase : Canvas, ITrackableContent, IGraphAreaBase
 
     public static void SetPositioningComplete(Control obj, bool value)
     {
-        obj.SetValue(PositioningCompleteProperty, value);
+        obj.SetCurrentValue(PositioningCompleteProperty, value);
     }
 
     #region DP - ExternalSettings
