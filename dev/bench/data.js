@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1771864704418,
+  "lastUpdate": 1771937736313,
   "repoUrl": "https://github.com/westermo/GraphX",
   "entries": {
     "Benchmark.Net Benchmark": [
@@ -480,6 +480,126 @@ window.BENCHMARK_DATA = {
             "value": 8364414.868566177,
             "unit": "ns",
             "range": "± 171251.22163823945"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "142813963+carl-andersson-at-westermo@users.noreply.github.com",
+            "name": "Caran",
+            "username": "carl-andersson-at-westermo"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "1750afe8f95c869935a45447f903a4e2bd9be543",
+          "message": "Adjusted EdgeLabelControls to actually move and render along the edge properly, and improved performance (#15)\n\n* Adjusted EdgeLabelControls to actually move and render along the edge properly, and improved performance\n\n* Update Westermo.GraphX.Controls.Avalonia/Controls/EdgeControlBase.cs\n\nCo-authored-by: Copilot <175728472+Copilot@users.noreply.github.com>\n\n* Update Westermo.GraphX.Controls.Avalonia/Controls/EdgeControlBase.cs\n\nCo-authored-by: Copilot <175728472+Copilot@users.noreply.github.com>\n\n* Update Westermo.GraphX.Controls.Avalonia/Controls/EdgeControlBase.cs\n\nCo-authored-by: Copilot <175728472+Copilot@users.noreply.github.com>\n\n* Update Westermo.GraphX.Controls.Avalonia/Controls/EdgeLabels/EdgeLabelControl.cs\n\nCo-authored-by: Copilot <175728472+Copilot@users.noreply.github.com>\n\n* Update Westermo.GraphX.Controls.Avalonia/Controls/EdgeControlBase.cs\n\nCo-authored-by: Copilot <175728472+Copilot@users.noreply.github.com>\n\n* Small fixes\n\n* Removed bad UpdateLayout logic from EdgePointers\n\n* Cleanup\n\n* Order change to prevent glitching\n\n* Update Westermo.GraphX.Controls.Avalonia/Controls/EdgePointers/DefaultEdgePointer.cs\n\nCo-authored-by: Copilot <175728472+Copilot@users.noreply.github.com>\n\n* Update Westermo.GraphX.Controls.Avalonia/Controls/EdgeControlBase.cs\n\nCo-authored-by: Copilot <175728472+Copilot@users.noreply.github.com>\n\n* Cleanup\n\n---------\n\nCo-authored-by: Copilot <175728472+Copilot@users.noreply.github.com>",
+          "timestamp": "2026-02-24T13:50:41+01:00",
+          "tree_id": "41b6368b19dbdff4e9b73a5fd3814a889bdd0a70",
+          "url": "https://github.com/westermo/GraphX/commit/1750afe8f95c869935a45447f903a4e2bd9be543"
+        },
+        "date": 1771937733664,
+        "tool": "benchmarkdotnet",
+        "benches": [
+          {
+            "name": "GraphXBenchmarks.GraphRenderingBenchmarks.SmallGraph_PreloadVertexes",
+            "value": 266905.7016225961,
+            "unit": "ns",
+            "range": "± 2651.414114038339"
+          },
+          {
+            "name": "GraphXBenchmarks.GraphRenderingBenchmarks.MediumGraph_PreloadVertexes",
+            "value": 2755464.763541667,
+            "unit": "ns",
+            "range": "± 41444.89383121529"
+          },
+          {
+            "name": "GraphXBenchmarks.GraphRenderingBenchmarks.LargeGraph_PreloadVertexes",
+            "value": 18402142.07142857,
+            "unit": "ns",
+            "range": "± 228661.145038117"
+          },
+          {
+            "name": "GraphXBenchmarks.GraphRenderingBenchmarks.SmallGraph_PreloadAndGenerateEdges",
+            "value": 539836.4899553572,
+            "unit": "ns",
+            "range": "± 3811.306016076819"
+          },
+          {
+            "name": "GraphXBenchmarks.GraphRenderingBenchmarks.MediumGraph_PreloadAndGenerateEdges",
+            "value": 6730173.575334822,
+            "unit": "ns",
+            "range": "± 31860.305367722347"
+          },
+          {
+            "name": "GraphXBenchmarks.GraphRenderingBenchmarks.LargeGraph_PreloadAndGenerateEdges",
+            "value": 61416535.808823526,
+            "unit": "ns",
+            "range": "± 1227258.8720252584"
+          },
+          {
+            "name": "GraphXBenchmarks.GraphRenderingBenchmarks.SmallGraph_UpdateAllEdges",
+            "value": 538694.455078125,
+            "unit": "ns",
+            "range": "± 4380.779454551479"
+          },
+          {
+            "name": "GraphXBenchmarks.GraphRenderingBenchmarks.MediumGraph_UpdateAllEdges",
+            "value": 6838108.349158654,
+            "unit": "ns",
+            "range": "± 26252.59087047216"
+          },
+          {
+            "name": "GraphXBenchmarks.GraphRenderingBenchmarks.LargeGraph_UpdateAllEdges",
+            "value": 59289163.36507935,
+            "unit": "ns",
+            "range": "± 1909737.482217711"
+          },
+          {
+            "name": "GraphXBenchmarks.GraphRenderingBenchmarks.LargeGraph_VertexCreationOnly",
+            "value": 18351190.414583333,
+            "unit": "ns",
+            "range": "± 337447.82282489864"
+          },
+          {
+            "name": "GraphXBenchmarks.GraphRenderingBenchmarks.LargeGraph_EdgeGenerationOnly",
+            "value": 60328722.38888889,
+            "unit": "ns",
+            "range": "± 673915.0501815373"
+          },
+          {
+            "name": "GraphXBenchmarks.GraphRenderingBenchmarks.LargeGraph_UpdateEdgesRenderingOnly",
+            "value": 60768928.115226336,
+            "unit": "ns",
+            "range": "± 1650363.5391024426"
+          },
+          {
+            "name": "GraphXBenchmarks.GraphRenderingBenchmarks.LargeGraph_UpdateEdges_WithParallelEdges",
+            "value": 59604388.25,
+            "unit": "ns",
+            "range": "± 1380301.5722941638"
+          },
+          {
+            "name": "GraphXBenchmarks.GraphRenderingBenchmarks.LargeGraph_UpdateEdges_WithCurving",
+            "value": 59114860.15441176,
+            "unit": "ns",
+            "range": "± 1145062.7201486903"
+          },
+          {
+            "name": "GraphXBenchmarks.GraphRenderingBenchmarks.LargeGraph_PositionUpdatesCost",
+            "value": 20468090.497916665,
+            "unit": "ns",
+            "range": "± 278121.2373310449"
+          },
+          {
+            "name": "GraphXBenchmarks.GraphRenderingBenchmarks.MediumGraph_WithSelfLoops_UpdateAllEdges",
+            "value": 6706679.0703125,
+            "unit": "ns",
+            "range": "± 55455.2996038245"
           }
         ]
       }
