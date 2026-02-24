@@ -144,9 +144,8 @@ public class DefaultEdgePointer : ContentControl, IEdgePointer
 
     public DefaultEdgePointer()
     {
-        RenderTransformOrigin = new RelativePoint(.5, .5, RelativeUnit.Relative);
-        VerticalAlignment = global::Avalonia.Layout.VerticalAlignment.Center;
-        HorizontalAlignment = global::Avalonia.Layout.HorizontalAlignment.Center;
+        // Intentionally left empty: default alignment and transform origin
+        // are configured in the static constructor to avoid per-instance overhead.
     }
 
     public void Dispose()
