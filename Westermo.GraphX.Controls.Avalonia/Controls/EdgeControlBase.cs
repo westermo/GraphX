@@ -765,28 +765,58 @@ public abstract class EdgeControlBase : TemplatedControl, IGraphControl, IDispos
         var edgeLength = 0.0;
         Measure.Point[] points = [p1, ..routingInfo.RoutingPoints, p2];
         for (var i = 0; i < points.Length - 1; i++)
+        // Compute total edge length by walking from p1 through all routing points to p2.
+        var edgeLength = 0.0;
+        var routingPoints = routingInfo.RoutingPoints;
+        var previousPoint = p1;
+        for (var i = 0; i < routingPoints.Length; i++)
         {
-            edgeLength += MathHelper.GetDistanceBetweenPoints(points[i], points[i + 1]);
+            var currentPoint = routingPoints[i];
+            edgeLength += MathHelper.GetDistanceBetweenPoints(previousPoint, currentPoint);
+            previousPoint = currentPoint;
         }
 
+        // Include the final segment from the last routing point (or p1 if none) to p2.
+        edgeLength += MathHelper.GetDistanceBetweenPoints(previousPoint, p2);
+
+        // We now want the midpoint along the entire polyline.
         edgeLength /= 2;
         var newp1 = p1;
         var newp2 = p2;
-        for (int i = 0; i < points.Length - 1; i++)
+        previousPoint = p1;
+        var remaining = edgeLength;
+        var foundSegment = false;
+
+        // Walk again to find the segment that contains the midpoint.
+        for (var i = 0; i < routingPoints.Length; i++)
         {
-            double lengthOfSegment = MathHelper.GetDistanceBetweenPoints(newp1 = points[i], newp2 = points[i + 1]);
-            if (lengthOfSegment >= edgeLength) break;
-            edgeLength -= lengthOfSegment;
+            var currentPoint = routingPoints[i];
+            var lengthOfSegment = MathHelper.GetDistanceBetweenPoints(previousPoint, currentPoint);
+            if (lengthOfSegment >= remaining)
+            {
+                newp1 = previousPoint;
+                newp2 = currentPoint;
+                foundSegment = true;
+                break;
+            }
+
+            remaining -= lengthOfSegment;
+            previousPoint = currentPoint;
         }
 
-        // Use the segment that contains the midpoint as the active segment.
+        // If the midpoint lies on the last segment to p2, handle it here.
+        if (!foundSegment)
+        {
+            newp1 = previousPoint;
+            newp2 = p2;
+            // 'remaining' is already the distance from newp1 along this last segment.
+        }
+
         p1 = newp1;
         p2 = newp2;
         angle = MathHelper.GetAngleBetweenPoints(p1, p2);
-        // Recompute flipAxis for the selected segment so vector and label flipping work for routed edges.
-        flipAxis = p1.X > p2.X;
         vector = flipAxis ? p1 - p2 : p2 - p1;
-        return new Measure.Point(p1.X + edgeLength * Math.Cos(angle), p1.Y - edgeLength * Math.Sin(angle));
+        return new Measure.Point(p1.X + remaining * Math.Cos(angle), p1.Y - remaining * Math.Sin(angle));
     }
 
     internal int ParallelEdgeOffset;
