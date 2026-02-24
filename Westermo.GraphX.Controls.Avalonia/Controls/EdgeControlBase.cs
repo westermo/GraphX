@@ -235,7 +235,6 @@ public abstract class EdgeControlBase : TemplatedControl, IGraphControl, IDispos
         var angle = pointer.NeedRotation
             ? -MathHelper.GetAngleBetweenPoints(from.ToGraphX(), to.ToGraphX()).ToDegrees()
             : 0;
-        // pointer.Update(position, dir, angle);
 
         var vecMove = new Measure.Vector((.5 + dir.X * .5) * width, (.5 + dir.Y * .5) * height);
         position = new Measure.Point(position.X - vecMove.X, position.Y - vecMove.Y);
@@ -247,8 +246,6 @@ public abstract class EdgeControlBase : TemplatedControl, IGraphControl, IDispos
             SetRotation(ctrl, angle);
         }
 
-        // var arrangeRect = new Rect(position.ToAvalonia(), size);
-        // ctrl.Arrange(arrangeRect);
         return position;
     }
 

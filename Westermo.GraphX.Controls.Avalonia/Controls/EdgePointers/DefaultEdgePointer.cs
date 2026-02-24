@@ -1,12 +1,8 @@
-﻿using System;
-using Avalonia;
+﻿using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Layout;
-using Avalonia.Media;
 using Avalonia.VisualTree;
-using QuikGraph;
 using Westermo.GraphX.Controls.Controls.Misc;
-using Westermo.GraphX.Controls.Controls.ZoomControl.Helpers;
 
 namespace Westermo.GraphX.Controls.Controls.EdgePointers;
 
