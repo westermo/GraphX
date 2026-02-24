@@ -746,7 +746,8 @@ public abstract class EdgeControlBase : TemplatedControl, IGraphControl, IDispos
             if (Source is null) return default;
             var pt = Source.GetCenterPosition().ToGraphX();
             pt.Offset(SelfLoopIndicatorOffset.X, SelfLoopIndicatorOffset.Y);
-            angle = 45;
+            // For self-loop edges, store angle in radians (45 degrees = π/4) to match other branches.
+            angle = Math.PI / 4.0;
             return pt;
         }
 
