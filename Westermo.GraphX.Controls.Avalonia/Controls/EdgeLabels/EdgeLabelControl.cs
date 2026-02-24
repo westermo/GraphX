@@ -183,14 +183,4 @@ public abstract class EdgeLabelControl : ContentControl, IEdgeLabelControl
     {
         _edgeControl = null;
     }
-
-    /// <summary>
-    /// Gets or sets if label should update its position and size data on visual size change. Helps to update label correctly on template manipulations. Can be turned off for better performance.
-    /// </summary>
-    public bool UpdateLabelOnSizeChange { get; set; } = true;
-
-    /// <summary>
-    /// Gets or sets if label should additionaly update its position and size data on label visibility change. Can be turned off for better performance.
-    /// </summary>
-    public bool UpdateLabelOnVisibilityChange { get; set; } = true;
 }

@@ -712,7 +712,9 @@ public abstract class EdgeControlBase : TemplatedControl, IGraphControl, IDispos
         if (LinePathObject == null) return base.ArrangeOverride(finalSize);
         LinePathObject.Data = LineGeometry;
         LinePathObject.StrokeDashArray = StrokeDashArray;
-        var midPoint = GetMidpoint(out double angle, out bool flipAxis, out var vector);
+        var midPoint = GetMidpoint(out var angle, out var flipAxis, out var vector);
+        if (midPoint == default) return base.ArrangeOverride(finalSize);
+        vector.Normalize();
         foreach (var label in EdgeLabelControls)
         {
             if (label is not Control { IsVisible: true } ctrl) continue;
@@ -729,7 +731,7 @@ public abstract class EdgeControlBase : TemplatedControl, IGraphControl, IDispos
             localPoint.Y += -labelSize.Height / 2 + offsetX.Y + offsetY.Y;
             ctrl.SetCurrentValue(GraphAreaBase.XProperty, localPoint.X);
             ctrl.SetCurrentValue(GraphAreaBase.YProperty, localPoint.Y);
-            label.Angle = -angle.ToDegrees() + (flipAxis ? 180 : 0);
+            label.Angle = label.AlignToEdge ? -angle.ToDegrees() + (flipAxis ? 180 : 0) : 0;
             ctrl.Arrange(new Rect(localPoint.X, localPoint.Y, labelSize.Width, labelSize.Height));
         }
 
@@ -763,28 +765,22 @@ public abstract class EdgeControlBase : TemplatedControl, IGraphControl, IDispos
             return mid;
         }
 
-        var edgeLength = 0.0;
-        Measure.Point[] points = [p1, ..routingInfo.RoutingPoints, p2];
-        for (var i = 0; i < points.Length - 1; i++)
-        // Compute total edge length by walking from p1 through all routing points to p2.
-        var edgeLength = 0.0;
         var routingPoints = routingInfo.RoutingPoints;
-        var previousPoint = p1;
-        for (var i = 0; i < routingPoints.Length; i++)
-        {
-            var currentPoint = routingPoints[i];
-            edgeLength += MathHelper.GetDistanceBetweenPoints(previousPoint, currentPoint);
-            previousPoint = currentPoint;
-        }
+        var edgeLength = TotalLength(p1, p2, routingPoints);
+        var remaining = FindHalfwayPoint(edgeLength, routingPoints, ref p1, ref p2);
+        angle = MathHelper.GetAngleBetweenPoints(p1, p2);
+        vector = flipAxis ? p1 - p2 : p2 - p1;
+        return new Measure.Point(p1.X + remaining * Math.Cos(angle), p1.Y - remaining * Math.Sin(angle));
+    }
 
-        // Include the final segment from the last routing point (or p1 if none) to p2.
-        edgeLength += MathHelper.GetDistanceBetweenPoints(previousPoint, p2);
-
+    private static double FindHalfwayPoint(double edgeLength, Measure.Point[] routingPoints, ref Measure.Point p1,
+        ref Measure.Point p2)
+    {
         // We now want the midpoint along the entire polyline.
         edgeLength /= 2;
         var newp1 = p1;
         var newp2 = p2;
-        previousPoint = p1;
+        var previousPoint = p1;
         var remaining = edgeLength;
         var foundSegment = false;
 
@@ -815,9 +811,23 @@ public abstract class EdgeControlBase : TemplatedControl, IGraphControl, IDispos
 
         p1 = newp1;
         p2 = newp2;
-        angle = MathHelper.GetAngleBetweenPoints(p1, p2);
-        vector = flipAxis ? p1 - p2 : p2 - p1;
-        return new Measure.Point(p1.X + remaining * Math.Cos(angle), p1.Y - remaining * Math.Sin(angle));
+        return remaining;
+    }
+
+    private static double TotalLength(Measure.Point p1, Measure.Point p2, Measure.Point[] routingPoints)
+    {
+        var edgeLength = 0.0;
+        var previousPoint = p1;
+        for (var i = 0; i < routingPoints.Length; i++)
+        {
+            var currentPoint = routingPoints[i];
+            edgeLength += MathHelper.GetDistanceBetweenPoints(previousPoint, currentPoint);
+            previousPoint = currentPoint;
+        }
+
+        // Include the final segment from the last routing point (or p1 if none) to p2.
+        edgeLength += MathHelper.GetDistanceBetweenPoints(previousPoint, p2);
+        return edgeLength;
     }
 
     internal int ParallelEdgeOffset;

@@ -1,5 +1,4 @@
 ﻿using System;
-using Avalonia;
 
 namespace Westermo.GraphX.Controls.Controls.Misc;
 
@@ -31,7 +30,7 @@ public interface IEdgeLabelControl : IDisposable
     double Angle { get; set; }
 
     /// <summary>
-    /// Gets or sets if label should be visible for self looped edge. Default value is false.
+    /// Gets if label should be visible for self looped edge. Default value is false.
     /// </summary>
     bool DisplayForSelfLoopedEdges { get; }
 
