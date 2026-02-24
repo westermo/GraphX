@@ -1,5 +1,3 @@
-using System;
-
 namespace Westermo.GraphX.Controls.Controls;
 
 /// <summary>

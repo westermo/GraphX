@@ -1,14 +1,10 @@
-﻿using System;
-using System.Diagnostics;
-using System.Linq;
+﻿using System.Linq;
 using Avalonia;
 using Avalonia.Controls;
-using Avalonia.Interactivity;
+using Avalonia.Layout;
 using Avalonia.Media;
 using Avalonia.VisualTree;
-using Westermo.GraphX.Common.Interfaces;
 using Westermo.GraphX.Controls.Controls.Misc;
-using Westermo.GraphX.Controls.Controls.ZoomControl.Helpers;
 
 namespace Westermo.GraphX.Controls.Controls.EdgeLabels;
 
@@ -16,24 +12,14 @@ public abstract class EdgeLabelControl : ContentControl, IEdgeLabelControl
 {
     private EdgeControl? _edgeControl;
 
-    internal Rect LastKnownRectSize;
-
     static EdgeLabelControl()
     {
         ShowLabelProperty.Changed.AddClassHandler<EdgeLabelControl>(ShowLabelChanged);
         AngleProperty.Changed.AddClassHandler<EdgeLabelControl>(AngleChanged);
-    }
-
-    public EdgeLabelControl()
-    {
-        RenderTransformOrigin = new RelativePoint(.5, .5, RelativeUnit.Relative);
-        LayoutUpdated += EdgeLabelControl_LayoutUpdated;
-        HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Left;
-        VerticalAlignment = Avalonia.Layout.VerticalAlignment.Top;
-        SizeChanged += EdgeLabelControl_SizeChanged;
-        Loaded += EdgeLabelControl_Loaded;
-        UpdateLabelOnSizeChange = true;
-        UpdateLabelOnVisibilityChange = true;
+        HorizontalAlignmentProperty.OverrideDefaultValue<EdgeLabelControl>(HorizontalAlignment.Left);
+        VerticalAlignmentProperty.OverrideDefaultValue<EdgeLabelControl>(VerticalAlignment.Top);
+        RenderTransformOriginProperty.OverrideDefaultValue<EdgeLabelControl>(new RelativePoint(0.5, 0.5,
+            RelativeUnit.Relative));
     }
 
     protected EdgeControl? EdgeControl => _edgeControl ??= GetEdgeControl(GetParent());
@@ -59,7 +45,21 @@ public abstract class EdgeLabelControl : ContentControl, IEdgeLabelControl
 
     private static void ShowLabelChanged(EdgeLabelControl elc, AvaloniaPropertyChangedEventArgs e)
     {
-        elc.EdgeControl?.InvalidateArrange();
+        // Ensure we only process valid boolean values for the ShowLabel property.
+        if (e.NewValue is not bool showLabel)
+            return;
+
+        // Delegate visibility changes through Show()/Hide() so any custom logic
+        // (e.g. self-loop edge visibility rules) is consistently applied.
+        if (showLabel)
+            elc.Show();
+        else
+            elc.Hide();
+
+        // Invalidate the associated edge layout so the label is repositioned
+        // immediately when its visibility changes.
+        var edgeControl = elc.EdgeControl;
+        edgeControl?.InvalidateMeasure();
     }
 
     public static readonly StyledProperty<bool> AlignToEdgeProperty =
@@ -173,12 +173,6 @@ public abstract class EdgeLabelControl : ContentControl, IEdgeLabelControl
     }
 
 
-    private void EdgeLabelControl_SizeChanged(object? sender, SizeChangedEventArgs sizeChangedEventArgs)
-    {
-        if (!UpdateLabelOnSizeChange) return;
-        UpdatePosition();
-    }
-
     private Control? GetParent()
     {
         return this.GetVisualParent() as Control;
@@ -187,196 +181,5 @@ public abstract class EdgeLabelControl : ContentControl, IEdgeLabelControl
     public void Dispose()
     {
         _edgeControl = null;
-    }
-
-    private static double GetLabelDistance(double edgeLength)
-    {
-        return edgeLength * .5; // set the label halfway the length of the edge
-    }
-
-    /// <summary>
-    /// Automaticaly update edge label position
-    /// </summary>
-    public virtual void UpdatePosition()
-    {
-        if (double.IsNaN(DesiredSize.Width) || DesiredSize.Width == 0) return;
-
-        if (EdgeControl == null)
-            return;
-        if (EdgeControl.Source == null || EdgeControl.Target == null)
-        {
-            Debug.WriteLine("EdgeLabelControl_LayoutUpdated() -> Got empty edgecontrol!");
-            return;
-        }
-
-        //if hidden
-        if (!IsVisible) return;
-
-        if (EdgeControl.IsSelfLooped)
-        {
-            var idesiredSize = DesiredSize;
-            var pt = EdgeControl.Source.GetCenterPosition();
-            SetSelfLoopedSize(pt.ToGraphX(), idesiredSize);
-            Arrange(LastKnownRectSize);
-            return;
-        }
-
-        var p1 = EdgeControl.SourceConnectionPoint.GetValueOrDefault().ToGraphX();
-        var p2 = EdgeControl.TargetConnectionPoint.GetValueOrDefault().ToGraphX();
-
-        double edgeLength = 0;
-        if (EdgeControl.Edge is IRoutingInfo routingInfo)
-        {
-            var routePoints = routingInfo.RoutingPoints;
-
-            if (routePoints == null || routePoints.Length == 0)
-            {
-                // the edge is a single segment (p1,p2)
-                edgeLength = GetLabelDistance(MathHelper.GetDistanceBetweenPoints(p1, p2));
-            }
-            else
-            {
-                // the edge has one or more segments
-                // compute the total length of all the segments
-                edgeLength = 0;
-                var rplen = routePoints.Length;
-                for (var i = 0; i <= rplen; ++i)
-                    if (i == 0)
-                        edgeLength += MathHelper.GetDistanceBetweenPoints(p1, routePoints[0]);
-                    else if (i == rplen)
-                        edgeLength += MathHelper.GetDistanceBetweenPoints(routePoints[rplen - 1], p2);
-                    else
-                        edgeLength += MathHelper.GetDistanceBetweenPoints(routePoints[i - 1], routePoints[i]);
-                // find the line segment where the half distance is located
-                edgeLength = GetLabelDistance(edgeLength);
-                var newp1 = p1;
-                var newp2 = p2;
-                for (var i = 0; i <= rplen; ++i)
-                {
-                    double lengthOfSegment;
-                    if (i == 0)
-                        lengthOfSegment = MathHelper.GetDistanceBetweenPoints(newp1 = p1, newp2 = routePoints[0]);
-                    else if (i == rplen)
-                        lengthOfSegment =
-                            MathHelper.GetDistanceBetweenPoints(newp1 = routePoints[rplen - 1], newp2 = p2);
-                    else
-                        lengthOfSegment =
-                            MathHelper.GetDistanceBetweenPoints(newp1 = routePoints[i - 1], newp2 = routePoints[i]);
-                    if (lengthOfSegment >= edgeLength)
-                        break;
-                    edgeLength -= lengthOfSegment;
-                }
-
-                // redefine our edge points
-                p1 = newp1;
-                p2 = newp2;
-            }
-        }
-
-        // The label control should be laid out on a rectangle, in the middle of the edge
-        var angleBetweenPoints = MathHelper.GetAngleBetweenPoints(p1, p2);
-        var desiredSize = DesiredSize;
-        var flipAxis = p1.X > p2.X; // Flip axis if source is "after" target
-
-        edgeLength = ApplyLabelHorizontalOffset(edgeLength, LabelHorizontalOffset);
-
-        // Calculate the center point of the edge
-        var centerPoint = new Measure.Point(p1.X + edgeLength * Math.Cos(angleBetweenPoints),
-            p1.Y - edgeLength * Math.Sin(angleBetweenPoints));
-        if (AlignToEdge)
-        {
-            // If we're aligning labels to the edges make sure add the label vertical offset
-            var yEdgeOffset = LabelVerticalOffset;
-            if (FlipOnRotation && flipAxis &&
-                !EdgeControl.IsParallel) // If we've flipped axis, move the offset to the other side of the edge
-                yEdgeOffset = -yEdgeOffset;
-
-            // Adjust offset for rotation. Remember, the offset is perpendicular from the edge tangent.
-            // Slap on 90 degrees to the angle between the points, to get the direction of the offset.
-            centerPoint.Y -= yEdgeOffset * Math.Sin(angleBetweenPoints + Math.PI / 2);
-            centerPoint.X += yEdgeOffset * Math.Cos(angleBetweenPoints + Math.PI / 2);
-            // Angle is in degrees
-            Angle = -angleBetweenPoints * 180 / Math.PI;
-            if (flipAxis)
-                Angle += 180; // Reorient the label so that it's always "pointing north"
-        }
-
-        UpdateFinalPosition(centerPoint, desiredSize);
-        LastKnownRectSize = LastKnownRectSize.IsEmpty()
-            ? new Rect(
-                double.IsNaN(LastKnownRectSize.X) ? 0 : LastKnownRectSize.X,
-                double.IsNaN(LastKnownRectSize.Y) ? 0 : LastKnownRectSize.Y,
-                double.IsNaN(LastKnownRectSize.Width) || LastKnownRectSize.Width == 0
-                    ? desiredSize.Width
-                    : LastKnownRectSize.Width,
-                double.IsNaN(LastKnownRectSize.Height) || LastKnownRectSize.Height == 0
-                    ? desiredSize.Height
-                    : LastKnownRectSize.Height
-            )
-            : LastKnownRectSize;
-        Arrange(LastKnownRectSize);
-    }
-
-    protected virtual double ApplyLabelHorizontalOffset(double edgeLength, double offset)
-    {
-        if (offset == 0) return edgeLength;
-        edgeLength += edgeLength / 100 * offset;
-        return edgeLength;
-    }
-
-    /// <summary>
-    /// Gets or sets if label should update its position and size data on visual size change. Helps to update label correctly on template manipulations. Can be turned off for better performance.
-    /// </summary>
-    public bool UpdateLabelOnSizeChange { get; set; }
-
-    /// <summary>
-    /// Gets or sets if label should additionaly update its position and size data on label visibility change. Can be turned off for better performance.
-    /// </summary>
-    public bool UpdateLabelOnVisibilityChange { get; set; }
-
-    private void SetSelfLoopedSize(Measure.Point pt, Size idesiredSize)
-    {
-        pt.Offset(-idesiredSize.Width / 2,
-            EdgeControl!.Source!.DesiredSize.Height * .5 + 2 + idesiredSize.Height * .5);
-        LastKnownRectSize = new Rect(pt.X, pt.Y, idesiredSize.Width, idesiredSize.Height);
-    }
-
-    private void UpdateFinalPosition(Measure.Point centerPoint, Size desiredSize)
-    {
-        LastKnownRectSize = new Rect(centerPoint.X - desiredSize.Width / 2,
-            centerPoint.Y - desiredSize.Height / 2, desiredSize.Width, desiredSize.Height);
-    }
-
-    /// <summary>
-    /// Get label rectangular size
-    /// </summary>
-    public Rect GetSize()
-    {
-        return LastKnownRectSize;
-    }
-
-    /// <summary>
-    /// Set label rectangular size
-    /// </summary>
-    public void SetSize(Rect size)
-    {
-        LastKnownRectSize = size;
-    }
-
-    private void EdgeLabelControl_Loaded(object? sender, RoutedEventArgs e)
-    {
-        if (EdgeControl is { IsSelfLooped: true } && !DisplayForSelfLoopedEdges) Hide();
-        else Show();
-    }
-
-    private void EdgeLabelControl_LayoutUpdated(object? sender, EventArgs e)
-    {
-        if (EdgeControl == null || !ShowLabel) return;
-        if (LastKnownRectSize.IsEmpty() || double.IsNaN(LastKnownRectSize.Width) ||
-            LastKnownRectSize.Width == 0)
-        {
-            UpdatePosition();
-        }
-        else Arrange(LastKnownRectSize);
     }
 }

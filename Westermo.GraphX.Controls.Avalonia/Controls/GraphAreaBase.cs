@@ -651,7 +651,9 @@ public abstract class GraphAreaBase : Canvas, ITrackableContent, IGraphAreaBase
 
             //get the position of the vertex
             var left = GetFinalX(child);
+            if (double.IsNaN(left)) left = GetX(child);
             var top = GetFinalY(child);
+            if (double.IsNaN(top)) top = GetY(child);
 
             if (!child.IsVisible) continue;
 

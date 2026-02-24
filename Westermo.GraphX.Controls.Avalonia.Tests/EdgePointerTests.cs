@@ -269,7 +269,7 @@ public class EdgePointerTests
         var targetPointer = edge.GetEdgePointerForTarget() as DefaultEdgePointer;
         await Assert.That(targetPointer).IsNotNull();
 
-        var rect = targetPointer!.LastKnownRectSize;
+        var rect = new Rect(edge.TargetPointerPosition.ToAvalonia(), targetPointer!.DesiredSize);
 
         // The rect should have non-zero size
         await Assert.That(rect.Width).IsGreaterThan(0)

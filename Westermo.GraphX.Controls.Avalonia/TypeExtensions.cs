@@ -19,6 +19,11 @@ public static class TypeExtensions
         {
             return new Point(v.X, v.Y);
         }
+
+        public Vector Perpendicular()
+        {
+            return new Vector(v.Y, -v.X);
+        }
     }
 
 
@@ -35,6 +40,11 @@ public static class TypeExtensions
         public Point ToAvalonia()
         {
             return new Point(point.X, point.Y);
+        }
+
+        public Vector Perpendicular()
+        {
+            return new Vector(point.Y, -point.X);
         }
     }
 
