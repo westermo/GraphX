@@ -719,7 +719,7 @@ public abstract class EdgeControlBase : TemplatedControl, IGraphControl, IDispos
             var labelSize = ctrl.DesiredSize;
             var offsetX = label.LabelHorizontalOffset * vector;
             var offsetY = label.LabelVerticalOffset * vector.Perpendicular();
-            if (label.FlipOnRotation && flipAxis & !IsParallel)
+            if (label.FlipOnRotation && flipAxis && !IsParallel)
             {
                 offsetY = -offsetY;
             }
