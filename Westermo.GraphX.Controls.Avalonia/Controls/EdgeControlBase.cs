@@ -779,9 +779,12 @@ public abstract class EdgeControlBase : TemplatedControl, IGraphControl, IDispos
             edgeLength -= lengthOfSegment;
         }
 
+        // Use the segment that contains the midpoint as the active segment.
         p1 = newp1;
         p2 = newp2;
         angle = MathHelper.GetAngleBetweenPoints(p1, p2);
+        // Recompute flipAxis for the selected segment so vector and label flipping work for routed edges.
+        flipAxis = p1.X > p2.X;
         vector = flipAxis ? p1 - p2 : p2 - p1;
         return new Measure.Point(p1.X + edgeLength * Math.Cos(angle), p1.Y - edgeLength * Math.Sin(angle));
     }
