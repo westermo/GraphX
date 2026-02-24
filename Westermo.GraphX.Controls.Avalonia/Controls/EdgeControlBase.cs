@@ -818,6 +818,9 @@ public abstract class EdgeControlBase : TemplatedControl, IGraphControl, IDispos
         var routingPoints = routingInfo.RoutingPoints;
         var edgeLength = TotalLength(p1, p2, routingPoints);
         var remaining = FindHalfwayPoint(edgeLength, routingPoints, ref p1, ref p2);
+        // After FindHalfwayPoint, p1 and p2 represent the segment containing the midpoint.
+        // Compute flipAxis based on the updated segment endpoints, consistent with the non-routing branch.
+        flipAxis = p1.X > p2.X;
         angle = MathHelper.GetAngleBetweenPoints(p1, p2);
         vector = flipAxis ? p1 - p2 : p2 - p1;
         return new Measure.Point(p1.X + remaining * Math.Cos(angle), p1.Y - remaining * Math.Sin(angle));
