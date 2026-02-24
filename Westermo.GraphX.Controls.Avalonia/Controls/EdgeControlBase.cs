@@ -16,7 +16,6 @@ using Westermo.GraphX.Common.Enums;
 using Westermo.GraphX.Common.Exceptions;
 using Westermo.GraphX.Common.Interfaces;
 using Westermo.GraphX.Controls.Controls.Misc;
-using Westermo.GraphX.Controls.Controls.ZoomControl.Helpers;
 using Westermo.GraphX.Controls.Models.Interfaces;
 
 namespace Westermo.GraphX.Controls.Controls;
@@ -500,10 +499,7 @@ public abstract class EdgeControlBase : TemplatedControl, IGraphControl, IDispos
         if (!RootArea.Children.Contains((Control)ctrl))
             RootArea.Children.Add((Control)ctrl);
         ctrl.Show();
-        var r = ctrl.GetSize();
-        if (!r.IsEmpty()) return;
-        ctrl.UpdateLayout();
-        ctrl.UpdatePosition();
+        InvalidateMeasure();
     }
 
     /// <summary>
@@ -525,12 +521,7 @@ public abstract class EdgeControlBase : TemplatedControl, IGraphControl, IDispos
     /// </summary>
     public void UpdateLabel()
     {
-        _edgeLabelControls.Where(l => l.ShowLabel).ForEach(l =>
-        {
-            l.Show();
-            l.UpdateLayout();
-            l.UpdatePosition();
-        });
+        _edgeLabelControls.Where(l => l.ShowLabel).ForEach(l => { l.Show(); });
     }
 
 
@@ -702,37 +693,97 @@ public abstract class EdgeControlBase : TemplatedControl, IGraphControl, IDispos
             routingBounds = new Size(dx, dy);
         }
 
+        foreach (var label in EdgeLabelControls)
+        {
+            if (IsSelfLooped && !label.DisplayForSelfLoopedEdges) continue;
+            if (label is not Control { IsVisible: true } ctrl) continue;
+            ctrl.Measure(availableSize);
+            selfLoopSize = Union(selfLoopSize, ctrl.DesiredSize);
+        }
+
         return Union(new Size(right - left, bottom - top), selfLoopSize, routingBounds);
     }
 
     protected override Size ArrangeOverride(Size finalSize)
     {
-        foreach (var l in EdgeLabelControls)
-        {
-            switch (l.ShowLabel)
-            {
-                case true:
-                    l.UpdatePosition();
-                    l.Show();
-                    break;
-                default:
-                    l.Hide();
-                    break;
-            }
-        }
-
         //use final vertex coordinates (layout results) instead of current to avoid drawing collapsed edges before animation/position commit
         LineGeometry = PrepareEdgePath();
-        foreach (var l in EdgeLabelControls)
-        {
-            if (l.ShowLabel)
-                l.UpdatePosition();
-        }
 
         if (LinePathObject == null) return base.ArrangeOverride(finalSize);
         LinePathObject.Data = LineGeometry;
         LinePathObject.StrokeDashArray = StrokeDashArray;
+        var midPoint = GetMidpoint(out double angle, out bool flipAxis, out var vector);
+        foreach (var label in EdgeLabelControls)
+        {
+            if (label is not Control { IsVisible: true } ctrl) continue;
+            var labelSize = ctrl.DesiredSize;
+            var offsetX = label.LabelHorizontalOffset * vector;
+            var offsetY = label.LabelVerticalOffset * vector.Perpendicular();
+            if (label.FlipOnRotation && flipAxis & !IsParallel)
+            {
+                offsetY = -offsetY;
+            }
+
+            var localPoint = midPoint;
+            localPoint.X += -labelSize.Width / 2 + offsetX.X + offsetY.X;
+            localPoint.Y += -labelSize.Height / 2 + offsetX.Y + offsetY.Y;
+            ctrl.SetCurrentValue(GraphAreaBase.XProperty, localPoint.X);
+            ctrl.SetCurrentValue(GraphAreaBase.YProperty, localPoint.Y);
+            label.Angle = -angle.ToDegrees() + (flipAxis ? 180 : 0);
+            ctrl.Arrange(new Rect(localPoint.X, localPoint.Y, labelSize.Width, labelSize.Height));
+        }
+
         return base.ArrangeOverride(finalSize);
+    }
+
+    private Measure.Point GetMidpoint(out double angle, out bool flipAxis, out Measure.Vector vector)
+    {
+        angle = 0;
+        flipAxis = false;
+        vector = new Measure.Vector(1, 1);
+        if (IsSelfLooped)
+        {
+            if (Source is null) return default;
+            var pt = Source.GetCenterPosition().ToGraphX();
+            pt.Offset(SelfLoopIndicatorOffset.X, SelfLoopIndicatorOffset.Y);
+            angle = 45;
+            return pt;
+        }
+
+        if (Source == null || Target == null) return default;
+        var p1 = SourceConnectionPoint.GetValueOrDefault().ToGraphX();
+        var p2 = TargetConnectionPoint.GetValueOrDefault().ToGraphX();
+        if (Edge is not IRoutingInfo { RoutingPoints.Length: > 0 } routingInfo)
+        {
+            var mid = new Measure.Point((p1.X + p2.X) / 2, (p1.Y + p2.Y) / 2);
+            angle = MathHelper.GetAngleBetweenPoints(p1, p2);
+            flipAxis = p1.X > p2.X;
+            vector = flipAxis ? p1 - p2 : p2 - p1;
+            return mid;
+        }
+
+        var edgeLength = 0.0;
+        Measure.Point[] points = [p1, ..routingInfo.RoutingPoints, p2];
+        for (var i = 0; i < points.Length - 1; i++)
+        {
+            edgeLength += MathHelper.GetDistanceBetweenPoints(points[i], points[i + 1]);
+        }
+
+        edgeLength /= 2;
+        var newp1 = p1;
+        var newp2 = p2;
+        for (int i = 0; i < points.Length - 1; i++)
+        {
+            double lengthOfSegment = MathHelper.GetDistanceBetweenPoints(newp1 = points[i], newp2 = points[i + 1]);
+            if (lengthOfSegment >= edgeLength) break;
+            edgeLength -= lengthOfSegment;
+        }
+
+        p1 = newp1;
+        p2 = newp2;
+        angle = MathHelper.GetAngleBetweenPoints(p1, p2);
+        vector = flipAxis ? p1 - p2 : p2 - p1;
+        return new Measure.Point(p1.X + edgeLength * Math.Cos(angle), p1.Y - edgeLength * Math.Sin(angle));
     }
 
     internal int ParallelEdgeOffset;
@@ -956,7 +1007,6 @@ public abstract class EdgeControlBase : TemplatedControl, IGraphControl, IDispos
     /// <c>CreateFigure</c>. Using <see cref="StreamGeometry"/> is more performant than
     /// <see cref="PathGeometry"/> for dynamically generated edge visuals.
     /// </summary>
-    /// <param name="externalRoutingPoints">Optional external routing points provided by the routing algorithm, if any.</param>
     /// <param name="hasRouteInfo">Indicates whether valid route information is available in <paramref name="routeInformation"/>.</param>
     /// <param name="routeInformation">The route points describing the edge path when routing is enabled.</param>
     /// <param name="p1">The initial source connection point of the edge before pointer adjustments.</param>
@@ -1225,11 +1275,6 @@ public abstract class EdgeControlBase : TemplatedControl, IGraphControl, IDispos
     protected virtual object? GetTemplatePart(TemplateAppliedEventArgs args, string name)
     {
         return args.NameScope.Find(name);
-    }
-
-    public virtual IList<Rect> GetLabelSizes()
-    {
-        return [.. EdgeLabelControls.Select(l => l.GetSize())];
     }
 
     // Internal test accessor
