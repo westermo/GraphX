@@ -1,8 +1,10 @@
 ﻿using System;
 using Avalonia;
 using Avalonia.Controls;
+using Avalonia.Layout;
 using Avalonia.Media;
 using Avalonia.VisualTree;
+using QuikGraph;
 using Westermo.GraphX.Controls.Controls.Misc;
 using Westermo.GraphX.Controls.Controls.ZoomControl.Helpers;
 
@@ -29,13 +31,14 @@ public class DefaultEdgePointer : ContentControl, IEdgePointer
         var newPmd = new StyledPropertyMetadata<bool>(oldPmd.DefaultValue, coerce: CoerceVisibility);
         IsVisibleProperty.OverrideMetadata<DefaultEdgePointer>(newPmd);
         IsSuppressedProperty.Changed.AddClassHandler<DefaultEdgePointer>(OnSuppressChanged);
+        HorizontalAlignmentProperty.OverrideDefaultValue<DefaultEdgePointer>(HorizontalAlignment.Center);
+        VerticalAlignmentProperty.OverrideDefaultValue<DefaultEdgePointer>(VerticalAlignment.Center);
+        RenderTransformOriginProperty.OverrideDefaultValue<DefaultEdgePointer>(new RelativePoint(0.5, 0.5,
+            RelativeUnit.Relative));
     }
 
 
     #region Common part
-
-    internal Rect LastKnownRectSize;
-
 
     public static readonly StyledProperty<Point> OffsetProperty =
         AvaloniaProperty.Register<EdgeControl, Point>(nameof(Offset));
@@ -62,7 +65,7 @@ public class DefaultEdgePointer : ContentControl, IEdgePointer
     /// <inheritdoc />
     public Measure.Point GetPosition()
     {
-        return LastKnownRectSize.IsEmpty() ? new Point().ToGraphX() : LastKnownRectSize.Center().ToGraphX();
+        return EdgeControl?.GetPointerPosition(this) ?? new Measure.Point();
     }
 
     public void Show()
@@ -148,60 +151,11 @@ public class DefaultEdgePointer : ContentControl, IEdgePointer
         RenderTransformOrigin = new RelativePoint(.5, .5, RelativeUnit.Relative);
         VerticalAlignment = global::Avalonia.Layout.VerticalAlignment.Center;
         HorizontalAlignment = global::Avalonia.Layout.HorizontalAlignment.Center;
-        LayoutUpdated += EdgePointer_LayoutUpdated;
-    }
-
-    /// <summary>
-    /// Update edge pointer position and angle
-    /// </summary>
-    public virtual Measure.Point Update(Measure.Point? position, Measure.Vector direction, double angle = 0d)
-    {
-        // Get the size to use - prefer DesiredSize, fallback to explicit Width/Height, then Bounds
-        var width = DesiredSize.Width;
-        var height = DesiredSize.Height;
-
-        if (width == 0 || height == 0)
-        {
-            // Fallback to explicit Width/Height if DesiredSize not available yet
-            width = double.IsNaN(Width) ? Bounds.Width : Width;
-            height = double.IsNaN(Height) ? Bounds.Height : Height;
-        }
-
-        if (width == 0 || height == 0 || !position.HasValue) return new Measure.Point();
-
-        // Calculate the offset to move the pointer along the direction by half its size
-        var vecMove = new Measure.Vector(direction.X * width * .5, direction.Y * height * .5);
-        position = new Measure.Point(position.Value.X - vecMove.X, position.Value.Y - vecMove.Y);
-        if (!double.IsNaN(width) && width != 0 && !double.IsNaN(position.Value.X))
-        {
-            LastKnownRectSize =
-                new Rect(
-                    new Point(position.Value.X - width * .5,
-                        position.Value.Y - height * .5), new Size(width, height));
-            Arrange(LastKnownRectSize);
-        }
-
-        RenderTransform = new RotateTransform { Angle = double.IsNaN(angle) ? 0 : angle, CenterX = 0, CenterY = 0 };
-        return new Measure.Point(direction.X * width, direction.Y * height);
-    }
-
-    public void SetManualPosition(Measure.Point position)
-    {
-        LastKnownRectSize =
-            new Rect(new Point(position.X - DesiredSize.Width * .5, position.Y - DesiredSize.Height * .5),
-                DesiredSize);
-        Arrange(LastKnownRectSize);
     }
 
     public void Dispose()
     {
         _edgeControl = null;
-    }
-
-    private void EdgePointer_LayoutUpdated(object? sender, EventArgs e)
-    {
-        if (LastKnownRectSize.Width != 0 && EdgeControl != null)
-            Arrange(LastKnownRectSize);
     }
 
     private Control? GetParent()

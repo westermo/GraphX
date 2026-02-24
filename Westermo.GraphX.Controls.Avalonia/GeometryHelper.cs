@@ -62,9 +62,9 @@ public static class GeometryHelper
         Debug.Assert(points.Length >= 2);
         Debug.Assert(tolerance > 0);
 
-            // Pre-calculate estimated capacity to reduce list resizing
-            var estimatedCapacity = EstimateCurvePointCount(points, tolerance);
-            var oPolyLineSegment = new List<Point>(estimatedCapacity);
+        // Pre-calculate estimated capacity to reduce list resizing
+        var estimatedCapacity = EstimateCurvePointCount(points, tolerance);
+        var oPolyLineSegment = new List<Point>(estimatedCapacity);
 
         if (points.Length == 2)
         {
@@ -103,31 +103,31 @@ public static class GeometryHelper
         return oPolyLineSegment;
     }
 
-        /// <summary>
-        /// Estimates the number of points needed for the curve to pre-allocate list capacity.
-        /// </summary>
-        /// <param name="points">The sequence of points that define the curve.</param>
-        /// <param name="tolerance">The tolerance used when approximating the curve; smaller values typically require more points.</param>
-        /// <returns>The estimated number of points required to represent the curve, used to pre-allocate the list capacity.</returns>
-        private static int EstimateCurvePointCount(Span<Point> points, double tolerance)
+    /// <summary>
+    /// Estimates the number of points needed for the curve to pre-allocate list capacity.
+    /// </summary>
+    /// <param name="points">The sequence of points that define the curve.</param>
+    /// <param name="tolerance">The tolerance used when approximating the curve; smaller values typically require more points.</param>
+    /// <returns>The estimated number of points required to represent the curve, used to pre-allocate the list capacity.</returns>
+    private static int EstimateCurvePointCount(Span<Point> points, double tolerance)
+    {
+        if (points.Length < 2) return 2;
+
+        var totalDistance = 0.0;
+        for (var i = 0; i < points.Length - 1; i++)
         {
-            if (points.Length < 2) return 2;
-
-            var totalDistance = 0.0;
-            for (var i = 0; i < points.Length - 1; i++)
-            {
-                totalDistance += Math.Abs(points[i].X - points[i + 1].X) +
-                                 Math.Abs(points[i].Y - points[i + 1].Y);
-            }
-
-            // Estimate based on total distance and tolerance, with some buffer
-            return Math.Max(points.Length, (int)(totalDistance / tolerance) + points.Length);
+            totalDistance += Math.Abs(points[i].X - points[i + 1].X) +
+                             Math.Abs(points[i].Y - points[i + 1].Y);
         }
 
-        public static IList<Point> GetCurvePointsThroughPoints(Point[] points, double tension, double tolerance)
-        {
-            return GetCurveThroughPoints(points, tension, tolerance);
-        }
+        // Estimate based on total distance and tolerance, with some buffer
+        return Math.Max(points.Length, (int)(totalDistance / tolerance) + points.Length);
+    }
+
+    public static IList<Point> GetCurvePointsThroughPoints(Point[] points, double tension, double tolerance)
+    {
+        return GetCurveThroughPoints(points, tension, tolerance);
+    }
 
 
     private static void AddPointsToPolyLineSegment(List<Point> oPolyLineSegment, Point oPoint0, Point oPoint1,
@@ -161,20 +161,20 @@ public static class GeometryHelper
             var dDx = oPoint1.X;
             var dDy = oPoint1.Y;
 
-                // Pre-calculate divisor to avoid repeated division
-                var divisor = 1.0 / (iPoints - 1);
+            // Pre-calculate divisor to avoid repeated division
+            var divisor = 1.0 / (iPoints - 1);
 
-                // Note that this starts at 1, not 0.
-                for (var i = 1; i < iPoints; i++)
-                {
-                    var t = i * divisor;
-                    var t2 = t * t;      // Cache t squared
-                    var t3 = t2 * t;     // Cache t cubed
+            // Note that this starts at 1, not 0.
+            for (var i = 1; i < iPoints; i++)
+            {
+                var t = i * divisor;
+                var t2 = t * t; // Cache t squared
+                var t3 = t2 * t; // Cache t cubed
 
-                    var oPoint = new Point(
-                        dAx * t3 + dBx * t2 + dCx * t + dDx,
-                        dAy * t3 + dBy * t2 + dCy * t + dDy
-                    );
+                var oPoint = new Point(
+                    dAx * t3 + dBx * t2 + dCx * t + dDx,
+                    dAy * t3 + dBy * t2 + dCy * t + dDy
+                );
 
                 oPolyLineSegment.Add(oPoint);
             }

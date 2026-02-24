@@ -969,6 +969,7 @@ public class GraphArea<TVertex, TEdge, TGraph> : GraphAreaBase, IDisposable
 
             SetCurrentValue(LogicCoreProperty, localLogicCore);
             InvalidateMeasure();
+            Measure(new Size(double.PositiveInfinity, double.PositiveInfinity));
         }
 
         void PreUpdate()
@@ -1005,7 +1006,7 @@ public class GraphArea<TVertex, TEdge, TGraph> : GraphAreaBase, IDisposable
                 });
             }
 
-            UpdateLayout(); //update layout so we can get actual control sizes
+            // UpdateLayout(); //update layout so we can get actual control sizes
 
             Measure(new Size(double.PositiveInfinity, double.PositiveInfinity));
             if (LogicCore.AreVertexSizesNeeded())

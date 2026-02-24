@@ -60,7 +60,6 @@ public abstract class EdgeLabelControl : ContentControl, IEdgeLabelControl
         // immediately when its visibility changes.
         var edgeControl = elc.EdgeControl;
         edgeControl?.InvalidateMeasure();
-        edgeControl?.InvalidateArrange();
     }
 
     public static readonly StyledProperty<bool> AlignToEdgeProperty =
