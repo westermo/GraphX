@@ -757,8 +757,11 @@ public abstract class EdgeControlBase : TemplatedControl, IGraphControl, IDispos
         if (LinePathObject == null) return base.ArrangeOverride(finalSize);
         LinePathObject.Data = LineGeometry;
         LinePathObject.StrokeDashArray = StrokeDashArray;
+
+        var result = base.ArrangeOverride(finalSize);
+        ApplyPendingEdgePointers();
         var midPoint = GetMidpoint(out var angle, out var flipAxis, out var vector);
-        if (midPoint == default) return base.ArrangeOverride(finalSize);
+        if (midPoint == default) return result;
         vector.Normalize();
         foreach (var label in EdgeLabelControls)
         {
@@ -780,8 +783,6 @@ public abstract class EdgeControlBase : TemplatedControl, IGraphControl, IDispos
             ctrl.Arrange(new Rect(localPoint.X, localPoint.Y, labelSize.Width, labelSize.Height));
         }
 
-        var result = base.ArrangeOverride(finalSize);
-        ApplyPendingEdgePointers();
         return result;
     }
 
