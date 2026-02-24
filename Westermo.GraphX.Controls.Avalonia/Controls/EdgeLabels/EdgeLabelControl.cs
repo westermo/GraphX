@@ -45,7 +45,22 @@ public abstract class EdgeLabelControl : ContentControl, IEdgeLabelControl
 
     private static void ShowLabelChanged(EdgeLabelControl elc, AvaloniaPropertyChangedEventArgs e)
     {
-        elc.SetCurrentValue(IsVisibleProperty, e.NewValue);
+        // Ensure we only process valid boolean values for the ShowLabel property.
+        if (e.NewValue is not bool showLabel)
+            return;
+
+        // Delegate visibility changes through Show()/Hide() so any custom logic
+        // (e.g. self-loop edge visibility rules) is consistently applied.
+        if (showLabel)
+            elc.Show();
+        else
+            elc.Hide();
+
+        // Invalidate the associated edge layout so the label is repositioned
+        // immediately when its visibility changes.
+        var edgeControl = elc.EdgeControl;
+        edgeControl?.InvalidateMeasure();
+        edgeControl?.InvalidateArrange();
     }
 
     public static readonly StyledProperty<bool> AlignToEdgeProperty =
