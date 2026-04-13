@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1771937736313,
+  "lastUpdate": 1776088450426,
   "repoUrl": "https://github.com/westermo/GraphX",
   "entries": {
     "Benchmark.Net Benchmark": [
@@ -600,6 +600,126 @@ window.BENCHMARK_DATA = {
             "value": 6706679.0703125,
             "unit": "ns",
             "range": "± 55455.2996038245"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "142813963+carl-andersson-at-westermo@users.noreply.github.com",
+            "name": "Caran",
+            "username": "carl-andersson-at-westermo"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "ece4cdd2868f508a9f3f88618fb3ae398e53074a",
+          "message": "Avalonia 12 (#16)",
+          "timestamp": "2026-04-13T15:48:09+02:00",
+          "tree_id": "fa7a304d8f4826b906560a7038e5e5da529edd14",
+          "url": "https://github.com/westermo/GraphX/commit/ece4cdd2868f508a9f3f88618fb3ae398e53074a"
+        },
+        "date": 1776088448207,
+        "tool": "benchmarkdotnet",
+        "benches": [
+          {
+            "name": "GraphXBenchmarks.GraphRenderingBenchmarks.SmallGraph_PreloadVertexes",
+            "value": 291125.5967145647,
+            "unit": "ns",
+            "range": "± 3832.591594988057"
+          },
+          {
+            "name": "GraphXBenchmarks.GraphRenderingBenchmarks.MediumGraph_PreloadVertexes",
+            "value": 2873463.690848214,
+            "unit": "ns",
+            "range": "± 65972.23835948946"
+          },
+          {
+            "name": "GraphXBenchmarks.GraphRenderingBenchmarks.LargeGraph_PreloadVertexes",
+            "value": 18818231.391666666,
+            "unit": "ns",
+            "range": "± 164915.47400247853"
+          },
+          {
+            "name": "GraphXBenchmarks.GraphRenderingBenchmarks.SmallGraph_PreloadAndGenerateEdges",
+            "value": 562295.8703264509,
+            "unit": "ns",
+            "range": "± 4637.0305287625215"
+          },
+          {
+            "name": "GraphXBenchmarks.GraphRenderingBenchmarks.MediumGraph_PreloadAndGenerateEdges",
+            "value": 7244704.046875,
+            "unit": "ns",
+            "range": "± 70996.94437787523"
+          },
+          {
+            "name": "GraphXBenchmarks.GraphRenderingBenchmarks.LargeGraph_PreloadAndGenerateEdges",
+            "value": 61232391.553571425,
+            "unit": "ns",
+            "range": "± 441005.28355272836"
+          },
+          {
+            "name": "GraphXBenchmarks.GraphRenderingBenchmarks.SmallGraph_UpdateAllEdges",
+            "value": 561329.2121233259,
+            "unit": "ns",
+            "range": "± 6505.679788572231"
+          },
+          {
+            "name": "GraphXBenchmarks.GraphRenderingBenchmarks.MediumGraph_UpdateAllEdges",
+            "value": 7297842.941666666,
+            "unit": "ns",
+            "range": "± 63839.91634858622"
+          },
+          {
+            "name": "GraphXBenchmarks.GraphRenderingBenchmarks.LargeGraph_UpdateAllEdges",
+            "value": 60682395.946428575,
+            "unit": "ns",
+            "range": "± 618126.4272409745"
+          },
+          {
+            "name": "GraphXBenchmarks.GraphRenderingBenchmarks.LargeGraph_VertexCreationOnly",
+            "value": 18992725.352083333,
+            "unit": "ns",
+            "range": "± 241820.50356972258"
+          },
+          {
+            "name": "GraphXBenchmarks.GraphRenderingBenchmarks.LargeGraph_EdgeGenerationOnly",
+            "value": 61613466.701754384,
+            "unit": "ns",
+            "range": "± 1302739.120348246"
+          },
+          {
+            "name": "GraphXBenchmarks.GraphRenderingBenchmarks.LargeGraph_UpdateEdgesRenderingOnly",
+            "value": 61220024.483333334,
+            "unit": "ns",
+            "range": "± 879637.5501319877"
+          },
+          {
+            "name": "GraphXBenchmarks.GraphRenderingBenchmarks.LargeGraph_UpdateEdges_WithParallelEdges",
+            "value": 60547164.78333333,
+            "unit": "ns",
+            "range": "± 561008.8032291087"
+          },
+          {
+            "name": "GraphXBenchmarks.GraphRenderingBenchmarks.LargeGraph_UpdateEdges_WithCurving",
+            "value": 61951468.3125,
+            "unit": "ns",
+            "range": "± 875883.9500015796"
+          },
+          {
+            "name": "GraphXBenchmarks.GraphRenderingBenchmarks.LargeGraph_PositionUpdatesCost",
+            "value": 21168916.125,
+            "unit": "ns",
+            "range": "± 192442.96550094956"
+          },
+          {
+            "name": "GraphXBenchmarks.GraphRenderingBenchmarks.MediumGraph_WithSelfLoops_UpdateAllEdges",
+            "value": 7187045.212611607,
+            "unit": "ns",
+            "range": "± 95009.1637455744"
           }
         ]
       }
