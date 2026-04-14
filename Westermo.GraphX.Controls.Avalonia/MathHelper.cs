@@ -71,14 +71,10 @@ public static class MathHelper
         var sinTheta = Math.Sin(angleInRadians);
         return new Point
         {
-            X =
-                (int)
-                (cosTheta * (pointToRotate.X - centerPoint.X) -
-                    sinTheta * (pointToRotate.Y - centerPoint.Y) + centerPoint.X),
-            Y =
-                (int)
-                (sinTheta * (pointToRotate.X - centerPoint.X) +
-                 cosTheta * (pointToRotate.Y - centerPoint.Y) + centerPoint.Y)
+            X = cosTheta * (pointToRotate.X - centerPoint.X) -
+                    sinTheta * (pointToRotate.Y - centerPoint.Y) + centerPoint.X,
+            Y = sinTheta * (pointToRotate.X - centerPoint.X) +
+                 cosTheta * (pointToRotate.Y - centerPoint.Y) + centerPoint.Y
         };
     }
 

@@ -7,6 +7,7 @@ using Avalonia.Controls.Primitives;
 using Avalonia.Input;
 using Avalonia.Interactivity;
 using Avalonia.Media;
+using Avalonia.Threading;
 using Westermo.GraphX.Controls.Controls.Misc;
 using Westermo.GraphX.Controls.Controls.ZoomControl.SupportClasses;
 using Westermo.GraphX.Controls.Models;
@@ -34,6 +35,11 @@ public sealed class ZoomControl : ContentControl, IZoomControl, INotifyPropertyC
     private bool _clickTrack;
     private bool _startedAsAreaSelection;
 
+    /// <summary>
+    /// Guards against redundant viewport updates during batched property changes.
+    /// </summary>
+    private bool _viewportUpdatePending;
+
     // Hook placeholders
     private void HookBeforeZoomChanging()
     {
@@ -41,8 +47,24 @@ public sealed class ZoomControl : ContentControl, IZoomControl, INotifyPropertyC
 
     private void HookAfterZoomChanging()
     {
-        NotifyGraphAreaViewportChanged();
-        NotifyGraphAreaZoomChanged();
+        ScheduleViewportUpdate();
+    }
+
+    /// <summary>
+    /// Schedules a deferred viewport update to coalesce multiple translate/zoom changes
+    /// into a single notification. This prevents O(N) culling scans from running multiple
+    /// times when TranslateX, TranslateY, and Zoom change in the same frame.
+    /// </summary>
+    private void ScheduleViewportUpdate()
+    {
+        if (_viewportUpdatePending) return;
+        _viewportUpdatePending = true;
+        Dispatcher.UIThread.Post(() =>
+        {
+            _viewportUpdatePending = false;
+            NotifyGraphAreaViewportChanged();
+            NotifyGraphAreaZoomChanged();
+        }, DispatcherPriority.Render);
     }
 
     /// <summary>
@@ -300,7 +322,7 @@ public sealed class ZoomControl : ContentControl, IZoomControl, INotifyPropertyC
         if (!zc._isZooming) zc.Mode = ZoomControlModes.Custom;
         zc.OnPropertyChanged(nameof(Presenter));
         zc.Presenter?.InvalidateVisual();
-        zc.NotifyGraphAreaViewportChanged();
+        zc.ScheduleViewportUpdate();
     }
 
     private static void TranslateY_PropertyChanged(ZoomControl zc, AvaloniaPropertyChangedEventArgs e)
@@ -310,7 +332,7 @@ public sealed class ZoomControl : ContentControl, IZoomControl, INotifyPropertyC
         if (!zc._isZooming) zc.Mode = ZoomControlModes.Custom;
         zc.OnPropertyChanged(nameof(Presenter));
         zc.Presenter?.InvalidateVisual();
-        zc.NotifyGraphAreaViewportChanged();
+        zc.ScheduleViewportUpdate();
     }
 
     public static readonly StyledProperty<IBrush> ZoomBoxBackgroundProperty =

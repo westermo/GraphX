@@ -1,5 +1,4 @@
-﻿using System;
-using Avalonia;
+﻿using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Layout;
 using Avalonia.VisualTree;
@@ -86,7 +85,6 @@ public class StaticVertexConnectionPoint : ContentControl, IVertexConnectionPoin
         RenderTransformOrigin = new RelativePoint(new Point(0.5, 0.5), RelativeUnit.Absolute);
         VerticalAlignment = VerticalAlignment.Center;
         HorizontalAlignment = HorizontalAlignment.Center;
-        LayoutUpdated += OnLayoutUpdated;
     }
 
     public void Update()
@@ -105,8 +103,4 @@ public class StaticVertexConnectionPoint : ContentControl, IVertexConnectionPoin
         return this.GetVisualParent() as Control;
     }
 
-    protected virtual void OnLayoutUpdated(object? sender, EventArgs e)
-    {
-        CalculateRectangularSize();
-    }
 }

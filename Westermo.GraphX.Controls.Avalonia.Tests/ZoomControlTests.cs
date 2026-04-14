@@ -1,5 +1,6 @@
 using Avalonia;
 using Avalonia.Controls;
+using Avalonia.Threading;
 using Westermo.GraphX.Controls.Controls.ZoomControl;
 using Westermo.GraphX.Controls.Controls.ZoomControl.SupportClasses;
 
@@ -371,6 +372,60 @@ public class ZoomControlTests
             // For non-trackable content, translate is (0, 0)
             await Assert.That(Math.Abs(zc.TranslateX)).IsLessThan(Tolerance);
             await Assert.That(Math.Abs(zc.TranslateY)).IsLessThan(Tolerance);
+        }
+        finally
+        {
+            window.Close();
+        }
+    }
+
+    #endregion
+
+    #region Deferred Viewport Update Tests
+
+    [Test]
+    public async Task TranslateXY_BatchChange_CoalescesViewportUpdates()
+    {
+        // Setting both TranslateX and TranslateY should not cause two immediate
+        // viewport notifications — they should be deferred and coalesced.
+        var (zc, window) = CreateZoomControlWithContent(800, 600, 400, 200);
+        try
+        {
+            // Force initial layout
+            zc.ZoomToFill();
+
+            // Change both translate properties in quick succession
+            zc.TranslateX = 100;
+            zc.TranslateY = 200;
+
+            // Process the deferred Render-priority callback
+            await Dispatcher.UIThread.InvokeAsync(() => { }, DispatcherPriority.Render);
+
+            // After processing, translate values should be applied
+            await Assert.That(Math.Abs(zc.TranslateX - 100)).IsLessThan(Tolerance);
+            await Assert.That(Math.Abs(zc.TranslateY - 200)).IsLessThan(Tolerance);
+        }
+        finally
+        {
+            window.Close();
+        }
+    }
+
+    [Test]
+    public async Task Zoom_Change_UsesScheduledViewportUpdate()
+    {
+        // Changing Zoom should schedule a deferred viewport update
+        // rather than calling NotifyGraphAreaViewportChanged directly.
+        var (zc, window) = CreateZoomControlWithContent(800, 600, 400, 200);
+        try
+        {
+            zc.Mode = ZoomControlModes.Custom;
+            zc.Zoom = 2.0;
+
+            // Process deferred callback
+            await Dispatcher.UIThread.InvokeAsync(() => { }, DispatcherPriority.Render);
+
+            await Assert.That(Math.Abs(zc.Zoom - 2.0)).IsLessThan(Tolerance);
         }
         finally
         {

@@ -9,6 +9,7 @@ using Avalonia.Interactivity;
 using Westermo.GraphX.Common.Exceptions;
 using Westermo.GraphX.Common.Interfaces;
 using Westermo.GraphX.Controls.Behaviours;
+using Avalonia.Threading;
 using Westermo.GraphX.Controls.Controls.Interfaces;
 using Westermo.GraphX.Controls.Controls.Misc;
 using Westermo.GraphX.Controls.Controls.ZoomControl.Helpers;
@@ -205,11 +206,38 @@ public class VertexControl : VertexControlBase, IXYReactive, IDraggable
         return (T)Vertex!;
     }
 
+    /// <summary>
+    /// Guards against redundant position change processing during batched X/Y updates.
+    /// When SetPosition(x,y) is called, X and Y change sequentially, triggering XYChanged twice.
+    /// This flag ensures we only process the update once by skipping the first call
+    /// and processing on the second (which has both X and Y updated).
+    /// </summary>
+    private bool _positionUpdatePending;
+
     public void XYChanged(AvaloniaPropertyChangedEventArgs args)
     {
-        if (ShowLabel)
-            VertexLabelControl?.UpdatePosition();
-        OnPositionChanged(new Point(), GetPosition());
+        if (_positionUpdatePending)
+        {
+            // Second property change in a batched SetPosition — process the update now.
+            _positionUpdatePending = false;
+            if (ShowLabel)
+                VertexLabelControl?.UpdatePosition();
+            OnPositionChanged(new Point(), GetPosition());
+            return;
+        }
+
+        // First property change — defer to coalesce with a potential second change.
+        _positionUpdatePending = true;
+        Dispatcher.UIThread.Post(() =>
+        {
+            // Only fires if no second property change occurred synchronously
+            // (e.g., when only X or only Y was changed individually).
+            if (!_positionUpdatePending) return;
+            _positionUpdatePending = false;
+            if (ShowLabel)
+                VertexLabelControl?.UpdatePosition();
+            OnPositionChanged(new Point(), GetPosition());
+        }, DispatcherPriority.Render);
     }
 
     private Point? m_dragOrigin;

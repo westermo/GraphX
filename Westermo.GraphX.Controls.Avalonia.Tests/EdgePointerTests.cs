@@ -368,4 +368,48 @@ public class EdgePointerTests
             .Because(
                 $"For vertical edge spanning Y 100-400, target pointer Y ({pointerPos.Y:F1}) should be towards bottom");
     }
+
+    [Test]
+    public async Task EdgePointer_PositionSurvives_MultipleArrangePasses()
+    {
+        // Regression guard: edge pointers must retain correct positions across
+        // multiple arrange passes even when geometry dirty-checking determines
+        // no rebuild is needed (i.e. the cached pointer data must be re-applied).
+        var sourcePos = new Point(100, 100);
+        var targetPos = new Point(400, 100);
+        var (area, edge, sourceVc, targetVc) = CreateTestGraph(sourcePos, targetPos);
+
+        var targetPointer = edge.GetEdgePointerForTarget();
+        await Assert.That(targetPointer).IsNotNull();
+
+        // Capture position after initial layout
+        var initialPos = targetPointer!.GetPosition();
+        await Assert.That(initialPos.X).IsGreaterThan(100)
+            .Because("Target pointer should be positioned near the target vertex after initial layout");
+
+        // Force a second arrange pass WITHOUT moving any vertex.
+        // This simulates the scenario where ArrangeOverride runs again (e.g. due to
+        // a sibling change) but ShouldRebuildGeometry() returns false. The edge
+        // pointers must still be at the correct positions.
+        edge.InvalidateArrange();
+        edge.UpdateLayout();
+        Dispatcher.UIThread.RunJobs();
+
+        var afterSecondArrange = targetPointer.GetPosition();
+        await Assert.That(Math.Abs(afterSecondArrange.X - initialPos.X)).IsLessThan(1)
+            .Because($"Target pointer X should be stable across arrange passes. " +
+                     $"Initial: {initialPos.X:F1}, After re-arrange: {afterSecondArrange.X:F1}");
+        await Assert.That(Math.Abs(afterSecondArrange.Y - initialPos.Y)).IsLessThan(1)
+            .Because($"Target pointer Y should be stable across arrange passes. " +
+                     $"Initial: {initialPos.Y:F1}, After re-arrange: {afterSecondArrange.Y:F1}");
+
+        // Force a third arrange pass to ensure stability is not a one-off
+        edge.InvalidateArrange();
+        edge.UpdateLayout();
+        Dispatcher.UIThread.RunJobs();
+
+        var afterThirdArrange = targetPointer.GetPosition();
+        await Assert.That(Math.Abs(afterThirdArrange.X - initialPos.X)).IsLessThan(1)
+            .Because("Target pointer position must remain stable across three arrange passes");
+    }
 }
