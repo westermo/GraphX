@@ -710,9 +710,7 @@ public abstract class EdgeControlBase : TemplatedControl, IGraphControl, IDispos
         {
             if (ShowArrows) EdgePointerForTarget.Show();
             pointerForTarget.Measure(infiniteSize);
-            // Use the target pointer that was just validated and measured for target endpoint shortening.
-            // Using the source pointer here can skip or miscompute the target offset when the pointers differ.
-            var targetOffset = ComputeEdgePointerOffset(pointerForTarget, _points[^1], _points[^2]);
+            var targetOffset = ComputeEdgePointerOffset(EdgePointerForTarget, _points[^1], _points[^2]);
             _points[^1] = _points[^1].Subtract(targetOffset);
         }
 
