@@ -1533,7 +1533,8 @@ public class ZoomControl : ContentControl, IZoomControl, INotifyPropertyChanged
         if (_presenter == null)
             return;
         var c = IsContentTrackable ? TrackableContent!.ContentSize.Size : ContentVisual!.DesiredSize;
-        if (c.Width == 0 || double.IsNaN(c.Width) || double.IsInfinity(c.Width)) return;
+        if (c.Width == 0 || double.IsNaN(c.Width) || double.IsInfinity(c.Width) ||
+            c.Height == 0 || double.IsNaN(c.Height) || double.IsInfinity(c.Height)) return;
 
         var deltaZoom = Math.Min(MaxZoom,Math.Min( ActualWidth / c.Width, ActualHeight / c.Height));
         var initialTranslate = IsContentTrackable ? GetTrackableTranslate() : GetInitialTranslate(c.Width, c.Height);
