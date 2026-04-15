@@ -1,11 +1,9 @@
-﻿using System.Linq;
-using Avalonia;
+﻿using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Media;
 using Avalonia.VisualTree;
 using Westermo.GraphX.Common.Exceptions;
 using Westermo.GraphX.Controls.Controls.Misc;
-using DefaultEventArgs = System.EventArgs;
 
 namespace Westermo.GraphX.Controls.Controls.VertexLabels;
 
@@ -18,21 +16,20 @@ public class VertexLabelControl : ContentControl, IVertexLabelControl
         AngleProperty.Changed.AddClassHandler<Control>(AngleChanged);
     }
 
+    private RotateTransform? _cachedRotation;
+
     private static void AngleChanged(Control? control, AvaloniaPropertyChangedEventArgs e)
     {
-        if (control is null)
-            return;
-        if (control.RenderTransform is not TransformGroup tg)
-            control.RenderTransform = new RotateTransform
-                { Angle = e.NewValue is double val ? val : 0.0, CenterX = .5, CenterY = .5 };
-        else
+        if (control is not VertexLabelControl vlc) return;
+        var angle = e.NewValue is double val ? val : 0.0;
+        if (vlc._cachedRotation is not null)
         {
-            var rt = tg.Children.FirstOrDefault(a => a is RotateTransform);
-            if (rt == null)
-                tg.Children.Add(new RotateTransform
-                    { Angle = e.NewValue is double val ? val : 0.0, CenterX = .5, CenterY = .5 });
-            else (rt as RotateTransform)!.Angle = e.NewValue is double val ? val : 0.0;
+            vlc._cachedRotation.Angle = angle;
+            return;
         }
+        var rt = new RotateTransform { Angle = angle, CenterX = .5, CenterY = .5 };
+        vlc._cachedRotation = rt;
+        vlc.RenderTransform = rt;
     }
 
     public static readonly StyledProperty<double> AngleProperty =
@@ -91,7 +88,6 @@ public class VertexLabelControl : ContentControl, IVertexLabelControl
     {
         if (Design.IsDesignMode) return;
 
-        LayoutUpdated += VertexLabelControl_LayoutUpdated;
         HorizontalAlignment = global::Avalonia.Layout.HorizontalAlignment.Left;
         VerticalAlignment = global::Avalonia.Layout.VerticalAlignment.Top;
     }
@@ -148,13 +144,6 @@ public class VertexLabelControl : ContentControl, IVertexLabelControl
     public void Show()
     {
         SetCurrentValue(IsVisibleProperty, true);
-    }
-
-    private void VertexLabelControl_LayoutUpdated(object? sender, DefaultEventArgs e)
-    {
-        var vc = GetVertexControl(GetParent());
-        if (vc == null || !vc.ShowLabel) return;
-        UpdatePosition();
     }
 
     protected virtual Control? GetParent()

@@ -28,7 +28,7 @@ public abstract class GraphAreaBase : Canvas, ITrackableContent, IGraphAreaBase
 {
     static GraphAreaBase()
     {
-        AffectsMeasure<GraphAreaBase>(XProperty, YProperty);
+        AffectsArrange<GraphAreaBase>(XProperty, YProperty);
         XProperty.Changed.AddClassHandler<Control>(x_changed);
         YProperty.Changed.AddClassHandler<Control>(y_changed);
     }

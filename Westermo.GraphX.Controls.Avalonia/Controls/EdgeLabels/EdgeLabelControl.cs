@@ -1,5 +1,4 @@
-﻿using System.Linq;
-using Avalonia;
+﻿using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Layout;
 using Avalonia.Media;
@@ -25,22 +24,22 @@ public abstract class EdgeLabelControl : ContentControl, IEdgeLabelControl
     protected EdgeControl? EdgeControl => _edgeControl ??= GetEdgeControl(GetParent());
 
 
+    /// <summary>
+    /// Cached rotation transform to avoid repeated LINQ lookups and allocations on angle changes.
+    /// </summary>
+    private RotateTransform? _cachedRotation;
+
     private static void AngleChanged(EdgeLabelControl d, AvaloniaPropertyChangedEventArgs e)
     {
         if (e.NewValue is not double angle) return;
-        if (d.RenderTransform is TransformGroup tg)
+        if (d._cachedRotation is not null)
         {
-            if (tg.Children.OfType<RotateTransform>().FirstOrDefault() is { } rt)
-            {
-                rt.Angle = angle;
-                return;
-            }
-
-            tg.Children.Add(new RotateTransform { Angle = angle, CenterX = .5, CenterY = .5 });
+            d._cachedRotation.Angle = angle;
             return;
         }
-
-        d.RenderTransform = new RotateTransform { Angle = angle, CenterX = .5, CenterY = .5 };
+        var rt = new RotateTransform { Angle = angle, CenterX = .5, CenterY = .5 };
+        d._cachedRotation = rt;
+        d.RenderTransform = rt;
     }
 
     private static void ShowLabelChanged(EdgeLabelControl elc, AvaloniaPropertyChangedEventArgs e)
