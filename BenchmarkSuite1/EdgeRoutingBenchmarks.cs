@@ -16,8 +16,6 @@ namespace GraphXBenchmarks;
 /// and identify optimization opportunities.
 /// </summary>
 [MemoryDiagnoser]
-[JsonExporterAttribute.Full]
-[JsonExporterAttribute.FullCompressed]
 public class EdgeRoutingBenchmarks
 {
     public sealed class BenchVertex : VertexBase

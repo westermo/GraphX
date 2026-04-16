@@ -2101,6 +2101,7 @@ public class GraphArea<TVertex, TEdge, TGraph> : GraphAreaBase, IDisposable
     /// </summary>
     protected virtual void OnDispose()
     {
+        ClearLayout();
     }
 
     /// <summary>

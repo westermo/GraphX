@@ -62,6 +62,7 @@ public class EdgeControl : EdgeControlBase, IDraggable
 
     public override void Clean()
     {
+        DoubleTapped -= EdgeControl_MouseDoubleClick;
         Source = null;
         Target = null;
         Edge = null;
@@ -156,11 +157,6 @@ public class EdgeControl : EdgeControlBase, IDraggable
 
         DoubleTapped += EdgeControl_MouseDoubleClick;
         IsSelfLooped = IsSelfLoopedInternal;
-    }
-
-    ~EdgeControl()
-    {
-        DoubleTapped -= EdgeControl_MouseDoubleClick;
     }
 
     #region Event handlers

@@ -46,11 +46,6 @@ public class VertexControl : VertexControlBase, IXYReactive, IDraggable
         DoubleTapped += OnDoubleTapped;
     }
 
-    ~VertexControl()
-    {
-        DoubleTapped -= OnDoubleTapped;
-    }
-
     public static T? FindDescendant<T>(TemplateAppliedEventArgs templateAppliedEventArgs, string name)
         where T : class
     {
@@ -191,6 +186,7 @@ public class VertexControl : VertexControlBase, IXYReactive, IDraggable
     /// </summary>
     public override void Clean()
     {
+        DoubleTapped -= OnDoubleTapped;
         Vertex = null;
         RootArea = null!;
         DragBehaviour.SetIsDragEnabled(this, false);

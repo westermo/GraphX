@@ -16,8 +16,6 @@ namespace GraphXBenchmarks;
 /// and optimization opportunities with different graph sizes.
 /// </summary>
 [MemoryDiagnoser]
-[JsonExporterAttribute.Full]
-[JsonExporterAttribute.FullCompressed]
 public class LayoutAlgorithmBenchmarks
 {
     public sealed class BenchVertex : VertexBase, IIdentifiableGraphDataObject
@@ -183,7 +181,7 @@ public class LayoutAlgorithmBenchmarks
         return algorithm.VertexPositions;
     }
 
-    [Benchmark(Description = "FR Layout - 50 nodes")]
+    [Benchmark(Baseline = true, Description = "FR Layout - 50 nodes")]
     public IDictionary<BenchVertex, Point> FRLayout_Small()
     {
         var algorithm = new FRLayoutAlgorithm<BenchVertex, BenchEdge, BidirectionalGraph<BenchVertex, BenchEdge>>(
@@ -312,49 +310,6 @@ public class LayoutAlgorithmBenchmarks
     {
         var algorithm = new SimpleTreeLayoutAlgorithm<BenchVertex, BenchEdge, BidirectionalGraph<BenchVertex, BenchEdge>>(
             _treeGraph, null, _treeSizes, new SimpleTreeLayoutParameters());
-        algorithm.Compute(CancellationToken.None);
-        return algorithm.VertexPositions;
-    }
-
-    #endregion
-
-    #region Comparative Benchmarks - Same Graph Size
-
-    /// <summary>
-    /// Compare all force-directed algorithms on the same medium-sized graph
-    /// </summary>
-    [Benchmark(Baseline = true, Description = "FR (Baseline) - 50 nodes")]
-    public IDictionary<BenchVertex, Point> Baseline_FR_Small()
-    {
-        var algorithm = new FRLayoutAlgorithm<BenchVertex, BenchEdge, BidirectionalGraph<BenchVertex, BenchEdge>>(
-            _smallGraph, null, new BoundedFRLayoutParameters { Width = 1000, Height = 1000 });
-        algorithm.Compute(CancellationToken.None);
-        return algorithm.VertexPositions;
-    }
-
-    [Benchmark(Description = "KK vs FR - 50 nodes")]
-    public IDictionary<BenchVertex, Point> Compare_KK_Small()
-    {
-        var algorithm = new KKLayoutAlgorithm<BenchVertex, BenchEdge, BidirectionalGraph<BenchVertex, BenchEdge>>(
-            _smallGraph, null, new KKLayoutParameters { Width = 1000, Height = 1000 });
-        algorithm.Compute(CancellationToken.None);
-        return algorithm.VertexPositions;
-    }
-
-    [Benchmark(Description = "LinLog vs FR - 50 nodes")]
-    public IDictionary<BenchVertex, Point> Compare_LinLog_Small()
-    {
-        var algorithm = new LinLogLayoutAlgorithm<BenchVertex, BenchEdge, BidirectionalGraph<BenchVertex, BenchEdge>>(
-            _smallGraph, null, new LinLogLayoutParameters());
-        algorithm.Compute(CancellationToken.None);
-        return algorithm.VertexPositions;
-    }
-
-    [Benchmark(Description = "ISOM vs FR - 50 nodes")]
-    public IDictionary<BenchVertex, Point> Compare_ISOM_Small()
-    {
-        var algorithm = new ISOMLayoutAlgorithm<BenchVertex, BenchEdge, BidirectionalGraph<BenchVertex, BenchEdge>>(
-            _smallGraph, null, new ISOMLayoutParameters { Width = 1000, Height = 1000 });
         algorithm.Compute(CancellationToken.None);
         return algorithm.VertexPositions;
     }

@@ -13,11 +13,10 @@ namespace GraphXBenchmarks;
 
 /// <summary>
 /// Benchmarks for performance optimizations including viewport culling,
-/// batch updates, geometry caching, object pooling, and LOD.
+/// batch updates, geometry caching, and parallel edges.
 /// </summary>
 [MemoryDiagnoser]
-[JsonExporterAttribute.Full]
-[JsonExporterAttribute.FullCompressed]
+[SimpleJob(BenchmarkDotNet.Engines.RunStrategy.Monitoring, warmupCount: 3, iterationCount: 10, invocationCount: 1)]
 public class OptimizationBenchmarks
 {
     private class BenchVertex : VertexBase
@@ -274,96 +273,6 @@ public class OptimizationBenchmarks
         _cachingTestArea.UpdateAllEdges(true, skipHiddenEdges: false);
     }
 
-    // ==================== OBJECT POOLING BENCHMARKS ====================
-
-    /// <summary>
-    /// Benchmark list allocation without pooling.
-    /// </summary>
-    [Benchmark]
-    public void NoPooling_AllocateLists_1000Times()
-    {
-        for (int i = 0; i < 1000; i++)
-        {
-            var list = new List<int>();
-            for (int j = 0; j < 100; j++)
-                list.Add(j);
-            // List is garbage collected
-        }
-    }
-
-    /// <summary>
-    /// Benchmark list usage with pooling.
-    /// </summary>
-    [Benchmark]
-    public void WithPooling_RentReturnLists_1000Times()
-    {
-        for (int i = 0; i < 1000; i++)
-        {
-            var list = ListPool<int>.Rent();
-            for (int j = 0; j < 100; j++)
-                list.Add(j);
-            ListPool<int>.Return(list);
-        }
-    }
-
-    /// <summary>
-    /// Benchmark dictionary allocation without pooling.
-    /// </summary>
-    [Benchmark]
-    public void NoPooling_AllocateDictionaries_1000Times()
-    {
-        for (int i = 0; i < 1000; i++)
-        {
-            var dict = new Dictionary<int, int>();
-            for (int j = 0; j < 50; j++)
-                dict[j] = j * 2;
-            // Dictionary is garbage collected
-        }
-    }
-
-    /// <summary>
-    /// Benchmark dictionary usage with pooling.
-    /// </summary>
-    [Benchmark]
-    public void WithPooling_RentReturnDictionaries_1000Times()
-    {
-        for (int i = 0; i < 1000; i++)
-        {
-            var dict = DictionaryPool<int, int>.Rent();
-            for (int j = 0; j < 50; j++)
-                dict[j] = j * 2;
-            DictionaryPool<int, int>.Return(dict);
-        }
-    }
-
-    // ==================== LEVEL OF DETAIL BENCHMARKS ====================
-
-    /// <summary>
-    /// Benchmark LOD threshold checks.
-    /// </summary>
-    [Benchmark]
-    public void LodSettings_ThresholdChecks_1Million()
-    {
-        var settings = new LevelOfDetailSettings
-        {
-            IsEnabled = true,
-            HideArrowsZoomThreshold = 0.3,
-            HideEdgeLabelsZoomThreshold = 0.5,
-            HideVertexLabelsZoomThreshold = 0.4
-        };
-
-        var random = new Random(42);
-        int visible = 0;
-
-        for (int i = 0; i < 1_000_000; i++)
-        {
-            var zoom = random.NextDouble() * 2.0; // 0.0 to 2.0
-            if (settings.ShouldShowArrows(zoom)) visible++;
-            if (settings.ShouldShowEdgeLabels(zoom)) visible++;
-            if (settings.ShouldShowVertexLabels(zoom)) visible++;
-        }
-    }
-
     // ==================== PARALLEL EDGES WITH POOLING ====================
 
     /// <summary>
@@ -421,5 +330,59 @@ public class OptimizationBenchmarks
         }
 
         return graph;
+    }
+}
+
+/// <summary>
+/// Micro-benchmarks for object pooling. Separated from heavy GraphArea benchmarks
+/// because these need different BDN job configuration (DefaultJob is appropriate here).
+/// </summary>
+[MemoryDiagnoser]
+public class PoolingBenchmarks
+{
+    [Benchmark(Baseline = true)]
+    public void NoPooling_AllocateLists_1000Times()
+    {
+        for (int i = 0; i < 1000; i++)
+        {
+            var list = new List<int>();
+            for (int j = 0; j < 100; j++)
+                list.Add(j);
+        }
+    }
+
+    [Benchmark]
+    public void WithPooling_RentReturnLists_1000Times()
+    {
+        for (int i = 0; i < 1000; i++)
+        {
+            var list = ListPool<int>.Rent();
+            for (int j = 0; j < 100; j++)
+                list.Add(j);
+            ListPool<int>.Return(list);
+        }
+    }
+
+    [Benchmark]
+    public void NoPooling_AllocateDictionaries_1000Times()
+    {
+        for (int i = 0; i < 1000; i++)
+        {
+            var dict = new Dictionary<int, int>();
+            for (int j = 0; j < 50; j++)
+                dict[j] = j * 2;
+        }
+    }
+
+    [Benchmark]
+    public void WithPooling_RentReturnDictionaries_1000Times()
+    {
+        for (int i = 0; i < 1000; i++)
+        {
+            var dict = DictionaryPool<int, int>.Rent();
+            for (int j = 0; j < 50; j++)
+                dict[j] = j * 2;
+            DictionaryPool<int, int>.Return(dict);
+        }
     }
 }

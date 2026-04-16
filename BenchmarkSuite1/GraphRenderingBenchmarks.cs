@@ -12,8 +12,7 @@ using Westermo.GraphX.Controls.Controls;
 namespace GraphXBenchmarks;
 
 [MemoryDiagnoser]
-[JsonExporterAttribute.Full]
-[JsonExporterAttribute.FullCompressed]
+[SimpleJob(BenchmarkDotNet.Engines.RunStrategy.Monitoring, warmupCount: 3, iterationCount: 10, invocationCount: 1)]
 public class GraphRenderingBenchmarks
 {
     private class BenchVertex : VertexBase
@@ -38,9 +37,21 @@ public class GraphRenderingBenchmarks
     private BidirectionalGraph<BenchVertex, BenchEdge> _smallGraph = null!;
     private BidirectionalGraph<BenchVertex, BenchEdge> _mediumGraph = null!;
     private BidirectionalGraph<BenchVertex, BenchEdge> _largeGraph = null!;
+    private BidirectionalGraph<BenchVertex, BenchEdge> _selfLoopGraph = null!;
     private Dictionary<BenchVertex, Point> _smallPositions = null!;
     private Dictionary<BenchVertex, Point> _mediumPositions = null!;
     private Dictionary<BenchVertex, Point> _largePositions = null!;
+    private Dictionary<BenchVertex, Point> _selfLoopPositions = null!;
+
+    // Pre-loaded areas refreshed each iteration via [IterationSetup]
+    private GraphArea<BenchVertex, BenchEdge, BidirectionalGraph<BenchVertex, BenchEdge>> _smallPreloaded = null!;
+    private GraphArea<BenchVertex, BenchEdge, BidirectionalGraph<BenchVertex, BenchEdge>> _mediumPreloaded = null!;
+    private GraphArea<BenchVertex, BenchEdge, BidirectionalGraph<BenchVertex, BenchEdge>> _largePreloaded = null!;
+    private GraphArea<BenchVertex, BenchEdge, BidirectionalGraph<BenchVertex, BenchEdge>> _largeVerticesOnly = null!;
+    private GraphArea<BenchVertex, BenchEdge, BidirectionalGraph<BenchVertex, BenchEdge>> _largeVerticesPositioned = null!;
+    private GraphArea<BenchVertex, BenchEdge, BidirectionalGraph<BenchVertex, BenchEdge>> _largeParallelPreloaded = null!;
+    private GraphArea<BenchVertex, BenchEdge, BidirectionalGraph<BenchVertex, BenchEdge>> _largeCurvingPreloaded = null!;
+    private GraphArea<BenchVertex, BenchEdge, BidirectionalGraph<BenchVertex, BenchEdge>> _selfLoopPreloaded = null!;
 
     [GlobalSetup]
     public void Setup()
@@ -63,6 +74,62 @@ public class GraphRenderingBenchmarks
         _smallPositions = GeneratePositions([.. _smallGraph.Vertices], 800, 600);
         _mediumPositions = GeneratePositions([.. _mediumGraph.Vertices], 2000, 1500);
         _largePositions = GeneratePositions([.. _largeGraph.Vertices], 5000, 4000);
+        _selfLoopGraph = CreateGraphWithSelfLoops(100, 150, 20);
+        _selfLoopPositions = GeneratePositions([.. _selfLoopGraph.Vertices], 2000, 1500);
+    }
+
+    [IterationSetup]
+    public void PrepareIteration()
+    {
+        _smallPreloaded = CreateArea(_smallGraph, _smallPositions);
+        _smallPreloaded.PreloadGraph(_smallPositions, showObjectsIfPosSpecified: true);
+
+        _mediumPreloaded = CreateArea(_mediumGraph, _mediumPositions);
+        _mediumPreloaded.PreloadGraph(_mediumPositions, showObjectsIfPosSpecified: true);
+
+        _largePreloaded = CreateArea(_largeGraph, _largePositions);
+        _largePreloaded.PreloadGraph(_largePositions, showObjectsIfPosSpecified: true);
+
+        _largeVerticesOnly = CreateArea(_largeGraph, _largePositions);
+        _largeVerticesOnly.PreloadVertexes();
+
+        _largeVerticesPositioned = CreateArea(_largeGraph, _largePositions);
+        _largeVerticesPositioned.PreloadVertexes();
+        foreach (var item in _largePositions)
+        {
+            if (_largeVerticesPositioned.VertexList.TryGetValue(item.Key, out var value))
+                value.SetPosition(item.Value);
+        }
+
+        var lcParallel = new GXLogicCore<BenchVertex, BenchEdge, BidirectionalGraph<BenchVertex, BenchEdge>>
+        {
+            Graph = _largeGraph,
+            EnableParallelEdges = true
+        };
+        _largeParallelPreloaded = new GraphArea<BenchVertex, BenchEdge, BidirectionalGraph<BenchVertex, BenchEdge>>
+        {
+            LogicCore = lcParallel,
+            Width = 5000,
+            Height = 4000
+        };
+        _largeParallelPreloaded.PreloadGraph(_largePositions, showObjectsIfPosSpecified: true);
+
+        var lcCurving = new GXLogicCore<BenchVertex, BenchEdge, BidirectionalGraph<BenchVertex, BenchEdge>>
+        {
+            Graph = _largeGraph,
+            EnableParallelEdges = false,
+            EdgeCurvingEnabled = true
+        };
+        _largeCurvingPreloaded = new GraphArea<BenchVertex, BenchEdge, BidirectionalGraph<BenchVertex, BenchEdge>>
+        {
+            LogicCore = lcCurving,
+            Width = 5000,
+            Height = 4000
+        };
+        _largeCurvingPreloaded.PreloadGraph(_largePositions, showObjectsIfPosSpecified: true);
+
+        _selfLoopPreloaded = CreateArea(_selfLoopGraph, _selfLoopPositions);
+        _selfLoopPreloaded.PreloadGraph(_selfLoopPositions, showObjectsIfPosSpecified: true);
     }
 
     private static BidirectionalGraph<BenchVertex, BenchEdge> CreateGraph(int vertexCount, int edgeCount)
@@ -126,83 +193,72 @@ public class GraphRenderingBenchmarks
     }
 
     [Benchmark]
-    public void SmallGraph_PreloadVertexes()
+    public int SmallGraph_PreloadVertexes()
     {
         var area = CreateArea(_smallGraph, _smallPositions);
         area.PreloadVertexes();
+        return area.VertexList.Count;
     }
 
     [Benchmark]
-    public void MediumGraph_PreloadVertexes()
+    public int MediumGraph_PreloadVertexes()
     {
         var area = CreateArea(_mediumGraph, _mediumPositions);
         area.PreloadVertexes();
+        return area.VertexList.Count;
     }
 
     [Benchmark]
-    public void LargeGraph_PreloadVertexes()
+    public int LargeGraph_PreloadVertexes()
     {
         var area = CreateArea(_largeGraph, _largePositions);
         area.PreloadVertexes();
+        return area.VertexList.Count;
     }
 
     [Benchmark]
-    public void SmallGraph_PreloadAndGenerateEdges()
+    public int SmallGraph_PreloadAndGenerateEdges()
     {
         var area = CreateArea(_smallGraph, _smallPositions);
         area.PreloadGraph(_smallPositions, showObjectsIfPosSpecified: true);
+        return area.VertexList.Count;
     }
 
     [Benchmark]
-    public void MediumGraph_PreloadAndGenerateEdges()
+    public int MediumGraph_PreloadAndGenerateEdges()
     {
         var area = CreateArea(_mediumGraph, _mediumPositions);
         area.PreloadGraph(_mediumPositions, showObjectsIfPosSpecified: true);
+        return area.VertexList.Count;
     }
 
     [Benchmark]
-    public void LargeGraph_PreloadAndGenerateEdges()
+    public int LargeGraph_PreloadAndGenerateEdges()
     {
         var area = CreateArea(_largeGraph, _largePositions);
         area.PreloadGraph(_largePositions, showObjectsIfPosSpecified: true);
+        return area.VertexList.Count;
     }
 
     [Benchmark]
     public void SmallGraph_UpdateAllEdges()
     {
-        var area = CreateArea(_smallGraph, _smallPositions);
-        area.PreloadGraph(_smallPositions, showObjectsIfPosSpecified: true);
-        area.UpdateAllEdges(true);
+        _smallPreloaded.UpdateAllEdges(true);
     }
 
     [Benchmark]
     public void MediumGraph_UpdateAllEdges()
     {
-        var area = CreateArea(_mediumGraph, _mediumPositions);
-        area.PreloadGraph(_mediumPositions, showObjectsIfPosSpecified: true);
-        area.UpdateAllEdges(true);
+        _mediumPreloaded.UpdateAllEdges(true);
     }
 
     [Benchmark]
     public void LargeGraph_UpdateAllEdges()
     {
-        var area = CreateArea(_largeGraph, _largePositions);
-        area.PreloadGraph(_largePositions, showObjectsIfPosSpecified: true);
-        area.UpdateAllEdges(true);
+        _largePreloaded.UpdateAllEdges(true);
     }
 
     // ==================== ADDITIONAL GRANULAR BENCHMARKS ====================
-
-    /// <summary>
-    /// Benchmark isolated vertex control creation (without edge generation)
-    /// to measure the cost of vertex object instantiation and template application.
-    /// </summary>
-    [Benchmark]
-    public void LargeGraph_VertexCreationOnly()
-    {
-        var area = CreateArea(_largeGraph, _largePositions);
-        area.PreloadVertexes();
-    }
 
     /// <summary>
     /// Benchmark edge generation separately after vertices are already loaded.
@@ -211,18 +267,7 @@ public class GraphRenderingBenchmarks
     [Benchmark]
     public void LargeGraph_EdgeGenerationOnly()
     {
-        var area = CreateArea(_largeGraph, _largePositions);
-        area.PreloadVertexes();
-
-        // Set positions first
-        foreach (var item in _largePositions)
-        {
-            if (area.VertexList.TryGetValue(item.Key, out var value))
-                value.SetPosition(item.Value);
-        }
-
-        // Now benchmark just edge generation
-        area.GenerateAllEdges();
+        _largeVerticesPositioned.GenerateAllEdges();
     }
 
     /// <summary>
@@ -232,10 +277,7 @@ public class GraphRenderingBenchmarks
     [Benchmark]
     public void LargeGraph_UpdateEdgesRenderingOnly()
     {
-        var area = CreateArea(_largeGraph, _largePositions);
-        area.PreloadGraph(_largePositions, showObjectsIfPosSpecified: true);
-        // Rendering only - no full update
-        area.UpdateAllEdges(performFullUpdate: false);
+        _largePreloaded.UpdateAllEdges(performFullUpdate: false);
     }
 
     /// <summary>
@@ -244,19 +286,7 @@ public class GraphRenderingBenchmarks
     [Benchmark]
     public void LargeGraph_UpdateEdges_WithParallelEdges()
     {
-        var lc = new GXLogicCore<BenchVertex, BenchEdge, BidirectionalGraph<BenchVertex, BenchEdge>>
-        {
-            Graph = _largeGraph,
-            EnableParallelEdges = true // Enable parallel edge detection
-        };
-        var area = new GraphArea<BenchVertex, BenchEdge, BidirectionalGraph<BenchVertex, BenchEdge>>
-        {
-            LogicCore = lc,
-            Width = 5000,
-            Height = 4000
-        };
-        area.PreloadGraph(_largePositions, showObjectsIfPosSpecified: true);
-        area.UpdateAllEdges(true);
+        _largeParallelPreloaded.UpdateAllEdges(true);
     }
 
     /// <summary>
@@ -266,20 +296,7 @@ public class GraphRenderingBenchmarks
     [Benchmark]
     public void LargeGraph_UpdateEdges_WithCurving()
     {
-        var lc = new GXLogicCore<BenchVertex, BenchEdge, BidirectionalGraph<BenchVertex, BenchEdge>>
-        {
-            Graph = _largeGraph,
-            EnableParallelEdges = false,
-            EdgeCurvingEnabled = true
-        };
-        var area = new GraphArea<BenchVertex, BenchEdge, BidirectionalGraph<BenchVertex, BenchEdge>>
-        {
-            LogicCore = lc,
-            Width = 5000,
-            Height = 4000
-        };
-        area.PreloadGraph(_largePositions, showObjectsIfPosSpecified: true);
-        area.UpdateAllEdges(true);
+        _largeCurvingPreloaded.UpdateAllEdges(true);
     }
 
     /// <summary>
@@ -288,13 +305,9 @@ public class GraphRenderingBenchmarks
     [Benchmark]
     public void LargeGraph_PositionUpdatesCost()
     {
-        var area = CreateArea(_largeGraph, _largePositions);
-        area.PreloadVertexes();
-
-        // Measure position update overhead
         foreach (var item in _largePositions)
         {
-            if (area.VertexList.TryGetValue(item.Key, out var value))
+            if (_largeVerticesOnly.VertexList.TryGetValue(item.Key, out var value))
             {
                 value.SetPosition(item.Value);
             }
@@ -307,11 +320,7 @@ public class GraphRenderingBenchmarks
     [Benchmark]
     public void MediumGraph_WithSelfLoops_UpdateAllEdges()
     {
-        var graph = CreateGraphWithSelfLoops(100, 150, 20);
-        var positions = GeneratePositions([.. graph.Vertices], 2000, 1500);
-        var area = CreateArea(graph, positions);
-        area.PreloadGraph(positions, showObjectsIfPosSpecified: true);
-        area.UpdateAllEdges(true);
+        _selfLoopPreloaded.UpdateAllEdges(true);
     }
 
     private static BidirectionalGraph<BenchVertex, BenchEdge> CreateGraphWithSelfLoops(int vertexCount, int edgeCount,

@@ -16,6 +16,7 @@ namespace GraphXBenchmarks
             // Run all benchmark suites
             BenchmarkRunner.Run<GraphRenderingBenchmarks>(config);
             // BenchmarkRunner.Run<OptimizationBenchmarks>(config);
+            // BenchmarkRunner.Run<PoolingBenchmarks>(config);
             // BenchmarkRunner.Run<LayoutAlgorithmBenchmarks>(config);
             // BenchmarkRunner.Run<EdgeRoutingBenchmarks>(config);
             // BenchmarkRunner.Run<OverlapRemovalBenchmarks>(config);

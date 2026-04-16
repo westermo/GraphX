@@ -12,8 +12,6 @@ namespace GraphXBenchmarks;
 /// after layout computation.
 /// </summary>
 [MemoryDiagnoser]
-[JsonExporterAttribute.Full]
-[JsonExporterAttribute.FullCompressed]
 public class OverlapRemovalBenchmarks
 {
     public sealed class BenchObject
