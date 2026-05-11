@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
+using System.Runtime.InteropServices;
 using Avalonia;
 using Avalonia.Collections;
 using Avalonia.Controls;
@@ -11,7 +12,6 @@ using Avalonia.Controls.Shapes;
 using Avalonia.Interactivity;
 using Avalonia.Media;
 using Westermo.GraphX.Common;
-using Westermo.GraphX.Common.Enums;
 using Westermo.GraphX.Common.Exceptions;
 using Westermo.GraphX.Common.Interfaces;
 using Westermo.GraphX.Controls.Controls.Misc;
@@ -137,8 +137,8 @@ public abstract class EdgeControlBase : TemplatedControl, IGraphControl, IDispos
 
         // Compute direction from endpoint towards its neighbor
         var dir = from == to
-            ? new Measure.Vector(0, 0)
-            : MathHelper.GetDirection(from.ToGraphX(), to.ToGraphX());
+            ? new Vector(0, 0)
+            : from.DirectionTo(to);
 
         var width = ctrl.DesiredSize.Width;
         var height = ctrl.DesiredSize.Height;
@@ -168,11 +168,11 @@ public abstract class EdgeControlBase : TemplatedControl, IGraphControl, IDispos
         var to = data.DirectionTarget;
         var allowUnsuppress = data.AllowUnsuppress;
 
-        var dir = MathHelper.GetDirection(from.ToGraphX(), to.ToGraphX());
+        var dir = from.DirectionTo(to);
         if (from == to)
         {
             if (hideEdgePointerOnVertexOverlap) pointer.Suppress();
-            else dir = new Measure.Vector(0, 0);
+            else dir = new Vector(0, 0);
         }
         else if (allowUnsuppress) pointer.UnSuppress();
 
@@ -666,22 +666,7 @@ public abstract class EdgeControlBase : TemplatedControl, IGraphControl, IDispos
 
         var p1 = SourceConnectionPoint.Value;
         var p2 = TargetConnectionPoint.Value;
-        _points = GetPoints(p1, p2, routedEdge);
-        var minX = double.MaxValue;
-        var maxX = double.MinValue;
-        var minY = double.MaxValue;
-        var maxY = double.MinValue;
-        foreach (var point in _points)
-        {
-            minX = Math.Min(minX, point.X);
-            maxX = Math.Max(maxX, point.X);
-            minY = Math.Min(minY, point.Y);
-            maxY = Math.Max(maxY, point.Y);
-        }
-
-        var dx = maxX - minX;
-        var dy = maxY - minY;
-        var routingBounds = new Size(dx, dy);
+        GetPoints(p1, p2, routedEdge.RoutingPoints);
 
         // Cache layout info for pointer arrangement after base.ArrangeOverride
         _sourcePointerLayout = new EdgePointerLayoutInfo
@@ -715,10 +700,13 @@ public abstract class EdgeControlBase : TemplatedControl, IGraphControl, IDispos
         }
 
         //Measure bounds after edge pointers have been measured.
-        _pathBounds = GetBounds(_points);
+
+        // Calculate padding needed for edge pointers to prevent clipping
+        var pointerPadding = GetEdgePointerPadding();
+        _pathBounds = CollectionsMarshal.AsSpan(_points).GetBounds(pointerPadding);
 
         // Shift points into local space
-        for (var i = 0; i < _points.Length; i++)
+        for (var i = 0; i < _points.Count; i++)
             _points[i] = _points[i].Subtract(_pathBounds.TopLeft);
         _sourcePointerLayout.Position = _sourcePointerLayout.Position.Subtract(_pathBounds.TopLeft);
         _sourcePointerLayout.DirectionTarget = _sourcePointerLayout.DirectionTarget.Subtract(_pathBounds.TopLeft);
@@ -734,7 +722,7 @@ public abstract class EdgeControlBase : TemplatedControl, IGraphControl, IDispos
         }
 
 
-        return Union(spanningRect.Size, selfLoopSize, routingBounds);
+        return Union(spanningRect.Size, selfLoopSize, _pathBounds.Size);
     }
 
     protected override Size ArrangeOverride(Size finalSize)
@@ -761,113 +749,50 @@ public abstract class EdgeControlBase : TemplatedControl, IGraphControl, IDispos
         // Position labels at edge midpoint
         var midPoint = GetMidpoint(out var angle, out var flipAxis, out var vector);
         if (midPoint == default) return result;
-        vector.Normalize();
+        vector = vector.Normalize();
+        var perp = vector.Perpendicular();
         foreach (var label in EdgeLabelControls)
         {
             if (label is not Control { IsVisible: true } ctrl) continue;
             var labelSize = ctrl.DesiredSize;
             var offsetX = label.LabelHorizontalOffset * vector;
-            var offsetY = label.LabelVerticalOffset * vector.Perpendicular();
+            var offsetY = label.LabelVerticalOffset * perp;
             if (label.FlipOnRotation && flipAxis && !IsParallel)
             {
                 offsetY = -offsetY;
             }
 
-            var localPoint = midPoint;
-            localPoint.X += -labelSize.Width / 2 + offsetX.X + offsetY.X + _pathBounds.X;
-            localPoint.Y += -labelSize.Height / 2 + offsetX.Y + offsetY.Y + _pathBounds.Y;
+            var localPoint = midPoint.Add(
+                -labelSize.Width / 2 + offsetX.X + offsetY.X + _pathBounds.X,
+                -labelSize.Height / 2 + offsetX.Y + offsetY.Y + _pathBounds.Y);
             ctrl.SetCurrentValue(GraphAreaBase.XProperty, localPoint.X);
             ctrl.SetCurrentValue(GraphAreaBase.YProperty, localPoint.Y);
             label.Angle = label.AlignToEdge ? -angle.ToDegrees() + (flipAxis ? 180 : 0) : 0;
-            ctrl.Arrange(new Rect(localPoint.X , localPoint.Y, labelSize.Width, labelSize.Height));
+            ctrl.Arrange(new Rect(localPoint.X, localPoint.Y, labelSize.Width, labelSize.Height));
         }
 
         return result;
     }
 
-    private Measure.Point GetMidpoint(out double angle, out bool flipAxis, out Measure.Vector vector)
+    private Point GetMidpoint(out double angle, out bool flipAxis, out Vector vector)
     {
         angle = 0;
         flipAxis = false;
-        vector = new Measure.Vector(1, 1);
+        vector = new Vector(1, 1);
         if (IsSelfLooped)
         {
             if (Source is null) return default;
-            var pt = Source.GetCenterPosition().ToGraphX();
-            pt.Offset(SelfLoopIndicatorOffset.X, SelfLoopIndicatorOffset.Y);
+            var pt = Source.GetCenterPosition();
             // For self-loop edges, store angle in radians (45 degrees = π/4) to match other branches.
             angle = Math.PI / 4.0;
-            return pt;
+            return pt.Add(SelfLoopIndicatorOffset.X, SelfLoopIndicatorOffset.Y);
         }
 
         if (Source == null || Target == null) return default;
-        var p1 = _points[0].ToGraphX();
-        var p2 = _points[^1].ToGraphX();
 
-        var edgeLength = TotalLength(_points);
-        var remaining = FindHalfwayPoint(edgeLength, _points, ref p1, ref p2);
-        // After FindHalfwayPoint, p1 and p2 represent the segment containing the midpoint.
-        // Compute flipAxis based on the updated segment endpoints, consistent with the non-routing branch.
-        flipAxis = p1.X > p2.X;
-        angle = MathHelper.GetAngleBetweenPoints(p1, p2);
-        vector = flipAxis ? p1 - p2 : p2 - p1;
-        return new Measure.Point(p1.X + remaining * Math.Cos(angle), p1.Y - remaining * Math.Sin(angle));
+        return CollectionsMarshal.AsSpan(_points).MidPoint(out angle, out flipAxis, out vector);
     }
 
-    private static double FindHalfwayPoint(double edgeLength, Point[] routingPoints, ref Measure.Point p1,
-        ref Measure.Point p2)
-    {
-        // We now want the midpoint along the entire polyline.
-        edgeLength /= 2;
-        var newp1 = p1;
-        var newp2 = p2;
-        var previousPoint = p1;
-        var remaining = edgeLength;
-        var foundSegment = false;
-
-        // Walk again to find the segment that contains the midpoint.
-        for (var index = 1; index < routingPoints.Length; index++)
-        {
-            var currentPoint = routingPoints[index].ToGraphX();
-            var lengthOfSegment = MathHelper.GetDistanceBetweenPoints(previousPoint, currentPoint);
-            if (lengthOfSegment >= remaining)
-            {
-                newp1 = previousPoint;
-                newp2 = currentPoint;
-                foundSegment = true;
-                break;
-            }
-
-            remaining -= lengthOfSegment;
-            previousPoint = currentPoint;
-        }
-
-        // If the midpoint lies on the last segment to p2, handle it here.
-        if (!foundSegment)
-        {
-            newp1 = previousPoint;
-            newp2 = p2;
-            // 'remaining' is already the distance from newp1 along this last segment.
-        }
-
-        p1 = newp1;
-        p2 = newp2;
-        return remaining;
-    }
-
-    private static double TotalLength(Point[] points)
-    {
-        var result = 0.0;
-        for (var index = 0; index < points.Length-1; index++)
-        {
-            var currentPoint = points[index];
-            var nextPoint = points[index + 1];
-            var lengthOfSegment = MathHelper.GetDistanceBetweenPoints(currentPoint.ToGraphX(), nextPoint.ToGraphX());
-            if (double.IsNaN(lengthOfSegment)) continue;
-            result += lengthOfSegment;
-        }
-        return result;
-    }
 
     internal int ParallelEdgeOffset;
 
@@ -897,7 +822,7 @@ public abstract class EdgeControlBase : TemplatedControl, IGraphControl, IDispos
     /// </summary>
     protected internal Point? TargetConnectionPoint;
 
-    private Point[] _points = [];
+    private readonly List<Point> _points = [];
     private Rect _pathBounds;
 
     protected Point? OverrideEndpoint
@@ -946,62 +871,6 @@ public abstract class EdgeControlBase : TemplatedControl, IGraphControl, IDispos
         }
     }
 
-    /// <summary>
-    /// Builds a <see cref="StreamGeometry"/> from normalized points. <see cref="StreamGeometry"/> is more performant than <see cref="PathGeometry"/>
-    /// as recommended by Avalonia documentation.
-    /// </summary>
-    /// <param name="points">A span of points, in control coordinates, that define the polyline of the edge. The span may be modified in place (e.g. reversed).</param>
-    /// <param name="reverse">If <c>true</c>, reverses the order of <paramref name="points"/> before building the geometry.</param>
-    /// <returns>
-    /// A tuple containing the <see cref="StreamGeometry"/> representing the edge path and
-    /// the local offset used to transform world-space coordinates into control-local space.
-    /// </returns>
-    private StreamGeometry BuildNormalizedStreamGeometry(Span<Point> points, bool reverse)
-    {
-        // Handle edge case gracefully: if fewer than 2 points, return an empty geometry
-        // This can occur temporarily during rapid vertex dragging or when edge endpoints
-        // are removed due to arrow pointer adjustments on very short edges.
-        if (points.Length < 2)
-            return new StreamGeometry();
-
-        // Build StreamGeometry - more performant than PathGeometry
-        if (reverse) points.Reverse();
-
-        var geometry = new StreamGeometry();
-        using var ctx = geometry.Open();
-        ctx.BeginFigure(points[0], false);
-        for (var i = 1; i < points.Length; i++)
-            ctx.LineTo(points[i]);
-        ctx.EndFigure(false);
-
-        return geometry;
-    }
-
-    private Rect GetBounds(Span<Point> points)
-    {
-        // Calculate padding needed for edge pointers to prevent clipping
-        var pointerPadding = GetEdgePointerPadding();
-
-        // Collect bounds
-        var minX = double.MaxValue;
-        var minY = double.MaxValue;
-        var maxX = double.MinValue;
-        var maxY = double.MinValue;
-        foreach (var point in points)
-        {
-            if (point.X < minX) minX = point.X;
-            if (point.Y < minY) minY = point.Y;
-            if (point.X > maxX) maxX = point.X;
-            if (point.Y > maxY) maxY = point.Y;
-        }
-
-        // Expand bounds to include edge pointer padding
-        minX -= pointerPadding;
-        minY -= pointerPadding;
-        maxX += pointerPadding;
-        maxY += pointerPadding;
-        return new Rect(minX, minY, maxX - minX, maxY - minY);
-    }
 
     /// <summary>
     /// Process self looped edge positioning
@@ -1058,29 +927,35 @@ public abstract class EdgeControlBase : TemplatedControl, IGraphControl, IDispos
         return CreateEdgeGeometry(_points, routedEdge is IGraphXCommonEdge { ReversePath: true });
     }
 
-    private Point[] GetPoints(Point p1, Point p2, IRoutingInfo routeInformation)
+    private void GetPoints(Point p1, Point p2, Measure.Point[]? routeInformation)
     {
-        if (routeInformation is not { RoutingPoints.Length: > 2 }) return [p1, p2];
-        //replace start and end points with accurate ones
-        const int stackallocThreshold = 256;
-        var pointsLength = routeInformation.RoutingPoints.Length;
-        var routePoints = pointsLength <= stackallocThreshold
-            ? stackalloc Point[pointsLength]
-            : new Point[pointsLength];
-        for (var i = 0; i < routeInformation.RoutingPoints.Length; i++)
+        _points.Clear();
+        if (routeInformation is null || routeInformation.Length <= 2)
         {
-            routePoints[i] = routeInformation.RoutingPoints[i].ToAvalonia();
+            _points.Add(p1);
+            _points.Add(p2);
+            return;
         }
 
-        routePoints[0] = p1;
-        routePoints[^1] = p2;
+        var pointsLength = routeInformation.Length;
+        _points.EnsureCapacity(pointsLength);
+        foreach (var t in routeInformation)
+        {
+            _points.Add(t.ToAvalonia());
+        }
+
+        _points[0] = p1;
+        _points[^1] = p2;
 
         if (RootArea is not { IsEdgeRoutingEnabled: true })
         {
-            return [..routePoints];
+            return;
         }
 
-        return [..GeometryHelper.GetCurveThroughPoints(routePoints, 0.5, RootArea.EdgeCurvingTolerance)];
+        Span<Point> copy = stackalloc Point[_points.Count];
+        _points.CopyTo(copy);
+
+        copy.GetCurveThroughPoints(_points, 0.5, RootArea.EdgeCurvingTolerance);
     }
 
     /// <summary>
@@ -1093,9 +968,11 @@ public abstract class EdgeControlBase : TemplatedControl, IGraphControl, IDispos
     /// <returns>
     /// A tuple of the normalized geometry and the local offset for coordinate conversion.
     /// </returns>
-    private StreamGeometry CreateEdgeGeometry(Point[] points, bool reverse)
+    private StreamGeometry CreateEdgeGeometry(List<Point> points, bool reverse)
     {
-        return BuildNormalizedStreamGeometry(TransformFinalPath(points), reverse);
+        var span = TransformFinalPath(CollectionsMarshal.AsSpan(points));
+        if (reverse) span.Reverse();
+        return span.ToStreamGeometry();
     }
 
     [MemberNotNullWhen(true, nameof(Source))]
@@ -1147,8 +1024,8 @@ public abstract class EdgeControlBase : TemplatedControl, IGraphControl, IDispos
                 var sourceCpCenter = sourceCp.RectangularSize.Center();
                 var targetCpCenter = targetCp.RectangularSize.Center();
 
-                SourceConnectionPoint = GetCpEndPoint(sourceCp, sourceCpCenter, targetCpCenter);
-                TargetConnectionPoint = GetCpEndPoint(targetCp, targetCpCenter, sourceCpCenter);
+                SourceConnectionPoint = sourceCp.GetEndpoint(sourceCpCenter, targetCpCenter);
+                TargetConnectionPoint = targetCp.GetEndpoint(targetCpCenter, sourceCpCenter);
                 break;
             }
             case { SourceConnectionPointId: { } id }:
@@ -1168,7 +1045,7 @@ public abstract class EdgeControlBase : TemplatedControl, IGraphControl, IDispos
                     targetCenter = routeInformation[1].ToAvalonia();
                 }
 
-                SourceConnectionPoint = GetCpEndPoint(sourceCp, sourceCpCenter, targetCenter);
+                SourceConnectionPoint = sourceCp.GetEndpoint(sourceCpCenter, targetCenter);
                 TargetConnectionPoint = GeometryHelper.GetEdgeEndpoint(targetCenter, targetRect,
                     routeInformation is { Length: > 1 } ? routeInformation[^2].ToAvalonia() : sourceCpCenter,
                     Target.VertexShape);
@@ -1194,7 +1071,7 @@ public abstract class EdgeControlBase : TemplatedControl, IGraphControl, IDispos
                 SourceConnectionPoint = GeometryHelper.GetEdgeEndpoint(sourceCenter, sourceRect,
                     routeInformation is { Length: > 1 } ? routeInformation[1].ToAvalonia() : targetCpCenter,
                     Source!.VertexShape);
-                TargetConnectionPoint = GetCpEndPoint(targetCp, targetCpCenter, sourceCenter);
+                TargetConnectionPoint = targetCp.GetEndpoint(targetCpCenter, sourceCenter);
                 break;
             }
             default:
@@ -1223,16 +1100,6 @@ public abstract class EdgeControlBase : TemplatedControl, IGraphControl, IDispos
     {
         if (RootArea is null) return false;
         return !hasRouteInfo && RootArea.EnableParallelEdges && IsParallel;
-    }
-
-    private static Point GetCpEndPoint(IVertexConnectionPoint cp, Point cpCenter, Point distantEnd)
-    {
-        // If the connection point (cp) doesn't have any shape, the edge comes from its center, otherwise find the location
-        // on its perimeter that the edge should come from.
-        var calculatedCp = cp.Shape == VertexShape.None
-            ? cpCenter
-            : GeometryHelper.GetEdgeEndpoint(cpCenter, cp.RectangularSize, distantEnd, cp.Shape);
-        return calculatedCp;
     }
 
     private IVertexConnectionPoint GetTargetCpOrThrow(int id)

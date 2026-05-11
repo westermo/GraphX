@@ -496,7 +496,7 @@ public class RenderOptimizationRegressionTests
         // This captures the bug where (int) casts truncate precision
         var source = new Measure.Point(1, 0);
         var center = new Measure.Point(0, 0);
-        var result = MathHelper.RotatePoint(source, center, 90);
+        var result = source.RotateAround(center, 90);
 
         // With (int) casts, result would be (0,0) instead of (0,1)
         await Assert.That(Math.Abs(result.X - 0.0)).IsLessThan(0.01);
