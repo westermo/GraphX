@@ -40,6 +40,18 @@
             </StackPanel>
         </Border>
 
+        <!-- Wayfinder (minimap) overlay – top-right corner of the graph viewport.
+             Bound to the same ZoomControl as the GraphArea; pure add-on, no template change. -->
+        <Border Grid.Row="1" Grid.Column="0"
+                HorizontalAlignment="Right" VerticalAlignment="Top"
+                CornerRadius="4" BorderBrush="{DynamicResource ButtonBorder}"
+                BorderThickness="1" Background="{DynamicResource ButtonBackground}"
+                Margin="10" Padding="2" Opacity="0.9"
+                IsVisible="{Binding #chkShowWayfinder.IsChecked}">
+            <zoomControl:Wayfinder ZoomControl="{Binding #zoomCtrl}"
+                                   Width="200" Height="150" />
+        </Border>
+
         <!-- Loading indicator -->
         <Border Name="loader" IsVisible="False" CornerRadius="4" BorderBrush="{DynamicResource ButtonBorder}"
                 BorderThickness="1" HorizontalAlignment="Center" VerticalAlignment="Center"
@@ -126,6 +138,15 @@
                         <Button Name="btnMoveRandom" Content="Move 50 Random Vertices" Margin="2"/>
                         <Button Name="btnBatchMove" Content="Batch Move 50 Vertices" Margin="2"/>
                         <Button Name="btnZoomToFit" Content="Zoom to Fit" Margin="2"/>
+                    </StackPanel>
+                </Expander>
+
+                <!-- Wayfinder toggle -->
+                <Expander IsExpanded="True" Header="Wayfinder">
+                    <StackPanel Margin="4">
+                        <CheckBox Name="chkShowWayfinder" Content="Show Minimap" IsChecked="True" Margin="2"/>
+                        <TextBlock FontSize="10" Foreground="Gray" TextWrapping="Wrap" Margin="2"
+                                   Text="Drag the viewport rectangle to pan, single-click outside it to recenter, or double-tap anywhere inside the content to jump."/>
                     </StackPanel>
                 </Expander>
 

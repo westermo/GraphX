@@ -74,7 +74,11 @@ public class GlobalHooks
             _thread = new Thread(() =>
             {
                 var app = AppBuilder.Configure<Application>()
-                    .UseHeadless(new AvaloniaHeadlessPlatformOptions())
+                    .UseSkia()
+                    .UseHeadless(new AvaloniaHeadlessPlatformOptions
+                    {
+                        UseHeadlessDrawing = false
+                    })
                     .SetupWithoutStarting();
                 
                 // Load GraphX control themes so edge pointers and other template parts work

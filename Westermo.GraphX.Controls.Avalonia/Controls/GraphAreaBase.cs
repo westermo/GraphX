@@ -628,8 +628,7 @@ public abstract class GraphAreaBase : Canvas, ITrackableContent, IGraphAreaBase
             child.Arrange(new Rect(x, y, width, height));
         }
 
-        return Design.IsDesignMode ? DesignSize :
-            IsInPrintMode ? ContentSize.Size : new Size(10, 10);
+        return ContentSize.Size;
     }
 
     /// <summary>
@@ -695,8 +694,7 @@ public abstract class GraphAreaBase : Canvas, ITrackableContent, IGraphAreaBase
         var newSize = ContentSize;
         if (oldSize != newSize)
             OnContentSizeChanged(oldSize, newSize);
-        return Design.IsDesignMode ? DesignSize :
-            IsInPrintMode ? ContentSize.Size : new Size(10, 10);
+        return ContentSize.Size;
     }
 
     #endregion
