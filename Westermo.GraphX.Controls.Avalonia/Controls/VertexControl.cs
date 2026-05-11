@@ -270,6 +270,7 @@ public class VertexControl : VertexControlBase, IXYReactive, IDraggable
         var diff = pos - m_dragOrigin.Value;
         var newPos = DragBehaviour.Snap(this, m_draggedFrom + diff);
         SetPosition(newPos);
+        UpdateEdgesIfRequested();
     }
 
     /// <summary>
@@ -288,7 +289,23 @@ public class VertexControl : VertexControlBase, IXYReactive, IDraggable
         m_dragOrigin = null;
         IsDragging = false;
         SetPosition(newPos);
+        UpdateEdgesIfRequested();
         return true;
+    }
+
+    /// <summary>
+    /// Recomputes routes for every edge attached to this vertex when
+    /// <see cref="DragBehaviour.UpdateEdgesOnMoveProperty"/> is set on this control and edge routing
+    /// is enabled on the host <see cref="GraphArea"/>. The connected <see cref="EdgeControl"/>s
+    /// already invalidate themselves in response to the vertex's <c>PositionChanged</c> event, so
+    /// the next layout pass picks up the freshly-computed routing points automatically.
+    /// </summary>
+    internal void UpdateEdgesIfRequested()
+    {
+        if (RootArea is not { IsEdgeRoutingEnabled: true }) return;
+        if (!DragBehaviour.GetUpdateEdgesOnMove(this)) return;
+        if (Vertex is null) return;
+        RootArea.ComputeEdgeRoutesByVertex(this);
     }
 
     /// <summary>
