@@ -281,8 +281,7 @@ public static class EdgeMathExtensions
         /// Builds a <see cref="StreamGeometry"/> from normalized points.
         /// </summary>
         /// <returns>
-        /// A tuple containing the <see cref="StreamGeometry"/> representing the edge path and
-        /// the local offset used to transform world-space coordinates into control-local space.
+        /// A <see cref="StreamGeometry"/> representing the edge path defined by the provided points.
         /// </returns>
         public StreamGeometry ToStreamGeometry()
         {
