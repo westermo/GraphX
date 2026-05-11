@@ -160,11 +160,13 @@ public sealed class Wayfinder : Control
         ((AvaloniaObject)zc).PropertyChanged += TargetPropertyChanged;
         if (zc.Content is ITrackableContent tc)
             tc.ContentSizeChanged += TargetContentSizeChanged;
-        SubscribeContentVisual(zc.ContentVisual as Layoutable);
+        SubscribeContentVisual(zc.ContentVisual);
     }
 
     private void Unsubscribe(ZoomControl zc)
     {
+        _brushSourceVisual = null;
+        _contentBrush = null;
         ((AvaloniaObject)zc).PropertyChanged -= TargetPropertyChanged;
         if (zc.Content is ITrackableContent tc)
             tc.ContentSizeChanged -= TargetContentSizeChanged;
@@ -231,10 +233,14 @@ public sealed class Wayfinder : Control
         {
             if (e.Property == ContentControl.ContentProperty)
             {
+                if(e.OldValue is ITrackableContent oldTc)
+                    oldTc.ContentSizeChanged -= TargetContentSizeChanged;
+                if (e.NewValue is ITrackableContent newTc)
+                    newTc.ContentSizeChanged += TargetContentSizeChanged;
                 // Re-target the LayoutUpdated subscription onto the new content
                 // visual so that descendant relayouts (graph rebuilds, vertex
                 // additions) continue to refresh the minimap.
-                SubscribeContentVisual(ZoomControl?.ContentVisual as Layoutable);
+                SubscribeContentVisual(ZoomControl?.ContentVisual);
             }
 
             RecomputeGeometry();

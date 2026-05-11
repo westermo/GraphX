@@ -1,24 +1,22 @@
 ﻿<Styles
     xmlns="https://github.com/avaloniaui"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-    
-    xmlns:controls="clr-namespace:Westermo.GraphX.Controls.Controls;assembly=Westermo.GraphX.Controls.Avalonia"
-    xmlns:edgePointers="clr-namespace:Westermo.GraphX.Controls.Controls.EdgePointers;assembly=Westermo.GraphX.Controls.Avalonia"
-    xmlns:edgeLabels="clr-namespace:Westermo.GraphX.Controls.Controls.EdgeLabels;assembly=Westermo.GraphX.Controls.Avalonia">
+    xmlns:graphx="https://westermo.com/graphx/">
 
-    <Style Selector="controls|VertexControl">
-        <Setter Property="Foreground" Value="{DynamicResource ButtonText}" />
+    <Style Selector="graphx|VertexControl">
         <Setter Property="Template">
             <Setter.Value>
-                <ControlTemplate TargetType="{x:Type controls:VertexControl}">
+                <ControlTemplate TargetType="{x:Type graphx:VertexControl}">
                     <Grid>
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="Auto" />
                             <ColumnDefinition Width="*" />
                             <ColumnDefinition Width="Auto" />
                         </Grid.ColumnDefinitions>
-                        <Border BorderThickness="1" BorderBrush="{TemplateBinding Foreground}"
-                                Background="{DynamicResource ButtonBackgroundPressed}" Grid.Column="1" CornerRadius="5"
+                        <!-- Use TemplateBinding so the Background comes from the
+                             active GraphX theme style, not a Fluent-specific resource. -->
+                        <Border BorderThickness="1" BorderBrush="{TemplateBinding BorderBrush}"
+                                Background="{TemplateBinding Background}" Grid.Column="1" CornerRadius="5"
                                 Width="80">
                             <ContentPresenter Content="{TemplateBinding Vertex}" VerticalAlignment="Center"
                                               HorizontalAlignment="Center" />
@@ -29,19 +27,18 @@
         </Setter>
     </Style>
 
-    <Style Selector="controls|EdgeControl">
-        <Setter Property="Foreground" Value="{DynamicResource ButtonText}" />
+    <Style Selector="graphx|EdgeControl">
         <Setter Property="Template">
             <Setter.Value>
-                <ControlTemplate TargetType="{x:Type controls:EdgeControl}">
+                <ControlTemplate TargetType="{x:Type graphx:EdgeControl}">
                     <Grid>
                         <Path Stroke="{TemplateBinding Foreground}"
                               StrokeThickness="2"
                               x:Name="PART_edgePath" />
-                        <edgePointers:DefaultEdgePointer NeedRotation="true" x:Name="PART_EdgePointerForTarget">
+                        <graphx:DefaultEdgePointer NeedRotation="true" x:Name="PART_EdgePointerForTarget">
                             <Path Data="M0,0.5 L1,1 1,0" Fill="{TemplateBinding Foreground}" Stretch="Uniform"
                                   Width="10" Height="10" />
-                        </edgePointers:DefaultEdgePointer>
+                        </graphx:DefaultEdgePointer>
                     </Grid>
                 </ControlTemplate>
             </Setter.Value>
@@ -49,12 +46,12 @@
     </Style>
 
     <!--EDGE LABLE CONTROL -->
-    <Style Selector="edgeLabels|AttachableEdgeLabelControl">
+    <Style Selector="graphx|AttachableEdgeLabelControl">
         <Setter Property="LabelVerticalOffset" Value="0" />
         <Setter Property="ShowLabel" Value="true" />
         <Setter Property="Template">
             <Setter.Value>
-                <ControlTemplate TargetType="{x:Type edgeLabels:AttachableEdgeLabelControl}">
+                <ControlTemplate TargetType="{x:Type graphx:AttachableEdgeLabelControl}">
                     <Border BorderBrush="Black" BorderThickness="1" Background="White" CornerRadius="5">
                         <StackPanel Orientation="Horizontal">
                             <TextBlock FontWeight="Bold" FontSize="8" Text="ToolTip: " Foreground="Black" Margin="1" />

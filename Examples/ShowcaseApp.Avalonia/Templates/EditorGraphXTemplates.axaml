@@ -1,25 +1,22 @@
 ﻿<Styles
     xmlns="https://github.com/avaloniaui"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-    
-    xmlns:controls="clr-namespace:Westermo.GraphX.Controls.Controls;assembly=Westermo.GraphX.Controls.Avalonia"
-    xmlns:behaviours="clr-namespace:Westermo.GraphX.Controls.Behaviours;assembly=Westermo.GraphX.Controls.Avalonia"
-    xmlns:vertexLabels="clr-namespace:Westermo.GraphX.Controls.Controls.VertexLabels;assembly=Westermo.GraphX.Controls.Avalonia">
+    xmlns:graphx="https://westermo.com/graphx/">
 
     <!-- VERTEX CONTROL -->
-    <Style Selector="controls|VertexControl">
+    <Style Selector="graphx|VertexControl">
         <!-- Set background color through attached property -->
         <Setter Property="BorderThickness" Value="0" />
         <Setter Property="ShowLabel" Value="True" />
         <!-- VERTEX DRAGGING CONTROL -->
-        <Setter Property="behaviours:DragBehaviour.IsDragEnabled"
+        <Setter Property="graphx:DragBehaviour.IsDragEnabled"
                 Value="False" />
-        <Setter Property="behaviours:DragBehaviour.UpdateEdgesOnMove"
+        <Setter Property="graphx:DragBehaviour.UpdateEdgesOnMove"
                 Value="True" />
     </Style>
 
     <!-- Selected vertex style - provides visual feedback for selection -->
-    <Style Selector="controls|VertexControl[IsSelected=True]">
+    <Style Selector="graphx|VertexControl[IsSelected=True]">
         <Setter Property="RenderTransform">
             <Setter.Value>
                 <ScaleTransform ScaleX="1.1" ScaleY="1.1" />
@@ -33,7 +30,7 @@
     </Style>
 
 
-    <Style Selector="vertexLabels|AttachableVertexLabelControl">
+    <Style Selector="graphx|AttachableVertexLabelControl">
         <Setter Property="Background" Value="Transparent" />
         <Setter Property="Foreground" Value="Black" />
         <Setter Property="LabelPositionMode" Value="Sides" />
@@ -41,7 +38,7 @@
     </Style>
 
     <!-- EDGE CONTROL -->
-    <Style Selector="controls|EdgeControl">
+    <Style Selector="graphx|EdgeControl">
         <Setter Property="MinWidth"
                 Value="1" />
         <Setter Property="MinHeight"

@@ -1,0 +1,25 @@
+﻿<ResourceDictionary xmlns="https://github.com/avaloniaui"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <!-- Semi design-specific resources for GraphX controls.
+         These serve as fallbacks when Semi.Avalonia theme resources
+         are not available, and as semantic aliases for graph styling. -->
+
+    <SolidColorBrush x:Key="GraphXSemiVertexBackground" Color="#FFFFFFFF" />
+    <SolidColorBrush x:Key="GraphXSemiVertexBorder" Color="#FFE8E8E8" />
+    <SolidColorBrush x:Key="GraphXSemiVertexHoverBackground" Color="#FFF5F5F5" />
+    <SolidColorBrush x:Key="GraphXSemiVertexSelectedBorder" Color="#FF0077FA" />
+    <SolidColorBrush x:Key="GraphXSemiEdgeForeground" Color="#FF1C1F23" />
+    <SolidColorBrush x:Key="GraphXSemiLabelForeground" Color="#FF1C1F23" />
+
+    <!-- Compatibility resources: provide Fluent-named keys so that apps
+         originally styled for Fluent render correctly under Semi theme.
+         These map to Semi Design light-theme equivalents. -->
+    <SolidColorBrush x:Key="ButtonBackground" Color="#FFFFFFFF" />
+    <SolidColorBrush x:Key="ButtonBackgroundPressed" Color="#FFF5F5F5" />
+    <SolidColorBrush x:Key="ButtonBorder" Color="#FFE8E8E8" />
+    <SolidColorBrush x:Key="ButtonText" Color="#FF1C1F23" />
+    <SolidColorBrush x:Key="WindowBackground" Color="#FFF8F9FA" />
+    <SolidColorBrush x:Key="SystemRegionBrush" Color="#FFF5F5F5" />
+
+</ResourceDictionary>

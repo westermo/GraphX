@@ -1,0 +1,51 @@
+﻿<Styles xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:graphx="https://westermo.com/graphx/"
+        x:Class="Westermo.GraphX.Controls.Avalonia.Themes.Material.GraphXMaterialTheme">
+    <Styles.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceInclude Source="avares://Westermo.GraphX.Controls.Avalonia/Themes/DefaultResources.axaml" />
+                <ResourceInclude Source="GraphXMaterialResources.axaml" />
+            </ResourceDictionary.MergedDictionaries>
+        </ResourceDictionary>
+    </Styles.Resources>
+
+    <!-- Material-themed vertex control overrides using Material elevation and surface colors -->
+    <Style Selector="graphx|VertexControl">
+        <Setter Property="Background" Value="{DynamicResource MaterialSurfaceBrush}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource MaterialDividerBrush}" />
+        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="Padding" Value="16,12,16,12" />
+        <Setter Property="CornerRadius" Value="12" />
+
+        <Style Selector="^:pointerover">
+            <Setter Property="Background" Value="{DynamicResource GraphXMaterialVertexHoverBackground}" />
+        </Style>
+    </Style>
+
+    <!-- Material-themed edge control with Material color scheme -->
+    <Style Selector="graphx|EdgeControl">
+        <Setter Property="Foreground" Value="{DynamicResource MaterialBodyBrush}" />
+        <Setter Property="StrokeThickness" Value="2" />
+        <Setter Property="Opacity" Value="0.87" />
+    </Style>
+
+    <!-- Material-themed edge label with surface card appearance -->
+    <Style Selector="graphx|AttachableEdgeLabelControl">
+        <Setter Property="Background" Value="{DynamicResource MaterialSurfaceBrush}" />
+        <Setter Property="Foreground" Value="{DynamicResource MaterialBodyBrush}" />
+    </Style>
+
+    <!-- Material-themed vertex labels -->
+    <Style Selector="graphx|VertexLabelControl">
+        <Setter Property="Foreground" Value="{DynamicResource MaterialBodyBrush}" />
+        <Setter Property="Background" Value="Transparent" />
+    </Style>
+
+    <Style Selector="graphx|AttachableVertexLabelControl">
+        <Setter Property="Foreground" Value="{DynamicResource MaterialBodyBrush}" />
+        <Setter Property="Background" Value="Transparent" />
+    </Style>
+
+</Styles>

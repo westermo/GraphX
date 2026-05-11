@@ -1,0 +1,52 @@
+﻿<Styles xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:graphx="https://westermo.com/graphx/"
+        x:Class="Westermo.GraphX.Controls.Avalonia.Themes.Fluent.GraphXFluentTheme">
+    <Styles.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceInclude Source="avares://Westermo.GraphX.Controls.Avalonia/Themes/DefaultResources.axaml" />
+                <ResourceInclude Source="GraphXFluentResources.axaml" />
+            </ResourceDictionary.MergedDictionaries>
+        </ResourceDictionary>
+    </Styles.Resources>
+
+    <!-- Fluent-themed vertex control overrides -->
+    <Style Selector="graphx|VertexControl">
+        <Setter Property="Background" Value="{DynamicResource CardBackgroundFillColorDefaultBrush}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource CardStrokeColorDefaultBrush}" />
+        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="Padding" Value="12,8,12,8" />
+        <Setter Property="CornerRadius" Value="4" />
+
+        <Style Selector="^:pointerover">
+            <Setter Property="Background" Value="{DynamicResource SubtleFillColorSecondaryBrush}" />
+            <Setter Property="BorderBrush" Value="{DynamicResource ControlStrokeColorDefaultBrush}" />
+        </Style>
+    </Style>
+
+    <!-- Fluent-themed edge control overrides -->
+    <Style Selector="graphx|EdgeControl">
+        <Setter Property="Foreground" Value="{DynamicResource TextFillColorPrimaryBrush}" />
+        <Setter Property="StrokeThickness" Value="2" />
+        <Setter Property="Opacity" Value="1" />
+    </Style>
+
+    <!-- Fluent-themed edge label -->
+    <Style Selector="graphx|AttachableEdgeLabelControl">
+        <Setter Property="Background" Value="{DynamicResource CardBackgroundFillColorDefaultBrush}" />
+        <Setter Property="Foreground" Value="{DynamicResource TextFillColorPrimaryBrush}" />
+    </Style>
+
+    <!-- Fluent-themed vertex label -->
+    <Style Selector="graphx|VertexLabelControl">
+        <Setter Property="Foreground" Value="{DynamicResource TextFillColorPrimaryBrush}" />
+        <Setter Property="Background" Value="Transparent" />
+    </Style>
+
+    <Style Selector="graphx|AttachableVertexLabelControl">
+        <Setter Property="Foreground" Value="{DynamicResource TextFillColorPrimaryBrush}" />
+        <Setter Property="Background" Value="Transparent" />
+    </Style>
+
+</Styles>

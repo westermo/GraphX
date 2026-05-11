@@ -1,5 +1,8 @@
 <Application xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:graphx="https://westermo.com/graphx/"
+             xmlns:themes="clr-namespace:Material.Styles.Themes;assembly=Material.Styles"
+             xmlns:semi="https://irihi.tech/semi"
              x:Class="ShowcaseApp.Avalonia.App"
              RequestedThemeVariant="Light">
     <!-- "Default" ThemeVariant follows system theme variant. "Dark" or "Light" are other available options. -->
@@ -13,7 +16,7 @@
     </Application.Resources>
 
     <Application.Styles>
-        <FluentTheme />
-        <StyleInclude Source="avares://Westermo.GraphX.Controls.Avalonia/Themes/DefaultStyles.axaml" />
+        <themes:MaterialTheme/>
+        <graphx:GraphXMaterialTheme />
     </Application.Styles>
 </Application>

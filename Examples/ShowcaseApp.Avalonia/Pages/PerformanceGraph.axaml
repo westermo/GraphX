@@ -4,7 +4,7 @@
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:exampleModels="clr-namespace:ShowcaseApp.Avalonia.ExampleModels"
-             xmlns:zoomControl="clr-namespace:Westermo.GraphX.Controls.Controls.ZoomControl;assembly=Westermo.GraphX.Controls.Avalonia"
+             xmlns:graphx="https://westermo.com/graphx/"
              mc:Ignorable="d"
              d:DesignHeight="500" d:DesignWidth="800">
     <UserControl.Styles>
@@ -25,9 +25,9 @@
         </Border>
 
         <Border Grid.Row="1" Grid.Column="0" BorderBrush="{DynamicResource ButtonBorder}" BorderThickness="1" Margin="2">
-            <zoomControl:ZoomControl x:Name="zoomCtrl" Foreground="{DynamicResource ButtonText}">
+            <graphx:ZoomControl x:Name="zoomCtrl" Foreground="{DynamicResource ButtonText}">
                 <exampleModels:GraphAreaExample x:Name="graphArea" />
-            </zoomControl:ZoomControl>
+            </graphx:ZoomControl>
         </Border>
 
         <!-- Stats overlay -->
@@ -48,7 +48,7 @@
                 BorderThickness="1" Background="{DynamicResource ButtonBackground}"
                 Margin="10" Padding="2" Opacity="0.9"
                 IsVisible="{Binding #chkShowWayfinder.IsChecked}">
-            <zoomControl:Wayfinder ZoomControl="{Binding #zoomCtrl}"
+            <graphx:Wayfinder ZoomControl="{Binding #zoomCtrl}"
                                    Width="200" Height="150" />
         </Border>
 

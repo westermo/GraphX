@@ -684,7 +684,10 @@ public abstract class GraphAreaBase : Canvas, ITrackableContent, IGraphAreaBase
                 bottomRight.Y = Math.Max(bottomRight.Y, top + child.DesiredSize.Height);
             }
         }
-
+        if(!double.IsFinite(topLeft.X)) topLeft.X = 0;
+        if(!double.IsFinite(topLeft.Y)) topLeft.Y = 0;
+        if(!double.IsFinite(bottomRight.X)) bottomRight.X = 0;
+        if(!double.IsFinite(bottomRight.Y)) bottomRight.Y = 0;
         topLeft.X -= SideExpansionSize.Width * .5;
         topLeft.Y -= SideExpansionSize.Height * .5;
         bottomRight.X += SideExpansionSize.Width * .5;

@@ -6,7 +6,7 @@
              
              xmlns:exampleModels="clr-namespace:ShowcaseApp.Avalonia.ExampleModels"
              xmlns:pages1="clr-namespace:ShowcaseApp.Avalonia.Pages"
-             xmlns:zoomControl="clr-namespace:Westermo.GraphX.Controls.Controls.ZoomControl;assembly=Westermo.GraphX.Controls.Avalonia"
+             xmlns:graphx="https://westermo.com/graphx/"
              mc:Ignorable="d"
              d:DesignHeight="300" d:DesignWidth="600"
              x:DataType="pages1:EdgeRoutingGraph">
@@ -35,9 +35,9 @@
 
         <Border Grid.Row="1" Grid.Column="0" BorderBrush="{DynamicResource ButtonBorder}" BorderThickness="1"
                 Margin="2">
-            <zoomControl:ZoomControl x:Name="erg_zoomctrl" Margin="-5,0,5,0">
+            <graphx:ZoomControl x:Name="erg_zoomctrl" Margin="-5,0,5,0">
                 <exampleModels:GraphAreaExample x:Name="erg_Area" />
-            </zoomControl:ZoomControl>
+            </graphx:ZoomControl>
         </Border>
 
         <DockPanel Grid.Column="2" Grid.Row="0" Grid.RowSpan="2">
