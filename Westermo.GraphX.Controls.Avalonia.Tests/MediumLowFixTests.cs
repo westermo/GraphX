@@ -35,9 +35,7 @@ public class MediumLowFixTests
     public async Task RotatePoint_90Degrees_PreservesSubPixelPrecision()
     {
         // Rotating (1,0) around origin by 90 degrees should yield approximately (0,1)
-        var result = MathHelper.RotatePoint(
-            new Westermo.GraphX.Measure.Point(1, 0),
-            new Westermo.GraphX.Measure.Point(0, 0),
+        var result = new Westermo.GraphX.Measure.Point(1, 0).RotateAround(new Westermo.GraphX.Measure.Point(0, 0),
             90);
 
         // With (int) casts this would be (0,0), without them it's approximately (0,1)
@@ -49,9 +47,7 @@ public class MediumLowFixTests
     public async Task RotatePoint_45Degrees_ReturnsNonIntegerResult()
     {
         // Rotating (1,0) around origin by 45 degrees should yield ~(0.707, 0.707)
-        var result = MathHelper.RotatePoint(
-            new Westermo.GraphX.Measure.Point(1, 0),
-            new Westermo.GraphX.Measure.Point(0, 0),
+        var result = new Westermo.GraphX.Measure.Point(1, 0).RotateAround(new Westermo.GraphX.Measure.Point(0, 0),
             45);
 
         var expected = Math.Sqrt(2) / 2.0;

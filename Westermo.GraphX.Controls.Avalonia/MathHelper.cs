@@ -3,26 +3,6 @@ using Westermo.GraphX.Measure;
 
 namespace Westermo.GraphX.Controls;
 
-public static class DoubleExtensions
-{
-    /// <summary>
-    /// Convert angle value from radians to degrees
-    /// </summary>
-    public static double ToDegrees(this double value)
-    {
-        return value * 180 / Math.PI;
-    }
-
-    /// <summary>
-    /// Convert angle value from degrees to radians
-    /// </summary>
-    /// <param name="value"></param>
-    public static double ToRadians(this double value)
-    {
-        return value * Math.PI / 180;
-    }
-}
-
 public static class MathHelper
 {
     private const double D30_DEGREES_IN_RADIANS = Math.PI / 6.0;
@@ -33,49 +13,53 @@ public static class MathHelper
     {
         Tangent30Degrees = Math.Tan(D30_DEGREES_IN_RADIANS);
     }
-    /// <summary>
-    /// Returns normalized vector pointing to direction based on two points
-    /// </summary>
-    /// <param name="from">Source point</param>
-    /// <param name="to">Target point</param>
-    public static Vector GetDirection(Point from, Point to)
-    {
-        var dir = new Vector(from.X - to.X, from.Y - to.Y);
-        dir.Normalize();
-        return dir;
-    }
-        
-    /// <summary>
-    /// Returns distance between two specified points
-    /// </summary>
+
     /// <param name="point1">Source point</param>
-    /// <param name="point2">Target point</param>
-    public static double GetDistanceBetweenPoints(Point point1, Point point2)
+    extension(Avalonia.Point point1)
     {
-        // OPTIMIZATION: Use direct multiplication instead of Math.Pow for better performance
-        var dx = point2.X - point1.X;
-        var dy = point2.Y - point1.Y;
-        return Math.Sqrt(dx * dx + dy * dy);
+        /// <summary>
+        /// Returns distance between two specified points
+        /// </summary>
+        /// <param name="point2">Target point</param>
+        public double DistanceTo(Avalonia.Point point2)
+        {
+            var dx = point2.X - point1.X;
+            var dy = point2.Y - point1.Y;
+            return Math.Sqrt(dx * dx + dy * dy);
+        }
+
+        /// <summary>
+        /// Returns normalized vector pointing to direction based on two points
+        /// </summary>
+        /// <param name="to">Target point</param>
+        public Avalonia.Vector DirectionTo(Avalonia.Point to)
+        {
+            var dir = new Avalonia.Vector(point1.X - to.X, point1.Y - to.Y);
+            return dir.Normalize();
+        }
     }
 
-    /// <summary>
-    /// Returns point rotated around the specified point in degrees angle
-    /// </summary>
-    /// <param name="pointToRotate">Source point</param>
-    /// <param name="centerPoint">Center point</param>
-    /// <param name="angleInDegrees">Angle in degrees</param>
-    public static Point RotatePoint(Point pointToRotate, Point centerPoint, double angleInDegrees)
+    /// <param name="point">Source point</param>
+    extension(Point point)
     {
-        var angleInRadians = angleInDegrees * (Math.PI / 180);
-        var cosTheta = Math.Cos(angleInRadians);
-        var sinTheta = Math.Sin(angleInRadians);
-        return new Point
+        /// <summary>
+        /// Returns point rotated around the specified point in degrees angle
+        /// </summary>
+        /// <param name="centerPoint">Center point</param>
+        /// <param name="angleInDegrees">Angle in degrees</param>
+        public Point RotateAround(Point centerPoint, double angleInDegrees)
         {
-            X = cosTheta * (pointToRotate.X - centerPoint.X) -
-                    sinTheta * (pointToRotate.Y - centerPoint.Y) + centerPoint.X,
-            Y = sinTheta * (pointToRotate.X - centerPoint.X) +
-                 cosTheta * (pointToRotate.Y - centerPoint.Y) + centerPoint.Y
-        };
+            var angleInRadians = angleInDegrees * (Math.PI / 180);
+            var cosTheta = Math.Cos(angleInRadians);
+            var sinTheta = Math.Sin(angleInRadians);
+            return new Point
+            {
+                X = cosTheta * (point.X - centerPoint.X) -
+                    sinTheta * (point.Y - centerPoint.Y) + centerPoint.X,
+                Y = sinTheta * (point.X - centerPoint.X) +
+                    cosTheta * (point.Y - centerPoint.Y) + centerPoint.Y
+            };
+        }
     }
 
     /// <summary>
@@ -125,7 +109,7 @@ public static class MathHelper
             {
                 c.Y += (a.Y - b.Y) * (r.Right - c.X) / (a.X - b.X);
                 c.X = r.Right;
-            }/* if c is below r then move c on the line y = r->y_min
+            } /* if c is below r then move c on the line y = r->y_min
                 if c above the r then move c on the line y = r->y_max */
             else if (code.Bottom)
             {
@@ -150,6 +134,7 @@ public static class MathHelper
                 codeB = GetIntersectionData(r, b);
             }
         }
+
         return true;
     }
 
@@ -176,7 +161,7 @@ public static class MathHelper
             }
 
             Sides code;
-            Point c; 
+            Point c;
             if (!codeA.IsInside())
             {
                 code = codeA;
@@ -220,6 +205,7 @@ public static class MathHelper
                 codeB = GetIntersectionData(r, b);
             }
         }
+
         pt = GetCloserPoint(start, a, b);
         return 0;
     }
@@ -243,9 +229,9 @@ public static class MathHelper
         }
     }
 
-    public static Sides GetIntersectionData(Rect r, Point p)
+    public static Sides GetIntersectionData(this Rect r, Point p)
     {
-        return new Sides() { Left = p.X < r.Left, Right = p.X > r.Right, Bottom = p.Y > r.Bottom, Top = p.Y < r.Top };
+        return new Sides { Left = p.X < r.Left, Right = p.X > r.Right, Bottom = p.Y > r.Bottom, Top = p.Y < r.Top };
     }
 
     public static double GetDistance(Point a, Point b)
@@ -256,13 +242,13 @@ public static class MathHelper
     /// <summary>
     /// Returns point which is closer to the source point
     /// </summary>
-    /// <param name="start">Source point</param>
+    /// <param name="point">Source point</param>
     /// <param name="a">Point 1</param>
     /// <param name="b">Point 2</param>
-    public static Point GetCloserPoint(Point start, Point a, Point b)
+    public static Point GetCloserPoint(this Point point, Point a, Point b)
     {
-        var r1 = GetDistance(start, a);
-        var r2 = GetDistance(start, b);
+        var r1 = GetDistance(point, a);
+        var r2 = GetDistance(point, b);
         return r1 < r2 ? a : b;
     }
 
@@ -273,9 +259,9 @@ public static class MathHelper
     /// <param name="point2">Target point</param>
     public static double GetPositiveAngleBetweenPoints(Point point1, Point point2)
     {
-        var angle =  Math.Atan2(point1.Y - point2.Y, point1.X - point2.X);
+        var angle = Math.Atan2(point1.Y - point2.Y, point1.X - point2.X);
         while (angle < 0d)
-            angle += Math.PI*2;
+            angle += Math.PI * 2;
         return angle;
     }
 
@@ -289,4 +275,13 @@ public static class MathHelper
         return Math.Atan2(point1.Y - point2.Y, point2.X - point1.X);
     }
 
+    /// <summary>
+    /// Returns angle between two points in radians
+    /// </summary>
+    /// <param name="point1">Source point</param>
+    /// <param name="point2">Target point</param>
+    public static double GetAngleBetweenPoints(Avalonia.Point point1, Avalonia.Point point2)
+    {
+        return Math.Atan2(point1.Y - point2.Y, point2.X - point1.X);
+    }
 }

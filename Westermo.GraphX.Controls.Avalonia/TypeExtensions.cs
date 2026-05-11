@@ -48,17 +48,17 @@ public static class TypeExtensions
         }
     }
 
-    extension(Measure.Point[]? points)
+    extension(Measure.Point[] points)
     {
-        public Point[]? ToAvalonia()
+        public Point[] ToAvalonia()
         {
-            if (points == null) return null;
             var list = new Point[points.Length];
             for (var i = 0; i < points.Length; i++)
                 list[i] = points[i].ToAvalonia();
             return list;
         }
     }
+
 
     extension(Point[]? points)
     {
@@ -151,9 +151,14 @@ public static class TypeExtensions
             return new Point(pt.X * value, pt.Y * value);
         }
 
-        public Point Sum(Point pt2)
+        public Point Add(Point pt2)
         {
             return new Point(pt.X + pt2.X, pt.Y + pt2.Y);
+        }
+
+        public Point Add(double x, double y)
+        {
+            return new Point(pt.X + x, pt.Y + y);
         }
     }
 }

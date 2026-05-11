@@ -1,8 +1,6 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Diagnostics;
 using Avalonia;
-using Avalonia.Media;
 using Westermo.GraphX.Common.Enums;
 
 /* Code here is partially used from NodeXL (https://nodexl.codeplex.com/)
@@ -50,171 +48,8 @@ public static class GeometryHelper
         return a1 + t * a;
     }
 
-    /// <summary>
-    /// Generate PathGeometry object with curved Path using supplied route points
-    /// </summary>
-    /// <param name="points">Route points</param>
-    /// <param name="tension"></param>
-    /// <param name="tolerance"></param>
-    /// <returns></returns>
-    public static List<Point> GetCurveThroughPoints(Span<Point> points, double tension, double tolerance)
-    {
-        Debug.Assert(points.Length >= 2);
-        Debug.Assert(tolerance > 0);
-
-        // Pre-calculate estimated capacity to reduce list resizing
-        var estimatedCapacity = EstimateCurvePointCount(points, tolerance);
-        var oPolyLineSegment = new List<Point>(estimatedCapacity);
-
-        if (points.Length == 2)
-        {
-            AddPointsToPolyLineSegment(oPolyLineSegment, points[0], points[0],
-                points[1], points[1], tension, tolerance);
-        }
-        else
-        {
-            var iPoints = points.Length;
-
-            for (var i = 0; i < iPoints; i++)
-            {
-                if (i == 0)
-                {
-                    AddPointsToPolyLineSegment(oPolyLineSegment, points[0],
-                        points[0], points[1], points[2], tension, tolerance);
-                }
-
-                else if (i == iPoints - 2)
-                {
-                    AddPointsToPolyLineSegment(oPolyLineSegment, points[i - 1],
-                        points[i], points[i + 1], points[i + 1], tension,
-                        tolerance);
-                }
-                else if (i != iPoints - 1)
-                {
-                    AddPointsToPolyLineSegment(oPolyLineSegment, points[i - 1],
-                        points[i], points[i + 1], points[i + 2], tension,
-                        tolerance);
-                }
-            }
-
-            oPolyLineSegment.Insert(0, points[0]);
-        }
-
-        return oPolyLineSegment;
-    }
-
-    /// <summary>
-    /// Estimates the number of points needed for the curve to pre-allocate list capacity.
-    /// </summary>
-    /// <param name="points">The sequence of points that define the curve.</param>
-    /// <param name="tolerance">The tolerance used when approximating the curve; smaller values typically require more points.</param>
-    /// <returns>The estimated number of points required to represent the curve, used to pre-allocate the list capacity.</returns>
-    private static int EstimateCurvePointCount(Span<Point> points, double tolerance)
-    {
-        if (points.Length < 2) return 2;
-
-        var totalDistance = 0.0;
-        for (var i = 0; i < points.Length - 1; i++)
-        {
-            totalDistance += Math.Abs(points[i].X - points[i + 1].X) +
-                             Math.Abs(points[i].Y - points[i + 1].Y);
-        }
-
-        // Estimate based on total distance and tolerance, with some buffer
-        return Math.Max(points.Length, (int)(totalDistance / tolerance) + points.Length);
-    }
-
-    public static IList<Point> GetCurvePointsThroughPoints(Point[] points, double tension, double tolerance)
-    {
-        return GetCurveThroughPoints(points, tension, tolerance);
-    }
 
 
-    private static void AddPointsToPolyLineSegment(List<Point> oPolyLineSegment, Point oPoint0, Point oPoint1,
-        Point oPoint2, Point oPoint3, double dTension, double dTolerance)
-    {
-        Debug.Assert(oPolyLineSegment != null);
-        Debug.Assert(dTolerance > 0);
-
-        var iPoints = (int)((Math.Abs(oPoint1.X - oPoint2.X) +
-                             Math.Abs(oPoint1.Y - oPoint2.Y)) / dTolerance);
-
-
-        if (iPoints <= 2)
-        {
-            oPolyLineSegment.Add(oPoint2);
-        }
-        else
-        {
-            var dSx1 = dTension * (oPoint2.X - oPoint0.X);
-            var dSy1 = dTension * (oPoint2.Y - oPoint0.Y);
-            var dSx2 = dTension * (oPoint3.X - oPoint1.X);
-            var dSy2 = dTension * (oPoint3.Y - oPoint1.Y);
-
-            var dAx = dSx1 + dSx2 + 2 * oPoint1.X - 2 * oPoint2.X;
-            var dAy = dSy1 + dSy2 + 2 * oPoint1.Y - 2 * oPoint2.Y;
-            var dBx = -2 * dSx1 - dSx2 - 3 * oPoint1.X + 3 * oPoint2.X;
-            var dBy = -2 * dSy1 - dSy2 - 3 * oPoint1.Y + 3 * oPoint2.Y;
-
-            var dCx = dSx1;
-            var dCy = dSy1;
-            var dDx = oPoint1.X;
-            var dDy = oPoint1.Y;
-
-            // Pre-calculate divisor to avoid repeated division
-            var divisor = 1.0 / (iPoints - 1);
-
-            // Note that this starts at 1, not 0.
-            for (var i = 1; i < iPoints; i++)
-            {
-                var t = i * divisor;
-                var t2 = t * t; // Cache t squared
-                var t3 = t2 * t; // Cache t cubed
-
-                var oPoint = new Point(
-                    dAx * t3 + dBx * t2 + dCx * t + dDx,
-                    dAy * t3 + dBy * t2 + dCy * t + dDy
-                );
-
-                oPolyLineSegment.Add(oPoint);
-            }
-        }
-    }
-
-    public static PathFigure GetPathFigureFromPathSegments(Point oStartPoint, bool bPathFigureIsFilled,
-        params PathSegment[] aoPathSegments)
-    {
-        Debug.Assert(aoPathSegments != null);
-
-        var oPathFigure = new PathFigure { StartPoint = oStartPoint, IsFilled = bPathFigureIsFilled };
-        var oSegments = oPathFigure.Segments!;
-
-        foreach (var oPathSegment in aoPathSegments)
-        {
-            oSegments.Add(oPathSegment);
-        }
-
-        return oPathFigure;
-    }
-
-
-    public static PathGeometry GetPathGeometryFromPathSegments(Point oStartPoint, bool bPathFigureIsFilled,
-        params PathSegment[] aoPathSegments)
-    {
-        Debug.Assert(aoPathSegments != null);
-
-        var oPathFigure = new PathFigure { StartPoint = oStartPoint, IsFilled = bPathFigureIsFilled };
-        var oSegments = oPathFigure.Segments!;
-
-        foreach (var oPathSegment in aoPathSegments)
-        {
-            oSegments.Add(oPathSegment);
-        }
-
-        var oPathGeometry = new PathGeometry();
-        oPathGeometry.Figures!.Add(oPathFigure);
-        return oPathGeometry;
-    }
 
     /// <summary>
     /// Returns edge endpoint based on vertex math shape and rotation angle
@@ -272,7 +107,7 @@ public static class GeometryHelper
             sourcePoint.Y - dVertexARadiusHeight * Math.Sin(dEdgeAngle)
         );
         if (angle != 0)
-            pt = MathHelper.RotatePoint(pt.ToGraphX(), oVertexALocation.ToGraphX(), angle).ToAvalonia();
+            pt = MathHelper.RotateAround(pt.ToGraphX(), oVertexALocation.ToGraphX(), angle).ToAvalonia();
         return pt;
     }
 
@@ -406,78 +241,7 @@ public static class GeometryHelper
 
         Point Rotate(Point p, double a) => angle == 0.0
             ? p
-            : MathHelper.RotatePoint(p.ToGraphX(), sourceBounds.Center().ToGraphX(), a).ToAvalonia();
-    }
-
-    public static PathFigure GenerateOldArrow(Point ip1, Point ip2)
-    {
-        var p1 = new Vector(ip1.X, ip1.Y);
-        var p2 = new Vector(ip2.X, ip2.Y);
-        var v = p1 - p2;
-        v = v / v.Length * 5;
-        var n = new Vector(-v.Y, v.X) * 0.7;
-        var ov1 = p2 + v - n;
-        var ov2 = p2 + v + n;
-        var fig = new PathFigure
-        {
-            StartPoint = ip2,
-            Segments =
-            [
-                new LineSegment { Point = new Point(ov1.X, ov1.Y) },
-                new LineSegment { Point = new Point(ov2.X, ov2.Y) }
-            ],
-            IsClosed = true
-        };
-        return fig;
-    }
-
-    public static PathFigure GenerateArrow(Point oArrowTipLocation, Point start, Point end,
-        double customAngle = 0.1, double arrowWidth = 3.0)
-    {
-        // Compute the arrow's dimensions.  The width factor is arbitrary and
-        // was determined experimentally.
-
-        var dArrowAngle = Math.Abs(customAngle - 0.1) < 1e-9
-            ? MathHelper.GetAngleBetweenPoints(start.ToGraphX(), end.ToGraphX())
-            : customAngle;
-        var dArrowTipX = oArrowTipLocation.X;
-        var dArrowTipY = oArrowTipLocation.Y;
-        var dArrowHalfHeight = arrowWidth / 2.0;
-        var dX = dArrowTipX - arrowWidth;
-
-        // Compute the arrow's three points as if the arrow were at an angle of
-        // zero degrees, then use a rotated transform to adjust for the actual
-        // specified angle.
-
-        var oMatrix = GetRotatedMatrix(oArrowTipLocation,
-            -dArrowAngle.ToDegrees());
-        Point[] aoPoints =
-        [
-            // Index 0: Arrow tip.
-
-            oMatrix.Transform(oArrowTipLocation),
-
-            // Index 1: Arrow bottom.
-
-            oMatrix.Transform(new Point(dX, dArrowTipY - dArrowHalfHeight)),
-
-            // Index 2: Arrow top.
-
-            oMatrix.Transform(new Point(dX, dArrowTipY + dArrowHalfHeight)),
-
-            // Index 3: Center of the flat end of the arrow.
-            //
-            // Note: The 0.2 is to avoid a gap between the edge end-cap and the
-            // flat end of the arrow, but it sometimes causes the two to
-            // overlap slightly, and that can show if the edge isn't opaque.
-            // What is the correct way to get the end-cap to merge invisibly
-            // with the arrow?
-
-            oMatrix.Transform(new Point(dX + 0.2, dArrowTipY))
-        ];
-
-
-        return GetPathFigureFromPoints(aoPoints[0], aoPoints[1], aoPoints[2]);
+            : MathHelper.RotateAround(p.ToGraphX(), sourceBounds.Center().ToGraphX(), a).ToAvalonia();
     }
 
     /// <summary>
@@ -504,55 +268,5 @@ public static class GeometryHelper
         var dy = centerY * (1.0 - cos) - centerX * sin;
 
         return new Matrix(cos, sin, -sin, cos, dx, dy);
-    }
-
-    public static PathFigure GetPathFigureFromPoints(Point startPoint, params Point[] otherPoints)
-    {
-        var oPathFigure = new PathFigure { StartPoint = startPoint };
-        var oPathSegmentCollection = new PathSegments();
-
-        foreach (var item in otherPoints)
-            oPathSegmentCollection.Add(new LineSegment
-            {
-                Point = item,
-                IsStroked = true
-            });
-
-
-        oPathFigure.Segments = oPathSegmentCollection;
-        oPathFigure.IsClosed = true;
-        return oPathFigure;
-    }
-
-    public static PathGeometry GetPathGeometryFromPoints(Point startPoint, params Point[] otherPoints)
-    {
-        Debug.Assert(otherPoints != null);
-
-        var iOtherPoints = otherPoints.Length;
-
-        Debug.Assert(iOtherPoints > 0);
-
-        var oPathFigure = new PathFigure
-        {
-            StartPoint = startPoint
-        };
-
-        var oPathSegmentCollection = new PathSegments();
-        foreach (var item in otherPoints)
-            oPathSegmentCollection.Add(new LineSegment()
-            {
-                Point = item,
-                IsStroked = true
-            });
-
-        oPathFigure.Segments = oPathSegmentCollection;
-        oPathFigure.IsClosed = true;
-
-
-        var oPathGeometry = new PathGeometry();
-
-        oPathGeometry.Figures!.Add(oPathFigure);
-
-        return oPathGeometry;
     }
 }
