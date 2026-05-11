@@ -96,10 +96,6 @@ public sealed class ZoomControl : ContentControl, IZoomControl, INotifyPropertyC
     {
         if (_presenter == null || ContentVisual == null)
             return default;
-
-        // The visible area in screen coordinates is the ZoomControl bounds
-        var screenRect = new Rect(0, 0, ActualWidth, ActualHeight);
-
         // Convert to content coordinates by accounting for zoom and translate
         var zoom = Zoom;
         if (zoom <= 0) zoom = 1;
@@ -116,7 +112,7 @@ public sealed class ZoomControl : ContentControl, IZoomControl, INotifyPropertyC
     private double ActualWidth => Bounds.Width;
     private double ActualHeight => Bounds.Height;
 
-    
+
     // Public mode properties (moved earlier to ensure availability)
     /// <summary>
     /// Gets or sets the current zoom mode of the control.
@@ -152,7 +148,7 @@ public sealed class ZoomControl : ContentControl, IZoomControl, INotifyPropertyC
     /// Zooms the content to its original (1:1) zoom level, centered in the viewport.
     /// </summary>
     public void ZoomToOriginal() => DoZoomToOriginal();
-    
+
     /// <summary>
     /// Zooms the content to fill the entire viewport while maintaining aspect ratio.
     /// </summary>
@@ -254,24 +250,25 @@ public sealed class ZoomControl : ContentControl, IZoomControl, INotifyPropertyC
     /// <summary>
     /// Gets or sets whether the Ctrl key must be held for mouse wheel zooming. Default is true.
     /// </summary>
-    public bool UseCtrlForMouseWheel { get; set; } = true;
-    
+    public bool AllowZoomingWithoutCtrl { get; set; } = true;
+
     /// <summary>
     /// Gets or sets the mouse wheel zooming behavior mode.
     /// </summary>
     public MouseWheelZoomingMode MouseWheelZoomingMode { get; set; }
-    
+
     /// <summary>
     /// Occurs when an area is selected using the zoom box selection feature.
     /// </summary>
     public event AreaSelectedEventHandler? AreaSelected;
+
     private void OnAreaSelected(Rect selection) => AreaSelected?.Invoke(this, new AreaSelectedEventArgs(selection));
 
     public static readonly StyledProperty<TimeSpan> AnimationLengthProperty =
         AvaloniaProperty.Register<ZoomControl, TimeSpan>(nameof(AnimationLength), TimeSpan.FromMilliseconds(500));
 
     public static readonly StyledProperty<bool> IsDragSelectByDefaultProperty =
-        AvaloniaProperty.Register<ZoomControl, bool>(nameof(IsDragSelectByDefaultProperty));
+        AvaloniaProperty.Register<ZoomControl, bool>(nameof(IsDragSelectByDefault));
 
     public static readonly StyledProperty<double> ZoomStepProperty =
         AvaloniaProperty.Register<ZoomControl, double>(nameof(ZoomStep), 5.0);
@@ -300,10 +297,12 @@ public sealed class ZoomControl : ContentControl, IZoomControl, INotifyPropertyC
         AvaloniaProperty.Register<ZoomControl, ZoomViewModifierMode>(nameof(ModifierMode));
 
     public static readonly StyledProperty<double> TranslateXProperty =
-        AvaloniaProperty.Register<ZoomControl, double>(nameof(TranslateX), coerce: TranslateX_Coerce);
+        AvaloniaProperty.Register<ZoomControl, double>(nameof(TranslateX), coerce: TranslateX_Coerce,
+            defaultValue: 0.0);
 
     public static readonly StyledProperty<double> TranslateYProperty =
-        AvaloniaProperty.Register<ZoomControl, double>(nameof(TranslateY), coerce: TranslateY_Coerce);
+        AvaloniaProperty.Register<ZoomControl, double>(nameof(TranslateY), coerce: TranslateY_Coerce,
+            defaultValue: 0.0);
 
     private static double TranslateX_Coerce(AvaloniaObject o, double d) =>
         ((ZoomControl)o).GetCoercedTranslateX(d, ((ZoomControl)o).Zoom);
@@ -321,7 +320,7 @@ public sealed class ZoomControl : ContentControl, IZoomControl, INotifyPropertyC
         zc._translateTransform.X = (double)e.NewValue!;
         if (!zc._isZooming) zc.Mode = ZoomControlModes.Custom;
         zc.OnPropertyChanged(nameof(Presenter));
-        zc.Presenter?.InvalidateVisual();
+        if (!zc._isZooming) zc.Presenter?.InvalidateVisual();
         zc.ScheduleViewportUpdate();
     }
 
@@ -331,7 +330,7 @@ public sealed class ZoomControl : ContentControl, IZoomControl, INotifyPropertyC
         zc._translateTransform.Y = (double)e.NewValue!;
         if (!zc._isZooming) zc.Mode = ZoomControlModes.Custom;
         zc.OnPropertyChanged(nameof(Presenter));
-        zc.Presenter?.InvalidateVisual();
+        if (!zc._isZooming) zc.Presenter?.InvalidateVisual();
         zc.ScheduleViewportUpdate();
     }
 
@@ -531,13 +530,14 @@ public sealed class ZoomControl : ContentControl, IZoomControl, INotifyPropertyC
     /// Gets the content as a Control, if it is one.
     /// </summary>
     public Control? ContentVisual => Content as Control;
-    
+
     /// <summary>
     /// Gets the content as an ITrackableContent, if it implements that interface.
     /// </summary>
     public ITrackableContent? TrackableContent => Content as ITrackableContent;
+
     private bool _isga;
-    
+
     /// <summary>
     /// Gets whether the content implements ITrackableContent for automatic size tracking.
     /// </summary>
@@ -601,17 +601,17 @@ public sealed class ZoomControl : ContentControl, IZoomControl, INotifyPropertyC
 
     private void ZoomControl_PointerPressed(object? sender, PointerPressedEventArgs e) => OnPointerDown(e);
 
-    private void ZoomControl_PointerReleased(object? sender, PointerReleasedEventArgs e) =>
-        ZoomControl_MouseUp(sender, e);
+    private void ZoomControl_PointerReleased(object? sender, PointerReleasedEventArgs e) => OnPointerUp(sender, e);
 
-    private static void Content_ContentSizeChanged(object sender, ContentSizeChangedEventArgs e)
+    private void Content_ContentSizeChanged(object sender, ContentSizeChangedEventArgs e)
     {
+        if (Mode == ZoomControlModes.Fill) DoZoomToFill();
     }
 
     private void ZoomControl_MouseWheel(object? sender, PointerWheelEventArgs e)
     {
         var handle = ((e.KeyModifiers & KeyModifiers.Control) > 0 && ModifierMode == ZoomViewModifierMode.None) ||
-                     UseCtrlForMouseWheel;
+                     AllowZoomingWithoutCtrl;
         if (!handle) return;
         e.Handled = true;
         MouseWheelAction(e);
@@ -624,7 +624,7 @@ public sealed class ZoomControl : ContentControl, IZoomControl, INotifyPropertyC
     {
         var origoPosition = OrigoPosition;
         var distance = delta.Length;
-        var step = Math.Max(1 / ZoomStep, Math.Min(ZoomStep, Math.Abs(distance) / 10000.0 * ZoomSensitivity + 1));
+        var step = Math.Max(1 / ZoomStep, Math.Min(ZoomStep, Math.Abs(distance) * ZoomSensitivity / 10000.0 + 1));
         var mod = delta.Y < 0 ? -1 : 1;
         var startPosition = MouseWheelZoomingMode == MouseWheelZoomingMode.Absolute ? origoPosition : mousePosition;
         var targetPosition =
@@ -634,8 +634,9 @@ public sealed class ZoomControl : ContentControl, IZoomControl, INotifyPropertyC
             startPosition, targetPosition);
     }
 
-    private void ZoomControl_MouseUp(object? sender, PointerReleasedEventArgs e)
+    private void OnPointerUp(object? sender, PointerReleasedEventArgs e)
     {
+        PointerMoved -= ZoomControl_PreviewMouseMove;
         if (_clickTrack)
         {
             RaiseEvent(new RoutedEventArgs(ClickEvent));
@@ -752,34 +753,28 @@ public sealed class ZoomControl : ContentControl, IZoomControl, INotifyPropertyC
     /// <param name="usingContentCoordinates">Sets if content coordinates or screen coordinates was specified</param>
     public void ZoomToContent(Rect rectangle, bool usingContentCoordinates = true)
     {
-        //if content isn't UIElement - return
         if (ContentVisual == null) return;
-        // translate the region from the coordinate space of the content 
-        // to the coordinate space of the content presenter
         var region = usingContentCoordinates && _presenter is not null
             ? new Rect(
                 ContentVisual.TranslatePoint(rectangle.TopLeft, _presenter) ?? rectangle.TopLeft,
                 ContentVisual.TranslatePoint(rectangle.BottomRight, _presenter) ?? rectangle.BottomRight)
             : rectangle;
 
-        // calculate actual zoom, which must fit the entire selection 
-        // while maintaining a 1:1 ratio
         var aspectX = ActualWidth / region.Width;
         var aspectY = ActualHeight / region.Height;
         var newRelativeScale = aspectX < aspectY ? aspectX : aspectY;
-        // ensure that the scale value alls within the valid range
         if (newRelativeScale > MaxZoom)
             newRelativeScale = MaxZoom;
         else if (newRelativeScale < MinZoom)
             newRelativeScale = MinZoom;
 
-        var center = new Point(rectangle.X + rectangle.Width / 2, rectangle.Y + rectangle.Height / 2);
+        // Use region (presenter coordinates) for center, not the original rectangle
+        var center = new Point(region.X + region.Width / 2, region.Y + region.Height / 2);
         var newRelativePosition =
-            new Point((ActualWidth / 2 - center.X) * Zoom, (ActualHeight / 2 - center.Y) * Zoom);
+            new Point((ActualWidth / 2 - center.X) * newRelativeScale,
+                (ActualHeight / 2 - center.Y) * newRelativeScale);
 
-        TranslateX = newRelativePosition.X;
-        TranslateY = newRelativePosition.Y;
-        Zoom = newRelativeScale;
+        DoZoomAnimation(newRelativeScale, newRelativePosition.X, newRelativePosition.Y);
     }
 
     public event EventHandler? ZoomAnimationCompleted;
