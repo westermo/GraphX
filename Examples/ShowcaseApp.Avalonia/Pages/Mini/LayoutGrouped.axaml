@@ -7,7 +7,7 @@
              
              xmlns:exampleModels="clr-namespace:ShowcaseApp.Avalonia.ExampleModels"
              xmlns:models="clr-namespace:ShowcaseApp.Avalonia.Models"
-             xmlns:zoomControl="clr-namespace:Westermo.GraphX.Controls.Controls.ZoomControl;assembly=Westermo.GraphX.Controls.Avalonia"
+             xmlns:graphx="https://westermo.com/graphx/"
              mc:Ignorable="d"
              d:DesignHeight="300" d:DesignWidth="600">
     <UserControl.Styles>
@@ -15,11 +15,11 @@
     </UserControl.Styles>
     <Grid>
         <Border BorderBrush="{DynamicResource ButtonBorder}" BorderThickness="1" Margin="2">
-            <zoomControl:ZoomControl x:Name="zoomControl" Background="{DynamicResource ButtonBackground}"
+            <graphx:ZoomControl x:Name="zoomControl" Background="{DynamicResource ButtonBackground}"
                                   Foreground="{DynamicResource ButtonText}" HorizontalContentAlignment="Center"
                                   VerticalAlignment="Center">
                 <exampleModels:GraphAreaExample x:Name="graphArea" />
-            </zoomControl:ZoomControl>
+            </graphx:ZoomControl>
         </Border>
 
         <Expander VerticalAlignment="Bottom"

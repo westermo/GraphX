@@ -4,7 +4,7 @@
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:exampleModels="clr-namespace:ShowcaseApp.Avalonia.ExampleModels"
-             xmlns:zoomControl="clr-namespace:Westermo.GraphX.Controls.Controls.ZoomControl;assembly=Westermo.GraphX.Controls.Avalonia"
+             xmlns:graphx="https://westermo.com/graphx/"
              mc:Ignorable="d"
              d:DesignHeight="500" d:DesignWidth="800">
     <UserControl.Styles>
@@ -25,9 +25,9 @@
         </Border>
 
         <Border Grid.Row="1" Grid.Column="0" BorderBrush="{DynamicResource ButtonBorder}" BorderThickness="1" Margin="2">
-            <zoomControl:ZoomControl x:Name="zoomCtrl" Foreground="{DynamicResource ButtonText}">
+            <graphx:ZoomControl x:Name="zoomCtrl" Foreground="{DynamicResource ButtonText}">
                 <exampleModels:GraphAreaExample x:Name="graphArea" />
-            </zoomControl:ZoomControl>
+            </graphx:ZoomControl>
         </Border>
 
         <!-- Stats overlay -->
@@ -38,6 +38,18 @@
             <StackPanel>
                 <TextBlock Name="txtStats" Text="Stats: Loading..." FontFamily="Consolas" FontSize="11"/>
             </StackPanel>
+        </Border>
+
+        <!-- Wayfinder (minimap) overlay – top-right corner of the graph viewport.
+             Bound to the same ZoomControl as the GraphArea; pure add-on, no template change. -->
+        <Border Grid.Row="1" Grid.Column="0"
+                HorizontalAlignment="Right" VerticalAlignment="Top"
+                CornerRadius="4" BorderBrush="{DynamicResource ButtonBorder}"
+                BorderThickness="1" Background="{DynamicResource ButtonBackground}"
+                Margin="10" Padding="2" Opacity="0.9"
+                IsVisible="{Binding #chkShowWayfinder.IsChecked}">
+            <graphx:Wayfinder ZoomControl="{Binding #zoomCtrl}"
+                                   Width="200" Height="150" />
         </Border>
 
         <!-- Loading indicator -->
@@ -126,6 +138,15 @@
                         <Button Name="btnMoveRandom" Content="Move 50 Random Vertices" Margin="2"/>
                         <Button Name="btnBatchMove" Content="Batch Move 50 Vertices" Margin="2"/>
                         <Button Name="btnZoomToFit" Content="Zoom to Fit" Margin="2"/>
+                    </StackPanel>
+                </Expander>
+
+                <!-- Wayfinder toggle -->
+                <Expander IsExpanded="True" Header="Wayfinder">
+                    <StackPanel Margin="4">
+                        <CheckBox Name="chkShowWayfinder" Content="Show Minimap" IsChecked="True" Margin="2"/>
+                        <TextBlock FontSize="10" Foreground="Gray" TextWrapping="Wrap" Margin="2"
+                                   Text="Drag the viewport rectangle to pan, single-click outside it to recenter, or double-tap anywhere inside the content to jump."/>
                     </StackPanel>
                 </Expander>
 

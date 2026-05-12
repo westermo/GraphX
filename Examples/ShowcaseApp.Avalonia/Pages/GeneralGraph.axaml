@@ -5,7 +5,7 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:exampleModels="clr-namespace:ShowcaseApp.Avalonia.ExampleModels"
              xmlns:viewModels="clr-namespace:ShowcaseApp.Avalonia.ViewModels"
-             xmlns:zoomControl="clr-namespace:Westermo.GraphX.Controls.Controls.ZoomControl;assembly=Westermo.GraphX.Controls.Avalonia"
+             xmlns:graphx="https://westermo.com/graphx/"
              mc:Ignorable="d"
              d:DesignHeight="300" d:DesignWidth="600"
              x:DataType="viewModels:GeneralGraphViewModel">
@@ -52,15 +52,28 @@
                 BorderBrush="{DynamicResource ButtonBorder}"
                 BorderThickness="1"
                 Margin="2">
-            <zoomControl:ZoomControl x:Name="zoomCtrl"
-                                     Foreground="{DynamicResource ButtonText}"
-                                     IsAnimationEnabled="{Binding IsZoomAnimationEnabled}"
-                                     ZoomStep="{Binding ZoomStep}">
-                <exampleModels:GraphAreaExample x:Name="graphArea"
-                                                LogicCore="{Binding LogicCore}"
-                                                SelectedVertices="{Binding SelectedVertices}"
-                                                SelectionMode="{Binding SelectionMode}" />
-            </zoomControl:ZoomControl>
+            <Grid>
+
+                <graphx:ZoomControl x:Name="zoomCtrl"
+                                         Foreground="{DynamicResource ButtonText}"
+                                         IsAnimationEnabled="{Binding IsZoomAnimationEnabled}"
+                                         ZoomStep="{Binding ZoomStep}">
+                    <exampleModels:GraphAreaExample x:Name="graphArea"
+                                                    LogicCore="{Binding LogicCore}"
+                                                    SelectedVertices="{Binding SelectedVertices}"
+                                                    SelectionMode="{Binding SelectionMode}" />
+                </graphx:ZoomControl>
+                <!-- Wayfinder (minimap) overlay – top-right corner of the graph viewport.
+             Bound to the same ZoomControl as the GraphArea; pure add-on, no template change. -->
+                <Border
+                    HorizontalAlignment="Right" VerticalAlignment="Top"
+                    CornerRadius="4" BorderBrush="Red"
+                    BorderThickness="1" Background="{DynamicResource ButtonBackground}"
+                    Margin="10" Padding="2" Opacity="0.9">
+                    <graphx:Wayfinder ZoomControl="{Binding #zoomCtrl}"
+                                           Width="200" Height="150" />
+                </Border>
+            </Grid>
         </Border>
 
         <!-- Loading Overlay -->

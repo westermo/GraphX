@@ -1,9 +1,7 @@
 ﻿<Styles xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:examplemodels="using:ShowcaseApp.Avalonia.ExampleModels"
-        xmlns:vertexConnectionPoints="clr-namespace:Westermo.GraphX.Controls.Controls.VertexConnectionPoints;assembly=Westermo.GraphX.Controls.Avalonia"
-        xmlns:controls="clr-namespace:Westermo.GraphX.Controls.Controls;assembly=Westermo.GraphX.Controls.Avalonia"
-        xmlns:vertexLabels="clr-namespace:Westermo.GraphX.Controls.Controls.VertexLabels;assembly=Westermo.GraphX.Controls.Avalonia">
+        xmlns:graphx="https://westermo.com/graphx/">
     <Design.PreviewWith>
         <Border Padding="20">
             <StackPanel>
@@ -12,7 +10,7 @@
         </Border>
     </Design.PreviewWith>
 
-    <Style Selector="vertexConnectionPoints|StaticVertexConnectionPoint">
+    <Style Selector="graphx|StaticVertexConnectionPoint">
         <Setter Property="Shape" Value="Circle" />
 
         <Setter Property="Content">
@@ -31,25 +29,26 @@
         </Setter>
     </Style>
 
-    <Style Selector="controls|VertexControl">
-        <Setter Property="Foreground" Value="{DynamicResource ButtonText}" />
+    <Style Selector="graphx|VertexControl">
         <Setter Property="Template">
             <Setter.Value>
-                <ControlTemplate TargetType="{x:Type controls:VertexControl}">
+                <ControlTemplate TargetType="{x:Type graphx:VertexControl}">
                     <Grid ColumnDefinitions="Auto,*,Auto">
                         <StackPanel Grid.Column="0"
                                     Orientation="Vertical">
                             <Border Margin="2,2,0,2" Padding="0">
-                                <vertexConnectionPoints:StaticVertexConnectionPoint Id="1" />
+                                <graphx:StaticVertexConnectionPoint Id="1" />
                             </Border>
                             <Border Margin="2,2,0,2" Padding="0">
-                                <vertexConnectionPoints:StaticVertexConnectionPoint Id="2" />
+                                <graphx:StaticVertexConnectionPoint Id="2" />
                             </Border>
                         </StackPanel>
+                        <!-- Use TemplateBinding so the Background comes from the
+                             active GraphX theme style, not a Fluent-specific resource. -->
                         <Border Grid.Column="1"
                                 Width="120"
-                                Background="{DynamicResource ButtonBackgroundPressed}"
-                                BorderBrush="{TemplateBinding Foreground}"
+                                Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
                                 BorderThickness="1"
                                 CornerRadius="5">
                             <Grid>
@@ -58,16 +57,16 @@
                                                   VerticalAlignment="Center"
                                                   Content="{TemplateBinding Vertex}" />
 
-                                <vertexLabels:VertexLabelControl x:Name="PART_vertexLabel"
+                                <graphx:VertexLabelControl x:Name="PART_vertexLabel"
                                                              Content="{TemplateBinding Vertex}" />
                             </Grid>
                         </Border>
                         <StackPanel Grid.Column="2" Orientation="Vertical">
                             <Border Margin="0,2,2,2" Padding="0">
-                                <vertexConnectionPoints:StaticVertexConnectionPoint Id="3" />
+                                <graphx:StaticVertexConnectionPoint Id="3" />
                             </Border>
                             <Border Margin="0,2,2,2" Padding="0">
-                                <vertexConnectionPoints:StaticVertexConnectionPoint Id="4" />
+                                <graphx:StaticVertexConnectionPoint Id="4" />
                             </Border>
                         </StackPanel>
                     </Grid>
@@ -76,7 +75,7 @@
         </Setter>
     </Style>
 
-    <Style Selector="controls|EdgeControl">
+    <Style Selector="graphx|EdgeControl">
         <Setter Property="MinWidth"
                 Value="1" />
         <Setter Property="MinHeight"

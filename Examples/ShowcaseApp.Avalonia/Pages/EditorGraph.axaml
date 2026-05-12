@@ -5,7 +5,7 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              
              xmlns:exampleModels="clr-namespace:ShowcaseApp.Avalonia.ExampleModels"
-             xmlns:zoomControl="clr-namespace:Westermo.GraphX.Controls.Controls.ZoomControl;assembly=Westermo.GraphX.Controls.Avalonia"
+             xmlns:graphx="https://westermo.com/graphx/"
              mc:Ignorable="d"
              d:DesignHeight="380" d:DesignWidth="600">
     <UserControl.Styles>
@@ -37,10 +37,10 @@
                     </VisualBrush.Visual>
                 </VisualBrush>
             </Border.Background>
-            <zoomControl:ZoomControl x:Name="zoomCtrl" Background="Transparent" VerticalContentAlignment="Center"
+            <graphx:ZoomControl x:Name="zoomCtrl" Background="Transparent" VerticalContentAlignment="Center"
                                   VerticalAlignment="Center">
                 <exampleModels:GraphAreaExample x:Name="graphArea" />
-            </zoomControl:ZoomControl>
+            </graphx:ZoomControl>
         </Border>
 
 

@@ -1,0 +1,16 @@
+﻿<ResourceDictionary xmlns="https://github.com/avaloniaui"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <!-- Fluent design-specific resources for GraphX controls.
+         These resources leverage Fluent theme tokens where available,
+         with fallback values for standalone usage. -->
+
+    <SolidColorBrush x:Key="GraphXFluentVertexBackground" Color="#FFF3F3F3" />
+    <SolidColorBrush x:Key="GraphXFluentVertexBorder" Color="#FFE0E0E0" />
+    <SolidColorBrush x:Key="GraphXFluentVertexHoverBackground" Color="#FFEAEAEA" />
+    <SolidColorBrush x:Key="GraphXFluentVertexHoverBorder" Color="#FFD0D0D0" />
+    <SolidColorBrush x:Key="GraphXFluentVertexSelectedBorder" Color="#FF0078D4" />
+    <SolidColorBrush x:Key="GraphXFluentEdgeForeground" Color="#FF323130" />
+    <SolidColorBrush x:Key="GraphXFluentLabelForeground" Color="#FF323130" />
+
+</ResourceDictionary>

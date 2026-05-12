@@ -5,15 +5,13 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              
              xmlns:exampleModels="clr-namespace:ShowcaseApp.Avalonia.ExampleModels"
-             xmlns:controls="clr-namespace:Westermo.GraphX.Controls.Controls;assembly=Westermo.GraphX.Controls.Avalonia"
-             xmlns:behaviours="clr-namespace:Westermo.GraphX.Controls.Behaviours;assembly=Westermo.GraphX.Controls.Avalonia"
-             xmlns:zoomControl="clr-namespace:Westermo.GraphX.Controls.Controls.ZoomControl;assembly=Westermo.GraphX.Controls.Avalonia"
+             xmlns:graphx="https://westermo.com/graphx/"
              mc:Ignorable="d"
              d:DesignHeight="300" d:DesignWidth="600">
     <UserControl.Styles>
 
         <!-- VERTEX CONTROL -->
-        <Style Selector="controls|VertexControl">
+        <Style Selector="graphx|VertexControl">
             <!-- Set background color through attached property -->
             <Setter Property="Background" Value="{StaticResource NormalBrush}" />
             <Setter Property="Padding" Value="10,5,10,5" />
@@ -25,9 +23,9 @@
                     <DoubleTransition Property="Opacity" Duration="0:0:0.1" />
                 </Transitions>
             </Setter>
-            <Setter Property="behaviours:DragBehaviour.IsDragEnabled"
+            <Setter Property="graphx:DragBehaviour.IsDragEnabled"
                     Value="True" />
-            <Setter Property="behaviours:DragBehaviour.UpdateEdgesOnMove"
+            <Setter Property="graphx:DragBehaviour.UpdateEdgesOnMove"
                     Value="True" />
 
 
@@ -40,7 +38,7 @@
         </Style>
 
         <!-- EDGE CONTROL -->
-        <Style Selector="controls|EdgeControl">
+        <Style Selector="graphx|EdgeControl">
             <Setter Property="MinWidth"
                     Value="1" />
             <Setter Property="MinHeight"
@@ -151,13 +149,13 @@
                         </VisualBrush.Visual>
                     </VisualBrush>
                 </Border.Background>
-                <zoomControl:ZoomControl Margin="20" x:Name="tg_zoomctrl" Background="Transparent">
+                <graphx:ZoomControl Margin="20" x:Name="tg_zoomctrl" Background="Transparent">
                     <exampleModels:GraphAreaExample x:Name="tg_Area">
                         <exampleModels:GraphAreaExample.Styles>
                             <StyleInclude Source="/Templates/TransparentTooltips.axaml" />
                         </exampleModels:GraphAreaExample.Styles>
                     </exampleModels:GraphAreaExample>
-                </zoomControl:ZoomControl>
+                </graphx:ZoomControl>
             </Border>
         </Border>
         <Border Name="tg_loader" IsVisible="False" CornerRadius="4" BorderBrush="{DynamicResource ButtonBorder}"

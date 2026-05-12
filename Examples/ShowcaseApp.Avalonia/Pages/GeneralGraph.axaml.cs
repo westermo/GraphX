@@ -10,7 +10,6 @@ using ShowcaseApp.Avalonia.ExampleModels;
 using ShowcaseApp.Avalonia.ViewModels;
 using Westermo.GraphX.Common.Enums;
 using Westermo.GraphX.Common.Models;
-using Westermo.GraphX.Controls;
 using Westermo.GraphX.Controls.Controls.ZoomControl.SupportClasses;
 
 namespace ShowcaseApp.Avalonia.Pages;

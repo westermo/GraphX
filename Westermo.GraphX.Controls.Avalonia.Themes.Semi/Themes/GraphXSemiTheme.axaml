@@ -1,0 +1,52 @@
+﻿<Styles xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:graphx="https://westermo.com/graphx/"
+        x:Class="Westermo.GraphX.Controls.Avalonia.Themes.Semi.GraphXSemiTheme">
+    <Styles.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceInclude Source="avares://Westermo.GraphX.Controls.Avalonia/Themes/DefaultResources.axaml" />
+                <ResourceInclude Source="GraphXSemiResources.axaml" />
+            </ResourceDictionary.MergedDictionaries>
+        </ResourceDictionary>
+    </Styles.Resources>
+
+    <!-- Semi-themed vertex control overrides using Semi Design tokens -->
+    <Style Selector="graphx|VertexControl">
+        <Setter Property="Background" Value="{DynamicResource SemiColorBg1}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource SemiColorBorder}" />
+        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="Padding" Value="12,8,12,8" />
+        <Setter Property="CornerRadius" Value="6" />
+
+        <Style Selector="^:pointerover">
+            <Setter Property="Background" Value="{DynamicResource SemiColorFillTertiary}" />
+            <Setter Property="BorderBrush" Value="{DynamicResource SemiColorPrimary}" />
+        </Style>
+    </Style>
+
+    <!-- Semi-themed edge control -->
+    <Style Selector="graphx|EdgeControl">
+        <Setter Property="Foreground" Value="{DynamicResource SemiColorText0}" />
+        <Setter Property="StrokeThickness" Value="2" />
+        <Setter Property="Opacity" Value="1" />
+    </Style>
+
+    <!-- Semi-themed edge label -->
+    <Style Selector="graphx|AttachableEdgeLabelControl">
+        <Setter Property="Background" Value="{DynamicResource SemiColorBg1}" />
+        <Setter Property="Foreground" Value="{DynamicResource SemiColorText0}" />
+    </Style>
+
+    <!-- Semi-themed vertex labels -->
+    <Style Selector="graphx|VertexLabelControl">
+        <Setter Property="Foreground" Value="{DynamicResource SemiColorText0}" />
+        <Setter Property="Background" Value="Transparent" />
+    </Style>
+
+    <Style Selector="graphx|AttachableVertexLabelControl">
+        <Setter Property="Foreground" Value="{DynamicResource SemiColorText0}" />
+        <Setter Property="Background" Value="Transparent" />
+    </Style>
+
+</Styles>

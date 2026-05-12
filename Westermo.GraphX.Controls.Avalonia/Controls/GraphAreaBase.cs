@@ -628,8 +628,7 @@ public abstract class GraphAreaBase : Canvas, ITrackableContent, IGraphAreaBase
             child.Arrange(new Rect(x, y, width, height));
         }
 
-        return Design.IsDesignMode ? DesignSize :
-            IsInPrintMode ? ContentSize.Size : new Size(10, 10);
+        return ContentSize.Size;
     }
 
     /// <summary>
@@ -685,7 +684,10 @@ public abstract class GraphAreaBase : Canvas, ITrackableContent, IGraphAreaBase
                 bottomRight.Y = Math.Max(bottomRight.Y, top + child.DesiredSize.Height);
             }
         }
-
+        if(!double.IsFinite(topLeft.X)) topLeft.X = 0;
+        if(!double.IsFinite(topLeft.Y)) topLeft.Y = 0;
+        if(!double.IsFinite(bottomRight.X)) bottomRight.X = 0;
+        if(!double.IsFinite(bottomRight.Y)) bottomRight.Y = 0;
         topLeft.X -= SideExpansionSize.Width * .5;
         topLeft.Y -= SideExpansionSize.Height * .5;
         bottomRight.X += SideExpansionSize.Width * .5;
@@ -695,8 +697,7 @@ public abstract class GraphAreaBase : Canvas, ITrackableContent, IGraphAreaBase
         var newSize = ContentSize;
         if (oldSize != newSize)
             OnContentSizeChanged(oldSize, newSize);
-        return Design.IsDesignMode ? DesignSize :
-            IsInPrintMode ? ContentSize.Size : new Size(10, 10);
+        return ContentSize.Size;
     }
 
     #endregion

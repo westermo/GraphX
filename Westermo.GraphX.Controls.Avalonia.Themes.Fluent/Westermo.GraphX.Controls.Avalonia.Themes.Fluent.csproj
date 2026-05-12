@@ -1,0 +1,19 @@
+<Project Sdk="Microsoft.NET.Sdk">
+    <PropertyGroup>
+        <TargetFramework>net10.0</TargetFramework>
+        <LangVersion>latest</LangVersion>
+        <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+        <Nullable>enable</Nullable>
+        <AvaloniaUseCompiledBindingsByDefault>true</AvaloniaUseCompiledBindingsByDefault>
+    </PropertyGroup>
+    <ItemGroup>
+        <PackageReference Include="Avalonia.Themes.Fluent"/>
+        <ProjectReference Include="..\Westermo.GraphX.Controls.Avalonia\Westermo.GraphX.Controls.Avalonia.csproj"/>
+    </ItemGroup>
+
+    <PropertyGroup>
+        <AssemblyTitle>Westermo GraphX Fluent Theme</AssemblyTitle>
+        <Description>Fluent Design theme for Westermo GraphX Avalonia controls</Description>
+    </PropertyGroup>
+
+</Project>

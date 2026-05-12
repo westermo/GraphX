@@ -1,7 +1,7 @@
 ﻿{
   Center: {
-    X: 100.0,
-    Y: 100.0
+    X: 5.0,
+    Y: 5.0
   },
   RadiusX: 5.0,
   RadiusY: 5.0

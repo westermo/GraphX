@@ -1,17 +1,16 @@
 ﻿<ResourceDictionary xmlns="https://github.com/avaloniaui"
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
                     xmlns:models="clr-namespace:ShowcaseApp.Avalonia.Models"
-                    
-                    xmlns:converters="clr-namespace:Westermo.GraphX.Controls.Controls.ZoomControl.Converters;assembly=Westermo.GraphX.Controls.Avalonia">
+                    xmlns:graphx="https://westermo.com/graphx/">
     <models:ValueToEditorImageConverter x:Key="EditorImageConverter" />
     <models:ValueToImageConverter x:Key="ImageConverter" />
     <models:ValueToPersonImageConverter x:Key="PersonImageConverter" />
 
-    <converters:VisibilityToBoolConverter
+    <graphx:VisibilityToBoolConverter
         x:Key="BooleanToVisibility"
         Inverted="True"
         Not="True" />
 
-    <converters:GeometryToPathGeometryConverter x:Key="GeometryToPathGeometry" />
+    <graphx:GeometryToPathGeometryConverter x:Key="GeometryToPathGeometry" />
     <models:BoolToColorConverter TrueColor="LightBlue" FalseColor="Yellow" x:Key="ColorConverter" />
 </ResourceDictionary>

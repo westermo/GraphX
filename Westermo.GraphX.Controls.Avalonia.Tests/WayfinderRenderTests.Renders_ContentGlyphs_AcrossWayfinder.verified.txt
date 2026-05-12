@@ -1,0 +1,65 @@
+﻿{
+  Type: Window,
+  WindowState: Normal,
+  Content: {
+    Type: StackPanel,
+    Spacing: 8.0,
+    Orientation: Vertical,
+    Children: [
+      {
+        Type: ZoomControl,
+        Content: {
+          Type: Canvas,
+          Background: Transparent,
+          Width: 800.0,
+          Height: 600.0,
+          Children: [
+            {
+              Type: Rectangle,
+              Fill: SteelBlue,
+              Width: 40.0,
+              Height: 40.0
+            },
+            {
+              Type: Rectangle,
+              Fill: SteelBlue,
+              Width: 40.0,
+              Height: 40.0
+            },
+            {
+              Type: Rectangle,
+              Fill: SteelBlue,
+              Width: 40.0,
+              Height: 40.0
+            },
+            {
+              Type: Rectangle,
+              Fill: SteelBlue,
+              Width: 40.0,
+              Height: 40.0
+            },
+            {
+              Type: Rectangle,
+              Fill: SteelBlue,
+              Width: 40.0,
+              Height: 40.0
+            }
+          ]
+        },
+        Width: 400.0,
+        Height: 240.0
+      },
+      {
+        Type: Wayfinder,
+        Focusable: true,
+        Width: 200.0,
+        Height: 120.0,
+        ClipToBounds: true
+      }
+    ]
+  },
+  Background: White,
+  Width: 420.0,
+  Height: 400.0,
+  IsVisible: true
+}

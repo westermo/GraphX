@@ -651,7 +651,6 @@ public abstract class EdgeControlBase : TemplatedControl, IGraphControl, IDispos
         var infiniteSize = new Size(double.PositiveInfinity, double.PositiveInfinity);
 
         if (SelfLoopIndicator is { } selfLoopIndicator) selfLoopIndicator.Measure(infiniteSize);
-
         if (Edge is not IRoutingInfo routedEdge)
             throw new GX_InvalidDataException("Edge must implement IRoutingInfo interface");
 
@@ -705,6 +704,26 @@ public abstract class EdgeControlBase : TemplatedControl, IGraphControl, IDispos
         var pointerPadding = GetEdgePointerPadding();
         _pathBounds = CollectionsMarshal.AsSpan(_points).GetBounds(pointerPadding);
 
+        // For self-looped edges the source and target connection points collapse onto the same
+        // location, so the raw _pathBounds is degenerate (zero size). Replace it with the rectangle
+        // that will house the self-loop indicator (or the built-in ellipse) anchored relative to the
+        // source vertex's top-left, matching the WPF positioning in PrepareSelfLoopedEdge.
+        if (IsSelfLooped)
+        {
+            var hasTemplate = SelfLoopIndicator is not null;
+            var indicatorSize = hasTemplate
+                ? SelfLoopIndicator!.DesiredSize
+                : new Size(SelfLoopIndicatorRadius * 2, SelfLoopIndicatorRadius * 2);
+            // Match PrepareSelfLoopedEdge's anchor offset: subtract DesiredSize for a template,
+            // or one radius for the built-in ellipse.
+            var anchorOffsetX = hasTemplate ? SelfLoopIndicator!.DesiredSize.Width : SelfLoopIndicatorRadius;
+            var anchorOffsetY = hasTemplate ? SelfLoopIndicator!.DesiredSize.Height : SelfLoopIndicatorRadius;
+            var indicatorTopLeft = new Point(
+                sourceRect.X + SelfLoopIndicatorOffset.X - anchorOffsetX,
+                sourceRect.Y + SelfLoopIndicatorOffset.Y - anchorOffsetY);
+            _pathBounds = new Rect(indicatorTopLeft, indicatorSize);
+        }
+
         // Shift points into local space
         for (var i = 0; i < _points.Count; i++)
             _points[i] = _points[i].Subtract(_pathBounds.TopLeft);
@@ -721,8 +740,13 @@ public abstract class EdgeControlBase : TemplatedControl, IGraphControl, IDispos
             selfLoopSize = Union(selfLoopSize, ctrl.DesiredSize);
         }
 
-
-        return Union(spanningRect.Size, selfLoopSize, _pathBounds.Size);
+        // For self-looped edges _pathBounds was set to the actual indicator rect above; the legacy
+        // selfLoopSize estimate (radius * 2 + offset) would inflate the EdgeControl past the
+        // indicator and let Avalonia's Grid centring push the visible part behind the source
+        // vertex. Use the precise indicator rect instead so DesiredSize matches what we render.
+        return IsSelfLooped
+            ? _pathBounds.Size
+            : Union(spanningRect.Size, selfLoopSize, _pathBounds.Size);
     }
 
     protected override Size ArrangeOverride(Size finalSize)
@@ -782,10 +806,12 @@ public abstract class EdgeControlBase : TemplatedControl, IGraphControl, IDispos
         if (IsSelfLooped)
         {
             if (Source is null) return default;
-            var pt = Source.GetCenterPosition();
             // For self-loop edges, store angle in radians (45 degrees = π/4) to match other branches.
             angle = Math.PI / 4.0;
-            return pt.Add(SelfLoopIndicatorOffset.X, SelfLoopIndicatorOffset.Y);
+            // Return a position in EdgeControl-local coordinates so that the label-positioning
+            // code in ArrangeOverride (which adds _pathBounds.X/Y to convert local→absolute) ends
+            // up centered on the indicator rather than double-offset by _pathBounds.TopLeft.
+            return new Point(_pathBounds.Width / 2.0, _pathBounds.Height / 2.0);
         }
 
         if (Source == null || Target == null) return default;
@@ -916,15 +942,20 @@ public abstract class EdgeControlBase : TemplatedControl, IGraphControl, IDispos
 
         //if self looped edge
         UpdateSelfLoopedEdgeData();
-        if (IsSelfLooped)
+        if (!IsSelfLooped) return CreateEdgeGeometry(_points, routedEdge is IGraphXCommonEdge { ReversePath: true });
+        
+        // Self-looped edges have no edge pointers to position
+        _sourcePointerLayout = default;
+        _targetPointerLayout = default;
+        var geom = PrepareSelfLoopedEdge(sourceRect.TopLeft);
+        // PrepareSelfLoopedEdge returns geometry in graph-area coordinates; shift it into
+        // the EdgeControl's local space so it lines up with the (now self-loop-sized) bounds.
+        if (geom is { } ellipse)
         {
-            // Self-looped edges have no edge pointers to position
-            _sourcePointerLayout = default;
-            _targetPointerLayout = default;
-            return PrepareSelfLoopedEdge(sourceRect.TopLeft);
+            ellipse.Center = new Point(ellipse.Center.X - _pathBounds.X, ellipse.Center.Y - _pathBounds.Y);
         }
 
-        return CreateEdgeGeometry(_points, routedEdge is IGraphXCommonEdge { ReversePath: true });
+        return geom;
     }
 
     private void GetPoints(Point p1, Point p2, Measure.Point[]? routeInformation)
