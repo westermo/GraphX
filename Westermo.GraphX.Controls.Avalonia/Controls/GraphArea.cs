@@ -9,7 +9,6 @@ using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Media;
-using Avalonia.Platform.Storage;
 using Avalonia.Threading;
 using QuikGraph;
 using Westermo.GraphX.Common;
@@ -489,7 +488,7 @@ public class GraphArea<TVertex, TEdge, TGraph> : GraphAreaBase, IDisposable
         if (edgeData == null || !_edgesList.TryGetValue(edgeData, out EdgeControl? ctrl)) return;
         if (removeFromList)
             _edgesList.Remove(edgeData);
-        else RemoveEdgeInternal(ctrl, removeEdgeFromDataGraph);
+        RemoveEdgeInternal(ctrl, removeEdgeFromDataGraph);
     }
 
     private void RemoveEdgeInternal(EdgeControlBase ctrl, bool removeEdgeFromDataGraph = false)
@@ -1942,138 +1941,6 @@ public class GraphArea<TVertex, TEdge, TGraph> : GraphAreaBase, IDisposable
         var vSizes = GetVertexSizesAndPositions(out var vPositions);
         LogicCore!.GenerateAlgorithmStorage(vSizes.ToDictionary(s => s.Key, s => s.Value.ToGraphX()),
             vPositions.ToDictionary(s => s.Key, s => s.Value.ToGraphX()));
-    }
-
-    #endregion
-
-    #region Export and printing
-
-    /// <summary>
-    /// Export current graph layout into the PNG image file. layout will be saved in full size.
-    /// </summary>
-    public virtual async Task ExportAsPng()
-    {
-        await ExportAsImageDialog(ImageType.PNG);
-    }
-
-    /// <summary>
-    /// Export current graph layout into the JPEG image file. layout will be saved in full size.
-    /// </summary>
-    /// <param name="quality">Optional image quality parameter</param>
-    public virtual async Task ExportAsJpeg(int quality = 100)
-    {
-        await ExportAsImageDialog(ImageType.JPEG, true, PrintHelper.DEFAULT_DPI, quality);
-    }
-
-    /// <summary>
-    /// Export current graph layout into the chosen image file and format. layout will be saved in full size.
-    /// </summary>
-    /// <param name="itype">Image format</param>
-    /// <param name="useZoomControlSurface">Use zoom control parent surface to render bitmap (only visible zoom content will be exported)</param>
-    /// <param name="dpi">Optional image DPI parameter</param>
-    /// <param name="quality">Optional image quality parameter (for JPEG)</param>
-    public virtual async Task ExportAsImageDialog(ImageType itype, bool useZoomControlSurface = false,
-        double dpi = PrintHelper.DEFAULT_DPI, int quality = 100)
-    {
-        var fileType = itype.ToString();
-        var fileExt = itype switch
-        {
-            ImageType.PNG => "*.png",
-            ImageType.JPEG => "*.jpg",
-            ImageType.BMP => "*.bmp",
-            ImageType.GIF => "*.gif",
-            ImageType.TIFF => "*.tiff",
-            _ => throw new GX_InvalidDataException("ExportAsImage() -> Unknown output image format specified!"),
-        };
-        var top = TopLevel.GetTopLevel(this);
-        if (top is null) return;
-        var dlg = await top.StorageProvider.SaveFilePickerAsync(new FilePickerSaveOptions
-        {
-            Title = $"Exporting graph as {fileType} image...",
-            DefaultExtension = fileExt,
-            FileTypeChoices = [new FilePickerFileType(fileType) { Patterns = [fileExt] }]
-        });
-        if (dlg is null) return;
-
-        ExportAsImage(dlg.Name, itype, useZoomControlSurface, dpi, quality);
-    }
-
-    public virtual void ExportAsImage(string filename, ImageType itype, bool useZoomControlSurface = false,
-        double dpi = PrintHelper.DEFAULT_DPI, int quality = 100)
-    {
-        PrintHelper.ExportToImage(this, new Uri(filename, UriKind.Absolute), itype, useZoomControlSurface, dpi,
-            quality);
-    }
-
-    private Size _oldSizeExpansion;
-
-    /// <summary>
-    /// Sets GraphArea into printing mode when its size will be recalculated on each measure and child controls will be arranged accordingly.
-    /// Use with caution. Can spoil normal work while active but is essential to set before printing or grabbing an image.
-    /// </summary>
-    /// <param name="value">True or False</param>
-    /// <param name="offsetControls">Offset child controls to fit into GraphArea control size</param>
-    /// <param name="margin">Optional print area margin around the graph</param>
-    public override void SetPrintMode(bool value, bool offsetControls = true, int margin = 0)
-    {
-        if (IsInPrintMode == value) return;
-        IsInPrintMode = value;
-
-        if (IsInPrintMode)
-        {
-            //set parent background
-            if (Parent is ZoomControl.ZoomControl parent)
-                Background = parent.Background;
-            //set margin
-            _oldSizeExpansion = SideExpansionSize;
-            SideExpansionSize = margin == 0 ? new Size(0, 0) : new Size(margin, margin);
-        }
-        else
-        {
-            //reset margin
-            SideExpansionSize = _oldSizeExpansion;
-            //clear background
-            if (Parent is ZoomControl.ZoomControl)
-                Background = Brushes.Transparent;
-        }
-
-        if (offsetControls)
-        {
-            var offset = new Point(ContentSize.TopLeft.X - (margin == 0 ? 0 : margin * .5),
-                ContentSize.TopLeft.Y - (margin == 0 ? 0 : margin * .5));
-
-            foreach (var child in Children)
-            {
-                //skip edge controls
-                if (child is EdgeControl) continue;
-                //get current position
-                var pos = new Point(GetX(child), GetY(child));
-                //skip children with unset coordinates
-                if (double.IsNaN(pos.X) || double.IsInfinity(pos.X)) continue;
-                //adjust coordinates
-                SetX(child, pos.X - (IsInPrintMode ? offset.X : -offset.X));
-                SetY(child, pos.Y - (IsInPrintMode ? offset.Y : -offset.Y), true);
-            }
-        }
-
-        InvalidateMeasure();
-        UpdateLayout();
-    }
-
-    /// <summary>
-    /// Print current visual graph layout as visible in ZoomControl (if wrapped in)
-    /// </summary>
-    /// <param name="description">Optional header description</param>
-    public virtual void PrintVisibleAreaDialog(string description = "")
-    {
-        var vis = Parent switch
-        {
-            IZoomControl zoomControl => zoomControl.PresenterVisual,
-            Control { Parent: IZoomControl control } => control.PresenterVisual,
-            _ => this
-        };
-
-        PrintHelper.PrintVisualDialog(vis, description);
     }
 
     #endregion

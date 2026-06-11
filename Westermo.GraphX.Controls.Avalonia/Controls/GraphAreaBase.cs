@@ -33,11 +33,6 @@ public abstract class GraphAreaBase : Canvas, ITrackableContent, IGraphAreaBase
         YProperty.Changed.AddClassHandler<Control>(y_changed);
     }
 
-    /// <summary>
-    /// Gets or Sets if GraphArea is in print mode when its size is recalculated on each Measure pass
-    /// </summary>
-    protected bool IsInPrintMode;
-
     #region Viewport Culling
 
     private ViewportCulling? _viewportCulling;
@@ -144,8 +139,6 @@ public abstract class GraphAreaBase : Canvas, ITrackableContent, IGraphAreaBase
     }
 
     #endregion
-
-    public abstract void SetPrintMode(bool value, bool offsetControls = true, int margin = 0);
 
     /// <summary>
     /// Automaticaly assign unique Id (if missing) for vertex and edge data classes provided as Graph in GenerateGraph() method or by Addvertex() or AddEdge() methods
@@ -684,10 +677,11 @@ public abstract class GraphAreaBase : Canvas, ITrackableContent, IGraphAreaBase
                 bottomRight.Y = Math.Max(bottomRight.Y, top + child.DesiredSize.Height);
             }
         }
-        if(!double.IsFinite(topLeft.X)) topLeft.X = 0;
-        if(!double.IsFinite(topLeft.Y)) topLeft.Y = 0;
-        if(!double.IsFinite(bottomRight.X)) bottomRight.X = 0;
-        if(!double.IsFinite(bottomRight.Y)) bottomRight.Y = 0;
+
+        if (!double.IsFinite(topLeft.X)) topLeft.X = 0;
+        if (!double.IsFinite(topLeft.Y)) topLeft.Y = 0;
+        if (!double.IsFinite(bottomRight.X)) bottomRight.X = 0;
+        if (!double.IsFinite(bottomRight.Y)) bottomRight.Y = 0;
         topLeft.X -= SideExpansionSize.Width * .5;
         topLeft.Y -= SideExpansionSize.Height * .5;
         bottomRight.X += SideExpansionSize.Width * .5;
