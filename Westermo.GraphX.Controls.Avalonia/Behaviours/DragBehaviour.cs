@@ -303,10 +303,10 @@ public static class DragBehaviour
         if (draggable is not Control control) return point;
         var root = draggable.Container;
         if (root is null) return point;
-        var snapX = GetXSnapModifier(control);
-        var snapY = GetYSnapModifier(control);
         if (GetIsSnappingPredicate(control)(control))
         {
+            var snapX = GetXSnapModifier(control);
+            var snapY = GetYSnapModifier(control);
             point = new Point(snapX(root, control, point.X), snapY(root, control, point.Y));
         }
 
