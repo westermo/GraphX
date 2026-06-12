@@ -63,8 +63,8 @@ public static class DragBehaviour
     /// <summary>
     /// Helper function for snapping to ctrl width
     /// </summary>
-    public static readonly SnapModifierFunc WidthSnap =
-        (_, ctrl, val) => Math.Round(val / ctrl.Bounds.Width) * ctrl.Bounds.Width;
+public static readonly SnapModifierFunc WidthSnap =
+    (_, ctrl, val) => ctrl.Bounds.Width <= 0 ? val : Math.Round(val / ctrl.Bounds.Width) * ctrl.Bounds.Width;
 
     /// <summary>
     /// Helper function for snapping to ctrl height
