@@ -120,15 +120,17 @@ public static class PrintHelper
         public void ExportToImage(Uri path, double imgdpi = DEFAULT_DPI)
 
         {
-            Visual vis = (Visual)surface;
-
+            var vis = (Control)surface;
+            var offsetX = -surface.ContentSize.Left;
+            var offsetY = -surface.ContentSize.Top;
             var size = new PixelSize((int)(surface.ContentSize.Width * (imgdpi / DEFAULT_DPI) + 100),
                 (int)(surface.ContentSize.Height * (imgdpi / DEFAULT_DPI) + 100));
-            using (var renderBitmap =
-                   new RenderTargetBitmap(size, new Vector(imgdpi, imgdpi)))
+            using (var renderBitmap = new RenderTargetBitmap(size, new Vector(imgdpi, imgdpi)))
             {
-                //Render the graphlayout onto the bitmap.
+                var originalTransform = vis.RenderTransform;
+                vis.RenderTransform = new TranslateTransform(offsetX, offsetY);
                 renderBitmap.Render(vis);
+                vis.RenderTransform = originalTransform;
 
 
                 //Create a file stream for saving image
