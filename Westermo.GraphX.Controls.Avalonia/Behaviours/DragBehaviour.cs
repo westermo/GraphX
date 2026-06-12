@@ -69,8 +69,8 @@ public static class DragBehaviour
     /// <summary>
     /// Helper function for snapping to ctrl height
     /// </summary>
-    public static readonly SnapModifierFunc HeightSnap =
-        (_, ctrl, val) => Math.Round(val / ctrl.Bounds.Height) * ctrl.Bounds.Height;
+public static readonly SnapModifierFunc HeightSnap =
+    (_, ctrl, val) => ctrl.Bounds.Height <= 0 ? val : Math.Round(val / ctrl.Bounds.Height) * ctrl.Bounds.Height;
 
     /// <summary>
     /// Snapping is active when the Shift key alone is held.
