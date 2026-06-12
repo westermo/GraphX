@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics;
 using System.Linq;
 using Avalonia;
 using Avalonia.Controls;
@@ -49,85 +50,60 @@ public static class DragBehaviour
 {
     #region Built-in snapping behavior
 
-    private static readonly Predicate<Control>? _builtinIsSnappingPredicate = _ => false;
+    /// <summary>
+    /// Helper function for snapping to a certain amount of pixels
+    /// </summary>
+    /// <param name="gridSize">The number of pixels to snap to</param>
+    /// <returns></returns>
+    public static SnapModifierFunc GridSnap(double gridSize)
+    {
+        return (_, _, val) => Math.Round(val / gridSize) * gridSize;
+    }
 
-    private static readonly Predicate<Control> _builtinIsIndividualSnappingPredicate = _ => false;
+    /// <summary>
+    /// Helper function for snapping to ctrl width
+    /// </summary>
+    public static readonly SnapModifierFunc WidthSnap =
+        (_, ctrl, val) => Math.Round(val / ctrl.Bounds.Width) * ctrl.Bounds.Width;
 
-    private static readonly SnapModifierFunc? _builtinSnapModifier = (_, _, val) => Math.Round(val * 0.1) * 10.0;
+    /// <summary>
+    /// Helper function for snapping to ctrl height
+    /// </summary>
+    public static readonly SnapModifierFunc HeightSnap =
+        (_, ctrl, val) => Math.Round(val / ctrl.Bounds.Height) * ctrl.Bounds.Height;
+
+    /// <summary>
+    /// Snapping is active when the Shift key alone is held.
+    /// <see cref="CurrentPointerKeyModifiers"/> is updated on every PointerMoved event so that this predicate
+    /// reflects the correct keyboard state regardless of whether Shift was pressed before or after the drag started.
+    /// </summary>
+    public static readonly Predicate<Control>? DefaultSnapPredicate =
+        _ => (CurrentPointerKeyModifiers & KeyModifiers.Shift) == KeyModifiers.Shift;
+
+    public static readonly SnapModifierFunc DefaultSnapModifier = GridSnap(DefaultSnapGridSize);
 
     #endregion Built-in snapping behavior
 
     #region Global snapping behavior management
 
-    private static Predicate<Control>? _globalIsSnappingPredicate = _builtinIsSnappingPredicate;
+    private const double DefaultSnapGridSize = 10.0;
 
     /// <summary>
-    /// Gets or sets the predicate used to determine whether to snap an object. The global predicate is used whenever the
-    /// primary dragged object does not have a different predicate set using the IsSnappingPredicate attached property.
+    /// Gets the <see cref="KeyModifiers"/> captured from the most recent pointer-move event.
+    /// Custom <see cref="GlobalIsSnappingPredicate"/> implementations can read this to react to
+    /// keyboard modifiers without needing to change the predicate signature.
     /// </summary>
-    /// <remarks>
-    /// Setting to null will restore the built-in behavior, but it is recommended to track the preceding value and restore that.
-    /// </remarks>
-    public static Predicate<Control>? GlobalIsSnappingPredicate
-    {
-        get => _globalIsSnappingPredicate;
-        set => _globalIsSnappingPredicate = value ?? _builtinIsSnappingPredicate;
-    }
-
-    private static Predicate<Control> _globalIsIndividualSnappingPredicate =
-        _builtinIsIndividualSnappingPredicate;
-
-    /// <summary>
-    /// Gets or sets the predicate used to determine whether to perform individual snapping on a group of dragged objects.
-    /// The global predicate is used whenever the primary dragged object does not have a different predicate set using the
-    /// IsIndividualSnappingPredicate attached property.
-    /// </summary>
-    /// <remarks>
-    /// Setting to null will restore the built-in behavior, but it is recommended to track the preceding value and restore that.
-    /// </remarks>
-    public static Predicate<Control>? GlobalIsIndividualSnappingPredicate
-    {
-        get => _globalIsIndividualSnappingPredicate;
-        set => _globalIsIndividualSnappingPredicate = value ?? _builtinIsIndividualSnappingPredicate;
-    }
-
-    private static SnapModifierFunc? _globalXSnapModifier = _builtinSnapModifier;
-
-    /// <summary>
-    /// Gets or sets the X value modifier to use when snapping an object. The global modifier is used whenever the
-    /// primary dragged object does not have a different modifier set using the XSnapModifier attached property.
-    /// </summary>
-    /// <remarks>
-    /// Setting to null will restore the built-in behavior, but it is recommended to track the preceding value and restore that.
-    /// </remarks>
-    public static SnapModifierFunc? GlobalXSnapModifier
-    {
-        get => _globalXSnapModifier;
-        set => _globalXSnapModifier = value ?? _builtinSnapModifier;
-    }
-
-    private static SnapModifierFunc? _globalYSnapModifier = _builtinSnapModifier;
-
-    /// <summary>
-    /// Gets or sets the Y value modifier to use when snapping an object. The global modifier is used whenever the
-    /// primary dragged object does not have a different modifier set using the YSnapModifier attached property.
-    /// </summary>
-    /// <remarks>
-    /// Setting to null will restore the built-in behavior, but it is recommended to track the preceding value and restore that.
-    /// </remarks>
-    public static SnapModifierFunc? GlobalYSnapModifier
-    {
-        get => _globalYSnapModifier;
-        set => _globalYSnapModifier = value ?? _builtinSnapModifier;
-    }
+    public static KeyModifiers CurrentPointerKeyModifiers { get; private set; }
 
     #endregion Global snapping behavior management
 
-    #region Attached DPs
+    #region Attached Properties
 
     static DragBehaviour()
     {
         IsDragEnabledProperty.Changed.AddClassHandler<Control>(OnIsDragEnabledPropertyChanged);
+        InputElement.PointerCaptureLostEvent.AddClassHandler<Control>(PointerCaptureLost,
+            RoutingStrategies.Bubble | RoutingStrategies.Tunnel);
     }
 
     public static readonly AttachedProperty<bool> IsDragEnabledProperty =
@@ -141,26 +117,21 @@ public static class DragBehaviour
 
     public static readonly AttachedProperty<Predicate<Control>> IsSnappingPredicateProperty =
         AvaloniaProperty.RegisterAttached<Control, Predicate<Control>>(
-            "IsSnappingPredicate", typeof(DragBehaviour), obj => _globalIsSnappingPredicate(obj));
-
-    public static readonly AttachedProperty<Predicate<Control>> IsIndividualSnappingPredicateProperty =
-        AvaloniaProperty.RegisterAttached<Control, Predicate<Control>>("IsIndividualSnappingPredicate",
-            typeof(DragBehaviour),
-            _globalIsIndividualSnappingPredicate);
+            "IsSnappingPredicate", typeof(DragBehaviour), DefaultSnapPredicate);
 
     /// <summary>
     /// Snap feature modifier delegate for X axis
     /// </summary>
     public static readonly AttachedProperty<SnapModifierFunc> XSnapModifierProperty =
         AvaloniaProperty.RegisterAttached<Control, SnapModifierFunc>("XSnapModifier", typeof(DragBehaviour),
-            _globalXSnapModifier);
+            DefaultSnapModifier);
 
     /// <summary>
     /// Snap feature modifier delegate for Y axis
     /// </summary>
     public static readonly AttachedProperty<SnapModifierFunc> YSnapModifierProperty =
         AvaloniaProperty.RegisterAttached<Control, SnapModifierFunc>("YSnapModifier", typeof(DragBehaviour),
-            _globalYSnapModifier);
+            DefaultSnapModifier);
 
     #endregion Attached DPs
 
@@ -204,16 +175,6 @@ public static class DragBehaviour
     public static void SetIsSnappingPredicate(Control obj, Predicate<Control> value)
     {
         obj.SetValue(IsSnappingPredicateProperty, value);
-    }
-
-    public static Predicate<Control> GetIsIndividualSnappingPredicate(Control obj)
-    {
-        return obj.GetValue(IsIndividualSnappingPredicateProperty);
-    }
-
-    public static void SetIsIndividualSnappingPredicate(Control obj, Predicate<Control> value)
-    {
-        obj.SetValue(IsIndividualSnappingPredicateProperty, value);
     }
 
     public static SnapModifierFunc GetXSnapModifier(Control obj)
@@ -264,9 +225,8 @@ public static class DragBehaviour
     {
         if (sender is not IDraggable draggable) return;
         if (!draggable.StartDrag(e)) return;
+        draggable.Container?.Classes.Add("ChildDragging");
         draggable.PointerMoved += PointerMoved;
-        InputElement.PointerCaptureLostEvent.AddClassHandler<Control>(PointerCaptureLost,
-            RoutingStrategies.Bubble | RoutingStrategies.Tunnel);
         e.Pointer.Capture(draggable);
         var affected = GetTagged(draggable);
         if (affected == null) return;
@@ -292,6 +252,7 @@ public static class DragBehaviour
         if (sender is not IDraggable draggable) return;
         if (!draggable.EndDrag(e)) return;
         draggable.PointerMoved -= PointerMoved;
+        draggable.Container?.Classes.Remove("ChildDragging");
         if (e.Pointer.Captured == draggable)
             e.Pointer.Capture(null);
         var affected = GetTagged(draggable);
@@ -307,6 +268,7 @@ public static class DragBehaviour
     {
         if (sender is not IDraggable draggable) return;
         if (!draggable.IsDragging) return;
+        draggable.Container?.Classes.Remove("ChildDragging");
         draggable.EndDrag();
         draggable.PointerMoved -= PointerMoved;
         if (e.Pointer.Captured == draggable)
@@ -324,6 +286,7 @@ public static class DragBehaviour
     private static void PointerMoved(object? sender, PointerEventArgs e)
     {
         if (sender is not IDraggable draggable) return;
+        CurrentPointerKeyModifiers = e.KeyModifiers;
         draggable.Drag(e);
 
         var affected = GetTagged(draggable);
@@ -340,22 +303,13 @@ public static class DragBehaviour
         if (draggable is not Control control) return point;
         var root = draggable.Container;
         if (root is null) return point;
-        if (GetIsIndividualSnappingPredicate(control)(control))
+        var snapX = GetXSnapModifier(control);
+        var snapY = GetYSnapModifier(control);
+        if (GetIsSnappingPredicate(control)(control))
         {
-            var snapX = GetXSnapModifier(control);
-            var snapY = GetYSnapModifier(control);
-            var x = snapX(root, control, point.X);
-            var y = snapY(root, control, point.Y);
-            return new Point(x, y);
+            point = new Point(snapX(root, control, point.X), snapY(root, control, point.Y));
         }
 
-        if (!GetIsSnappingPredicate(control)(control)) return point;
-        {
-            var snapX = _globalXSnapModifier;
-            var snapY = _globalYSnapModifier;
-            if (snapX != null) point = new Point(snapX(root, control, point.X), point.Y);
-            if (snapY != null) point = new Point(point.X, snapY(root, control, point.Y));
-            return point;
-        }
+        return point;
     }
 }

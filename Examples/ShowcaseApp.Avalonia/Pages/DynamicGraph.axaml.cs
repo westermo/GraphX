@@ -67,28 +67,17 @@ public partial class DynamicGraph : UserControl
 
 
     private bool loaded;
-    private Predicate<Control>? _originalGlobalIsSnapping;
-    private Predicate<Control>? _originalGlobalIsSnappingIndividually;
 
     private void DynamicGraph_Loaded(object? sender, RoutedEventArgs e)
     {
         if (loaded)
             return;
         loaded = true;
-
-        _originalGlobalIsSnapping = DragBehaviour.GlobalIsSnappingPredicate;
-        _originalGlobalIsSnappingIndividually = DragBehaviour.GlobalIsIndividualSnappingPredicate;
-
-        DragBehaviour.GlobalIsSnappingPredicate = IsSnapping;
-        DragBehaviour.GlobalIsIndividualSnappingPredicate = IsSnappingIndividually;
     }
 
     private void DynamicGraph_Unloaded(object? sender, RoutedEventArgs e)
     {
         loaded = false;
-
-        DragBehaviour.GlobalIsSnappingPredicate = _originalGlobalIsSnapping;
-        DragBehaviour.GlobalIsIndividualSnappingPredicate = _originalGlobalIsSnappingIndividually;
     }
 
     private void FindRandom(object? sender, RoutedEventArgs routedEventArgs)
@@ -217,6 +206,7 @@ public partial class DynamicGraph : UserControl
         {
             dg_Area.RemoveVertexAndEdges(vertex);
         }
+
         dg_zoomctrl.ZoomToFill();
     }
 
@@ -228,7 +218,11 @@ public partial class DynamicGraph : UserControl
     private void AddVertex(object? sender, RoutedEventArgs e)
     {
         var data = ThemedDataStorage.FillDataVertex(new DataVertex());
-        dg_Area.AddVertexAndData(data, new VertexControl(data));
+        var vc = new VertexControl(data);
+        dg_Area.AddVertexAndData(data, vc);
+        DragBehaviour.SetIsSnappingPredicate(vc, IsSnapping);
+        DragBehaviour.SetXSnapModifier(vc, ExaggeratedSnappingModifier);
+        DragBehaviour.SetYSnapModifier(vc, ExaggeratedSnappingModifier);
 
         //we have to check if there is only one vertex and set coordinates manulay 
         //because layout algorithms skip all logic if there are less than two vertices
@@ -266,62 +260,20 @@ public partial class DynamicGraph : UserControl
         return new DataEdge(rnd1, rnd2);
     }
 
-    /// <summary>
-    /// Select vertex by setting its IsSelected property and adding to SelectedVertices.
-    /// Also applies custom snapping modifiers for selected vertices.
-    /// </summary>
-    /// <param name="vc">VertexControl object</param>
-    private void SelectVertex(VertexControl vc)
-    {
-        if (vc.Vertex is not DataVertex dv) return;
-        
-        if (vc.IsSelected)
-        {
-            // Deselect
-            dg_Area.SelectedVertices?.Remove(dv);
-            vc.IsSelected = false;
-            vc.ClearValue(DragBehaviour.XSnapModifierProperty);
-            vc.ClearValue(DragBehaviour.YSnapModifierProperty);
-        }
-        else
-        {
-            // Select
-            dg_Area.SelectedVertices?.Add(dv);
-            vc.IsSelected = true;
-            DragBehaviour.SetXSnapModifier(vc, ExaggeratedSnappingXModifier);
-            DragBehaviour.SetYSnapModifier(vc, ExaggeratedSnappingYModifier);
-        }
-    }
-
     private bool IsSnapping(Control obj)
     {
         return dg_snap.IsChecked ?? false;
     }
 
-    private bool IsSnappingIndividually(Control obj)
-    {
-        return dg_snapIndividually.IsChecked ?? false;
-    }
+    private static readonly SnapModifierFunc Exaggerated = DragBehaviour.GridSnap(50);
 
-    private double ExaggeratedSnappingXModifier(Visual area, Control obj, double val)
+    private double ExaggeratedSnappingModifier(Visual area, Control obj, double val)
     {
         if (dg_snapExaggerate.IsChecked ?? false)
         {
-            return Math.Round(val * 0.01) * 100.0;
+            return Exaggerated(area, obj, val);
         }
 
-        System.Diagnostics.Debug.Assert(DragBehaviour.GlobalXSnapModifier != null);
-        return DragBehaviour.GlobalXSnapModifier(area, obj, val);
-    }
-
-    private double ExaggeratedSnappingYModifier(Visual area, Control obj, double val)
-    {
-        if (dg_snapExaggerate.IsChecked ?? false)
-        {
-            return Math.Round(val * 0.01) * 100.0;
-        }
-
-        System.Diagnostics.Debug.Assert(DragBehaviour.GlobalYSnapModifier != null);
-        return DragBehaviour.GlobalYSnapModifier(area, obj, val);
+        return DragBehaviour.DefaultSnapModifier(area, obj, val);
     }
 }
