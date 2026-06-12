@@ -57,20 +57,20 @@ public static class DragBehaviour
     /// <returns></returns>
     public static SnapModifierFunc GridSnap(double gridSize)
     {
-        return (_, _, val) => Math.Round(val / gridSize) * gridSize;
+        return (_, _, val) => gridSize <= 0 ? val : Math.Round(val / gridSize) * gridSize;
     }
 
     /// <summary>
     /// Helper function for snapping to ctrl width
     /// </summary>
-public static readonly SnapModifierFunc WidthSnap =
-    (_, ctrl, val) => ctrl.Bounds.Width <= 0 ? val : Math.Round(val / ctrl.Bounds.Width) * ctrl.Bounds.Width;
+    public static readonly SnapModifierFunc WidthSnap =
+        (_, ctrl, val) => ctrl.Bounds.Width <= 0 ? val : Math.Round(val / ctrl.Bounds.Width) * ctrl.Bounds.Width;
 
     /// <summary>
     /// Helper function for snapping to ctrl height
     /// </summary>
-public static readonly SnapModifierFunc HeightSnap =
-    (_, ctrl, val) => ctrl.Bounds.Height <= 0 ? val : Math.Round(val / ctrl.Bounds.Height) * ctrl.Bounds.Height;
+    public static readonly SnapModifierFunc HeightSnap =
+        (_, ctrl, val) => ctrl.Bounds.Height <= 0 ? val : Math.Round(val / ctrl.Bounds.Height) * ctrl.Bounds.Height;
 
     /// <summary>
     /// Snapping is active when the Shift key alone is held.
