@@ -192,8 +192,7 @@ public abstract class EdgeControlBase : TemplatedControl, IGraphControl, IDispos
         var vecMove = new Measure.Vector((.5 + dir.X * .5) * width, (.5 + dir.Y * .5) * height);
         position = new Measure.Point(position.X - vecMove.X, position.Y - vecMove.Y);
         if (double.IsNaN(width) || width == 0 || double.IsNaN(position.X)) return position;
-        var rect =
-            new Rect(position.ToAvalonia(), size);
+        var rect = new Rect(position.ToAvalonia(), size);
         ctrl.Arrange(rect);
         SetRotation(ctrl, angle);
 
@@ -773,7 +772,7 @@ public abstract class EdgeControlBase : TemplatedControl, IGraphControl, IDispos
         // Position labels at edge midpoint
         var midPoint = GetMidpoint(out var angle, out var flipAxis, out var vector);
         if (midPoint == default) return result;
-        vector = vector.Normalize();
+        vector = vector is { X: 0, Y: 0 } ? new Vector(1, 0) : vector.Normalize();
         var perp = vector.Perpendicular();
         foreach (var label in EdgeLabelControls)
         {
@@ -789,6 +788,10 @@ public abstract class EdgeControlBase : TemplatedControl, IGraphControl, IDispos
             var localPoint = midPoint.Add(
                 -labelSize.Width / 2 + offsetX.X + offsetY.X + _pathBounds.X,
                 -labelSize.Height / 2 + offsetX.Y + offsetY.Y + _pathBounds.Y);
+            if (!double.IsFinite(localPoint.X) || !double.IsFinite(localPoint.Y) ||
+                !double.IsFinite(labelSize.Width) || !double.IsFinite(labelSize.Height))
+                continue;
+
             ctrl.SetCurrentValue(GraphAreaBase.XProperty, localPoint.X);
             ctrl.SetCurrentValue(GraphAreaBase.YProperty, localPoint.Y);
             label.Angle = label.AlignToEdge ? -angle.ToDegrees() + (flipAxis ? 180 : 0) : 0;
@@ -943,7 +946,7 @@ public abstract class EdgeControlBase : TemplatedControl, IGraphControl, IDispos
         //if self looped edge
         UpdateSelfLoopedEdgeData();
         if (!IsSelfLooped) return CreateEdgeGeometry(_points, routedEdge is IGraphXCommonEdge { ReversePath: true });
-        
+
         // Self-looped edges have no edge pointers to position
         _sourcePointerLayout = default;
         _targetPointerLayout = default;
