@@ -5,7 +5,9 @@ using Avalonia.Controls.Shapes;
 using Avalonia.Layout;
 using Avalonia.Media;
 using Avalonia.Threading;
+using Westermo.GraphX.Controls.Controls.Misc;
 using Westermo.GraphX.Controls.Controls.ZoomControl;
+using Westermo.GraphX.Controls.Models;
 
 namespace Westermo.GraphX.Controls.Avalonia.Tests;
 
@@ -108,6 +110,64 @@ public class WayfinderRenderTests
         return (window, zc, wf);
     }
 
+    private static (Window window, ZoomControl zc, Wayfinder wf) BuildOffsetTrackableScene(
+        Rect contentRect,
+        Action<Panel> populateContent)
+    {
+        // GraphArea reports the actual child extent via ITrackableContent.
+        // Reproduce that here without depending on graph layout algorithms.
+        var content = new TrackableCanvas(contentRect)
+        {
+            Width = contentRect.Width,
+            Height = contentRect.Height,
+            Background = Brushes.Transparent
+        };
+        populateContent(content);
+
+        var zc = new ZoomControl
+        {
+            Width = 400,
+            Height = 240,
+            Content = content
+        };
+
+        var wf = new Wayfinder
+        {
+            Width = WayfinderWidth,
+            Height = WayfinderHeight,
+            ZoomControl = zc,
+            Background = new SolidColorBrush(Color.FromRgb(0xF0, 0xF0, 0xF0)),
+            ShadowBrush = null,
+            ViewportBrush = Brushes.Transparent,
+            ViewportPen = null
+        };
+
+        var root = new StackPanel
+        {
+            Orientation = Orientation.Vertical,
+            Spacing = 8,
+            Children = { zc, wf }
+        };
+
+        var window = new Window
+        {
+            Width = 420,
+            Height = 400,
+            Background = Brushes.White,
+            Content = root
+        };
+        window.Show();
+
+        for (var i = 0; i < 3; i++)
+        {
+            window.Measure(new Size(420, 400));
+            window.Arrange(new Rect(0, 0, 420, 400));
+            Dispatcher.UIThread.RunJobs();
+        }
+
+        return (window, zc, wf);
+    }
+
     private static VerifySettings GetSettings([CallerMemberName] string? testName = null)
     {
         var settings = new VerifySettings();
@@ -193,6 +253,28 @@ public class WayfinderRenderTests
         await Verify(window, GetSettings());
     }
 
+    /// <summary>
+    /// Trackable graph content may have a positive top-left extent when all
+    /// vertices live away from the origin. The minimap must still render the
+    /// bottom/right of that extent instead of clipping it by the offset amount.
+    /// </summary>
+    [Test]
+    public async Task Renders_OffsetTrackableContent_WithoutClippingLowerOrRightEdges()
+    {
+        var contentRect = new Rect(100, 80, 800, 600);
+        var (window, _, wf) = BuildOffsetTrackableScene(contentRect, canvas =>
+        {
+            AddBox(canvas, 0, 0, 40, 40);
+            AddBox(canvas, 760, 0, 40, 40);
+            AddBox(canvas, 0, 560, 40, 40);
+            AddBox(canvas, 760, 560, 40, 40);
+            AddBox(canvas, 380, 280, 40, 40);
+        });
+
+        // Verify.Avalonia takes ownership of closing the window.
+        await Verify(window, GetSettings());
+    }
+
     private static void AddBox(Panel canvas, double x, double y, double w, double h)
     {
         var rect = new Rectangle
@@ -204,5 +286,16 @@ public class WayfinderRenderTests
         Canvas.SetLeft(rect, x);
         Canvas.SetTop(rect, y);
         canvas.Children.Add(rect);
+    }
+
+    private sealed class TrackableCanvas(Rect contentSize) : Canvas, ITrackableContent
+    {
+        public event ContentSizeChangedEventHandler? ContentSizeChanged
+        {
+            add { }
+            remove { }
+        }
+
+        public Rect ContentSize { get; } = contentSize;
     }
 }

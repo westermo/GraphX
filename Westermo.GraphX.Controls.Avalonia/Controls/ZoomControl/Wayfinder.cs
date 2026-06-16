@@ -104,7 +104,9 @@ public sealed class Wayfinder : Control
     #endregion
 
     private bool _isDragging;
+
     private Point _lastPointerPos;
+
     // Tracks whether the control is currently attached to the visual tree and
     // therefore has live event subscriptions on the target ZoomControl. Event
     // wiring is deferred to AttachedToVisualTree / DetachedFromVisualTree so
@@ -112,6 +114,7 @@ public sealed class Wayfinder : Control
     // target ZoomControl (otherwise the ZoomControl would keep the wayfinder
     // alive via its event handlers).
     private bool _subscribed;
+
     // The content visual we currently have a LayoutUpdated subscription on.
     // Tracked separately because ZoomControl.Content can change without the
     // wayfinder being detached, and we need to move the subscription with it.
@@ -233,7 +236,7 @@ public sealed class Wayfinder : Control
         {
             if (e.Property == ContentControl.ContentProperty)
             {
-                if(e.OldValue is ITrackableContent oldTc)
+                if (e.OldValue is ITrackableContent oldTc)
                     oldTc.ContentSizeChanged -= TargetContentSizeChanged;
                 if (e.NewValue is ITrackableContent newTc)
                     newTc.ContentSizeChanged += TargetContentSizeChanged;
@@ -281,13 +284,16 @@ public sealed class Wayfinder : Control
             // by -_contentRect.TopLeft so the result is anchored to the same
             // origin as ContentBounds (top-left of the wayfinder content area).
             var vpContent = WayfinderGeometry.ComputeViewportRect(
-                zc.Zoom, zc.TranslateX, zc.TranslateY,
+                zc.Zoom,
+                zc.TranslateX,
+                zc.TranslateY,
                 new Size(zc.Bounds.Width, zc.Bounds.Height),
                 Scale);
             ViewportRect = new Rect(
                 vpContent.X - _contentRect.X * Scale,
                 vpContent.Y - _contentRect.Y * Scale,
-                vpContent.Width, vpContent.Height);
+                vpContent.Width,
+                vpContent.Height);
         }
         else
         {
@@ -308,17 +314,15 @@ public sealed class Wayfinder : Control
         if (zc == null) return default;
         if (zc.TrackableContent is { } trackable)
             return trackable.ContentSize;
-        if (zc.ContentVisual is { } visual)
+        if (zc.ContentVisual is not { } visual) return default;
+        var size = visual.DesiredSize;
+        if (size.Width <= 0 || size.Height <= 0)
         {
-            var size = visual.DesiredSize;
-            if (size.Width <= 0 || size.Height <= 0)
-            {
-                var b = visual.Bounds;
-                if (b.Width > 0 && b.Height > 0) size = b.Size;
-            }
-            return new Rect(default, size);
+            var b = visual.Bounds;
+            if (b is { Width: > 0, Height: > 0 }) size = b.Size;
         }
-        return default;
+
+        return new Rect(default, size);
     }
 
     protected override Size MeasureOverride(Size availableSize) => availableSize;
@@ -344,11 +348,10 @@ public sealed class Wayfinder : Control
         // whether the press happens inside or outside the viewport rectangle.
         if (e.ClickCount >= 2)
         {
-            if (ContentBounds.Contains(p))
-            {
-                RecenterOnWayfinderPoint(p);
-                e.Handled = true;
-            }
+            if (!ContentBounds.Contains(p)) return;
+            RecenterOnWayfinderPoint(p);
+            e.Handled = true;
+
             return;
         }
 
@@ -431,7 +434,7 @@ public sealed class Wayfinder : Control
         if (zc == null || Scale <= 0) return;
 
         var clamped = WayfinderGeometry.ClampDragDelta(ViewportRect, ContentBounds, delta);
-        if (clamped.X == 0 && clamped.Y == 0) return;
+        if (clamped is { X: 0, Y: 0 }) return;
 
         // Move ZoomControl translate inversely: shifting the minimap viewport right
         // means the visible content slides left, i.e. translate decreases.
@@ -496,6 +499,7 @@ public sealed class Wayfinder : Control
             if (tx > txMax) tx = txMax;
             if (tx < txMin) tx = txMin;
         }
+
         if (contentSpanY < _contentRect.Height)
         {
             var tyMax = -_contentRect.Y * zoom;
@@ -523,7 +527,7 @@ public sealed class Wayfinder : Control
         base.Render(dc);
 
         // 1. Background of the content area.
-        if (Background != null && ContentBounds.Width > 0 && ContentBounds.Height > 0)
+        if (Background != null && ContentBounds is { Width: > 0, Height: > 0 })
             dc.DrawRectangle(Background, null, ContentBounds);
 
         // 2. Live snapshot of the actual ZoomControl content via a VisualBrush.
@@ -539,7 +543,7 @@ public sealed class Wayfinder : Control
         // 3. Shadow over non-viewport area + viewport outline.
         var bounds = new Rect(Bounds.Size);
         var vp = ViewportRect;
-        var intersects = vp.Width > 0 && vp.Height > 0 &&
+        var intersects = vp is { Width: > 0, Height: > 0 } &&
                          !(vp.Right <= bounds.X || vp.X >= bounds.Right ||
                            vp.Bottom <= bounds.Y || vp.Y >= bounds.Bottom);
 
@@ -553,7 +557,7 @@ public sealed class Wayfinder : Control
                 // ContentBounds (typical when zoomed-out so the on-screen
                 // viewport is larger than the graph) produces negative-sized
                 // shadow strips that don't draw, leaving the unscoped area
-                // un-shaded.
+                // unshaded.
                 var clipped = new Rect(
                     Math.Max(vp.X, contentRect.X),
                     Math.Max(vp.Y, contentRect.Y),
@@ -576,7 +580,7 @@ public sealed class Wayfinder : Control
 
             dc.DrawRectangle(ViewportBrush, ViewportPen, vp);
         }
-        else if (ShadowBrush != null && ContentBounds.Width > 0 && ContentBounds.Height > 0)
+        else if (ShadowBrush != null && ContentBounds is { Width: > 0, Height: > 0 })
         {
             // No part of the viewport is visible → entire content area is "off screen".
             dc.DrawRectangle(ShadowBrush, null, ContentBounds);
@@ -594,10 +598,6 @@ public sealed class Wayfinder : Control
         if (Scale <= 0 || ContentBounds.Width <= 0 || ContentBounds.Height <= 0) return;
         if (ZoomControl?.ContentVisual is not { } visual) return;
         if (_contentRect.Width <= 0 || _contentRect.Height <= 0) return;
-
-        // Rebuild the brush iff the source visual changed. The VisualBrush
-        // walks the live visual tree on every render, so a single instance
-        // covers all subsequent frames as long as the source visual is stable.
         if (!ReferenceEquals(_brushSourceVisual, visual) || _contentBrush == null)
         {
             _brushSourceVisual = visual;
@@ -611,11 +611,17 @@ public sealed class Wayfinder : Control
             };
         }
 
-        // Tell the brush to sample exactly the trackable content rectangle —
-        // not the visual's DesiredSize, which is a 10x10 sentinel for
-        // GraphAreaBase. RelativeUnit.Absolute treats the rect as raw pixels
-        // in the source visual's local coordinate space.
-        _contentBrush.SourceRect = new RelativeRect(_contentRect, RelativeUnit.Absolute);
+        // TrackableContent.ContentSize is expressed in graph coordinates, but
+        // the content visual is arranged to the extent size. Positive graph
+        // offsets must therefore not be used as a VisualBrush source offset:
+        // doing so skips the top/left of the visual and clips the bottom/right
+        // by the same amount.
+        var sourceRect = new Rect(
+            _contentRect.X > 0 ? 0 : _contentRect.X,
+            _contentRect.Y > 0 ? 0 : _contentRect.Y,
+            _contentRect.Width,
+            _contentRect.Height);
+        _contentBrush.SourceRect = new RelativeRect(sourceRect, RelativeUnit.Absolute);
 
         dc.DrawRectangle(_contentBrush, null, ContentBounds);
     }

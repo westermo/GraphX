@@ -1,5 +1,6 @@
 using Avalonia;
 using Avalonia.Controls;
+using Avalonia.Input;
 using Avalonia.Threading;
 using Westermo.GraphX.Controls.Controls.ZoomControl;
 using Westermo.GraphX.Controls.Controls.ZoomControl.SupportClasses;
@@ -219,6 +220,69 @@ public class ZoomControlTests
 
             // Expected zoom = min(800/400, 600/200) = 2.0
             await Assert.That(Math.Abs(zc.Zoom - 2.0)).IsLessThan(Tolerance);
+        }
+        finally
+        {
+            window.Close();
+        }
+    }
+
+    #endregion
+
+    #region Modifier Drag Gesture Tests
+
+    [Test]
+    public async Task Alt_LeftDrag_Zooms_To_Rectangle()
+    {
+        var (zc, window) = CreateZoomControlWithContent(800, 600, 1000, 1000);
+        try
+        {
+            zc.Mode = ZoomControlModes.Custom;
+            zc.Zoom = 1.0;
+
+            var areaSelectedCount = 0;
+            zc.AreaSelected += (_, _) => areaSelectedCount++;
+
+            var initialZoom = zc.Zoom;
+            var beganInteraction = zc.BeginInteractionForTest(KeyModifiers.Alt, new Point(100, 100));
+            await Assert.That(beganInteraction).IsTrue();
+            zc.MoveInteractionForTest(new Point(300, 300));
+            zc.CompleteInteractionForTest();
+
+            await Assert.That(zc.Zoom).IsGreaterThan(initialZoom);
+            await Assert.That(areaSelectedCount).IsEqualTo(0);
+            await Assert.That(zc.ZoomBox).IsEqualTo(default(Rect));
+        }
+        finally
+        {
+            window.Close();
+        }
+    }
+
+    [Test]
+    public async Task ControlAlt_LeftDrag_AreaSelects_Without_Zooming()
+    {
+        var (zc, window) = CreateZoomControlWithContent(800, 600, 1000, 1000);
+        try
+        {
+            zc.Mode = ZoomControlModes.Custom;
+            zc.Zoom = 1.0;
+
+            Rect? selectedRectangle = null;
+            zc.AreaSelected += (_, args) => selectedRectangle = args.Rectangle;
+
+            var initialZoom = zc.Zoom;
+            var beganInteraction =
+                zc.BeginInteractionForTest(KeyModifiers.Control | KeyModifiers.Alt, new Point(100, 100));
+            await Assert.That(beganInteraction).IsTrue();
+            zc.MoveInteractionForTest(new Point(300, 300));
+            zc.CompleteInteractionForTest();
+
+            await Assert.That(zc.Zoom).IsEqualTo(initialZoom);
+            await Assert.That(selectedRectangle.HasValue).IsTrue();
+            await Assert.That(Math.Abs(selectedRectangle!.Value.Width - 200)).IsLessThan(Tolerance);
+            await Assert.That(Math.Abs(selectedRectangle.Value.Height - 200)).IsLessThan(Tolerance);
+            await Assert.That(zc.ZoomBox).IsEqualTo(default(Rect));
         }
         finally
         {
