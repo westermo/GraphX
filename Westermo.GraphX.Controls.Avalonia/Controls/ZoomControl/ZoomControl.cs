@@ -637,6 +637,13 @@ public sealed class ZoomControl : ContentControl, IZoomControl, INotifyPropertyC
     private void OnPointerUp(object? sender, PointerReleasedEventArgs e)
     {
         PointerMoved -= ZoomControl_PreviewMouseMove;
+        CompleteInteraction();
+        if (Equals(e.Pointer.Captured, this))
+            e.Pointer.Capture(null);
+    }
+
+    private void CompleteInteraction()
+    {
         if (_clickTrack)
         {
             RaiseEvent(new RoutedEventArgs(ClickEvent));
@@ -655,8 +662,6 @@ public sealed class ZoomControl : ContentControl, IZoomControl, INotifyPropertyC
         }
 
         ModifierMode = ZoomViewModifierMode.None;
-        if (Equals(e.Pointer.Captured, this))
-            e.Pointer.Capture(null);
     }
 
     private void PanAction(Vector initialPoint, Vector diff)
@@ -668,21 +673,26 @@ public sealed class ZoomControl : ContentControl, IZoomControl, INotifyPropertyC
 
     private void ZoomControl_PreviewMouseMove(object? sender, PointerEventArgs e)
     {
+        MoveInteraction(e.GetPosition(this));
+    }
+
+    private void MoveInteraction(Point currentPosition)
+    {
         if (_clickTrack)
         {
-            var curPoint = e.GetPosition(this);
-            if (curPoint != _mouseDownPos) _clickTrack = false;
+            if (currentPosition != _mouseDownPos) _clickTrack = false;
         }
 
         switch (ModifierMode)
         {
             case ZoomViewModifierMode.None: return;
-            case ZoomViewModifierMode.Pan: PanAction(_startTranslate, e.GetPosition(this) - _mouseDownPos); break;
+            case ZoomViewModifierMode.Pan: PanAction(_startTranslate, currentPosition - _mouseDownPos); break;
             case ZoomViewModifierMode.ZoomBox:
-                var pos = e.GetPosition(this);
-                var x = Math.Min(_mouseDownPos.X, pos.X);
-                var y = Math.Min(_mouseDownPos.Y, pos.Y);
-                ZoomBox = new Rect(x, y, Math.Abs(_mouseDownPos.X - pos.X), Math.Abs(_mouseDownPos.Y - pos.Y));
+                var x = Math.Min(_mouseDownPos.X, currentPosition.X);
+                var y = Math.Min(_mouseDownPos.Y, currentPosition.Y);
+                var width = Math.Abs(_mouseDownPos.X - currentPosition.X);
+                var height = Math.Abs(_mouseDownPos.Y - currentPosition.Y);
+                ZoomBox = new Rect(x, y, width, height);
                 break;
             case ZoomViewModifierMode.ZoomIn:
             case ZoomViewModifierMode.ZoomOut:
@@ -694,9 +704,18 @@ public sealed class ZoomControl : ContentControl, IZoomControl, INotifyPropertyC
 
     private void OnPointerDown(PointerPressedEventArgs e)
     {
-        if (ModifierMode != ZoomViewModifierMode.None) return;
+        if (!e.GetCurrentPoint(this).Properties.IsLeftButtonPressed) return;
+        if (!BeginInteraction(e.KeyModifiers, e.GetPosition(this))) return;
+
+        e.Pointer.Capture(this);
+        PointerMoved += ZoomControl_PreviewMouseMove;
+    }
+
+    private bool BeginInteraction(KeyModifiers keyModifiers, Point position)
+    {
+        if (ModifierMode != ZoomViewModifierMode.None) return false;
         _startedAsAreaSelection = false;
-        switch (e.KeyModifiers)
+        switch (keyModifiers)
         {
             case KeyModifiers.None:
                 if (IsDragSelectByDefault)
@@ -708,23 +727,31 @@ public sealed class ZoomControl : ContentControl, IZoomControl, INotifyPropertyC
 
                 break;
             case KeyModifiers.Alt | KeyModifiers.Control:
-            case KeyModifiers.Alt:
                 _startedAsAreaSelection = true;
+                ModifierMode = ZoomViewModifierMode.ZoomBox;
+                break;
+            case KeyModifiers.Alt:
                 ModifierMode = ZoomViewModifierMode.ZoomBox;
                 break;
             case KeyModifiers.Shift: ModifierMode = ZoomViewModifierMode.Pan; break;
             case KeyModifiers.Control:
             case KeyModifiers.Meta:
-            default: return;
+            default: return false;
         }
 
         _clickTrack = true;
-        _mouseDownPos = e.GetPosition(this);
-        if (ModifierMode == ZoomViewModifierMode.None) return;
+        _mouseDownPos = position;
+        if (ModifierMode == ZoomViewModifierMode.None) return false;
         _startTranslate = new Vector(TranslateX, TranslateY);
-        e.Pointer.Capture(this);
-        PointerMoved += ZoomControl_PreviewMouseMove;
+        return true;
     }
+
+    internal bool BeginInteractionForTest(KeyModifiers keyModifiers, Point position) =>
+        BeginInteraction(keyModifiers, position);
+
+    internal void MoveInteractionForTest(Point position) => MoveInteraction(position);
+
+    internal void CompleteInteractionForTest() => CompleteInteraction();
 
     public static readonly RoutedEvent<RoutedEventArgs> ClickEvent =
         RoutedEvent.Register<ZoomControl, RoutedEventArgs>(nameof(Click), RoutingStrategies.Bubble);
