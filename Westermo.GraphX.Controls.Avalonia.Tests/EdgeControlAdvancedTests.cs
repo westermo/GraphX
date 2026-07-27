@@ -6,6 +6,8 @@ using Avalonia.Media;
 using QuikGraph;
 using Westermo.GraphX.Common.Models;
 using Westermo.GraphX.Controls.Controls;
+using Westermo.GraphX.Controls.Controls.EdgeLabels;
+using Westermo.GraphX.Controls.Controls.EdgePointers;
 using Westermo.GraphX.Logic.Models;
 
 namespace Westermo.GraphX.Controls.Avalonia.Tests;
@@ -156,6 +158,72 @@ public class EdgeControlAdvancedTests
     //     var routedSegCount = routedGeom!.Figures[0].Segments.Count;
     //     await Assert.That(routedSegCount).IsGreaterThan(baseSegCount);
     // }
+
+    [Test]
+    public async Task Edge_OverlappingVertices_WithLabel_DoesNotThrow()
+    {
+        var (area, v1c, v2c, _, ec) = CreateSimpleArea();
+
+        ApplyTemplateWithPointer(ec);
+
+        v1c.Measure(new Size(double.PositiveInfinity, double.PositiveInfinity));
+        v2c.Measure(new Size(double.PositiveInfinity, double.PositiveInfinity));
+
+        // Move v2 on top of v1 so source/target endpoints coincide.
+        v2c.SetPosition(50, 80);
+        GraphAreaBase.SetFinalX(v2c, 50);
+        GraphAreaBase.SetFinalY(v2c, 80);
+
+        // Attach a label so the label-positioning branch in ArrangeOverride executes.
+        var label = new AttachableEdgeLabelControl { Content = "Lbl" };
+        label.Attach(ec);
+        label.ShowLabel = true;
+
+        ec.InvalidateMeasure();
+        ec.Measure(new Size(double.PositiveInfinity, double.PositiveInfinity));
+
+        // Without the fix this throws InvalidOperationException("Invalid Arrange rectangle").
+        ec.Arrange(new Rect(0, 0,
+            Math.Max(1, ec.DesiredSize.Width),
+            Math.Max(1, ec.DesiredSize.Height)));
+
+        await Assert.That(label.AttachNode).IsEqualTo(ec);
+    }
+
+    private static void ApplyTemplateWithPointer(EdgeControl ec)
+    {
+        var content = new Grid();
+        var path = new global::Avalonia.Controls.Shapes.Path
+        {
+            Name = "PART_edgePath",
+            Stroke = Brushes.Black,
+            StrokeThickness = 1
+        };
+        // A pointer with a content shape so its DesiredSize is non-zero.
+        var pointer = new DefaultEdgePointer
+        {
+            Name = "PART_EdgePointerForTarget",
+            Width = 10,
+            Height = 10,
+            Content = new global::Avalonia.Controls.Shapes.Polygon
+            {
+                Points = [new Point(0, 0), new Point(10, 5), new Point(0, 10)],
+                Fill = Brushes.Black
+            }
+        };
+        content.Children.Add(path);
+        content.Children.Add(pointer);
+        var ns = new NameScope();
+        ns.Register("PART_edgePath", path);
+        ns.Register("PART_EdgePointerForTarget", pointer);
+        var functor = new Func<IServiceProvider?, object?>(_ => new TemplateResult<Control>(content, ns));
+        ec.Template = new ControlTemplate
+        {
+            TargetType = typeof(EdgeControl),
+            Content = functor
+        };
+        ec.ApplyTemplate();
+    }
 
     [Test]
     public async Task Edge_CurvingEnabled_StillProducesGeometry()
