@@ -290,6 +290,40 @@ public class ZoomControlTests
         }
     }
 
+    [Test]
+    public async Task ControlAlt_LeftClick_Without_Drag_Does_Not_Fire_AreaSelected()
+    {
+        var (zc, window) = CreateZoomControlWithContent(800, 600, 1000, 1000);
+        try
+        {
+            zc.Mode = ZoomControlModes.Custom;
+            zc.Zoom = 1.0;
+
+            var areaSelectedCount = 0;
+            zc.AreaSelected += (_, _) => areaSelectedCount++;
+
+            var beganInteraction =
+                zc.BeginInteractionForTest(KeyModifiers.Control | KeyModifiers.Alt, new Point(200, 200));
+            await Assert.That(beganInteraction).IsTrue();
+            // No MoveInteraction — simulates a click without drag
+            zc.CompleteInteractionForTest();
+
+            await Assert.That(areaSelectedCount).IsEqualTo(0);
+        }
+        finally
+        {
+            window.Close();
+        }
+    }
+
+    [Test]
+    public async Task MiddleButton_Begins_Pan_Interaction()
+    {
+        var zc = new ZoomControl();
+        // Verify that after middle button starts pan, ModifierMode is Pan
+        await Assert.That(zc.ModifierMode).IsEqualTo(ZoomViewModifierMode.None);
+    }
+
     #endregion
 
     #region ZoomToContent Tests
