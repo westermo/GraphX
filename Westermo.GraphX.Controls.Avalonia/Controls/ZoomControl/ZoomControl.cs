@@ -655,7 +655,10 @@ public sealed class ZoomControl : ContentControl, IZoomControl, INotifyPropertyC
             if (_startedAsAreaSelection)
             {
                 _startedAsAreaSelection = false;
-                OnAreaSelected(ToContentRectangle(ZoomBox));
+                // Only fire area selection if the user actually dragged a rectangle.
+                // A zero-area box means the user just clicked, not dragged.
+                if (ZoomBox.Width > 0 && ZoomBox.Height > 0)
+                    OnAreaSelected(ToContentRectangle(ZoomBox));
                 ZoomBox = new Rect();
             }
             else ZoomToInternal(ZoomBox);
@@ -704,7 +707,21 @@ public sealed class ZoomControl : ContentControl, IZoomControl, INotifyPropertyC
 
     private void OnPointerDown(PointerPressedEventArgs e)
     {
-        if (!e.GetCurrentPoint(this).Properties.IsLeftButtonPressed) return;
+        var point = e.GetCurrentPoint(this);
+        if (point.Properties.IsMiddleButtonPressed)
+        {
+            if (ModifierMode != ZoomViewModifierMode.None) return;
+            ModifierMode = ZoomViewModifierMode.Pan;
+            _clickTrack = false;
+            _mouseDownPos = e.GetPosition(this);
+            _startTranslate = new Vector(TranslateX, TranslateY);
+            e.Pointer.Capture(this);
+            PointerMoved += ZoomControl_PreviewMouseMove;
+            e.Handled = true;
+            return;
+        }
+
+        if (!point.Properties.IsLeftButtonPressed) return;
         if (!BeginInteraction(e.KeyModifiers, e.GetPosition(this))) return;
 
         e.Pointer.Capture(this);
