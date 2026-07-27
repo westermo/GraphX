@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1781615730435,
+  "lastUpdate": 1785159421341,
   "repoUrl": "https://github.com/westermo/GraphX",
   "entries": {
     "Benchmark.Net Benchmark": [
@@ -1746,6 +1746,120 @@ window.BENCHMARK_DATA = {
             "value": 65188,
             "unit": "ns",
             "range": "± 8555.693140307867"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "142813963+carl-andersson-at-westermo@users.noreply.github.com",
+            "name": "Caran",
+            "username": "carl-andersson-at-westermo"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "977ff22334ad8deb25739da2c9b1f11c1827045f",
+          "message": "Fix mouse shortcuts (#29)\n\n* Fixes for WayFinder and ZoomControl mouse interactions\n\n* fix: middle-button pan and Ctrl+Alt click selection in ZoomControl\n\n- Add middle mouse button drag to initiate pan mode, enabling scroll\n  wheel drag to pan the viewbox.\n- Skip firing AreaSelected when ZoomBox has zero area (click without\n  drag). Previously, Ctrl+Alt clicking a device would momentarily\n  select it on pointer-down but then clear the selection on pointer-up\n  because CompleteInteraction fired AreaSelected with an empty rect.\n\nCo-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>\n\n---------\n\nCo-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>",
+          "timestamp": "2026-07-27T15:32:19+02:00",
+          "tree_id": "a6827b550955facc94fab9c581ae13c9a0b9ca9f",
+          "url": "https://github.com/westermo/GraphX/commit/977ff22334ad8deb25739da2c9b1f11c1827045f"
+        },
+        "date": 1785159419418,
+        "tool": "benchmarkdotnet",
+        "benches": [
+          {
+            "name": "GraphXBenchmarks.GraphRenderingBenchmarks.SmallGraph_PreloadVertexes",
+            "value": 370903.5,
+            "unit": "ns",
+            "range": "± 73722.36611360822"
+          },
+          {
+            "name": "GraphXBenchmarks.GraphRenderingBenchmarks.MediumGraph_PreloadVertexes",
+            "value": 2137014.7,
+            "unit": "ns",
+            "range": "± 516011.9685033263"
+          },
+          {
+            "name": "GraphXBenchmarks.GraphRenderingBenchmarks.LargeGraph_PreloadVertexes",
+            "value": 10798260.4,
+            "unit": "ns",
+            "range": "± 2641416.538665452"
+          },
+          {
+            "name": "GraphXBenchmarks.GraphRenderingBenchmarks.SmallGraph_PreloadAndGenerateEdges",
+            "value": 695574.6,
+            "unit": "ns",
+            "range": "± 156669.54488717823"
+          },
+          {
+            "name": "GraphXBenchmarks.GraphRenderingBenchmarks.MediumGraph_PreloadAndGenerateEdges",
+            "value": 5184303.2,
+            "unit": "ns",
+            "range": "± 1230474.038617439"
+          },
+          {
+            "name": "GraphXBenchmarks.GraphRenderingBenchmarks.LargeGraph_PreloadAndGenerateEdges",
+            "value": 51380498.8,
+            "unit": "ns",
+            "range": "± 4117703.1768701347"
+          },
+          {
+            "name": "GraphXBenchmarks.GraphRenderingBenchmarks.SmallGraph_UpdateAllEdges",
+            "value": 23012.1,
+            "unit": "ns",
+            "range": "± 6134.686579877844"
+          },
+          {
+            "name": "GraphXBenchmarks.GraphRenderingBenchmarks.MediumGraph_UpdateAllEdges",
+            "value": 84827,
+            "unit": "ns",
+            "range": "± 11352.545627401028"
+          },
+          {
+            "name": "GraphXBenchmarks.GraphRenderingBenchmarks.LargeGraph_UpdateAllEdges",
+            "value": 335445.2,
+            "unit": "ns",
+            "range": "± 42394.70004034834"
+          },
+          {
+            "name": "GraphXBenchmarks.GraphRenderingBenchmarks.LargeGraph_EdgeGenerationOnly",
+            "value": 24124780.2,
+            "unit": "ns",
+            "range": "± 3010349.1003667773"
+          },
+          {
+            "name": "GraphXBenchmarks.GraphRenderingBenchmarks.LargeGraph_UpdateEdgesRenderingOnly",
+            "value": 342205.1,
+            "unit": "ns",
+            "range": "± 60998.38766803595"
+          },
+          {
+            "name": "GraphXBenchmarks.GraphRenderingBenchmarks.LargeGraph_UpdateEdges_WithParallelEdges",
+            "value": 780623.5,
+            "unit": "ns",
+            "range": "± 64595.54540583876"
+          },
+          {
+            "name": "GraphXBenchmarks.GraphRenderingBenchmarks.LargeGraph_UpdateEdges_WithCurving",
+            "value": 349026.7,
+            "unit": "ns",
+            "range": "± 85328.47873046581"
+          },
+          {
+            "name": "GraphXBenchmarks.GraphRenderingBenchmarks.LargeGraph_PositionUpdatesCost",
+            "value": 1244930.1,
+            "unit": "ns",
+            "range": "± 246358.49659589355"
+          },
+          {
+            "name": "GraphXBenchmarks.GraphRenderingBenchmarks.MediumGraph_WithSelfLoops_UpdateAllEdges",
+            "value": 83211.2,
+            "unit": "ns",
+            "range": "± 18742.515334572003"
           }
         ]
       }
