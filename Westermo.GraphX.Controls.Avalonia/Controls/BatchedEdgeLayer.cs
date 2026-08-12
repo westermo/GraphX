@@ -4,6 +4,7 @@ using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Media;
 using Westermo.GraphX.Controls.Controls.Interfaces;
+using Westermo.GraphX.Controls.Controls.Misc;
 
 namespace Westermo.GraphX.Controls.Controls;
 
@@ -20,9 +21,11 @@ public sealed class BatchedEdgeLayer : Control
     // resync so edges added/removed outside of GraphArea's registration calls are still picked up.
     private readonly HashSet<EdgeControlBase> _registeredEdges = [];
 
-    // The eligible subset of _registeredEdges: these have their default path suppressed and are drawn by
-    // this layer instead.
-    private readonly HashSet<EdgeControlBase> _batchedEdges = [];
+    // The eligible subset of _registeredEdges. Keep the list in GraphArea child-registration order so batching
+    // retains the deterministic z-order of the original individual edge controls.
+    private readonly List<EdgeControlBase> _batchedEdges = [];
+    private readonly HashSet<EdgeControlBase> _batchedEdgeSet = [];
+    private readonly Dictionary<EdgeControlBase, CachedPen> _pens = [];
     private bool _invalidationPending;
     private bool _isSynchronizing;
 
@@ -98,7 +101,9 @@ public sealed class BatchedEdgeLayer : Control
                 edge.SetBatchedPathSuppressed(false);
 
             _batchedEdges.Clear();
+            _batchedEdgeSet.Clear();
             _registeredEdges.Clear();
+            _pens.Clear();
         }
         finally
         {
@@ -133,7 +138,7 @@ public sealed class BatchedEdgeLayer : Control
             {
                 using (context.PushOpacity(info.Opacity))
                 {
-                    context.DrawGeometry(null, new Pen(info.Foreground, info.StrokeThickness), info.Geometry);
+                    context.DrawGeometry(null, GetPen(edge, info), info.Geometry);
                 }
             }
         }
@@ -149,8 +154,11 @@ public sealed class BatchedEdgeLayer : Control
     {
         if (edge.CanRenderInBatchedLayer)
         {
-            if (_batchedEdges.Add(edge))
+            if (_batchedEdgeSet.Add(edge))
+            {
+                _batchedEdges.Add(edge);
                 edge.SetBatchedPathSuppressed(true);
+            }
         }
         else
         {
@@ -176,7 +184,23 @@ public sealed class BatchedEdgeLayer : Control
 
     private void RestoreEdge(EdgeControlBase edge)
     {
-        if (!_batchedEdges.Remove(edge)) return;
+        if (!_batchedEdgeSet.Remove(edge)) return;
+        _batchedEdges.Remove(edge);
+        _pens.Remove(edge);
         edge.SetBatchedPathSuppressed(false);
     }
+
+    private IPen GetPen(EdgeControlBase edge, BatchedEdgeRenderInfo info)
+    {
+        if (_pens.TryGetValue(edge, out var cached) &&
+            ReferenceEquals(cached.Foreground, info.Foreground) &&
+            cached.StrokeThickness == info.StrokeThickness)
+            return cached.Pen;
+
+        var pen = new Pen(info.Foreground, info.StrokeThickness);
+        _pens[edge] = new CachedPen(info.Foreground, info.StrokeThickness, pen);
+        return pen;
+    }
+
+    private readonly record struct CachedPen(IBrush Foreground, double StrokeThickness, IPen Pen);
 }

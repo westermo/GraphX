@@ -1,3 +1,5 @@
+using System.Collections.Generic;
+using System.Linq;
 using Avalonia;
 using Avalonia.Controls;
 using Westermo.GraphX.Controls.Controls.Misc;
@@ -15,6 +17,7 @@ internal sealed class BatchedEdgeRenderController(GraphAreaBase graphArea)
 {
     private int _invalidationDeferral;
     private bool _invalidationPending;
+    private readonly HashSet<EdgeControlBase> _subscribedEdges = [];
 
     public BatchedEdgeLayer? Layer { get; private set; }
 
@@ -28,14 +31,15 @@ internal sealed class BatchedEdgeRenderController(GraphAreaBase graphArea)
 
     public void Register(EdgeControlBase edge)
     {
-        edge.PropertyChanged += OnEdgePropertyChanged;
+        if (graphArea.EdgeRenderingMode != EdgeRenderingMode.Batched) return;
+        Subscribe(edge);
         Layer?.Register(edge);
         NotifyChanged(edge);
     }
 
     public void Unregister(EdgeControlBase edge)
     {
-        edge.PropertyChanged -= OnEdgePropertyChanged;
+        Unsubscribe(edge);
         Layer?.Forget(edge);
     }
 
@@ -65,6 +69,9 @@ internal sealed class BatchedEdgeRenderController(GraphAreaBase graphArea)
     /// <summary>Restores the shared edge-layer invariant after GraphArea clears its visual children.</summary>
     public void RecreateAfterChildrenClear()
     {
+        foreach (var edge in _subscribedEdges.ToArray())
+            Unsubscribe(edge);
+
         Layer = null;
         if (graphArea.EdgeRenderingMode == EdgeRenderingMode.Batched)
             Enable();
@@ -86,6 +93,8 @@ internal sealed class BatchedEdgeRenderController(GraphAreaBase graphArea)
             GraphAreaBase.SetY(layer, 0);
             graphArea.Children.Insert(0, layer);
             layer.SeedFromCurrentChildren();
+            foreach (var edge in graphArea.Children.OfType<EdgeControlBase>())
+                Subscribe(edge);
         }
 
         NotifyChanged();
@@ -94,8 +103,22 @@ internal sealed class BatchedEdgeRenderController(GraphAreaBase graphArea)
     private void Disable()
     {
         if (Layer is null) return;
+        foreach (var edge in _subscribedEdges.ToArray())
+            Unsubscribe(edge);
         Layer.RestoreEdges();
         graphArea.Children.Remove(Layer);
         Layer = null;
+    }
+
+    private void Subscribe(EdgeControlBase edge)
+    {
+        if (_subscribedEdges.Add(edge))
+            edge.PropertyChanged += OnEdgePropertyChanged;
+    }
+
+    private void Unsubscribe(EdgeControlBase edge)
+    {
+        if (_subscribedEdges.Remove(edge))
+            edge.PropertyChanged -= OnEdgePropertyChanged;
     }
 }

@@ -13,6 +13,8 @@ namespace Westermo.GraphX.Controls.Controls;
 internal sealed class VisibilityPreservationTracker
 {
     private readonly Dictionary<Control, bool> _originalVisibilities = [];
+    private readonly HashSet<Control> _applicationControlled = [];
+    private bool _isApplying;
 
     /// <summary>Whether any controls are currently tracked.</summary>
     public bool IsEmpty => _originalVisibilities.Count == 0;
@@ -21,7 +23,10 @@ internal sealed class VisibilityPreservationTracker
     public void Track(Control control)
     {
         if (!_originalVisibilities.ContainsKey(control))
+        {
             _originalVisibilities.Add(control, control.IsVisible);
+            control.PropertyChanged += ControlPropertyChanged;
+        }
     }
 
     /// <summary>
@@ -32,9 +37,23 @@ internal sealed class VisibilityPreservationTracker
     public void Apply(Control control, bool isEligible)
     {
         Track(control);
-        var shouldBeVisible = _originalVisibilities[control] && isEligible;
+        // An explicit IsVisible change made while this tracker owns the control takes precedence over
+        // temporary culling/cache visibility until the tracker releases it.
+        var shouldBeVisible = _applicationControlled.Contains(control)
+            ? _originalVisibilities[control]
+            : _originalVisibilities[control] && isEligible;
         if (control.IsVisible != shouldBeVisible)
-            control.SetCurrentValue(Visual.IsVisibleProperty, shouldBeVisible);
+        {
+            _isApplying = true;
+            try
+            {
+                control.SetCurrentValue(Visual.IsVisibleProperty, shouldBeVisible);
+            }
+            finally
+            {
+                _isApplying = false;
+            }
+        }
     }
 
     /// <summary>
@@ -45,7 +64,10 @@ internal sealed class VisibilityPreservationTracker
     public void UpdateTrackedVisibility(Control control, bool isVisible)
     {
         if (_originalVisibilities.ContainsKey(control))
+        {
             _originalVisibilities[control] = isVisible;
+            _applicationControlled.Add(control);
+        }
     }
 
     /// <summary>Gets the original (pre-tracking) visibility recorded for <paramref name="control"/>, if any.</summary>
@@ -57,13 +79,33 @@ internal sealed class VisibilityPreservationTracker
     {
         foreach (var (control, isVisible) in _originalVisibilities)
         {
+            control.PropertyChanged -= ControlPropertyChanged;
             if (control.IsVisible != isVisible)
                 control.SetCurrentValue(Visual.IsVisibleProperty, isVisible);
         }
 
         _originalVisibilities.Clear();
+        _applicationControlled.Clear();
     }
 
     /// <summary>Stops tracking every control without changing its current visibility.</summary>
-    public void Clear() => _originalVisibilities.Clear();
+    public void Clear()
+    {
+        foreach (var control in _originalVisibilities.Keys)
+            control.PropertyChanged -= ControlPropertyChanged;
+
+        _originalVisibilities.Clear();
+        _applicationControlled.Clear();
+    }
+
+    private void ControlPropertyChanged(object? sender, AvaloniaPropertyChangedEventArgs e)
+    {
+        if (_isApplying ||
+            sender is not Control control ||
+            e.Property != Visual.IsVisibleProperty ||
+            e.NewValue is not bool isVisible)
+            return;
+
+        UpdateTrackedVisibility(control, isVisible);
+    }
 }
