@@ -495,7 +495,9 @@ public class GraphArea<TVertex, TEdge, TGraph> : GraphAreaBase, IDisposable
     {
         ctrl.DetachLabels();
 
+        UnregisterBatchedEdge(ctrl);
         Children.Remove(ctrl);
+        NotifyBatchedEdgeChanged();
         if (removeEdgeFromDataGraph && LogicCore?.Graph != null && ctrl.Edge is TEdge edge &&
             LogicCore.Graph.ContainsEdge(edge))
             LogicCore.Graph.RemoveEdge(edge);
@@ -597,6 +599,7 @@ public class GraphArea<TVertex, TEdge, TGraph> : GraphAreaBase, IDisposable
         edgeControl.RootArea = this;
         _edgesList.Add(edgeData, edgeControl);
         Children.Add(edgeControl);
+        RegisterBatchedEdge(edgeControl);
     }
 
     /// <summary>
@@ -646,6 +649,7 @@ public class GraphArea<TVertex, TEdge, TGraph> : GraphAreaBase, IDisposable
             if (ControlsDrawOrder == ControlDrawOrder.VerticesOnTop || num != 0)
                 Children.Insert(num, edgeControl);
             else Children.Add(edgeControl);
+            RegisterBatchedEdge(edgeControl);
         }
         catch (Exception ex)
         {
@@ -1983,7 +1987,10 @@ public class GraphArea<TVertex, TEdge, TGraph> : GraphAreaBase, IDisposable
         RemoveAllEdges();
         RemoveAllVertices();
         if (removeCustomObjects)
+        {
             Children.Clear();
+            RecreateBatchedEdgeLayerAfterChildrenClear();
+        }
         CreateNewStateStorage();
 
         if (clearLogicCore)

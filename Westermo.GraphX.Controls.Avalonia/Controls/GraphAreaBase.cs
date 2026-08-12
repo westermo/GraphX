@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
@@ -6,6 +6,7 @@ using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Data;
 using Avalonia.Input;
+using Avalonia.Media.Imaging;
 using Westermo.GraphX.Common.Enums;
 using Westermo.GraphX.Common.Interfaces;
 using Westermo.GraphX.Controls.Controls.Misc;
@@ -31,6 +32,7 @@ public abstract class GraphAreaBase : Canvas, ITrackableContent, IGraphAreaBase
         AffectsArrange<GraphAreaBase>(XProperty, YProperty);
         XProperty.Changed.AddClassHandler<Control>(x_changed);
         YProperty.Changed.AddClassHandler<Control>(y_changed);
+        EdgeRenderingModeProperty.Changed.AddClassHandler<GraphAreaBase>(EdgeRenderingModeChanged);
     }
 
     #region Viewport Culling
@@ -51,8 +53,23 @@ public abstract class GraphAreaBase : Canvas, ITrackableContent, IGraphAreaBase
     public bool EnableViewportCulling
     {
         get => _viewportCulling?.IsEnabled ?? false;
-        set => ViewportCulling.IsEnabled = value;
+        set
+        {
+            // Cached mode must keep culling physically disabled so its bitmap
+            // always contains the complete graph. Remember a caller's desired
+            // state and apply it when live rendering resumes instead.
+            if (IsGraphRenderCacheActive)
+            {
+                SetViewportCullingAfterCachedRendering(value);
+                return;
+            }
+
+            ViewportCulling.IsEnabled = value;
+        }
     }
+
+    internal void SetViewportCullingAfterCachedRendering(bool isEnabled) =>
+        _graphRenderCache.SetViewportCullingAfterCachedRendering(isEnabled);
 
     /// <summary>
     /// Updates the viewport for culling calculations.
@@ -63,6 +80,144 @@ public abstract class GraphAreaBase : Canvas, ITrackableContent, IGraphAreaBase
     {
         _viewportCulling?.UpdateViewport(viewport);
     }
+
+    #endregion
+
+    #region Raster cache
+
+    private readonly GraphAreaRasterCacheController _graphRenderCache;
+
+    /// <summary>
+    /// Gets or sets whether graph content is temporarily replaced with a raster
+    /// image. This opt-in optimization is disabled by default and is intended
+    /// only for viewport pan/zoom manipulation, not normal graph rendering.
+    /// </summary>
+    /// <remarks>
+    /// Live graph children are not rendered or hit tested while this is
+    /// enabled. End cached rendering before selecting, dragging, or otherwise
+    /// interacting with graph controls.
+    /// </remarks>
+    public bool EnableGraphRenderCache
+    {
+        get => _graphRenderCache.IsRequested;
+        set
+        {
+            if (value)
+            {
+                BeginCachedGraphRendering();
+                return;
+            }
+
+            EndCachedGraphRendering();
+        }
+    }
+
+    /// <summary>
+    /// Gets whether a graph raster cache is currently replacing live graph
+    /// children. A request can fall back to live rendering when the content is
+    /// empty or exceeds <see cref="MaximumGraphRenderCacheBytes"/>.
+    /// </summary>
+    public bool IsGraphRenderCacheActive => _graphRenderCache.IsActive;
+
+    /// <summary>
+    /// Gets or sets the maximum memory budget for a graph raster cache in
+    /// bytes. The default is 64 MiB. Values less than or equal to zero disable
+    /// cache creation and use normal live rendering instead.
+    /// </summary>
+    public long MaximumGraphRenderCacheBytes
+    {
+        get => _graphRenderCache.MaximumBytes;
+        set => _graphRenderCache.MaximumBytes = value;
+    }
+
+    // Diagnostic state is internal so headless coverage can verify cache
+    // lifetime without expanding the normal public GraphArea API.
+    internal int GraphRenderCacheRasterizationCount => _graphRenderCache.RasterizationCount;
+    internal Rect CachedGraphContentBounds => _graphRenderCache.ContentBounds;
+    internal RenderTargetBitmap? GraphRenderCacheBitmap => _graphRenderCache.Bitmap;
+    internal bool WasVisibleBeforeGraphRenderCaching(Control child) => _graphRenderCache.WasVisibleBeforeCaching(child);
+
+    /// <summary>
+    /// Captures the current graph children to a raster cache for viewport
+    /// manipulation.
+    /// </summary>
+    /// <returns>
+    /// <see langword="true"/> when cached mode is active; otherwise
+    /// <see langword="false"/> and normal live rendering remains active.
+    /// </returns>
+    /// <remarks>
+    /// This deliberately disables viewport culling until
+    /// <see cref="EndCachedGraphRendering"/> so the snapshot contains the full
+    /// graph. Live graph interaction is unavailable while it is active.
+    /// </remarks>
+    public bool BeginCachedGraphRendering() => _graphRenderCache.Begin();
+
+    /// <summary>
+    /// Ends cached graph rendering, disposes its bitmap, restores source
+    /// visibility, and re-enables the previous viewport-culling behavior.
+    /// </summary>
+    public void EndCachedGraphRendering() => _graphRenderCache.End();
+
+    /// <summary>
+    /// Invalidates a graph raster cache. Call this for custom visuals whose
+    /// appearance changes without an Avalonia property or layout update.
+    /// </summary>
+    public void InvalidateCachedGraphRendering() => _graphRenderCache.Invalidate();
+
+    protected override void OnAttachedToVisualTree(VisualTreeAttachmentEventArgs e)
+    {
+        base.OnAttachedToVisualTree(e);
+        _graphRenderCache.OnAttachedToVisualTree();
+    }
+
+    protected override void OnDetachedFromVisualTree(VisualTreeAttachmentEventArgs e)
+    {
+        _graphRenderCache.OnDetachedFromVisualTree();
+        base.OnDetachedFromVisualTree(e);
+    }
+
+    #endregion
+
+    #region Batched edge rendering
+
+    private readonly BatchedEdgeRenderController _batchedEdgeRendering;
+
+    /// <summary>
+    /// Gets or sets how graph edges are rendered. The default preserves the existing templated
+    /// <see cref="EdgeControl"/> rendering path.
+    /// </summary>
+    public static readonly StyledProperty<EdgeRenderingMode> EdgeRenderingModeProperty =
+        AvaloniaProperty.Register<GraphAreaBase, EdgeRenderingMode>(nameof(EdgeRenderingMode));
+
+    /// <summary>
+    /// Gets or sets how graph edges are rendered.
+    /// </summary>
+    public EdgeRenderingMode EdgeRenderingMode
+    {
+        get => GetValue(EdgeRenderingModeProperty);
+        set => SetValue(EdgeRenderingModeProperty, value);
+    }
+
+    private static void EdgeRenderingModeChanged(GraphAreaBase graphArea,
+        AvaloniaPropertyChangedEventArgs e)
+    {
+        graphArea._batchedEdgeRendering.OnModeChanged((EdgeRenderingMode)e.NewValue!);
+    }
+
+    internal void RegisterBatchedEdge(EdgeControlBase edge) => _batchedEdgeRendering.Register(edge);
+
+    internal void UnregisterBatchedEdge(EdgeControlBase edge) => _batchedEdgeRendering.Unregister(edge);
+
+    internal void NotifyBatchedEdgeChanged(EdgeControlBase? edge = null) => _batchedEdgeRendering.NotifyChanged(edge);
+
+    internal void BeginBatchedEdgeInvalidationDeferral() => _batchedEdgeRendering.BeginInvalidationDeferral();
+
+    internal void EndBatchedEdgeInvalidationDeferral() => _batchedEdgeRendering.EndInvalidationDeferral();
+
+    /// <summary>
+    /// Restores the shared edge-layer invariant after GraphArea clears its visual children.
+    /// </summary>
+    protected internal void RecreateBatchedEdgeLayerAfterChildrenClear() => _batchedEdgeRendering.RecreateAfterChildrenClear();
 
     #endregion
 
@@ -160,6 +315,8 @@ public abstract class GraphAreaBase : Canvas, ITrackableContent, IGraphAreaBase
     protected GraphAreaBase()
     {
         LogicCoreChangeAction = LogicCoreChangedAction.None;
+        _graphRenderCache = new GraphAreaRasterCacheController(this);
+        _batchedEdgeRendering = new BatchedEdgeRenderController(this);
     }
 
 
@@ -568,6 +725,15 @@ public abstract class GraphAreaBase : Canvas, ITrackableContent, IGraphAreaBase
     /// <returns>The size of the control.</returns>
     protected override Size ArrangeOverride(Size arrangeSize)
     {
+        // Cached mode intentionally keeps the live graph subtree out of both
+        // layout and render traversal. Only the non-hit-testable cache layer
+        // needs an arranged surface for its bitmap.
+        if (IsGraphRenderCacheActive)
+        {
+            _graphRenderCache.Layer!.Arrange(new Rect(default(Point), arrangeSize));
+            return ContentSize.Size;
+        }
+
         var minPoint = new Point(double.PositiveInfinity, double.PositiveInfinity);
         var maxPoint = new Point(double.NegativeInfinity, double.NegativeInfinity);
 
@@ -575,6 +741,9 @@ public abstract class GraphAreaBase : Canvas, ITrackableContent, IGraphAreaBase
 
         foreach (Control child in Children)
         {
+            if (child is GraphAreaRasterCacheLayer)
+                continue;
+
             var x = GetX(child);
             var y = GetY(child);
 
@@ -621,6 +790,11 @@ public abstract class GraphAreaBase : Canvas, ITrackableContent, IGraphAreaBase
             child.Arrange(new Rect(x, y, width, height));
         }
 
+        if (_batchedEdgeRendering.Layer is not null)
+            _batchedEdgeRendering.Layer.Arrange(new Rect(default(Point), arrangeSize));
+        if (_graphRenderCache.Layer is not null)
+            _graphRenderCache.Layer.Arrange(new Rect(default(Point), arrangeSize));
+
         return ContentSize.Size;
     }
 
@@ -632,12 +806,21 @@ public abstract class GraphAreaBase : Canvas, ITrackableContent, IGraphAreaBase
     /// <returns>The calculated size.</returns>
     protected override Size MeasureOverride(Size constraint)
     {
+        // Hiding live sources is the cache's traversal optimization. Keep the
+        // pre-cache extent stable rather than recomputing it from hidden
+        // children, otherwise a cache activation would collapse ContentSize.
+        if (IsGraphRenderCacheActive)
+            return ContentSize.Size;
+
         var oldSize = ContentSize;
         var topLeft = new Measure.Point(double.PositiveInfinity, double.PositiveInfinity);
         var bottomRight = new Measure.Point(double.NegativeInfinity, double.NegativeInfinity);
 
         foreach (var child in Children)
         {
+            if (child is GraphAreaRasterCacheLayer)
+                continue;
+
             //measure the child
             child.Measure(constraint);
 

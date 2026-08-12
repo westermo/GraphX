@@ -254,6 +254,7 @@ public class EdgeControl : EdgeControlBase, IDraggable
         if (!IsVisible) return false;
         if (!origin.Properties.IsLeftButtonPressed) return false;
         IsDragging = true;
+        RootArea?.NotifyBatchedEdgeChanged(this);
         return true;
     }
 
@@ -277,7 +278,12 @@ public class EdgeControl : EdgeControlBase, IDraggable
 
         var vertexControl = graphAreaBase?.GetVertexControlAt(e.GetPosition(graphAreaBase));
 
-        if (vertexControl == null) return true;
+        if (vertexControl == null)
+        {
+            IsDragging = false;
+            RootArea?.NotifyBatchedEdgeChanged(this);
+            return true;
+        }
         Target = vertexControl;
 
         if (vertexControl.VertexConnectionPointsList.Count > 0)
@@ -297,11 +303,16 @@ public class EdgeControl : EdgeControlBase, IDraggable
         }
 
         IsDragging = false;
+        RootArea?.NotifyBatchedEdgeChanged(this);
         return true;
     }
 
     public void EndDrag()
     {
+        if (!IsDragging) return;
+        OverrideEndpoint = null;
+        IsDragging = false;
+        RootArea?.NotifyBatchedEdgeChanged(this);
     }
 
     public Visual? Container => RootArea;

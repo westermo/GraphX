@@ -11,8 +11,8 @@
         Content: {
           Type: WayfinderRenderTests.TrackableCanvas,
           Background: Transparent,
-          Width: 800.0,
-          Height: 600.0,
+          Width: 900.0,
+          Height: 680.0,
           Children: [
             {
               Type: Rectangle,

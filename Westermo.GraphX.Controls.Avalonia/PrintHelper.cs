@@ -134,10 +134,8 @@ public static class PrintHelper
 
 
                 //Create a file stream for saving image
-                using (var outStream = new FileStream(path.LocalPath, FileMode.Create))
-                {
-                    renderBitmap.Save(outStream);
-                }
+                using var outStream = new FileStream(path.LocalPath, FileMode.Create);
+                renderBitmap.Save(outStream, PngBitmapEncoderOptions.Default);
             }
 
             GC.Collect();

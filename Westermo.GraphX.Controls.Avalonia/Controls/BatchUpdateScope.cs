@@ -30,6 +30,7 @@ public sealed class BatchUpdateScope : IDisposable
     {
         _graphArea = graphArea;
         _edges = edges;
+        _graphArea.BeginBatchedEdgeInvalidationDeferral();
     }
 
     public void Dispose()
@@ -38,6 +39,7 @@ public sealed class BatchUpdateScope : IDisposable
         _isDisposed = true;
 
         // Trigger a single layout pass
+        _graphArea.EndBatchedEdgeInvalidationDeferral();
         _graphArea.InvalidateMeasure();
     }
 }

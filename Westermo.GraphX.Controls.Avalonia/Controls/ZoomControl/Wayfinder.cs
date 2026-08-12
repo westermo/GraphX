@@ -1,9 +1,13 @@
 using System;
+using System.Collections.Generic;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Layout;
 using Avalonia.Media;
+using Avalonia.Media.Imaging;
+using Avalonia.VisualTree;
+using Westermo.GraphX.Controls.Controls;
 using Westermo.GraphX.Controls.Controls.Misc;
 
 namespace Westermo.GraphX.Controls.Controls.ZoomControl;
@@ -119,16 +123,29 @@ public sealed class Wayfinder : Control
     // Tracked separately because ZoomControl.Content can change without the
     // wayfinder being detached, and we need to move the subscription with it.
     private Layoutable? _subscribedContentVisual;
+    private readonly VisualDescendantSubscriptionTracker _sourceVisualTracker;
 
-    // VisualBrush rendering: a single brush wraps the ZoomControl's content
-    // visual and is reused across renders. It is rebuilt when the source
-    // visual changes (Content swap, ZoomControl swap), and its SourceRect is
-    // updated each render to match the actual content extent. Avalonia's
-    // VisualBrush (TileBrush) walks the live visual tree on each frame, so we
-    // do not need to manually rasterise; calling InvalidateVisual on layout
-    // changes is sufficient to keep the minimap in sync.
-    private VisualBrush? _contentBrush;
-    private Visual? _brushSourceVisual;
+    // The minimap source is rasterized only when it is dirty. The cached
+    // bitmap has the Wayfinder content area's *physical* pixel dimensions, so
+    // drawing it during pan/zoom is just an image draw and never re-traverses
+    // the source visual tree.
+    private RenderTargetBitmap? _contentCache;
+    private Visual? _cacheSourceVisual;
+    private bool _contentCacheDirty = true;
+    private TopLevel? _cacheTopLevel;
+
+    // Guard the cache against backend texture limits and unexpectedly large
+    // high-DPI Wayfinders. The uncached fallback keeps the minimap visible.
+    private const int MaximumContentCacheDimension = 8192;
+    private const long MaximumContentCacheBytes = 64L * 1024 * 1024;
+
+    // Cache diagnostics are intentionally internal: the headless tests verify
+    // cache lifetime and invalidation without making implementation details
+    // part of the public control API.
+    internal int CacheRasterizationCount { get; private set; }
+    internal PixelSize CachedContentPixelSize => _contentCache?.PixelSize ?? default;
+    internal bool HasContentCache => _contentCache != null;
+    internal int SourceVisualSubscriptionChangeCount => _sourceVisualTracker.SubscriptionChangeCount;
 
     static Wayfinder()
     {
@@ -142,6 +159,7 @@ public sealed class Wayfinder : Control
     {
         ClipToBounds = true;
         Focusable = true;
+        _sourceVisualTracker = new VisualDescendantSubscriptionTracker(SourceVisualPropertyChanged);
     }
 
     #region Attach / detach
@@ -150,6 +168,8 @@ public sealed class Wayfinder : Control
     {
         if (oldZc != null && _subscribed)
             Unsubscribe(oldZc);
+
+        InvalidateContentCache();
 
         if (newZc != null && _subscribed)
             Subscribe(newZc);
@@ -164,16 +184,17 @@ public sealed class Wayfinder : Control
         if (zc.Content is ITrackableContent tc)
             tc.ContentSizeChanged += TargetContentSizeChanged;
         SubscribeContentVisual(zc.ContentVisual);
+        SubscribeTopLevelScaling();
     }
 
     private void Unsubscribe(ZoomControl zc)
     {
-        _brushSourceVisual = null;
-        _contentBrush = null;
         ((AvaloniaObject)zc).PropertyChanged -= TargetPropertyChanged;
         if (zc.Content is ITrackableContent tc)
             tc.ContentSizeChanged -= TargetContentSizeChanged;
         SubscribeContentVisual(null);
+        UnsubscribeTopLevelScaling();
+        InvalidateContentCache();
     }
 
     /// <summary>
@@ -188,19 +209,72 @@ public sealed class Wayfinder : Control
     /// </summary>
     private void SubscribeContentVisual(Layoutable? newVisual)
     {
-        if (ReferenceEquals(_subscribedContentVisual, newVisual)) return;
+        if (ReferenceEquals(_subscribedContentVisual, newVisual))
+        {
+            RefreshSourceVisualSubscriptions();
+            return;
+        }
+
         if (_subscribedContentVisual != null)
             _subscribedContentVisual.LayoutUpdated -= ContentVisualLayoutUpdated;
+        _sourceVisualTracker.UnsubscribeAll();
         _subscribedContentVisual = newVisual;
         if (newVisual != null)
+        {
             newVisual.LayoutUpdated += ContentVisualLayoutUpdated;
+            RefreshSourceVisualSubscriptions();
+        }
     }
 
     private void ContentVisualLayoutUpdated(object? sender, EventArgs e)
     {
         // Descendants of the content visual (re)laid out — extent may have
         // grown/shrunk and the rendered geometry has changed. Refresh.
+        RefreshSourceVisualSubscriptions();
+        InvalidateContentCache();
         RecomputeGeometry();
+        InvalidateVisual();
+    }
+
+    private void RefreshSourceVisualSubscriptions()
+    {
+        if (_subscribedContentVisual == null) return;
+
+        _sourceVisualTracker.Refresh(_subscribedContentVisual);
+    }
+
+    private void SourceVisualPropertyChanged(object? sender, AvaloniaPropertyChangedEventArgs e)
+    {
+        // Visual controls do not expose a general render-invalidated event in
+        // Avalonia 12. Observe their rendering-affecting property changes
+        // instead, including child controls such as edge and vertex labels.
+        // ZoomControl's translate/zoom properties are on its parent and never
+        // reach this subscription, so viewport-only changes keep the cache.
+        InvalidateContentCache();
+        InvalidateVisual();
+    }
+
+    private void SubscribeTopLevelScaling()
+    {
+        var topLevel = TopLevel.GetTopLevel(this);
+        if (ReferenceEquals(_cacheTopLevel, topLevel)) return;
+
+        UnsubscribeTopLevelScaling();
+        _cacheTopLevel = topLevel;
+        if (_cacheTopLevel != null)
+            _cacheTopLevel.ScalingChanged += TopLevelScalingChanged;
+    }
+
+    private void UnsubscribeTopLevelScaling()
+    {
+        if (_cacheTopLevel != null)
+            _cacheTopLevel.ScalingChanged -= TopLevelScalingChanged;
+        _cacheTopLevel = null;
+    }
+
+    private void TopLevelScalingChanged(object? sender, EventArgs e)
+    {
+        InvalidateContentCache();
         InvalidateVisual();
     }
 
@@ -221,17 +295,30 @@ public sealed class Wayfinder : Control
     {
         if (_subscribed && ZoomControl is { } zc)
             Unsubscribe(zc);
+        else
+        {
+            UnsubscribeTopLevelScaling();
+            InvalidateContentCache();
+        }
+
         _subscribed = false;
         base.OnDetachedFromVisualTree(e);
     }
 
     private void TargetPropertyChanged(object? sender, AvaloniaPropertyChangedEventArgs e)
     {
-        // Only react to the few properties that affect minimap geometry.
+        // Pan/zoom changes affect only the viewport overlay. Source and
+        // bounds changes invalidate the cached minimap image as well.
         if (e.Property == ZoomControl.ZoomProperty ||
             e.Property == ZoomControl.TranslateXProperty ||
-            e.Property == ZoomControl.TranslateYProperty ||
-            e.Property == ContentControl.ContentProperty ||
+            e.Property == ZoomControl.TranslateYProperty)
+        {
+            RecomputeGeometry();
+            InvalidateVisual();
+            return;
+        }
+
+        if (e.Property == ContentControl.ContentProperty ||
             e.Property == BoundsProperty)
         {
             if (e.Property == ContentControl.ContentProperty)
@@ -246,6 +333,7 @@ public sealed class Wayfinder : Control
                 SubscribeContentVisual(ZoomControl?.ContentVisual);
             }
 
+            InvalidateContentCache();
             RecomputeGeometry();
             InvalidateVisual();
         }
@@ -257,6 +345,7 @@ public sealed class Wayfinder : Control
         // The trackable content reported a new extent; recompute scale and
         // refresh so the minimap reflects the newly enlarged (or shrunk)
         // content region.
+        InvalidateContentCache();
         RecomputeGeometry();
         InvalidateVisual();
     }
@@ -268,6 +357,8 @@ public sealed class Wayfinder : Control
     /// <summary>Recomputes <see cref="Scale"/>, <see cref="ContentBounds"/> and <see cref="ViewportRect"/>.</summary>
     private void RecomputeGeometry()
     {
+        var oldContentRect = _contentRect;
+        var oldContentBounds = ContentBounds;
         var available = Bounds.Size;
         if (available.Width <= 0 || available.Height <= 0)
             available = new Size(Width, Height);
@@ -299,6 +390,9 @@ public sealed class Wayfinder : Control
         {
             ViewportRect = default;
         }
+
+        if (_contentRect != oldContentRect || ContentBounds != oldContentBounds)
+            InvalidateContentCache();
     }
 
     /// <summary>
@@ -530,15 +624,10 @@ public sealed class Wayfinder : Control
         if (Background != null && ContentBounds is { Width: > 0, Height: > 0 })
             dc.DrawRectangle(Background, null, ContentBounds);
 
-        // 2. Live snapshot of the actual ZoomControl content via a VisualBrush.
-        //    The brush samples an absolute rectangle (_contentRect) of the
-        //    source visual rather than its DesiredSize — this is essential
-        //    because GraphAreaBase.MeasureOverride reports a sentinel
-        //    DesiredSize that does NOT cover its absolutely-positioned
-        //    children. By telling the brush to read from the real content
-        //    extent and stretch that into ContentBounds, we get a correct
-        //    minimap regardless of how the source visual reports its size.
-        DrawContentBrush(dc);
+        // 2. The dirty RenderTargetBitmap minimap cache. Unlike a VisualBrush
+        //    in the live draw path, this does not traverse the graph visual
+        //    tree while panning or zooming.
+        DrawContentCache(dc);
 
         // 3. Shadow over non-viewport area + viewport outline.
         var bounds = new Rect(Bounds.Size);
@@ -588,42 +677,135 @@ public sealed class Wayfinder : Control
     }
 
     /// <summary>
-    /// Draws the live content of the bound ZoomControl into <see cref="ContentBounds"/>
-    /// using a cached <see cref="VisualBrush"/>. The brush is rebuilt only when
-    /// the source visual changes; its <c>SourceRect</c> is updated each frame
-    /// so the brush always samples the current trackable content extent.
+    /// Draws the cached source image into <see cref="ContentBounds"/>, building
+    /// it on demand when source/content/layout/bounds/size/scaling changes
+    /// marked it dirty.
     /// </summary>
-    private void DrawContentBrush(DrawingContext dc)
+    private void DrawContentCache(DrawingContext dc)
     {
         if (Scale <= 0 || ContentBounds.Width <= 0 || ContentBounds.Height <= 0) return;
         if (ZoomControl?.ContentVisual is not { } visual) return;
         if (_contentRect.Width <= 0 || _contentRect.Height <= 0) return;
-        if (!ReferenceEquals(_brushSourceVisual, visual) || _contentBrush == null)
+
+        var scaling = GetRenderScaling();
+        if (!TryGetCachePixelSize(scaling, out var pixelSize))
         {
-            _brushSourceVisual = visual;
-            _contentBrush = new VisualBrush
-            {
-                Visual = visual,
-                Stretch = Stretch.Fill,
-                AlignmentX = AlignmentX.Left,
-                AlignmentY = AlignmentY.Top,
-                TileMode = TileMode.None,
-            };
+            DisposeContentCache();
+            DrawUncachedContent(dc, visual);
+            return;
         }
 
-        // TrackableContent.ContentSize is expressed in graph coordinates, but
-        // the content visual is arranged to the extent size. Positive graph
-        // offsets must therefore not be used as a VisualBrush source offset:
-        // doing so skips the top/left of the visual and clips the bottom/right
-        // by the same amount.
-        var sourceRect = new Rect(
-            _contentRect.X > 0 ? 0 : _contentRect.X,
-            _contentRect.Y > 0 ? 0 : _contentRect.Y,
-            _contentRect.Width,
-            _contentRect.Height);
-        _contentBrush.SourceRect = new RelativeRect(sourceRect, RelativeUnit.Absolute);
+        if (_contentCacheDirty ||
+            _contentCache == null ||
+            !ReferenceEquals(_cacheSourceVisual, visual) ||
+            _contentCache.PixelSize != pixelSize)
+            RasterizeContentCache(visual, pixelSize, scaling);
 
-        dc.DrawRectangle(_contentBrush, null, ContentBounds);
+        if (_contentCache != null)
+            dc.DrawImage(_contentCache, new Rect(_contentCache.Size), ContentBounds);
+    }
+
+    private double GetRenderScaling() => RasterCacheGeometry.GetEffectiveRenderScaling(_cacheTopLevel, this);
+
+    private bool TryGetCachePixelSize(double scaling, out PixelSize pixelSize) =>
+        RasterCacheGeometry.TryGetPixelSize(ContentBounds, scaling, MaximumContentCacheBytes,
+            MaximumContentCacheDimension, out pixelSize);
+
+    private void RasterizeContentCache(Visual visual, PixelSize pixelSize, double scaling)
+    {
+        DisposeContentCache();
+
+        var cache = RasterCacheGeometry.CreateBitmap(pixelSize, scaling);
+        try
+        {
+            using var context = cache.CreateDrawingContext();
+            if (visual is GraphAreaBase graphArea)
+                RasterizeGraphAreaChildren(context, graphArea);
+            else
+            {
+                var sourceBrush = new VisualBrush
+                {
+                    Visual = visual,
+                    Stretch = Stretch.Fill,
+                    AlignmentX = AlignmentX.Left,
+                    AlignmentY = AlignmentY.Top,
+                    TileMode = TileMode.None,
+                    SourceRect = new RelativeRect(
+                        _contentRect,
+                        RelativeUnit.Absolute)
+                };
+                context.DrawRectangle(sourceBrush, null, new Rect(cache.Size));
+            }
+
+            _contentCache = cache;
+            _cacheSourceVisual = visual;
+            _contentCacheDirty = false;
+            CacheRasterizationCount++;
+        }
+        catch
+        {
+            cache.Dispose();
+            throw;
+        }
+    }
+
+    private void DrawUncachedContent(DrawingContext context, Visual visual)
+    {
+        if (visual is GraphAreaBase graphArea)
+        {
+            RasterizeGraphAreaChildren(context, graphArea);
+            return;
+        }
+
+        var sourceBrush = new VisualBrush
+        {
+            Visual = visual,
+            Stretch = Stretch.Fill,
+            AlignmentX = AlignmentX.Left,
+            AlignmentY = AlignmentY.Top,
+            TileMode = TileMode.None,
+            SourceRect = new RelativeRect(_contentRect, RelativeUnit.Absolute)
+        };
+        context.DrawRectangle(sourceBrush, null, ContentBounds);
+    }
+
+    /// <summary>
+    /// Rasterizes a GraphArea child by child because GraphArea intentionally
+    /// reports its extent size while retaining graph-space child coordinates.
+    /// A VisualBrush clips its source to GraphArea's arranged bounds, which
+    /// drops children whose positive coordinates are greater than that size
+    /// and children at negative coordinates. Each child is sampled from its
+    /// own arranged bounds and placed using its graph-space transform relative
+    /// to the GraphArea.
+    /// </summary>
+    private void RasterizeGraphAreaChildren(
+        DrawingContext context,
+        GraphAreaBase graphArea)
+    {
+        GraphAreaChildRenderer.Render(
+            context,
+            graphArea,
+            graphArea.Children,
+            rect => new Rect(
+                (rect.X - _contentRect.X) * Scale,
+                (rect.Y - _contentRect.Y) * Scale,
+                rect.Width * Scale,
+                rect.Height * Scale),
+            renderCachedRasterLayerAsBitmap: true,
+            renderBatchedEdgeLayerDirectly: false);
+    }
+
+    private void InvalidateContentCache()
+    {
+        DisposeContentCache();
+        _contentCacheDirty = true;
+    }
+
+    private void DisposeContentCache()
+    {
+        _contentCache?.Dispose();
+        _contentCache = null;
+        _cacheSourceVisual = null;
     }
 
     #endregion
