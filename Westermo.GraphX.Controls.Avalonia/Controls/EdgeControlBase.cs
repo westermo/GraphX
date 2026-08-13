@@ -511,7 +511,10 @@ public abstract class EdgeControlBase : TemplatedControl, IGraphControl, IDispos
         EdgeLabelControls.Add(ctrl);
         if (!RootArea.Children.Contains((Control)ctrl))
             RootArea.Children.Add((Control)ctrl);
-        ctrl.Show();
+        if (ctrl.ShowLabel)
+            ctrl.Show();
+        else
+            ctrl.Hide();
         InvalidateMeasure();
         RootArea?.NotifyBatchedEdgeChanged(this);
     }

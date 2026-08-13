@@ -190,6 +190,17 @@ public class EdgeControlAdvancedTests
         await Assert.That(label.AttachNode).IsEqualTo(ec);
     }
 
+    [Test]
+    public async Task EdgeLabel_AttachHonorsInitialShowLabelState()
+    {
+        var (_, _, _, _, edge) = CreateSimpleArea();
+        var label = new AttachableEdgeLabelControl { ShowLabel = false };
+
+        label.Attach(edge);
+
+        await Assert.That(label.IsVisible).IsFalse();
+    }
+
     private static void ApplyTemplateWithPointer(EdgeControl ec)
     {
         var content = new Grid();
