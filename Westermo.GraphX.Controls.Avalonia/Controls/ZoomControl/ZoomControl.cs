@@ -96,16 +96,16 @@ public sealed class ZoomControl : ContentControl, IZoomControl, INotifyPropertyC
     {
         if (_presenter == null || ContentVisual == null)
             return default;
-        // Convert to content coordinates by accounting for zoom and translate
-        var zoom = Zoom;
-        if (zoom <= 0) zoom = 1;
 
-        var contentX = -TranslateX / zoom;
-        var contentY = -TranslateY / zoom;
-        var contentWidth = ActualWidth / zoom;
-        var contentHeight = ActualHeight / zoom;
+        // Translate both viewport corners through the live visual transform.
+        // ZoomContentPresenter scales around its center by default, so deriving
+        // this from only Zoom/Translate incorrectly treats the origin as (0, 0).
+        var topLeft = this.TranslatePoint(default, ContentVisual);
+        var bottomRight = this.TranslatePoint(new Point(ActualWidth, ActualHeight), ContentVisual);
+        if (topLeft is not { } tl || bottomRight is not { } br)
+            return default;
 
-        return new Rect(contentX, contentY, contentWidth, contentHeight);
+        return new Rect(tl, br);
     }
 
     // Simple helpers to emulate WPF ActualWidth/ActualHeight semantics

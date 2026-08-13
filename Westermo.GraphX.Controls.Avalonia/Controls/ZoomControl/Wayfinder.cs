@@ -371,20 +371,14 @@ public sealed class Wayfinder : Control
         var zc = ZoomControl;
         if (zc != null)
         {
-            // Compute viewport rect in content-space coordinates, then shift
-            // by -_contentRect.TopLeft so the result is anchored to the same
-            // origin as ContentBounds (top-left of the wayfinder content area).
-            var vpContent = WayfinderGeometry.ComputeViewportRect(
-                zc.Zoom,
-                zc.TranslateX,
-                zc.TranslateY,
-                new Size(zc.Bounds.Width, zc.Bounds.Height),
-                Scale);
+            // ZoomControl resolves its center-origin transform through its
+            // visual tree, making this the authoritative visible content rect.
+            var vpContent = zc.GetVisibleContentRect();
             ViewportRect = new Rect(
-                vpContent.X - _contentRect.X * Scale,
-                vpContent.Y - _contentRect.Y * Scale,
-                vpContent.Width,
-                vpContent.Height);
+                (vpContent.X - _contentRect.X) * Scale,
+                (vpContent.Y - _contentRect.Y) * Scale,
+                vpContent.Width * Scale,
+                vpContent.Height * Scale);
         }
         else
         {
@@ -568,14 +562,16 @@ public sealed class Wayfinder : Control
         var contentX = wayfinderPoint.X / Scale + _contentRect.X;
         var contentY = wayfinderPoint.Y / Scale + _contentRect.Y;
 
-        // ZoomControl maps content (cx, cy) to screen via: screen = cx * zoom + tx.
+        // ZoomControl maps content around the viewport center. Account for that
+        // center-origin transform when placing the requested content point at
+        // the visible viewport center.
         // We want the centre of the ZoomControl's screen viewport to land on (cx, cy).
-        // So tx = ScreenCenterX - cx * zoom.
+        // So tx = ScreenCenterX * zoom - cx * zoom.
         var zoom = zc.Zoom;
         var zcW = zc.Bounds.Width;
         var zcH = zc.Bounds.Height;
-        var tx = zcW / 2 - contentX * zoom;
-        var ty = zcH / 2 - contentY * zoom;
+        var tx = zcW / 2 * zoom - contentX * zoom;
+        var ty = zcH / 2 * zoom - contentY * zoom;
 
         // Clamp so the visible content rect [(-tx)/zoom, (-tx + zcW)/zoom]
         // stays inside [_contentRect.X, _contentRect.Right] when the content
@@ -586,18 +582,19 @@ public sealed class Wayfinder : Control
         var contentSpanY = zcH / zoom;
         if (contentSpanX < _contentRect.Width)
         {
-            // tx_max (content left edge inside viewport): -tx/zoom = _contentRect.X  → tx = -_contentRect.X * zoom
-            // tx_min (content right edge inside viewport): (-tx + zcW)/zoom = _contentRect.Right → tx = zcW - _contentRect.Right * zoom
-            var txMax = -_contentRect.X * zoom;
-            var txMin = zcW - _contentRect.Right * zoom;
+            var originAdjustmentX = zcW / 2 * (zoom - 1);
+            // GetVisibleContentRect().X = -tx/zoom + originAdjustmentX/zoom.
+            var txMax = originAdjustmentX - _contentRect.X * zoom;
+            var txMin = originAdjustmentX + zcW - _contentRect.Right * zoom;
             if (tx > txMax) tx = txMax;
             if (tx < txMin) tx = txMin;
         }
 
         if (contentSpanY < _contentRect.Height)
         {
-            var tyMax = -_contentRect.Y * zoom;
-            var tyMin = zcH - _contentRect.Bottom * zoom;
+            var originAdjustmentY = zcH / 2 * (zoom - 1);
+            var tyMax = originAdjustmentY - _contentRect.Y * zoom;
+            var tyMin = originAdjustmentY + zcH - _contentRect.Bottom * zoom;
             if (ty > tyMax) ty = tyMax;
             if (ty < tyMin) ty = tyMin;
         }

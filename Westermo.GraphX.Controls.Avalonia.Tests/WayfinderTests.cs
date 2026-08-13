@@ -1,8 +1,10 @@
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Threading;
+using Westermo.GraphX.Controls.Controls.Misc;
 using Westermo.GraphX.Controls.Controls.ZoomControl;
 using Westermo.GraphX.Controls.Controls.ZoomControl.SupportClasses;
+using Westermo.GraphX.Controls.Models;
 
 namespace Westermo.GraphX.Controls.Avalonia.Tests;
 
@@ -30,6 +32,24 @@ public class WayfinderTests
         double contentWidth, double contentHeight)
     {
         var content = new Canvas { Width = contentWidth, Height = contentHeight };
+        var zc = new ZoomControl { Content = content };
+        var window = new Window { Width = viewportWidth, Height = viewportHeight, Content = zc };
+        window.Show();
+        window.Measure(new Size(viewportWidth, viewportHeight));
+        window.Arrange(new Rect(0, 0, viewportWidth, viewportHeight));
+        return (zc, window);
+    }
+
+    private static (ZoomControl zoom, Window window) CreateZoomControlWithOffsetContent(
+        double viewportWidth, double viewportHeight, Rect contentRect)
+    {
+        // GraphArea reports an extent in graph coordinates, which may begin away
+        // from the visual origin. Match that contract for pointer navigation tests.
+        var content = new TrackableCanvas(contentRect)
+        {
+            Width = contentRect.Right,
+            Height = contentRect.Bottom
+        };
         var zc = new ZoomControl { Content = content };
         var window = new Window { Width = viewportWidth, Height = viewportHeight, Content = zc };
         window.Show();
@@ -94,18 +114,43 @@ public class WayfinderTests
     public async Task ComputeViewportRect_WithZoomAndTranslate_ShrinksAndShifts()
     {
         // Zoom=2 means visible content area is half size: 100x75 in content coords.
-        // Translate (-200, -100) screen units at zoom=2 means content origin shifted right/down.
-        // Visible content rect = (-translateX/zoom, -translateY/zoom, w/zoom, h/zoom)
-        //                      = (100, 50, 100, 75).
-        // Mapped at scale 0.25 → (25, 12.5, 25, 18.75).
+        // ZoomContentPresenter transforms around its center. The visible rect
+        // therefore also includes half of the viewport's zoom delta:
+        // (-translate/zoom + viewport/2 * (1 - 1/zoom)) = (150, 87.5).
+        // Mapped at scale 0.25 → (37.5, 21.875, 25, 18.75).
         var rect = WayfinderGeometry.ComputeViewportRect(
             zoom: 2.0, translateX: -200, translateY: -100,
             zoomControlSize: new Size(200, 150),
             scale: 0.25);
-        await Assert.That(Math.Abs(rect.X - 25)).IsLessThan(Tolerance);
-        await Assert.That(Math.Abs(rect.Y - 12.5)).IsLessThan(Tolerance);
+        await Assert.That(Math.Abs(rect.X - 37.5)).IsLessThan(Tolerance);
+        await Assert.That(Math.Abs(rect.Y - 21.875)).IsLessThan(Tolerance);
         await Assert.That(Math.Abs(rect.Width - 25)).IsLessThan(Tolerance);
         await Assert.That(Math.Abs(rect.Height - 18.75)).IsLessThan(Tolerance);
+    }
+
+    [Test]
+    public async Task GetVisibleContentRect_MatchesTransformedViewportCorners()
+    {
+        var (zc, window) = CreateZoomControlWithContent(400, 300, 800, 600);
+        try
+        {
+            zc.Mode = ZoomControlModes.Custom;
+            zc.Zoom = 2.0;
+            zc.TranslateX = -80;
+            zc.TranslateY = -40;
+            await Dispatcher.UIThread.InvokeAsync(() => { }, DispatcherPriority.Render);
+
+            var visual = zc.ContentVisual!;
+            var expectedTopLeft = zc.TranslatePoint(default, visual)!.Value;
+            var expectedBottomRight = zc.TranslatePoint(new Point(zc.Bounds.Width, zc.Bounds.Height), visual)!.Value;
+            var visible = zc.GetVisibleContentRect();
+
+            await Assert.That(Math.Abs(visible.X - expectedTopLeft.X)).IsLessThan(Tolerance);
+            await Assert.That(Math.Abs(visible.Y - expectedTopLeft.Y)).IsLessThan(Tolerance);
+            await Assert.That(Math.Abs(visible.Right - expectedBottomRight.X)).IsLessThan(Tolerance);
+            await Assert.That(Math.Abs(visible.Bottom - expectedBottomRight.Y)).IsLessThan(Tolerance);
+        }
+        finally { window.Close(); }
     }
 
     [Test]
@@ -384,6 +429,143 @@ public class WayfinderTests
     }
 
     [Test]
+    public async Task Wayfinder_RecenterOnPoint_AccountsForTrackableContentOffset()
+    {
+        // The minimap is normalized to the trackable extent's top-left. A
+        // pointer at (50, 25) must therefore target graph point (300, 180),
+        // not the unoffset point (200, 100).
+        var contentRect = new Rect(100, 80, 800, 600);
+        var (zc, window) = CreateZoomControlWithOffsetContent(400, 300, contentRect);
+        try
+        {
+            zc.Mode = ZoomControlModes.Custom;
+            zc.Zoom = 2.0;
+
+            var wf = new Wayfinder { Width = 100, Height = 100, ZoomControl = zc };
+            var host = new Window { Width = 200, Height = 200, Content = wf };
+            host.Show();
+            host.Measure(new Size(200, 200));
+            host.Arrange(new Rect(0, 0, 200, 200));
+            try
+            {
+                var target = new Point(25, 12.5);
+                wf.RecenterOnWayfinderPoint(target);
+                await Dispatcher.UIThread.InvokeAsync(() => { }, DispatcherPriority.Render);
+
+                var viewportCenter = new Point(
+                    wf.ViewportRect.X + wf.ViewportRect.Width / 2,
+                    wf.ViewportRect.Y + wf.ViewportRect.Height / 2);
+                await Assert.That(Math.Abs(viewportCenter.X - target.X)).IsLessThan(Tolerance);
+                await Assert.That(Math.Abs(viewportCenter.Y - target.Y)).IsLessThan(Tolerance);
+                await Assert.That(Math.Abs(zc.TranslateX + 200)).IsLessThan(Tolerance);
+                await Assert.That(Math.Abs(zc.TranslateY + 60)).IsLessThan(Tolerance);
+            }
+            finally { host.Close(); }
+        }
+        finally { window.Close(); }
+    }
+
+    [Test]
+    public async Task Wayfinder_PanByDrag_AccountsForTrackableContentOffset()
+    {
+        var contentRect = new Rect(100, 80, 800, 600);
+        var (zc, window) = CreateZoomControlWithOffsetContent(400, 300, contentRect);
+        try
+        {
+            zc.Mode = ZoomControlModes.Custom;
+            zc.Zoom = 2.0;
+
+            var wf = new Wayfinder { Width = 100, Height = 100, ZoomControl = zc };
+            var host = new Window { Width = 200, Height = 200, Content = wf };
+            host.Show();
+            host.Measure(new Size(200, 200));
+            host.Arrange(new Rect(0, 0, 200, 200));
+            try
+            {
+                wf.RecenterOnWayfinderPoint(new Point(50, 37.5));
+                await Dispatcher.UIThread.InvokeAsync(() => { }, DispatcherPriority.Render);
+                var initialViewport = wf.ViewportRect;
+                var initialTranslateX = zc.TranslateX;
+                var initialTranslateY = zc.TranslateY;
+
+                wf.PanByWayfinderDelta(new Vector(10, 5));
+                await Dispatcher.UIThread.InvokeAsync(() => { }, DispatcherPriority.Render);
+
+                await Assert.That(Math.Abs(wf.ViewportRect.X - initialViewport.X - 10)).IsLessThan(Tolerance);
+                await Assert.That(Math.Abs(wf.ViewportRect.Y - initialViewport.Y - 5)).IsLessThan(Tolerance);
+                await Assert.That(Math.Abs(zc.TranslateX - initialTranslateX + 160)).IsLessThan(Tolerance);
+                await Assert.That(Math.Abs(zc.TranslateY - initialTranslateY + 80)).IsLessThan(Tolerance);
+            }
+            finally { host.Close(); }
+        }
+        finally { window.Close(); }
+    }
+
+    [Test]
+    public async Task Wayfinder_ViewportRect_NormalizesCenteredVisibleContentRect()
+    {
+        var contentRect = new Rect(100, 80, 800, 600);
+        var (zc, window) = CreateZoomControlWithOffsetContent(400, 300, contentRect);
+        try
+        {
+            zc.Mode = ZoomControlModes.Custom;
+            zc.Zoom = 2.0;
+            zc.TranslateX = -80;
+            zc.TranslateY = -40;
+
+            var wf = new Wayfinder { Width = 100, Height = 100, ZoomControl = zc };
+            var host = new Window { Width = 200, Height = 200, Content = wf };
+            host.Show();
+            host.Measure(new Size(200, 200));
+            host.Arrange(new Rect(0, 0, 200, 200));
+            try
+            {
+                await Dispatcher.UIThread.InvokeAsync(() => { }, DispatcherPriority.Render);
+                var visible = zc.GetVisibleContentRect();
+
+                await Assert.That(Math.Abs(wf.ViewportRect.X - (visible.X - contentRect.X) * wf.Scale)).IsLessThan(Tolerance);
+                await Assert.That(Math.Abs(wf.ViewportRect.Y - (visible.Y - contentRect.Y) * wf.Scale)).IsLessThan(Tolerance);
+                await Assert.That(Math.Abs(wf.ViewportRect.Width - visible.Width * wf.Scale)).IsLessThan(Tolerance);
+                await Assert.That(Math.Abs(wf.ViewportRect.Height - visible.Height * wf.Scale)).IsLessThan(Tolerance);
+            }
+            finally { host.Close(); }
+        }
+        finally { window.Close(); }
+    }
+
+    [Test]
+    public async Task Wayfinder_ZoomToFill_AlignsViewportWithOffsetTrackableContent()
+    {
+        var contentRect = new Rect(100, 80, 800, 600);
+        var (zc, window) = CreateZoomControlWithOffsetContent(400, 300, contentRect);
+        try
+        {
+            var wf = new Wayfinder { Width = 100, Height = 100, ZoomControl = zc };
+            var host = new Window { Width = 200, Height = 200, Content = wf };
+            host.Show();
+            host.Measure(new Size(200, 200));
+            host.Arrange(new Rect(0, 0, 200, 200));
+            try
+            {
+                zc.ZoomToFill();
+                await Dispatcher.UIThread.InvokeAsync(() => { }, DispatcherPriority.Render);
+
+                var visible = zc.GetVisibleContentRect();
+                await Assert.That(Math.Abs(visible.X - contentRect.X)).IsLessThan(Tolerance);
+                await Assert.That(Math.Abs(visible.Y - contentRect.Y)).IsLessThan(Tolerance);
+                await Assert.That(Math.Abs(visible.Width - contentRect.Width)).IsLessThan(Tolerance);
+                await Assert.That(Math.Abs(visible.Height - contentRect.Height)).IsLessThan(Tolerance);
+                await Assert.That(Math.Abs(wf.ViewportRect.X - wf.ContentBounds.X)).IsLessThan(Tolerance);
+                await Assert.That(Math.Abs(wf.ViewportRect.Y - wf.ContentBounds.Y)).IsLessThan(Tolerance);
+                await Assert.That(Math.Abs(wf.ViewportRect.Width - wf.ContentBounds.Width)).IsLessThan(Tolerance);
+                await Assert.That(Math.Abs(wf.ViewportRect.Height - wf.ContentBounds.Height)).IsLessThan(Tolerance);
+            }
+            finally { host.Close(); }
+        }
+        finally { window.Close(); }
+    }
+
+    [Test]
     public async Task Wayfinder_DoubleTapInsideViewport_ImmediatelyRecenters()
     {
         // A double-tap *inside* the viewport rectangle should recenter on the
@@ -468,4 +650,15 @@ public class WayfinderTests
     }
 
     #endregion
+
+    private sealed class TrackableCanvas(Rect contentSize) : Canvas, ITrackableContent
+    {
+        public event ContentSizeChangedEventHandler? ContentSizeChanged
+        {
+            add { }
+            remove { }
+        }
+
+        public Rect ContentSize { get; } = contentSize;
+    }
 }

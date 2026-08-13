@@ -56,9 +56,10 @@ internal static class WayfinderGeometry
             !IsFinitePositive(zoomControlSize.Width) || !IsFinitePositive(zoomControlSize.Height))
             return default;
 
-        // Visible content rect in content coordinates (mirrors ZoomControl.GetVisibleContentRect).
-        var contentX = -translateX / zoom;
-        var contentY = -translateY / zoom;
+        // ZoomContentPresenter has the default center RenderTransformOrigin.
+        // Translate and scale therefore operate around the viewport midpoint.
+        var contentX = -translateX / zoom + zoomControlSize.Width / 2 * (1 - 1 / zoom);
+        var contentY = -translateY / zoom + zoomControlSize.Height / 2 * (1 - 1 / zoom);
         var contentW = zoomControlSize.Width / zoom;
         var contentH = zoomControlSize.Height / zoom;
 
