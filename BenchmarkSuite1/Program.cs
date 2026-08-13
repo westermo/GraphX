@@ -13,8 +13,8 @@ namespace GraphXBenchmarks
                 .AddExporter(JsonExporter.Full)
                 .AddExporter(JsonExporter.FullCompressed);
 
-            // Run all benchmark suites
-            BenchmarkRunner.Run<GraphRenderingBenchmarks>(config);
+            // Discover benchmark types so command-line filters can target individual render pipeline paths.
+            BenchmarkSwitcher.FromAssembly(typeof(Program).Assembly).Run(args, config);
             // BenchmarkRunner.Run<OptimizationBenchmarks>(config);
             // BenchmarkRunner.Run<PoolingBenchmarks>(config);
             // BenchmarkRunner.Run<LayoutAlgorithmBenchmarks>(config);

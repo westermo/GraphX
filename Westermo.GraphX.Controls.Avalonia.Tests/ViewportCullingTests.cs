@@ -241,4 +241,23 @@ public class ViewportCullingTests
         await Assert.That(initialVisible).IsGreaterThan(0);
         await Assert.That(afterMoveVisible).IsGreaterThan(0);
     }
+
+    [Test]
+    public async Task ViewportCulling_PreservesApplicationVisibilityChangesUntilDisabled()
+    {
+        var area = CreateLargeGraph(10);
+        var vertex = area.VertexList.Values.First();
+        area.EnableViewportCulling = true;
+        area.ViewportCulling.CullingMargin = 0;
+        area.UpdateViewport(new Rect(0, 0, 150, 150));
+
+        vertex.IsVisible = false;
+        area.UpdateViewport(new Rect(0, 0, 150, 150));
+
+        await Assert.That(vertex.IsVisible).IsFalse();
+
+        area.EnableViewportCulling = false;
+
+        await Assert.That(vertex.IsVisible).IsFalse();
+    }
 }

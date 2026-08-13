@@ -160,4 +160,19 @@ public class RoutingPointArrayReuseTests
         await Assert.That(edge.RoutingPoints).IsNotNull();
         await Assert.That(edge.RoutingPoints!.Length).IsGreaterThanOrEqualTo(2);
     }
+
+    [Test]
+    public async Task RoutingPointMutation_RebuildsGeometry_WhenArrayIsReused()
+    {
+        var (_, _, _, edge, ec) = CreateRoutedArea();
+        ForceGeometryRebuild(ec);
+        var initialGeometry = ec.GetLineGeometry();
+
+        // Routing engines commonly reuse their point array, so the cache must compare values
+        // rather than only the array reference or length.
+        edge.RoutingPoints![1] = new Measure.Point(175, 160);
+        ForceGeometryRebuild(ec);
+
+        await Assert.That(ec.GetLineGeometry()).IsNotSameReferenceAs(initialGeometry);
+    }
 }

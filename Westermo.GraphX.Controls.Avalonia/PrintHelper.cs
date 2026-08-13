@@ -49,26 +49,24 @@ public static class PrintHelper
         /// <param name="quality">Optional image quality parameter</param>
         public async Task ExportAsJpeg(int quality = 100)
         {
-            await surface.ExportAsImageDialog(ImageType.JPEG);
+            await surface.ExportAsImageDialog(ImageType.JPEG, quality: quality);
         }
 
         /// <summary>
-        /// Export current graph layout into the chosen image file and format. layout will be saved in full size.
+        /// Export current graph layout into a PNG or JPEG image file. Layout will be saved in full size.
         /// </summary>
         /// <param name="itype">Image format</param>
         /// <param name="dpi">Optional image DPI parameter</param>
         public async Task ExportAsImageDialog(ImageType itype,
-            double dpi = DEFAULT_DPI)
+            double dpi = DEFAULT_DPI, int quality = 100)
         {
             var fileType = itype.ToString();
             var fileExt = itype switch
             {
                 ImageType.PNG => "*.png",
                 ImageType.JPEG => "*.jpg",
-                ImageType.BMP => "*.bmp",
-                ImageType.GIF => "*.gif",
-                ImageType.TIFF => "*.tiff",
-                _ => throw new GX_InvalidDataException("ExportAsImage() -> Unknown output image format specified!"),
+                _ => throw new GX_InvalidDataException(
+                    "Avalonia image export currently supports PNG and JPEG output only."),
             };
             var top = TopLevel.GetTopLevel(surface as Control);
             if (top is null) return;
@@ -80,12 +78,20 @@ public static class PrintHelper
             });
             if (dlg is null) return;
 
-            surface.ExportAsImage(dlg.Path, dpi);
+            surface.ExportAsImage(dlg.Path, itype, dpi, quality);
         }
 
         public void ExportAsImage(Uri filename, double dpi = DEFAULT_DPI)
         {
-            ExportToImage(surface, filename, dpi);
+            ExportToImage(surface, filename, ImageType.PNG, dpi);
+        }
+
+        /// <summary>
+        /// Exports the graph using an encoder matching <paramref name="imageType"/>.
+        /// </summary>
+        public void ExportAsImage(Uri filename, ImageType imageType, double dpi = DEFAULT_DPI, int quality = 100)
+        {
+            ExportToImage(surface, filename, imageType, dpi, quality);
         }
 
         /// <summary>
@@ -112,12 +118,13 @@ public static class PrintHelper
         }
 
         /// <summary>
-        /// Method exports the GraphArea to an png image.
+        /// Exports the GraphArea using a PNG or JPEG encoder.
         /// </summary>
         /// <param name="surface">GraphArea control</param>
         /// <param name="path">Image destination path</param>
         /// <param name="imgdpi">Optional image DPI parameter</param>
-        public void ExportToImage(Uri path, double imgdpi = DEFAULT_DPI)
+        public void ExportToImage(Uri path, ImageType imageType = ImageType.PNG, double imgdpi = DEFAULT_DPI,
+            int quality = 100)
 
         {
             var vis = (Control)surface;
@@ -134,10 +141,8 @@ public static class PrintHelper
 
 
                 //Create a file stream for saving image
-                using (var outStream = new FileStream(path.LocalPath, FileMode.Create))
-                {
-                    renderBitmap.Save(outStream);
-                }
+                using var outStream = new FileStream(path.LocalPath, FileMode.Create);
+                renderBitmap.Save(outStream, GetEncoderOptions(imageType, quality));
             }
 
             GC.Collect();
@@ -145,6 +150,15 @@ public static class PrintHelper
             GC.Collect();
         }
     }
+
+    private static BitmapEncoderOptions GetEncoderOptions(ImageType imageType, int quality) =>
+        imageType switch
+        {
+            ImageType.PNG => PngBitmapEncoderOptions.Default,
+            ImageType.JPEG => new JpegBitmapEncoderOptions { Quality = Math.Clamp(quality, 0, 100) },
+            _ => throw new GX_InvalidDataException(
+                "Avalonia image export currently supports PNG and JPEG output only."),
+        };
 
     public static void PrintVisualDialog(Visual surface, string description = "", bool compat = false)
     {

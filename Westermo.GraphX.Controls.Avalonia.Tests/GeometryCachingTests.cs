@@ -4,6 +4,7 @@ using Avalonia.Controls.Templates;
 using Avalonia.Markup.Xaml.Templates;
 using Avalonia.Media;
 using QuikGraph;
+using Westermo.GraphX.Common.Enums;
 using Westermo.GraphX.Common.Models;
 using Westermo.GraphX.Controls.Controls;
 using Westermo.GraphX.Logic.Models;
@@ -157,5 +158,38 @@ public class GeometryCachingTests
 
         await Assert.That(edge.GeometryBounds).IsNotNull();
         await Assert.That(edge.GeometryBounds!.Value.Width).IsGreaterThan(0);
+    }
+
+    [Test]
+    public async Task Geometry_IsReused_WhenMeasureIsInvalidatedWithoutInputChanges()
+    {
+        var (_, _, _, edge) = CreateSimpleGraph();
+        edge.Measure(new Size(double.PositiveInfinity, double.PositiveInfinity));
+        edge.Arrange(new Rect(0, 0, edge.DesiredSize.Width, edge.DesiredSize.Height));
+        var initialGeometry = edge.GetLineGeometry();
+
+        // Consumers can invalidate layout defensively. Preserve the immutable geometry when all
+        // inputs affecting its construction remain the same.
+        edge.InvalidateMeasure();
+        edge.Measure(new Size(double.PositiveInfinity, double.PositiveInfinity));
+        edge.Arrange(new Rect(0, 0, edge.DesiredSize.Width, edge.DesiredSize.Height));
+
+        await Assert.That(edge.GetLineGeometry()).IsSameReferenceAs(initialGeometry);
+    }
+
+    [Test]
+    public async Task Geometry_IsRebuilt_WhenEndpointVertexShapeChanges()
+    {
+        var (_, source, _, edge) = CreateSimpleGraph();
+        edge.Measure(new Size(double.PositiveInfinity, double.PositiveInfinity));
+        edge.Arrange(new Rect(0, 0, edge.DesiredSize.Width, edge.DesiredSize.Height));
+        var initialGeometry = edge.GetLineGeometry();
+
+        source.VertexShape = VertexShape.Circle;
+        edge.InvalidateMeasure();
+        edge.Measure(new Size(double.PositiveInfinity, double.PositiveInfinity));
+        edge.Arrange(new Rect(0, 0, edge.DesiredSize.Width, edge.DesiredSize.Height));
+
+        await Assert.That(edge.GetLineGeometry()).IsNotSameReferenceAs(initialGeometry);
     }
 }

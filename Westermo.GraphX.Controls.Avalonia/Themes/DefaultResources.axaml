@@ -257,7 +257,8 @@
             <Setter.Value>
                 <ControlTemplate TargetType="{x:Type controls:EdgeControl}">
                     <Grid>
-                        <Path Stroke="{TemplateBinding Foreground}"
+                        <Path Classes="graphx-default-edge-path"
+                              Stroke="{TemplateBinding Foreground}"
                               StrokeThickness="{TemplateBinding StrokeThickness}"
                               x:Name="PART_edgePath" />
                         <edgePointers:DefaultEdgePointer NeedRotation="true" x:Name="PART_EdgePointerForTarget" IsVisible="False">

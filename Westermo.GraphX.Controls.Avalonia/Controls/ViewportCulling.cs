@@ -16,6 +16,7 @@ public sealed class ViewportCulling : IDisposable
     private bool _isEnabled;
     private bool _isDisposed;
     private double _cullingMargin = 100; // Extra margin around viewport to avoid popping
+    private readonly VisibilityPreservationTracker _visibility = new();
 
     /// <summary>
     /// Gets or sets whether viewport culling is enabled.
@@ -26,6 +27,12 @@ public sealed class ViewportCulling : IDisposable
         get => _isEnabled;
         set
         {
+            if (_graphArea.IsGraphRenderCacheActive)
+            {
+                _graphArea.SetViewportCullingAfterCachedRendering(value);
+                return;
+            }
+
             if (_isEnabled == value) return;
             _isEnabled = value;
             if (_isEnabled)
@@ -115,16 +122,13 @@ public sealed class ViewportCulling : IDisposable
             Math.Max(vertex.Bounds.Height, 1));
 
         var shouldBeVisible = viewport.Intersects(vertexBounds);
-        
-        if (vertex.IsVisible != shouldBeVisible)
-        {
-            vertex.SetCurrentValue(Visual.IsVisibleProperty, shouldBeVisible);
-            // Also update associated label if any
-            if (vertex.VertexLabelControl is Control label)
-            {
-                label.SetCurrentValue(Visual.IsVisibleProperty, shouldBeVisible && vertex.ShowLabel);
-            }
-        }
+        SetCulledVisibility(vertex, shouldBeVisible);
+
+        // Also update associated label if any. Its original visibility is
+        // tracked separately so disabling culling does not make an
+        // application-hidden label visible.
+        if (vertex.VertexLabelControl is Control label)
+            SetCulledVisibility(label, shouldBeVisible && vertex.ShowLabel);
     }
 
     private void UpdateEdgeVisibility(EdgeControlBase edge, Rect viewport)
@@ -138,11 +142,10 @@ public sealed class ViewportCulling : IDisposable
             return;
         }
 
-        // Quick check: if both vertices are visible, edge should be visible
+        // Quick check: if either endpoint is visible, the edge should be visible.
         if (source.IsVisible || target.IsVisible)
         {
-            if (!edge.IsVisible)
-                edge.SetCurrentValue(Visual.IsVisibleProperty, true);
+            SetCulledVisibility(edge, true);
             return;
         }
 
@@ -159,16 +162,12 @@ public sealed class ViewportCulling : IDisposable
                 bounds.Height);
 
             var shouldBeVisible = viewport.Intersects(worldBounds);
-            if (edge.IsVisible != shouldBeVisible)
-            {
-                edge.SetCurrentValue(Visual.IsVisibleProperty, shouldBeVisible);
-            }
+            SetCulledVisibility(edge, shouldBeVisible);
         }
         else
         {
             // No geometry yet, hide if vertices are hidden
-            if (edge.IsVisible)
-                edge.SetCurrentValue(Visual.IsVisibleProperty, false);
+            SetCulledVisibility(edge, false);
         }
     }
 
@@ -176,22 +175,10 @@ public sealed class ViewportCulling : IDisposable
     /// Shows all controls regardless of viewport position.
     /// Called when culling is disabled.
     /// </summary>
-    private void ShowAllControls()
-    {
-        foreach (var child in _graphArea.Children)
-        {
-            if (child is VertexControlBase vertex)
-            {
-                if (!vertex.IsVisible)
-                    vertex.SetCurrentValue(Visual.IsVisibleProperty, true);
-            }
-            else if (child is EdgeControlBase edge)
-            {
-                if (!edge.IsVisible)
-                    edge.SetCurrentValue(Visual.IsVisibleProperty, true);
-            }
-        }
-    }
+    private void ShowAllControls() => _visibility.RestoreAll();
+
+    private void SetCulledVisibility(Control control, bool isInViewport) => _visibility.Apply(control, isInViewport);
+
 
     /// <summary>
     /// Checks if a point is within the current viewport (with margin).

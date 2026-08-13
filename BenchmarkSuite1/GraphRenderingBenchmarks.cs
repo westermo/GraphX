@@ -5,7 +5,6 @@ using QuikGraph;
 using Westermo.GraphX.Common.Models;
 using Westermo.GraphX.Logic.Models;
 using Avalonia;
-using Avalonia.Headless;
 using Measure = Westermo.GraphX.Measure;
 using Westermo.GraphX.Controls.Controls;
 
@@ -17,22 +16,15 @@ public class GraphRenderingBenchmarks
 {
     private class BenchVertex : VertexBase
     {
-        public string Name { get; set; } = string.Empty;
+        public string Name { get; init; } = string.Empty;
 
         public override string ToString() => Name;
     }
 
-    private class BenchEdge : EdgeBase<BenchVertex>
+    private class BenchEdge(BenchVertex source, BenchVertex target) : EdgeBase<BenchVertex>(source, target)
     {
-        public BenchEdge(BenchVertex source, BenchVertex target) : base(source, target)
-        {
-        }
-
         public override Measure.Point[] RoutingPoints { get; set; }
     }
-
-    private static bool _avaloniaInitialized = false;
-    private static readonly object _initLock = new object();
 
     private BidirectionalGraph<BenchVertex, BenchEdge> _smallGraph = null!;
     private BidirectionalGraph<BenchVertex, BenchEdge> _mediumGraph = null!;
@@ -48,25 +40,22 @@ public class GraphRenderingBenchmarks
     private GraphArea<BenchVertex, BenchEdge, BidirectionalGraph<BenchVertex, BenchEdge>> _mediumPreloaded = null!;
     private GraphArea<BenchVertex, BenchEdge, BidirectionalGraph<BenchVertex, BenchEdge>> _largePreloaded = null!;
     private GraphArea<BenchVertex, BenchEdge, BidirectionalGraph<BenchVertex, BenchEdge>> _largeVerticesOnly = null!;
-    private GraphArea<BenchVertex, BenchEdge, BidirectionalGraph<BenchVertex, BenchEdge>> _largeVerticesPositioned = null!;
-    private GraphArea<BenchVertex, BenchEdge, BidirectionalGraph<BenchVertex, BenchEdge>> _largeParallelPreloaded = null!;
-    private GraphArea<BenchVertex, BenchEdge, BidirectionalGraph<BenchVertex, BenchEdge>> _largeCurvingPreloaded = null!;
+
+    private GraphArea<BenchVertex, BenchEdge, BidirectionalGraph<BenchVertex, BenchEdge>> _largeVerticesPositioned =
+        null!;
+
+    private GraphArea<BenchVertex, BenchEdge, BidirectionalGraph<BenchVertex, BenchEdge>> _largeParallelPreloaded =
+        null!;
+
+    private GraphArea<BenchVertex, BenchEdge, BidirectionalGraph<BenchVertex, BenchEdge>>
+        _largeCurvingPreloaded = null!;
+
     private GraphArea<BenchVertex, BenchEdge, BidirectionalGraph<BenchVertex, BenchEdge>> _selfLoopPreloaded = null!;
 
     [GlobalSetup]
     public void Setup()
     {
-        // Initialize Avalonia in headless mode (thread-safe, only once)
-        lock (_initLock)
-        {
-            if (!_avaloniaInitialized)
-            {
-                AppBuilder.Configure<Application>()
-                    .UseHeadless(new AvaloniaHeadlessPlatformOptions())
-                    .SetupWithoutStarting();
-                _avaloniaInitialized = true;
-            }
-        }
+        AvaloniaBenchmarkHost.EnsureInitialized();
 
         _smallGraph = CreateGraph(10, 15);
         _mediumGraph = CreateGraph(100, 200);

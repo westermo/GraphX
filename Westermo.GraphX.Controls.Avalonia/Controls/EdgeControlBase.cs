@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
@@ -15,6 +15,7 @@ using Westermo.GraphX.Common;
 using Westermo.GraphX.Common.Exceptions;
 using Westermo.GraphX.Common.Interfaces;
 using Westermo.GraphX.Controls.Controls.Misc;
+using Westermo.GraphX.Controls.Controls.Interfaces;
 using Westermo.GraphX.Controls.Models.Interfaces;
 
 namespace Westermo.GraphX.Controls.Controls;
@@ -394,7 +395,33 @@ public abstract class EdgeControlBase : TemplatedControl, IGraphControl, IDispos
     /// <summary>
     ///  Gets or Sets that user controls the path geometry object or it is generated automatically
     /// </summary>
-    public bool ManualDrawing { get; set; }
+    private bool _manualDrawing;
+
+    /// <summary>
+    /// Gets or sets whether the user controls the path geometry instead of automatic generation.
+    /// </summary>
+    public bool ManualDrawing
+    {
+        get => _manualDrawing;
+        set
+        {
+            if (_manualDrawing == value) return;
+            _manualDrawing = value;
+            RootArea?.NotifyBatchedEdgeChanged(this);
+        }
+    }
+
+    public static readonly StyledProperty<bool> IsSelectedProperty =
+        AvaloniaProperty.Register<EdgeControlBase, bool>(nameof(IsSelected));
+
+    /// <summary>
+    /// Gets or sets whether this edge is selected. Selected edges retain their individual visual.
+    /// </summary>
+    public bool IsSelected
+    {
+        get => GetValue(IsSelectedProperty);
+        set => SetValue(IsSelectedProperty, value);
+    }
 
     /// <summary>
     /// Geometry object that represents visual edge path. Applied in OnApplyTemplate and OnRender.
@@ -411,6 +438,7 @@ public abstract class EdgeControlBase : TemplatedControl, IGraphControl, IDispos
     /// Templated Path object to operate with routed path
     /// </summary>
     protected Path? LinePathObject;
+    private double? _batchedPathOpacity;
 
     private IList<IEdgeLabelControl> _edgeLabelControls = [];
 
@@ -485,6 +513,7 @@ public abstract class EdgeControlBase : TemplatedControl, IGraphControl, IDispos
             RootArea.Children.Add((Control)ctrl);
         ctrl.Show();
         InvalidateMeasure();
+        RootArea?.NotifyBatchedEdgeChanged(this);
     }
 
     /// <summary>
@@ -499,6 +528,7 @@ public abstract class EdgeControlBase : TemplatedControl, IGraphControl, IDispos
                 RootArea?.Children.Remove((Control)label);
             });
         EdgeLabelControls.Clear();
+        RootArea?.NotifyBatchedEdgeChanged(this);
     }
 
     /// <summary>
@@ -566,6 +596,7 @@ public abstract class EdgeControlBase : TemplatedControl, IGraphControl, IDispos
     {
         if (!ManualDrawing) return;
         LineGeometry = geo;
+        RootArea?.NotifyBatchedEdgeChanged(this);
     }
 
     /// <summary>
@@ -601,7 +632,31 @@ public abstract class EdgeControlBase : TemplatedControl, IGraphControl, IDispos
         MeasureChild(EdgePointerForSource as Control);
         MeasureChild(EdgePointerForTarget as Control);
         MeasureChild(SelfLoopIndicator);
+        RootArea?.NotifyBatchedEdgeChanged(this);
     }
+
+    /// <summary>
+    /// Suppresses only the default path while a shared layer draws its geometry. Keeping the edge
+    /// control's own opacity intact ensures application-driven opacity changes remain visible in
+    /// the batched result and are restored without state loss.
+    /// </summary>
+    internal void SetBatchedPathSuppressed(bool suppressed)
+    {
+        if (LinePathObject is null) return;
+
+        if (suppressed)
+        {
+            _batchedPathOpacity ??= LinePathObject.Opacity;
+            LinePathObject.Opacity = 0;
+        }
+        else if (_batchedPathOpacity is { } opacity)
+        {
+            LinePathObject.Opacity = opacity;
+            _batchedPathOpacity = null;
+        }
+    }
+
+    internal bool IsBatchedPathSuppressed => _batchedPathOpacity.HasValue;
 
     // Re-added after edit: measure template child once with unlimited size so DesiredSize is initialized
     protected void MeasureChild(Control? child)
@@ -656,6 +711,10 @@ public abstract class EdgeControlBase : TemplatedControl, IGraphControl, IDispos
         //get the route informations
         var routeInformation = routedEdge.RoutingPoints;
         var gEdge = Edge as IGraphXCommonEdge;
+        var geometryInputSignature = GetGeometryInputSignature(sourceRect, targetRect, routeInformation, gEdge);
+        _isGeometryDirty = !_hasGeometryInputSignature || _lastGeometryInputSignature != geometryInputSignature;
+        _lastGeometryInputSignature = geometryInputSignature;
+        _hasGeometryInputSignature = true;
         UpdateConnectionPoints(gEdge, routeInformation, sourceRect, targetRect);
 
         // If the logic above is working correctly, both the source and target connection points will exist.
@@ -754,7 +813,12 @@ public abstract class EdgeControlBase : TemplatedControl, IGraphControl, IDispos
         SetPosition(_pathBounds.X, _pathBounds.Y);
         Width = Math.Max(1, _pathBounds.Width);
         Height = Math.Max(1, _pathBounds.Height);
-        LineGeometry = PrepareEdgeLayout();
+        if (_isGeometryDirty)
+        {
+            LineGeometry = PrepareEdgeLayout();
+            _isGeometryDirty = false;
+            RootArea?.NotifyBatchedEdgeChanged(this);
+        }
         if (LinePathObject == null) return base.ArrangeOverride(finalSize);
         LinePathObject.Data = LineGeometry;
         LinePathObject.StrokeDashArray = StrokeDashArray;
@@ -853,6 +917,47 @@ public abstract class EdgeControlBase : TemplatedControl, IGraphControl, IDispos
 
     private readonly List<Point> _points = [];
     private Rect _pathBounds;
+    private ulong _lastGeometryInputSignature;
+    private bool _hasGeometryInputSignature;
+    private bool _isGeometryDirty = true;
+
+    internal bool CanRenderInBatchedLayer =>
+        GetType() == typeof(EdgeControl) &&
+        IsVisible &&
+        !ManualDrawing &&
+        !IsSelfLooped &&
+        !IsSelected &&
+        !IsPointerOver &&
+        !ShowArrows &&
+        DashStyle == EdgeDashStyle.Solid &&
+        EdgeLabelControls.Count == 0 &&
+        EdgePointerForSource is not Control { IsVisible: true } &&
+        EdgePointerForTarget is not Control { IsVisible: true } &&
+        this is not IDraggable { IsDragging: true } &&
+        this is EdgeControl { Foreground: not null, StrokeThickness: > 0 } &&
+        LineGeometry is not null &&
+        LinePathObject?.Classes.Contains("graphx-default-edge-path") == true;
+
+    /// <summary>
+    /// Narrow render-info accessor for a shared batched rendering layer (<see cref="BatchedEdgeLayer"/>): it
+    /// avoids that layer needing to downcast to <see cref="EdgeControl"/> or call multiple separate
+    /// accessors to read this edge's geometry, position, opacity, and stroke. Returns <see langword="false"/>
+    /// when any required value is missing, matching the invariants <see cref="CanRenderInBatchedLayer"/>
+    /// already checks for its eligible edges.
+    /// </summary>
+    internal bool TryGetBatchedRenderInfo(out BatchedEdgeRenderInfo info)
+    {
+        info = default;
+        if (this is not EdgeControl edgeControl) return false;
+        if (LineGeometry is not { } geometry) return false;
+
+        var position = GetPosition();
+        if (!double.IsFinite(position.X) || !double.IsFinite(position.Y)) return false;
+        if (edgeControl.Foreground is not { } foreground || edgeControl.StrokeThickness <= 0) return false;
+
+        info = new BatchedEdgeRenderInfo(geometry, position, Opacity, foreground, edgeControl.StrokeThickness);
+        return true;
+    }
 
     protected Point? OverrideEndpoint
     {
@@ -1134,6 +1239,91 @@ public abstract class EdgeControlBase : TemplatedControl, IGraphControl, IDispos
     {
         if (RootArea is null) return false;
         return !hasRouteInfo && RootArea.EnableParallelEdges && IsParallel;
+    }
+
+    /// <summary>
+    /// Captures every value that changes automatic edge geometry. The signature allows a layout
+    /// invalidation with unchanged inputs to retain the existing immutable StreamGeometry.
+    /// </summary>
+    private ulong GetGeometryInputSignature(Rect sourceRect, Rect targetRect, Measure.Point[]? routingPoints,
+        IGraphXCommonEdge? edge)
+    {
+        const ulong offsetBasis = 14695981039346656037;
+        var signature = offsetBasis;
+
+        AddSignature(ref signature, sourceRect.X);
+        AddSignature(ref signature, sourceRect.Y);
+        AddSignature(ref signature, sourceRect.Width);
+        AddSignature(ref signature, sourceRect.Height);
+        AddSignature(ref signature, targetRect.X);
+        AddSignature(ref signature, targetRect.Y);
+        AddSignature(ref signature, targetRect.Width);
+        AddSignature(ref signature, targetRect.Height);
+        AddSignature(ref signature, (int)Source!.VertexShape);
+        AddSignature(ref signature, (int)Target!.VertexShape);
+        AddSignature(ref signature, IsSelfLooped);
+        AddSignature(ref signature, IsParallel);
+        AddSignature(ref signature, ParallelEdgeOffset);
+        AddSignature(ref signature, ShowArrows);
+        AddSignature(ref signature, ShowSelfLoopIndicator);
+        AddSignature(ref signature, SelfLoopIndicatorRadius);
+        AddSignature(ref signature, SelfLoopIndicatorOffset.X);
+        AddSignature(ref signature, SelfLoopIndicatorOffset.Y);
+        AddControlSizeSignature(ref signature, EdgePointerForSource as Control);
+        AddControlSizeSignature(ref signature, EdgePointerForTarget as Control);
+        AddControlSizeSignature(ref signature, SelfLoopIndicator);
+        AddSignature(ref signature, edge?.SourceConnectionPointId ?? -1);
+        AddSignature(ref signature, edge?.TargetConnectionPointId ?? -1);
+        AddSignature(ref signature, edge?.ReversePath ?? false);
+        AddSignature(ref signature, RootArea?.IsEdgeRoutingEnabled ?? false);
+        AddSignature(ref signature, RootArea?.EnableParallelEdges ?? false);
+        AddSignature(ref signature, RootArea?.EdgeCurvingTolerance ?? 0);
+        AddSignature(ref signature, routingPoints?.Length ?? 0);
+
+        if (routingPoints is not null)
+        {
+            foreach (var point in routingPoints)
+            {
+                AddSignature(ref signature, point.X);
+                AddSignature(ref signature, point.Y);
+            }
+        }
+
+        return signature;
+    }
+
+    private static void AddControlSizeSignature(ref ulong signature, Control? control)
+    {
+        if (control is null)
+        {
+            AddSignature(ref signature, 0);
+            return;
+        }
+
+        AddSignature(ref signature, control.DesiredSize.Width);
+        AddSignature(ref signature, control.DesiredSize.Height);
+    }
+
+    private static void AddSignature(ref ulong signature, bool value)
+    {
+        AddSignature(ref signature, value ? 1 : 0);
+    }
+
+    private static void AddSignature(ref ulong signature, int value)
+    {
+        AddSignature(ref signature, unchecked((ulong)(uint)value));
+    }
+
+    private static void AddSignature(ref ulong signature, double value)
+    {
+        AddSignature(ref signature, unchecked((ulong)BitConverter.DoubleToInt64Bits(value)));
+    }
+
+    private static void AddSignature(ref ulong signature, ulong value)
+    {
+        const ulong prime = 1099511628211;
+        signature ^= value;
+        signature *= prime;
     }
 
     private IVertexConnectionPoint GetTargetCpOrThrow(int id)

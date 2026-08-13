@@ -118,8 +118,10 @@ public class WayfinderRenderTests
         // Reproduce that here without depending on graph layout algorithms.
         var content = new TrackableCanvas(contentRect)
         {
-            Width = contentRect.Width,
-            Height = contentRect.Height,
+            // GraphArea children remain in graph coordinates even when the
+            // trackable content extent starts away from the visual origin.
+            Width = contentRect.Right,
+            Height = contentRect.Bottom,
             Background = Brushes.Transparent
         };
         populateContent(content);
@@ -264,11 +266,11 @@ public class WayfinderRenderTests
         var contentRect = new Rect(100, 80, 800, 600);
         var (window, _, wf) = BuildOffsetTrackableScene(contentRect, canvas =>
         {
-            AddBox(canvas, 0, 0, 40, 40);
-            AddBox(canvas, 760, 0, 40, 40);
-            AddBox(canvas, 0, 560, 40, 40);
-            AddBox(canvas, 760, 560, 40, 40);
-            AddBox(canvas, 380, 280, 40, 40);
+            AddBox(canvas, 100, 80, 40, 40);
+            AddBox(canvas, 860, 80, 40, 40);
+            AddBox(canvas, 100, 640, 40, 40);
+            AddBox(canvas, 860, 640, 40, 40);
+            AddBox(canvas, 480, 360, 40, 40);
         });
 
         // Verify.Avalonia takes ownership of closing the window.
