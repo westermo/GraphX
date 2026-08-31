@@ -550,7 +550,7 @@ public class ZoomControl : ContentControl, IZoomControl, INotifyPropertyChanged
         // pass was still settling. Reacting to our own SizeChanged ensures a pending Fill request
         // is retried once real bounds are known, instead of being silently skipped forever (see
         // DoZoomToFill's guard).
-        if (Mode == ZoomControlModes.Fill) DoZoomToFill();
+        if (Mode == ZoomControlModes.Fill || _pendingFillOnBoundsAvailable) DoZoomToFill();
     }
 
     //private Rect _prevAreaSize;
@@ -1537,21 +1537,44 @@ public class ZoomControl : ContentControl, IZoomControl, INotifyPropertyChanged
     private void DoZoomToFill()
     {
         if (_presenter == null)
+        {
+            _pendingFillOnBoundsAvailable = true;
             return;
+        }
+
         var c = IsContentTrackable ? TrackableContent!.ContentSize.Size : ContentVisual!.DesiredSize;
         if (c.Width == 0 || double.IsNaN(c.Width) || double.IsInfinity(c.Width) ||
-            c.Height == 0 || double.IsNaN(c.Height) || double.IsInfinity(c.Height)) return;
+            c.Height == 0 || double.IsNaN(c.Height) || double.IsInfinity(c.Height))
+        {
+            _pendingFillOnBoundsAvailable = true;
+            return;
+        }
+
         // Guard against a viewport that hasn't been laid out yet (ActualWidth/Height still 0).
         // Fitting against a zero-size viewport would compute a degenerate Zoom of 0, which later
-        // blows up (0 * Infinity = NaN) when Zoom is next changed. Skip and let a subsequent
-        // size-changed-triggered call (once real bounds are known) do the fit instead.
+        // blows up (0 * Infinity = NaN) when Zoom is next changed. Skip, but remember the request
+        // so it can be retried once real bounds are known (see OnSizeChanged/Presenter_SizeChanged/
+        // OnApplyTemplate), even if Mode isn't/never becomes Fill - ZoomToFill() is a public
+        // one-shot API and must not silently fail forever just because it raced ahead of layout.
         if (ActualWidth <= 0 || ActualHeight <= 0 || double.IsNaN(ActualWidth) || double.IsNaN(ActualHeight))
+        {
+            _pendingFillOnBoundsAvailable = true;
             return;
+        }
 
+        _pendingFillOnBoundsAvailable = false;
         var deltaZoom = Math.Clamp(Math.Min(ActualWidth / c.Width, ActualHeight / c.Height), MinZoom, MaxZoom);
         var initialTranslate = IsContentTrackable ? GetTrackableTranslate() : GetInitialTranslate(c.Width, c.Height);
         DoZoomAnimation(deltaZoom, initialTranslate.X * deltaZoom, initialTranslate.Y * deltaZoom);
     }
+
+    /// <summary>
+    /// Set by DoZoomToFill() whenever it has to bail out early because the viewport/content
+    /// isn't laid out yet. This lets a fit request - whether from Mode == Fill or from an
+    /// explicit one-shot ZoomToFill() call - be retried once real bounds become available,
+    /// even if Mode never becomes (or isn't) Fill.
+    /// </summary>
+    private bool _pendingFillOnBoundsAvailable;
 
     private void DoZoom(double deltaZoom, int mod, Point origoPosition, Point startHandlePosition, Point targetHandlePosition, bool setDelta = false)
     {
@@ -1624,20 +1647,20 @@ public class ZoomControl : ContentControl, IZoomControl, INotifyPropertyChanged
             Presenter.SizeChanged += Presenter_SizeChanged;
             Presenter.ContentSizeChanged += Presenter_ContentSizeChanged;
         }
-        if (Mode == ZoomControlModes.Fill)
+        if (Mode == ZoomControlModes.Fill || _pendingFillOnBoundsAvailable)
             DoZoomToFill();
     }
 
     private void Presenter_ContentSizeChanged(object sender, Size newSize)
     {
-        if (Mode == ZoomControlModes.Fill)
+        if (Mode == ZoomControlModes.Fill || _pendingFillOnBoundsAvailable)
             DoZoomToFill();
     }
 
     private void Presenter_SizeChanged(object sender, SizeChangedEventArgs e)
     {
         UpdateViewport();
-        if (Mode == ZoomControlModes.Fill)
+        if (Mode == ZoomControlModes.Fill || _pendingFillOnBoundsAvailable)
             DoZoomToFill();
     }
 

@@ -605,9 +605,17 @@ public sealed class ZoomControl : ContentControl, IZoomControl, INotifyPropertyC
         SizeChanged += ZoomControl_SizeChanged;
     }
 
+    /// <summary>
+    /// Set by DoZoomToFill() whenever it has to bail out early because the viewport/content
+    /// isn't laid out yet. This lets a fit request - whether from Mode == Fill or from an
+    /// explicit one-shot ZoomToFill() call - be retried once real bounds become available,
+    /// even if Mode never becomes (or isn't) Fill.
+    /// </summary>
+    private bool _pendingFillOnBoundsAvailable;
+
     private void ZoomControl_SizeChanged(object? sender, SizeChangedEventArgs e)
     {
-        if (Mode == ZoomControlModes.Fill) DoZoomToFill();
+        if (Mode == ZoomControlModes.Fill || _pendingFillOnBoundsAvailable) DoZoomToFill();
     }
 
     private void ZoomControl_PointerPressed(object? sender, PointerPressedEventArgs e) => OnPointerDown(e);
@@ -616,7 +624,7 @@ public sealed class ZoomControl : ContentControl, IZoomControl, INotifyPropertyC
 
     private void Content_ContentSizeChanged(object sender, ContentSizeChangedEventArgs e)
     {
-        if (Mode == ZoomControlModes.Fill) DoZoomToFill();
+        if (Mode == ZoomControlModes.Fill || _pendingFillOnBoundsAvailable) DoZoomToFill();
     }
 
     private void ZoomControl_MouseWheel(object? sender, PointerWheelEventArgs e)
@@ -844,17 +852,38 @@ public sealed class ZoomControl : ContentControl, IZoomControl, INotifyPropertyC
 
     private void DoZoomToFill()
     {
-        if (_presenter == null) return;
+        if (_presenter == null)
+        {
+            // Template not applied yet - nothing we can do; OnApplyTemplate already retries
+            // Fill-mode/pending explicit requests once the presenter exists.
+            _pendingFillOnBoundsAvailable = true;
+            return;
+        }
+
         var c = IsContentTrackable ? TrackableContent!.ContentSize.Size : ContentVisual!.DesiredSize;
         if (c.Width == 0 || double.IsNaN(c.Width) || double.IsInfinity(c.Width) ||
-            c.Height == 0 || double.IsNaN(c.Height) || double.IsInfinity(c.Height)) return;
-        // Guard against a viewport that hasn't been laid out yet (ActualWidth/Height still 0,
-        // e.g. when OnApplyTemplate runs before the first real layout pass completes). Fitting
-        // against a zero-size viewport would compute a degenerate Zoom of 0, which later blows
-        // up (0 * Infinity = NaN) when Zoom is next changed. Skip and let the subsequent
-        // Presenter_SizeChanged-triggered call (once real bounds are known) do the fit instead.
-        if (ActualWidth <= 0 || ActualHeight <= 0 || double.IsNaN(ActualWidth) || double.IsNaN(ActualHeight))
+            c.Height == 0 || double.IsNaN(c.Height) || double.IsInfinity(c.Height))
+        {
+            _pendingFillOnBoundsAvailable = true;
             return;
+        }
+
+        // Guard against a viewport that hasn't been laid out yet (ActualWidth/Height still 0,
+        // e.g. when OnApplyTemplate runs before the first real layout pass completes, or when a
+        // caller explicitly invokes ZoomToFill() before the control has ever been measured -
+        // e.g. from a one-shot "Loaded" handler). Fitting against a zero-size viewport would
+        // compute a degenerate Zoom of 0, which later blows up (0 * Infinity = NaN) when Zoom is
+        // next changed. Skip, but remember the request so it can be retried once real bounds
+        // are known - see ZoomControl_SizeChanged/Presenter_SizeChanged/Presenter_ContentSizeChanged,
+        // which retry on this flag even when Mode != Fill (ZoomToFill() is a public one-shot API
+        // and must not silently fail forever just because it raced ahead of layout).
+        if (ActualWidth <= 0 || ActualHeight <= 0 || double.IsNaN(ActualWidth) || double.IsNaN(ActualHeight))
+        {
+            _pendingFillOnBoundsAvailable = true;
+            return;
+        }
+
+        _pendingFillOnBoundsAvailable = false;
         var deltaZoom = Math.Clamp(Math.Min(ActualWidth / c.Width, ActualHeight / c.Height), MinZoom, MaxZoom);
         var initialTranslate =
             IsContentTrackable ? GetTrackableTranslate() : GetInitialTranslate(c.Width, c.Height);
@@ -928,17 +957,17 @@ public sealed class ZoomControl : ContentControl, IZoomControl, INotifyPropertyC
             Presenter.ContentSizeChanged += Presenter_ContentSizeChanged;
         }
 
-        if (Mode == ZoomControlModes.Fill) DoZoomToFill();
+        if (Mode == ZoomControlModes.Fill || _pendingFillOnBoundsAvailable) DoZoomToFill();
     }
 
     private void Presenter_ContentSizeChanged(object sender, Size newSize)
     {
-        if (Mode == ZoomControlModes.Fill) DoZoomToFill();
+        if (Mode == ZoomControlModes.Fill || _pendingFillOnBoundsAvailable) DoZoomToFill();
     }
 
     private void Presenter_SizeChanged(object? sender, SizeChangedEventArgs e)
     {
-        if (Mode == ZoomControlModes.Fill) DoZoomToFill();
+        if (Mode == ZoomControlModes.Fill || _pendingFillOnBoundsAvailable) DoZoomToFill();
     }
 
     public new event PropertyChangedEventHandler? PropertyChanged;
