@@ -61,7 +61,8 @@
                     <exampleModels:GraphAreaExample x:Name="graphArea"
                                                     LogicCore="{Binding LogicCore}"
                                                     SelectedVertices="{Binding SelectedVertices}"
-                                                    SelectionMode="{Binding SelectionMode}" />
+                                                    SelectionMode="{Binding SelectionMode}"
+                                                    EdgeRenderingMode="Batched"/>
                 </graphx:ZoomControl>
                 <!-- Wayfinder (minimap) overlay – top-right corner of the graph viewport.
              Bound to the same ZoomControl as the GraphArea; pure add-on, no template change. -->

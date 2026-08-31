@@ -597,6 +597,17 @@ public sealed class ZoomControl : ContentControl, IZoomControl, INotifyPropertyC
         PointerWheelChanged += ZoomControl_MouseWheel;
         PointerPressed += ZoomControl_PointerPressed;
         PointerReleased += ZoomControl_PointerReleased;
+        // The control's own Bounds may still be 0x0 when OnApplyTemplate (and the
+        // presenter's own size/content-size events) first fire, e.g. while the
+        // outer layout pass is still settling. Reacting to our own SizeChanged
+        // ensures a pending Fill request is retried once real bounds are known,
+        // instead of being silently skipped forever (see DoZoomToFill's guard).
+        SizeChanged += ZoomControl_SizeChanged;
+    }
+
+    private void ZoomControl_SizeChanged(object? sender, SizeChangedEventArgs e)
+    {
+        if (Mode == ZoomControlModes.Fill) DoZoomToFill();
     }
 
     private void ZoomControl_PointerPressed(object? sender, PointerPressedEventArgs e) => OnPointerDown(e);
@@ -837,7 +848,14 @@ public sealed class ZoomControl : ContentControl, IZoomControl, INotifyPropertyC
         var c = IsContentTrackable ? TrackableContent!.ContentSize.Size : ContentVisual!.DesiredSize;
         if (c.Width == 0 || double.IsNaN(c.Width) || double.IsInfinity(c.Width) ||
             c.Height == 0 || double.IsNaN(c.Height) || double.IsInfinity(c.Height)) return;
-        var deltaZoom = Math.Min(MaxZoom, Math.Min(ActualWidth / c.Width, ActualHeight / c.Height));
+        // Guard against a viewport that hasn't been laid out yet (ActualWidth/Height still 0,
+        // e.g. when OnApplyTemplate runs before the first real layout pass completes). Fitting
+        // against a zero-size viewport would compute a degenerate Zoom of 0, which later blows
+        // up (0 * Infinity = NaN) when Zoom is next changed. Skip and let the subsequent
+        // Presenter_SizeChanged-triggered call (once real bounds are known) do the fit instead.
+        if (ActualWidth <= 0 || ActualHeight <= 0 || double.IsNaN(ActualWidth) || double.IsNaN(ActualHeight))
+            return;
+        var deltaZoom = Math.Clamp(Math.Min(ActualWidth / c.Width, ActualHeight / c.Height), MinZoom, MaxZoom);
         var initialTranslate =
             IsContentTrackable ? GetTrackableTranslate() : GetInitialTranslate(c.Width, c.Height);
         DoZoomAnimation(deltaZoom, initialTranslate.X * deltaZoom, initialTranslate.Y * deltaZoom);

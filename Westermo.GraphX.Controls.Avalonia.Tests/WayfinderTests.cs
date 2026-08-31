@@ -302,7 +302,10 @@ public class WayfinderTests
         try
         {
             zc.Mode = ZoomControlModes.Custom;
-            zc.Zoom = 2.0;
+            // Zoom past the 2x fit-to-width factor (800/400) so the content overflows the
+            // viewport in both axes; at exactly the fit zoom there is no room to pan and any
+            // drag would be clamped to zero, defeating the purpose of this test.
+            zc.Zoom = 4.0;
             var initialTx = zc.TranslateX;
             var initialTy = zc.TranslateY;
 
@@ -313,7 +316,7 @@ public class WayfinderTests
             host.Arrange(new Rect(0, 0, 200, 200));
             try
             {
-                // 10px drag in wayfinder-space at scale 0.25 = 40px in content-space at zoom 2 = 80px translate.
+                // 10px drag in wayfinder-space at scale 0.25 = 40px in content-space at zoom 4 = 160px translate.
                 wf.PanByWayfinderDelta(new Vector(10, 0));
                 await Dispatcher.UIThread.InvokeAsync(() => { }, DispatcherPriority.Render);
 
