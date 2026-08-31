@@ -545,6 +545,12 @@ public class ZoomControl : ContentControl, IZoomControl, INotifyPropertyChanged
     {
         // when the size is changing, the viewbox factor must be updated before updating the view
         UpdateViewboxFactor();
+        // The control's own ActualWidth/Height may still have been 0 when OnApplyTemplate (and
+        // the presenter's own size/content-size events) first fired, e.g. while the outer layout
+        // pass was still settling. Reacting to our own SizeChanged ensures a pending Fill request
+        // is retried once real bounds are known, instead of being silently skipped forever (see
+        // DoZoomToFill's guard).
+        if (Mode == ZoomControlModes.Fill) DoZoomToFill();
     }
 
     //private Rect _prevAreaSize;
@@ -1535,8 +1541,14 @@ public class ZoomControl : ContentControl, IZoomControl, INotifyPropertyChanged
         var c = IsContentTrackable ? TrackableContent!.ContentSize.Size : ContentVisual!.DesiredSize;
         if (c.Width == 0 || double.IsNaN(c.Width) || double.IsInfinity(c.Width) ||
             c.Height == 0 || double.IsNaN(c.Height) || double.IsInfinity(c.Height)) return;
+        // Guard against a viewport that hasn't been laid out yet (ActualWidth/Height still 0).
+        // Fitting against a zero-size viewport would compute a degenerate Zoom of 0, which later
+        // blows up (0 * Infinity = NaN) when Zoom is next changed. Skip and let a subsequent
+        // size-changed-triggered call (once real bounds are known) do the fit instead.
+        if (ActualWidth <= 0 || ActualHeight <= 0 || double.IsNaN(ActualWidth) || double.IsNaN(ActualHeight))
+            return;
 
-        var deltaZoom = Math.Min(MaxZoom,Math.Min( ActualWidth / c.Width, ActualHeight / c.Height));
+        var deltaZoom = Math.Clamp(Math.Min(ActualWidth / c.Width, ActualHeight / c.Height), MinZoom, MaxZoom);
         var initialTranslate = IsContentTrackable ? GetTrackableTranslate() : GetInitialTranslate(c.Width, c.Height);
         DoZoomAnimation(deltaZoom, initialTranslate.X * deltaZoom, initialTranslate.Y * deltaZoom);
     }

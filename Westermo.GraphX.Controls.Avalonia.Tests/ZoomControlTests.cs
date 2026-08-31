@@ -2,14 +2,40 @@ using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Threading;
+using Westermo.GraphX.Controls.Controls.Misc;
 using Westermo.GraphX.Controls.Controls.ZoomControl;
 using Westermo.GraphX.Controls.Controls.ZoomControl.SupportClasses;
+using Westermo.GraphX.Controls.Models;
 
 namespace Westermo.GraphX.Controls.Avalonia.Tests;
 
 public class ZoomControlTests
 {
     private const double Tolerance = 0.01;
+
+    /// <summary>
+    /// Minimal <see cref="ITrackableContent"/> implementation used to exercise the
+    /// GraphArea-like code path in ZoomControl, where the reported content bounds
+    /// (ContentSize) can have a non-zero X/Y offset and a size independent of the
+    /// control's own layout size. This mirrors GraphAreaBase's ContentSize semantics.
+    /// </summary>
+    private sealed class FakeTrackableContent : Control, ITrackableContent
+    {
+        private Rect _contentSize;
+
+        public event ContentSizeChangedEventHandler? ContentSizeChanged;
+
+        public Rect ContentSize
+        {
+            get => _contentSize;
+            set
+            {
+                var oldSize = _contentSize;
+                _contentSize = value;
+                ContentSizeChanged?.Invoke(this, new ContentSizeChangedEventArgs(oldSize, value));
+            }
+        }
+    }
 
     /// <summary>
     /// Creates a ZoomControl hosted in a Window with specified viewport and content dimensions.
@@ -34,6 +60,30 @@ public class ZoomControlTests
         window.Arrange(new Rect(0, 0, viewportWidth, viewportHeight));
 
         return (zc, window);
+    }
+
+    /// <summary>
+    /// Creates a ZoomControl hosted in a Window whose content implements ITrackableContent
+    /// with the given content-space bounding rectangle (which may have a non-zero X/Y offset,
+    /// as a GraphArea's ContentSize does when its vertices aren't anchored at the origin).
+    /// </summary>
+    private static (ZoomControl zoom, Window window, FakeTrackableContent content)
+        CreateZoomControlWithTrackableContent(double viewportWidth, double viewportHeight, Rect contentSize)
+    {
+        var content = new FakeTrackableContent { ContentSize = contentSize };
+        var zc = new ZoomControl { Content = content };
+        var window = new Window
+        {
+            Width = viewportWidth,
+            Height = viewportHeight,
+            Content = zc
+        };
+        window.Show();
+
+        window.Measure(new Size(viewportWidth, viewportHeight));
+        window.Arrange(new Rect(0, 0, viewportWidth, viewportHeight));
+
+        return (zc, window, content);
     }
 
     #region Mode Property Tests
@@ -136,11 +186,32 @@ public class ZoomControlTests
     }
 
     [Test]
+    public async Task ZoomToFill_ClampsToMinZoom()
+    {
+        // MinZoom=0.75, viewport 400x300, content 4000x3000
+        // calculated = min(400/4000, 300/3000) = 0.1, clamped up to 0.75
+        var (zc, window) = CreateZoomControlWithContent(400, 300, 4000, 3000);
+        try
+        {
+            zc.MinZoom = 0.75;
+            zc.ZoomToFill();
+            await Assert.That(Math.Abs(zc.Zoom - 0.75)).IsLessThan(Tolerance);
+        }
+        finally
+        {
+            window.Close();
+        }
+    }
+
+    [Test]
     public async Task ZoomToFill_CentersContentInViewport()
     {
         // viewport 800x600, content 400x200
         // deltaZoom = min(800/400, 600/200) = 2.0
-        // tX = -(400 - 800)/2 = 200, tY = -(200 - 600)/2 = 200
+        // GetInitialTranslate is computed at zoom=1 and then multiplied by deltaZoom, because
+        // ZoomContentPresenter's render transform scales around its own center
+        // (RenderTransformOrigin = 0.5, 0.5), not the top-left corner:
+        // tX = -((400 - 800)/2 + 0) = 200, tY = -((200 - 600)/2 + 0) = 200
         // TranslateX = 200 * 2 = 400, TranslateY = 200 * 2 = 400
         var (zc, window) = CreateZoomControlWithContent(800, 600, 400, 200);
         try
@@ -155,6 +226,17 @@ public class ZoomControlTests
 
             await Assert.That(Math.Abs(zc.TranslateX - expectedTranslateX)).IsLessThan(Tolerance);
             await Assert.That(Math.Abs(zc.TranslateY - expectedTranslateY)).IsLessThan(Tolerance);
+
+            // Cross-check against the real rendered/visible content rect (which independently
+            // derives content-space bounds via TranslatePoint through the live visual tree),
+            // to ensure the content is genuinely centered on screen, not just self-consistent
+            // with the translate formula above.
+            var visible = zc.GetVisibleContentRect();
+            await Assert.That(Math.Abs(visible.X - 0.0)).IsLessThan(Tolerance);
+            await Assert.That(Math.Abs(visible.Width - 400.0)).IsLessThan(Tolerance);
+            var topSlack = 0.0 - visible.Y;
+            var bottomSlack = visible.Bottom - 200.0;
+            await Assert.That(Math.Abs(topSlack - bottomSlack)).IsLessThan(Tolerance);
         }
         finally
         {
@@ -172,6 +254,138 @@ public class ZoomControlTests
             var initialZoom = zc.Zoom;
             zc.ZoomToFill();
             await Assert.That(zc.Zoom).IsEqualTo(initialZoom);
+        }
+        finally
+        {
+            window.Close();
+        }
+    }
+
+    #endregion
+
+    #region Trackable Content Tests (regression coverage for GraphArea-style offset content)
+
+    [Test]
+    public async Task ZoomToFill_TrackableContentWithOffset_CentersCorrectly()
+    {
+        // Content whose bounding box (ContentSize) is smaller than the viewport and has a
+        // non-zero X/Y offset (as a real GraphArea reports when its vertices aren't anchored
+        // at the origin) should still end up centered after ZoomToFill.
+        // viewport 800x600, content bounds = (300, 500, 400, 200)
+        // deltaZoom = min(800/400, 600/200) = 2.0 (content smaller than viewport -> zooms in)
+        // GetInitialTranslate is computed at zoom=1 and then multiplied by deltaZoom, because
+        // ZoomContentPresenter's render transform scales around its own center
+        // (RenderTransformOrigin = 0.5, 0.5), not the top-left corner:
+        // tX = -((400 - 800)/2 + 300) = -100, tY = -((200 - 600)/2 + 500) = -300
+        var contentRect = new Rect(300, 500, 400, 200);
+        var (zc, window, _) = CreateZoomControlWithTrackableContent(800, 600, contentRect);
+        try
+        {
+            zc.ZoomToFill();
+
+            var expectedDeltaZoom = 2.0;
+            var expectedTx = -((contentRect.Width - 800.0) / 2.0 + contentRect.X); // -100
+            var expectedTy = -((contentRect.Height - 600.0) / 2.0 + contentRect.Y); // -300
+            var expectedTranslateX = expectedTx * expectedDeltaZoom; // -200
+            var expectedTranslateY = expectedTy * expectedDeltaZoom; // -600
+
+            await Assert.That(Math.Abs(zc.Zoom - expectedDeltaZoom)).IsLessThan(Tolerance);
+            await Assert.That(Math.Abs(zc.TranslateX - expectedTranslateX)).IsLessThan(Tolerance);
+            await Assert.That(Math.Abs(zc.TranslateY - expectedTranslateY)).IsLessThan(Tolerance);
+
+            // Cross-check against the real visible content rect (derived independently via
+            // TranslatePoint through the live visual tree) to confirm the content is genuinely
+            // centered on screen. Width is the limiting dimension so it should exactly fill the
+            // viewport with no slack; height should be centered with equal slack top/bottom.
+            var visible = zc.GetVisibleContentRect();
+            await Assert.That(Math.Abs(visible.X - contentRect.X)).IsLessThan(Tolerance);
+            await Assert.That(Math.Abs(visible.Width - contentRect.Width)).IsLessThan(Tolerance);
+            var topSlack = contentRect.Y - visible.Y;
+            var bottomSlack = visible.Bottom - contentRect.Bottom;
+            await Assert.That(Math.Abs(topSlack - bottomSlack)).IsLessThan(Tolerance);
+        }
+        finally
+        {
+            window.Close();
+        }
+    }
+
+    [Test]
+    public async Task CenterContent_TrackableContentWithOffset_CentersAtCurrentZoom()
+    {
+        // CenterContent must account for the content offset at the *current* zoom level.
+        var contentRect = new Rect(50, -40, 200, 100);
+        var (zc, window, _) = CreateZoomControlWithTrackableContent(800, 600, contentRect);
+        try
+        {
+            zc.Mode = ZoomControlModes.Custom;
+            zc.Zoom = 3.0;
+
+            zc.CenterContent();
+
+            var zoom = 3.0;
+            var expectedTx = -((contentRect.Width - 800.0) / 2.0 + contentRect.X);
+            var expectedTy = -((contentRect.Height - 600.0) / 2.0 + contentRect.Y);
+            var expectedTranslateX = expectedTx * zoom;
+            var expectedTranslateY = expectedTy * zoom;
+
+            await Assert.That(Math.Abs(zc.Zoom - zoom)).IsLessThan(Tolerance);
+            await Assert.That(Math.Abs(zc.TranslateX - expectedTranslateX)).IsLessThan(Tolerance);
+            await Assert.That(Math.Abs(zc.TranslateY - expectedTranslateY)).IsLessThan(Tolerance);
+        }
+        finally
+        {
+            window.Close();
+        }
+    }
+
+    [Test]
+    public async Task ZoomToOriginal_TrackableContentWithOffset_CentersAtZoomOne()
+    {
+        var contentRect = new Rect(-150, 200, 300, 100);
+        var (zc, window, _) = CreateZoomControlWithTrackableContent(800, 600, contentRect);
+        try
+        {
+            zc.ZoomToFill();
+            zc.ZoomToOriginal();
+
+            var expectedTranslateX = (800.0 - contentRect.Width) / 2.0 - contentRect.X;
+            var expectedTranslateY = (600.0 - contentRect.Height) / 2.0 - contentRect.Y;
+
+            await Assert.That(Math.Abs(zc.Zoom - 1.0)).IsLessThan(Tolerance);
+            await Assert.That(Math.Abs(zc.TranslateX - expectedTranslateX)).IsLessThan(Tolerance);
+            await Assert.That(Math.Abs(zc.TranslateY - expectedTranslateY)).IsLessThan(Tolerance);
+        }
+        finally
+        {
+            window.Close();
+        }
+    }
+
+    [Test]
+    public async Task ContentSizeChanged_WhenModeIsFill_TriggersAutomaticRefit()
+    {
+        // GraphAreaBase raises ContentSizeChanged whenever vertices move/resize the bounding
+        // box. While Mode is Fill, the ZoomControl should automatically re-fit to the new size.
+        var (zc, window, content) = CreateZoomControlWithTrackableContent(800, 600, new Rect(0, 0, 400, 200));
+        try
+        {
+            zc.Mode = ZoomControlModes.Fill;
+            // Establish a known-good baseline explicitly: in a headless test harness,
+            // OnApplyTemplate can run once with a stale/zero ActualWidth before the real
+            // layout pass completes, so relying on the implicit Mode=Fill auto-trigger alone
+            // is not reliable here. An explicit ZoomToFill() call always uses the current,
+            // correct bounds.
+            zc.ZoomToFill();
+            var zoomAfterInitialFit = zc.Zoom; // expected 2.0 (min(800/400, 600/200))
+            await Assert.That(Math.Abs(zoomAfterInitialFit - 2.0)).IsLessThan(Tolerance);
+
+            // Grow the content bounding box - the fitted zoom should shrink to compensate,
+            // via the automatic ContentSizeChanged -> DoZoomToFill re-trigger (Mode is Fill).
+            content.ContentSize = new Rect(0, 0, 800, 600);
+
+            // expected zoom = min(800/800, 600/600) = 1.0
+            await Assert.That(Math.Abs(zc.Zoom - 1.0)).IsLessThan(Tolerance);
         }
         finally
         {
@@ -220,6 +434,27 @@ public class ZoomControlTests
 
             // Expected zoom = min(800/400, 600/200) = 2.0
             await Assert.That(Math.Abs(zc.Zoom - 2.0)).IsLessThan(Tolerance);
+        }
+        finally
+        {
+            window.Close();
+        }
+    }
+
+    [Test]
+    public async Task Mode_SetToOriginal_TriggersZoomToOriginal()
+    {
+        var (zc, window) = CreateZoomControlWithContent(800, 600, 400, 200);
+        try
+        {
+            // Start at a non-1.0 custom zoom
+            zc.Mode = ZoomControlModes.Custom;
+            zc.Zoom = 2.5;
+
+            // Setting mode to Original should trigger DoZoomToOriginal, resetting zoom to 1.0
+            zc.Mode = ZoomControlModes.Original;
+
+            await Assert.That(Math.Abs(zc.Zoom - 1.0)).IsLessThan(Tolerance);
         }
         finally
         {
@@ -324,6 +559,42 @@ public class ZoomControlTests
         await Assert.That(zc.ModifierMode).IsEqualTo(ZoomViewModifierMode.None);
     }
 
+    [Test]
+    public async Task PlainLeftDrag_NoModifiers_PansContent()
+    {
+        // With IsDragSelectByDefault false (the default), a plain left-button drag
+        // (no key modifiers) should pan the content by the drag distance rather than
+        // creating a zoom box or changing the zoom level.
+        var (zc, window) = CreateZoomControlWithContent(800, 600, 1000, 1000);
+        try
+        {
+            zc.Mode = ZoomControlModes.Custom;
+            zc.Zoom = 1.0;
+            zc.TranslateX = 0;
+            zc.TranslateY = 0;
+
+            var initialZoom = zc.Zoom;
+            var beganInteraction = zc.BeginInteractionForTest(KeyModifiers.None, new Point(100, 100));
+            await Assert.That(beganInteraction).IsTrue();
+            await Assert.That(zc.ModifierMode).IsEqualTo(ZoomViewModifierMode.Pan);
+
+            zc.MoveInteractionForTest(new Point(180, 130));
+            zc.CompleteInteractionForTest();
+
+            // PanAction: translate = startTranslate + (currentPosition - mouseDownPosition)
+            await Assert.That(Math.Abs(zc.TranslateX - 80.0)).IsLessThan(Tolerance);
+            await Assert.That(Math.Abs(zc.TranslateY - 30.0)).IsLessThan(Tolerance);
+            // Panning must not change the zoom level or open a zoom box.
+            await Assert.That(Math.Abs(zc.Zoom - initialZoom)).IsLessThan(Tolerance);
+            await Assert.That(zc.ZoomBox).IsEqualTo(default(Rect));
+            await Assert.That(zc.ModifierMode).IsEqualTo(ZoomViewModifierMode.None);
+        }
+        finally
+        {
+            window.Close();
+        }
+    }
+
     #endregion
 
     #region ZoomToContent Tests
@@ -369,6 +640,58 @@ public class ZoomControlTests
             zc.CenterContent();
 
             await Assert.That(Math.Abs(zc.Zoom - zoomBefore)).IsLessThan(Tolerance);
+        }
+        finally
+        {
+            window.Close();
+        }
+    }
+
+    #endregion
+
+    #region Geometry Helper Tests
+
+    [Test]
+    public async Task OrigoPosition_ReturnsViewportCenter()
+    {
+        var (zc, window) = CreateZoomControlWithContent(800, 600, 400, 200);
+        try
+        {
+            var origo = zc.OrigoPosition;
+            await Assert.That(Math.Abs(origo.X - 400.0)).IsLessThan(Tolerance);
+            await Assert.That(Math.Abs(origo.Y - 300.0)).IsLessThan(Tolerance);
+        }
+        finally
+        {
+            window.Close();
+        }
+    }
+
+    [Test]
+    public async Task GetVisibleContentRect_ReflectsZoomAndTranslate()
+    {
+        // viewport 800x600; zoom=2.0, translate=(-100,-50).
+        // GetVisibleContentRect derives content-space bounds by translating the viewport's
+        // screen corners through the live visual tree (via TranslatePoint), which correctly
+        // accounts for ZoomContentPresenter's render transform scaling around its own center
+        // (RenderTransformOrigin = 0.5, 0.5) rather than the top-left corner. The expected
+        // values below (250, 175, 400, 300) were derived from and verified against that
+        // transform, not from the simpler (and incorrect for zoom != 1 with this presenter)
+        // "contentX = -translateX/zoom" formula.
+        var (zc, window) = CreateZoomControlWithContent(800, 600, 1000, 1000);
+        try
+        {
+            zc.Mode = ZoomControlModes.Custom;
+            zc.Zoom = 2.0;
+            zc.TranslateX = -100;
+            zc.TranslateY = -50;
+
+            var visible = zc.GetVisibleContentRect();
+
+            await Assert.That(Math.Abs(visible.X - 250.0)).IsLessThan(Tolerance);
+            await Assert.That(Math.Abs(visible.Y - 175.0)).IsLessThan(Tolerance);
+            await Assert.That(Math.Abs(visible.Width - 400.0)).IsLessThan(Tolerance);
+            await Assert.That(Math.Abs(visible.Height - 300.0)).IsLessThan(Tolerance);
         }
         finally
         {
