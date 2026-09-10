@@ -1443,7 +1443,6 @@ public class GraphArea<TVertex, TEdge, TGraph> : GraphAreaBase, IDisposable
         {
             if (!edge.IsParallel) continue;
             edge.IsParallel = false;
-            edge.ParallelEdgeOffset = 0;
             edge.InvalidateMeasure();
         }
 
@@ -1525,11 +1524,6 @@ public class GraphArea<TVertex, TEdge, TGraph> : GraphAreaBase, IDisposable
                         kvp.Value.ParallelEdgeOffset = -offset;
                     }
 
-                    // IsParallel/ParallelEdgeOffset changes aren't observable Avalonia properties, so
-                    // force a re-measure whenever this edge's computed offset actually changed (e.g. a
-                    // newly-added parallel edge shifts an existing edge's offset). Without this, the
-                    // edge keeps its previous (possibly overlapping) geometry until something else
-                    // happens to invalidate it.
                     if (!wasParallel || previousOffset != kvp.Value.ParallelEdgeOffset)
                         kvp.Value.InvalidateMeasure();
 
@@ -2011,6 +2005,7 @@ public class GraphArea<TVertex, TEdge, TGraph> : GraphAreaBase, IDisposable
             Children.Clear();
             RecreateBatchedEdgeLayerAfterChildrenClear();
         }
+
         CreateNewStateStorage();
 
         if (clearLogicCore)
