@@ -694,10 +694,16 @@ public abstract class EdgeControlBase : TemplatedControl, IGraphControl, IDispos
         if (!IsTemplateLoaded)
             ApplyTemplate();
 
-        if (!TryGetSourcePoints(false, out var sourceRect))
+        if (!TryGetSourcePoints(false, out var sourceRect) || !TryGetTargetPoints(false, out var targetRect))
+        {
+            // Source/Target isn't ready yet (e.g. added to the graph before the vertex has been
+            // assigned a position). Explicitly flag the geometry as dirty and drop the cached
+            // signature so that the *next* successful Measure - whenever it happens - is guaranteed
+            // to rebuild the geometry instead of being silently treated as unchanged.
+            _isGeometryDirty = true;
+            _hasGeometryInputSignature = false;
             return default;
-        if (!TryGetTargetPoints(false, out var targetRect))
-            return default;
+        }
 
 
         var selfLoopSize = IsSelfLooped
@@ -818,9 +824,17 @@ public abstract class EdgeControlBase : TemplatedControl, IGraphControl, IDispos
         Height = Math.Max(1, _pathBounds.Height);
         if (_isGeometryDirty)
         {
-            LineGeometry = PrepareEdgeLayout();
-            _isGeometryDirty = false;
-            RootArea?.NotifyBatchedEdgeChanged(this);
+            var canComputeGeometry = TryGetSourcePoints(false, out _) && TryGetTargetPoints(false, out _);
+            if (canComputeGeometry)
+            {
+                LineGeometry = PrepareEdgeLayout();
+                _isGeometryDirty = false;
+                RootArea?.NotifyBatchedEdgeChanged(this);
+            }
+            // else: Source/Target position or size still isn't available. Leave `_isGeometryDirty`
+            // set so the geometry is not incorrectly treated as "up to date" - the next Measure that
+            // succeeds (see MeasureOverride) will force a rebuild instead of this edge silently
+            // staying blank until something unrelated (e.g. dragging the vertex) invalidates it again.
         }
         if (LinePathObject == null) return base.ArrangeOverride(finalSize);
         LinePathObject.Data = LineGeometry;
@@ -1141,6 +1155,15 @@ public abstract class EdgeControlBase : TemplatedControl, IGraphControl, IDispos
         if (double.IsNaN(y)) y = GraphAreaBase.GetY(control);
         if (double.IsNaN(x) ||
             double.IsNaN(y)) return false;
+        // Defend against Panel child-ordering: GraphAreaBase measures its Children in collection
+        // order, and edges can be positioned before their own Source/Target vertices there (e.g. the
+        // default ControlDrawOrder.VerticesOnTop inserts new edges at index 0). If this vertex hasn't
+        // been measured yet, DesiredSize would still be the zero-size default, producing an edge that
+        // is anchored at the vertex's top-left corner instead of its real bounds. Measuring it here
+        // (idempotent - Avalonia skips the work if it's already valid) guarantees a correct size
+        // regardless of visual-tree ordering.
+        if (!control.IsMeasureValid)
+            control.Measure(new Size(double.PositiveInfinity, double.PositiveInfinity));
         result = new Rect(new Point(x, y), control.DesiredSize);
         return true;
     }

@@ -1434,10 +1434,16 @@ public class GraphArea<TVertex, TEdge, TGraph> : GraphAreaBase, IDisposable
     {
         edgeList ??= _edgesList;
 
-        // Clear IsParallel flag - optimized: avoid LINQ allocation
+        // Clear IsParallel flag - optimized: avoid LINQ allocation.
+        // IsParallel/ParallelEdgeOffset are plain properties with no change notification, so any edge
+        // whose value actually changes here must be explicitly told to re-measure - otherwise it keeps
+        // rendering at its previous (possibly overlapping) offset until something unrelated invalidates
+        // it later (e.g. dragging one of its vertices).
         foreach (var edge in edgeList.Values)
         {
+            if (!edge.IsParallel) continue;
             edge.IsParallel = false;
+            edge.InvalidateMeasure();
         }
 
         // OPTIMIZATION: Use pooled dictionary to reduce allocations
@@ -1502,6 +1508,8 @@ public class GraphArea<TVertex, TEdge, TGraph> : GraphAreaBase, IDisposable
                 for (var i = 0; i < list.Count; i++)
                 {
                     var kvp = list[i];
+                    var previousOffset = kvp.Value.ParallelEdgeOffset;
+                    var wasParallel = kvp.Value.IsParallel;
                     kvp.Value.IsParallel = true;
 
                     var offset = viceversa *
@@ -1515,6 +1523,9 @@ public class GraphArea<TVertex, TEdge, TGraph> : GraphAreaBase, IDisposable
                     {
                         kvp.Value.ParallelEdgeOffset = -offset;
                     }
+
+                    if (!wasParallel || previousOffset != kvp.Value.ParallelEdgeOffset)
+                        kvp.Value.InvalidateMeasure();
 
                     //change trigger to opposite
                     viceversa = -viceversa;
@@ -1591,6 +1602,9 @@ public class GraphArea<TVertex, TEdge, TGraph> : GraphAreaBase, IDisposable
                 ctrl.InvalidateMeasure();
                 if (item.Source == item.Target) gotSelfLoop = true;
             }
+
+        if (LogicCore.EnableParallelEdges)
+            UpdateParallelEdgesData();
     }
 
     #endregion
@@ -1991,6 +2005,7 @@ public class GraphArea<TVertex, TEdge, TGraph> : GraphAreaBase, IDisposable
             Children.Clear();
             RecreateBatchedEdgeLayerAfterChildrenClear();
         }
+
         CreateNewStateStorage();
 
         if (clearLogicCore)

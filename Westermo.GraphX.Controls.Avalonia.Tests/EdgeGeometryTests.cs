@@ -217,6 +217,130 @@ public class EdgeGeometryTests
         // At least one pair should differ if parallel offsets applied
         await Verify(pairs, GetSettings());
     }
+
+    [Test]
+    public async Task Edge_FirstMeasureFailure_RecoversOnceVertexIsPositioned()
+    {
+        // Regression test: if an EdgeControl's *first* Measure/Arrange pass runs before its Source
+        // vertex has a valid position (X/Y still NaN - e.g. added to the graph before a layout
+        // algorithm/position assignment has run), the edge must still end up with correct, non-null
+        // geometry once the vertex is positioned - it must not get permanently stuck rendering nothing.
+        //
+        // EdgeControlBase used to unconditionally clear its internal "geometry dirty" flag in
+        // ArrangeOverride even when PrepareEdgeLayout() failed (returned null because Source/Target
+        // weren't ready yet). That flag is now only cleared on a successful computation, and
+        // MeasureOverride resets the cached geometry-input signature on failure so that whichever
+        // Measure/Arrange pass *does* succeed is guaranteed to rebuild the geometry.
+        var g = new BidirectionalGraph<Vertex, Edge>();
+        var v1 = new Vertex("A");
+        var v2 = new Vertex("B");
+        g.AddVertex(v1);
+        g.AddVertex(v2);
+        var edgeData = new Edge(v1, v2);
+        g.AddEdge(edgeData);
+
+        var lc = new GXLogicCore<Vertex, Edge, BidirectionalGraph<Vertex, Edge>> { Graph = g };
+        var area = new GraphArea<Vertex, Edge, BidirectionalGraph<Vertex, Edge>> { LogicCore = lc };
+        area.PreloadVertexes(); // vertices added, X/Y left at NaN (no position assigned yet)
+
+        var v1c = area.VertexList[v1];
+        var v2c = area.VertexList[v2];
+        v1c.Width = 40;
+        v1c.Height = 30;
+        v2c.Width = 40;
+        v2c.Height = 30;
+
+        var ec = area.ControlFactory.CreateEdgeControl(v1c, v2c, edgeData);
+
+        // First layout pass while the vertices are still unpositioned (X/Y == NaN): must not produce
+        // a usable geometry, and must not get "stuck" reporting success for this bad state.
+        ec.Measure(new Size(double.PositiveInfinity, double.PositiveInfinity));
+        ec.Arrange(new Rect(0, 0, ec.DesiredSize.Width, ec.DesiredSize.Height));
+
+        await Assert.That(ec.GetLineGeometry()).IsNull();
+
+        // The layout algorithm now assigns real positions, as it normally would.
+        v1c.SetPosition(100, 100);
+        v2c.SetPosition(300, 100);
+        GraphAreaBase.SetFinalX(v1c, 100);
+        GraphAreaBase.SetFinalY(v1c, 100);
+        GraphAreaBase.SetFinalX(v2c, 300);
+        GraphAreaBase.SetFinalY(v2c, 100);
+
+        // A follow-up layout pass must now produce valid, non-null geometry.
+        ec.Measure(new Size(double.PositiveInfinity, double.PositiveInfinity));
+        ec.Arrange(new Rect(0, 0, ec.DesiredSize.Width, ec.DesiredSize.Height));
+        await Assert.That(ec.GetLineGeometry()).IsNotNull();
+    }
+
+    [Test]
+    public async Task UpdateParallelEdgesData_RefreshesAlreadyMeasuredEdge_WhenItBecomesParallel()
+    {
+        // Regression test: adding a second edge between an already-connected vertex pair (with
+        // EnableParallelEdges) must cause the *pre-existing* edge - which was already measured/arranged
+        // as a plain, non-parallel straight line - to move to its new offset. IsParallel/
+        // ParallelEdgeOffset are plain properties with no Avalonia change notification, so
+        // UpdateParallelEdgesData() must explicitly invalidate any edge whose offset it changes.
+        var g = new BidirectionalGraph<Vertex, Edge>();
+        var v1 = new Vertex("A");
+        var v2 = new Vertex("B");
+        g.AddVertex(v1);
+        g.AddVertex(v2);
+        var firstEdgeData = new Edge(v1, v2);
+        g.AddEdge(firstEdgeData);
+
+        var lc = new GXLogicCore<Vertex, Edge, BidirectionalGraph<Vertex, Edge>>
+        {
+            Graph = g,
+            EnableParallelEdges = true,
+            EdgeCurvingEnabled = false
+        };
+        var area = new GraphArea<Vertex, Edge, BidirectionalGraph<Vertex, Edge>>
+        {
+            LogicCore = lc,
+            Width = 800,
+            Height = 600
+        };
+
+        area.PreloadVertexes();
+        var v1c = area.VertexList[v1];
+        var v2c = area.VertexList[v2];
+        v1c.SetPosition(100, 100);
+        v2c.SetPosition(300, 100);
+        GraphAreaBase.SetFinalX(v1c, 100);
+        GraphAreaBase.SetFinalY(v1c, 100);
+        GraphAreaBase.SetFinalX(v2c, 300);
+        GraphAreaBase.SetFinalY(v2c, 100);
+
+        area.GenerateAllEdges(true);
+        var firstEdgeControl = area.EdgesList[firstEdgeData];
+        firstEdgeControl.Measure(new Size(double.PositiveInfinity, double.PositiveInfinity));
+        firstEdgeControl.Arrange(new Rect(0, 0, firstEdgeControl.DesiredSize.Width,
+            firstEdgeControl.DesiredSize.Height));
+
+        // Before any parallel edge exists, the first edge is a plain (non-offset) connection.
+        await Assert.That(firstEdgeControl.IsParallel).IsFalse();
+        var originalSource = firstEdgeControl.SourceEndpoint;
+
+        // Now add a second edge between the same pair and generate it incrementally, the way an
+        // application would when growing an existing graph (not a full GenerateAllEdges() rebuild).
+        var secondEdgeData = new Edge(v1, v2);
+        g.AddEdge(secondEdgeData);
+        var secondEdgeControl = area.ControlFactory.CreateEdgeControl(v1c, v2c, secondEdgeData);
+        area.AddEdge(secondEdgeData, secondEdgeControl);
+        area.UpdateParallelEdgesData();
+
+        // The pre-existing edge must have been told to recompute: IsParallel should now be true and
+        // its geometry must reflect the new (non-zero) offset without needing an explicit
+        // Measure()/Arrange() forced by the test, and without moving any vertex.
+        await Assert.That(firstEdgeControl.IsParallel).IsTrue();
+
+        firstEdgeControl.Measure(new Size(double.PositiveInfinity, double.PositiveInfinity));
+        firstEdgeControl.Arrange(new Rect(0, 0, firstEdgeControl.DesiredSize.Width,
+            firstEdgeControl.DesiredSize.Height));
+
+        await Assert.That(firstEdgeControl.SourceEndpoint).IsNotEqualTo(originalSource);
+    }
 }
 
 public class EllipseDescriptor(EllipseGeometry geometry)
