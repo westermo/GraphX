@@ -438,6 +438,7 @@ public abstract class EdgeControlBase : TemplatedControl, IGraphControl, IDispos
     /// Templated Path object to operate with routed path
     /// </summary>
     protected Path? LinePathObject;
+
     private double? _batchedPathOpacity;
 
     private IList<IEdgeLabelControl> _edgeLabelControls = [];
@@ -688,6 +689,8 @@ public abstract class EdgeControlBase : TemplatedControl, IGraphControl, IDispos
         return new Size(width, height);
     }
 
+    private int _oldSignature;
+
     // Provide a desired size for layout based on current geometry bounds so edge is not collapsed to 0x0.
     protected override Size MeasureOverride(Size availableSize)
     {
@@ -696,12 +699,8 @@ public abstract class EdgeControlBase : TemplatedControl, IGraphControl, IDispos
 
         if (!TryGetSourcePoints(false, out var sourceRect) || !TryGetTargetPoints(false, out var targetRect))
         {
-            // Source/Target isn't ready yet (e.g. added to the graph before the vertex has been
-            // assigned a position). Explicitly flag the geometry as dirty and drop the cached
-            // signature so that the *next* successful Measure - whenever it happens - is guaranteed
-            // to rebuild the geometry instead of being silently treated as unchanged.
             _isGeometryDirty = true;
-            _hasGeometryInputSignature = false;
+            // _hasGeometryInputSignature = false;
             return default;
         }
 
@@ -720,10 +719,6 @@ public abstract class EdgeControlBase : TemplatedControl, IGraphControl, IDispos
         //get the route informations
         var routeInformation = routedEdge.RoutingPoints;
         var gEdge = Edge as IGraphXCommonEdge;
-        var geometryInputSignature = GetGeometryInputSignature(sourceRect, targetRect, routeInformation, gEdge);
-        _isGeometryDirty = !_hasGeometryInputSignature || _lastGeometryInputSignature != geometryInputSignature;
-        _lastGeometryInputSignature = geometryInputSignature;
-        _hasGeometryInputSignature = true;
         UpdateConnectionPoints(gEdge, routeInformation, sourceRect, targetRect);
 
         // If the logic above is working correctly, both the source and target connection points will exist.
@@ -732,7 +727,7 @@ public abstract class EdgeControlBase : TemplatedControl, IGraphControl, IDispos
 
         var p1 = SourceConnectionPoint.Value;
         var p2 = TargetConnectionPoint.Value;
-        GetPoints(p1, p2, routedEdge.RoutingPoints);
+        UpdatePoints(p1, p2, routedEdge.RoutingPoints);
 
         // Cache layout info for pointer arrangement after base.ArrangeOverride
         _sourcePointerLayout = new EdgePointerLayoutInfo
@@ -807,6 +802,10 @@ public abstract class EdgeControlBase : TemplatedControl, IGraphControl, IDispos
             selfLoopSize = Union(selfLoopSize, ctrl.DesiredSize);
         }
 
+        var pointSignature = GetSignature(_points);
+        var changed = _oldSignature != pointSignature;
+        _isGeometryDirty = LineGeometry is null || changed;
+        _oldSignature = pointSignature;
         // For self-looped edges _pathBounds was set to the actual indicator rect above; the legacy
         // selfLoopSize estimate (radius * 2 + offset) would inflate the EdgeControl past the
         // indicator and let Avalonia's Grid centring push the visible part behind the source
@@ -831,11 +830,8 @@ public abstract class EdgeControlBase : TemplatedControl, IGraphControl, IDispos
                 _isGeometryDirty = false;
                 RootArea?.NotifyBatchedEdgeChanged(this);
             }
-            // else: Source/Target position or size still isn't available. Leave `_isGeometryDirty`
-            // set so the geometry is not incorrectly treated as "up to date" - the next Measure that
-            // succeeds (see MeasureOverride) will force a rebuild instead of this edge silently
-            // staying blank until something unrelated (e.g. dragging the vertex) invalidates it again.
         }
+
         if (LinePathObject == null) return base.ArrangeOverride(finalSize);
         LinePathObject.Data = LineGeometry;
         LinePathObject.StrokeDashArray = StrokeDashArray;
@@ -933,9 +929,11 @@ public abstract class EdgeControlBase : TemplatedControl, IGraphControl, IDispos
     protected internal Point? TargetConnectionPoint;
 
     private readonly List<Point> _points = [];
+
     private Rect _pathBounds;
-    private ulong _lastGeometryInputSignature;
-    private bool _hasGeometryInputSignature;
+
+    // private ulong _lastGeometryInputSignature;
+    // private bool _hasGeometryInputSignature;
     private bool _isGeometryDirty = true;
 
     internal bool CanRenderInBatchedLayer =>
@@ -1067,51 +1065,60 @@ public abstract class EdgeControlBase : TemplatedControl, IGraphControl, IDispos
 
         //if self looped edge
         UpdateSelfLoopedEdgeData();
-        if (!IsSelfLooped) return CreateEdgeGeometry(_points, routedEdge is IGraphXCommonEdge { ReversePath: true });
-
-        // Self-looped edges have no edge pointers to position
-        _sourcePointerLayout = default;
-        _targetPointerLayout = default;
-        var geom = PrepareSelfLoopedEdge(sourceRect.TopLeft);
-        // PrepareSelfLoopedEdge returns geometry in graph-area coordinates; shift it into
-        // the EdgeControl's local space so it lines up with the (now self-loop-sized) bounds.
-        if (geom is { } ellipse)
+        switch (IsSelfLooped)
         {
-            ellipse.Center = new Point(ellipse.Center.X - _pathBounds.X, ellipse.Center.Y - _pathBounds.Y);
-        }
+            case true:
+            {
+                _sourcePointerLayout = default;
+                _targetPointerLayout = default;
+                var geom = PrepareSelfLoopedEdge(sourceRect.TopLeft);
+                geom?.Center = new Point(geom.Center.X - _pathBounds.X, geom.Center.Y - _pathBounds.Y);
 
-        return geom;
+                return geom;
+            }
+            default: return CreateEdgeGeometry(_points, routedEdge is IGraphXCommonEdge { ReversePath: true });
+        }
     }
 
-    private void GetPoints(Point p1, Point p2, Measure.Point[]? routeInformation)
+
+    private void UpdatePoints(Point p1, Point p2, Measure.Point[]? routeInformation)
     {
         _points.Clear();
-        if (routeInformation is null || routeInformation.Length <= 2)
+        if (routeInformation is not null && routeInformation.Length > 2)
+        {
+            var pointsLength = routeInformation.Length;
+            _points.EnsureCapacity(pointsLength);
+            foreach (var t in routeInformation)
+            {
+                _points.Add(t.ToAvalonia());
+            }
+
+            _points[0] = p1;
+            _points[^1] = p2;
+
+            if (RootArea is not { IsEdgeRoutingEnabled: true }) return;
+            Span<Point> copy = stackalloc Point[_points.Count];
+            _points.CopyTo(copy);
+
+            copy.GetCurveThroughPoints(_points, 0.5, RootArea.EdgeCurvingTolerance);
+        }
+        else
         {
             _points.Add(p1);
             _points.Add(p2);
-            return;
         }
+    }
 
-        var pointsLength = routeInformation.Length;
-        _points.EnsureCapacity(pointsLength);
-        foreach (var t in routeInformation)
+    private static int GetSignature(List<Point> points)
+    {
+        var hash = new HashCode();
+        foreach (var p in points)
         {
-            _points.Add(t.ToAvalonia());
+            hash.Add(p.X);
+            hash.Add(p.Y);
         }
 
-        _points[0] = p1;
-        _points[^1] = p2;
-
-        if (RootArea is not { IsEdgeRoutingEnabled: true })
-        {
-            return;
-        }
-
-        Span<Point> copy = stackalloc Point[_points.Count];
-        _points.CopyTo(copy);
-
-        copy.GetCurveThroughPoints(_points, 0.5, RootArea.EdgeCurvingTolerance);
+        return hash.ToHashCode();
     }
 
     /// <summary>
@@ -1155,15 +1162,6 @@ public abstract class EdgeControlBase : TemplatedControl, IGraphControl, IDispos
         if (double.IsNaN(y)) y = GraphAreaBase.GetY(control);
         if (double.IsNaN(x) ||
             double.IsNaN(y)) return false;
-        // Defend against Panel child-ordering: GraphAreaBase measures its Children in collection
-        // order, and edges can be positioned before their own Source/Target vertices there (e.g. the
-        // default ControlDrawOrder.VerticesOnTop inserts new edges at index 0). If this vertex hasn't
-        // been measured yet, DesiredSize would still be the zero-size default, producing an edge that
-        // is anchored at the vertex's top-left corner instead of its real bounds. Measuring it here
-        // (idempotent - Avalonia skips the work if it's already valid) guarantees a correct size
-        // regardless of visual-tree ordering.
-        if (!control.IsMeasureValid)
-            control.Measure(new Size(double.PositiveInfinity, double.PositiveInfinity));
         result = new Rect(new Point(x, y), control.DesiredSize);
         return true;
     }
@@ -1265,91 +1263,6 @@ public abstract class EdgeControlBase : TemplatedControl, IGraphControl, IDispos
     {
         if (RootArea is null) return false;
         return !hasRouteInfo && RootArea.EnableParallelEdges && IsParallel;
-    }
-
-    /// <summary>
-    /// Captures every value that changes automatic edge geometry. The signature allows a layout
-    /// invalidation with unchanged inputs to retain the existing immutable StreamGeometry.
-    /// </summary>
-    private ulong GetGeometryInputSignature(Rect sourceRect, Rect targetRect, Measure.Point[]? routingPoints,
-        IGraphXCommonEdge? edge)
-    {
-        const ulong offsetBasis = 14695981039346656037;
-        var signature = offsetBasis;
-
-        AddSignature(ref signature, sourceRect.X);
-        AddSignature(ref signature, sourceRect.Y);
-        AddSignature(ref signature, sourceRect.Width);
-        AddSignature(ref signature, sourceRect.Height);
-        AddSignature(ref signature, targetRect.X);
-        AddSignature(ref signature, targetRect.Y);
-        AddSignature(ref signature, targetRect.Width);
-        AddSignature(ref signature, targetRect.Height);
-        AddSignature(ref signature, (int)Source!.VertexShape);
-        AddSignature(ref signature, (int)Target!.VertexShape);
-        AddSignature(ref signature, IsSelfLooped);
-        AddSignature(ref signature, IsParallel);
-        AddSignature(ref signature, ParallelEdgeOffset);
-        AddSignature(ref signature, ShowArrows);
-        AddSignature(ref signature, ShowSelfLoopIndicator);
-        AddSignature(ref signature, SelfLoopIndicatorRadius);
-        AddSignature(ref signature, SelfLoopIndicatorOffset.X);
-        AddSignature(ref signature, SelfLoopIndicatorOffset.Y);
-        AddControlSizeSignature(ref signature, EdgePointerForSource as Control);
-        AddControlSizeSignature(ref signature, EdgePointerForTarget as Control);
-        AddControlSizeSignature(ref signature, SelfLoopIndicator);
-        AddSignature(ref signature, edge?.SourceConnectionPointId ?? -1);
-        AddSignature(ref signature, edge?.TargetConnectionPointId ?? -1);
-        AddSignature(ref signature, edge?.ReversePath ?? false);
-        AddSignature(ref signature, RootArea?.IsEdgeRoutingEnabled ?? false);
-        AddSignature(ref signature, RootArea?.EnableParallelEdges ?? false);
-        AddSignature(ref signature, RootArea?.EdgeCurvingTolerance ?? 0);
-        AddSignature(ref signature, routingPoints?.Length ?? 0);
-
-        if (routingPoints is not null)
-        {
-            foreach (var point in routingPoints)
-            {
-                AddSignature(ref signature, point.X);
-                AddSignature(ref signature, point.Y);
-            }
-        }
-
-        return signature;
-    }
-
-    private static void AddControlSizeSignature(ref ulong signature, Control? control)
-    {
-        if (control is null)
-        {
-            AddSignature(ref signature, 0);
-            return;
-        }
-
-        AddSignature(ref signature, control.DesiredSize.Width);
-        AddSignature(ref signature, control.DesiredSize.Height);
-    }
-
-    private static void AddSignature(ref ulong signature, bool value)
-    {
-        AddSignature(ref signature, value ? 1 : 0);
-    }
-
-    private static void AddSignature(ref ulong signature, int value)
-    {
-        AddSignature(ref signature, unchecked((ulong)(uint)value));
-    }
-
-    private static void AddSignature(ref ulong signature, double value)
-    {
-        AddSignature(ref signature, unchecked((ulong)BitConverter.DoubleToInt64Bits(value)));
-    }
-
-    private static void AddSignature(ref ulong signature, ulong value)
-    {
-        const ulong prime = 1099511628211;
-        signature ^= value;
-        signature *= prime;
     }
 
     private IVertexConnectionPoint GetTargetCpOrThrow(int id)

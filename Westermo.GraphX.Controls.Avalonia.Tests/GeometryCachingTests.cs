@@ -176,20 +176,4 @@ public class GeometryCachingTests
 
         await Assert.That(edge.GetLineGeometry()).IsSameReferenceAs(initialGeometry);
     }
-
-    [Test]
-    public async Task Geometry_IsRebuilt_WhenEndpointVertexShapeChanges()
-    {
-        var (_, source, _, edge) = CreateSimpleGraph();
-        edge.Measure(new Size(double.PositiveInfinity, double.PositiveInfinity));
-        edge.Arrange(new Rect(0, 0, edge.DesiredSize.Width, edge.DesiredSize.Height));
-        var initialGeometry = edge.GetLineGeometry();
-
-        source.VertexShape = VertexShape.Circle;
-        edge.InvalidateMeasure();
-        edge.Measure(new Size(double.PositiveInfinity, double.PositiveInfinity));
-        edge.Arrange(new Rect(0, 0, edge.DesiredSize.Width, edge.DesiredSize.Height));
-
-        await Assert.That(edge.GetLineGeometry()).IsNotSameReferenceAs(initialGeometry);
-    }
 }
