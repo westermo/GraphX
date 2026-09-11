@@ -118,7 +118,7 @@ public sealed class BatchedEdgeRenderingTests
         var layer = (BatchedEdgeLayer)graphArea.Children[0];
         var refreshCount = layer.RefreshCount;
         var initialGeometry = edge.GetLineGeometry();
-        ((TestEdge)edge.Edge!).RoutingPoints = [new(140, 120)];
+        ((TestEdge)edge.Edge!).RoutingPoints = [new(140, 120), new(130, 120), new(140, 130)];
 
         edge.InvalidateMeasure();
         UpdateEdgeGeometry(edge);
