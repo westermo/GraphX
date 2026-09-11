@@ -393,20 +393,15 @@ public abstract class EdgeControlBase : TemplatedControl, IGraphControl, IDispos
     }
 
     /// <summary>
-    ///  Gets or Sets that user controls the path geometry object or it is generated automatically
-    /// </summary>
-    private bool _manualDrawing;
-
-    /// <summary>
     /// Gets or sets whether the user controls the path geometry instead of automatic generation.
     /// </summary>
     public bool ManualDrawing
     {
-        get => _manualDrawing;
+        get;
         set
         {
-            if (_manualDrawing == value) return;
-            _manualDrawing = value;
+            if (field == value) return;
+            field = value;
             RootArea?.NotifyBatchedEdgeChanged(this);
         }
     }
@@ -632,7 +627,6 @@ public abstract class EdgeControlBase : TemplatedControl, IGraphControl, IDispos
         EdgePointerForTarget = GetTemplatePart(e, "PART_EdgePointerForTarget") as IEdgePointer;
 
         SelfLoopIndicator = GetTemplatePart(e, "PART_SelfLoopedEdge") as Control;
-        // var x = ShowLabel;
         MeasureChild(EdgePointerForSource as Control);
         MeasureChild(EdgePointerForTarget as Control);
         MeasureChild(SelfLoopIndicator);
@@ -700,7 +694,6 @@ public abstract class EdgeControlBase : TemplatedControl, IGraphControl, IDispos
         if (!TryGetSourcePoints(false, out var sourceRect) || !TryGetTargetPoints(false, out var targetRect))
         {
             _isGeometryDirty = true;
-            // _hasGeometryInputSignature = false;
             return default;
         }
 
@@ -806,10 +799,6 @@ public abstract class EdgeControlBase : TemplatedControl, IGraphControl, IDispos
         var changed = _oldSignature != pointSignature;
         _isGeometryDirty = LineGeometry is null || changed;
         _oldSignature = pointSignature;
-        // For self-looped edges _pathBounds was set to the actual indicator rect above; the legacy
-        // selfLoopSize estimate (radius * 2 + offset) would inflate the EdgeControl past the
-        // indicator and let Avalonia's Grid centring push the visible part behind the source
-        // vertex. Use the precise indicator rect instead so DesiredSize matches what we render.
         return IsSelfLooped
             ? _pathBounds.Size
             : Union(spanningRect.Size, selfLoopSize, _pathBounds.Size);
@@ -930,10 +919,7 @@ public abstract class EdgeControlBase : TemplatedControl, IGraphControl, IDispos
 
     private readonly List<Point> _points = [];
 
-    private Rect _pathBounds;
-
-    // private ulong _lastGeometryInputSignature;
-    // private bool _hasGeometryInputSignature;
+    private Rect _pathBounds; 
     private bool _isGeometryDirty = true;
 
     internal bool CanRenderInBatchedLayer =>
@@ -1065,19 +1051,16 @@ public abstract class EdgeControlBase : TemplatedControl, IGraphControl, IDispos
 
         //if self looped edge
         UpdateSelfLoopedEdgeData();
-        switch (IsSelfLooped)
+        if (IsSelfLooped)
         {
-            case true:
-            {
-                _sourcePointerLayout = default;
-                _targetPointerLayout = default;
-                var geom = PrepareSelfLoopedEdge(sourceRect.TopLeft);
-                geom?.Center = new Point(geom.Center.X - _pathBounds.X, geom.Center.Y - _pathBounds.Y);
-
-                return geom;
-            }
-            default: return CreateEdgeGeometry(_points, routedEdge is IGraphXCommonEdge { ReversePath: true });
+            _sourcePointerLayout = default;
+            _targetPointerLayout = default;
+            var geom = PrepareSelfLoopedEdge(sourceRect.TopLeft);
+            geom?.Center = new Point(geom.Center.X - _pathBounds.X, geom.Center.Y - _pathBounds.Y);
+            return geom;
         }
+
+        return CreateEdgeGeometry(_points, routedEdge is IGraphXCommonEdge { ReversePath: true });
     }
 
 
