@@ -68,6 +68,37 @@ public sealed class ZoomControl : ContentControl, IZoomControl, INotifyPropertyC
     }
 
     /// <summary>
+    /// Notifies the visual/layout system that the presenter's render transform was changed.
+    /// </summary>
+    /// <remarks>
+    /// The scale/translate transforms are mutated in place (deliberately - reallocating a
+    /// <see cref="TransformGroup"/> on every pan/zoom tick would churn the heap during drag
+    /// operations). In-place mutation raises neither <see cref="Visual.RenderTransformProperty"/>
+    /// nor <see cref="Visual.BoundsProperty"/>, which are the only signals Avalonia's
+    /// <c>AdornerHelper</c> listens for when deciding to re-arrange the adorner layer.
+    ///
+    /// The adorner layer positions each adorner by baking
+    /// <c>adornedElement.TransformToVisual(layer)</c> into the adorner's render transform during
+    /// its own arrange pass, so without an explicit invalidation any adorner attached to a
+    /// <c>VertexControl</c> would stay frozen at its pre-zoom screen position while the vertex
+    /// moves and scales underneath it. Invalidating the layer's arrange is far cheaper than
+    /// invalidating the presenter subtree's layout, and leaves the graph content itself
+    /// untouched (it only needs a repaint, which <see cref="Visual.InvalidateVisual"/> covers).
+    /// </remarks>
+    private void InvalidatePresenterTransform(bool invalidateVisual = true)
+    {
+        var presenter = _presenter;
+        if (presenter == null) return;
+
+        if (invalidateVisual) presenter.InvalidateVisual();
+
+        var adornerLayer = AdornerLayer.GetAdornerLayer(presenter);
+        if (adornerLayer == null || adornerLayer.Children.Count == 0) return;
+        adornerLayer.InvalidateMeasure();
+        adornerLayer.InvalidateArrange();
+    }
+
+    /// <summary>
     /// Notifies the contained GraphArea of viewport changes for culling optimization.
     /// </summary>
     private void NotifyGraphAreaViewportChanged()
@@ -320,7 +351,7 @@ public sealed class ZoomControl : ContentControl, IZoomControl, INotifyPropertyC
         zc._translateTransform.X = (double)e.NewValue!;
         if (!zc._isZooming) zc.Mode = ZoomControlModes.Custom;
         zc.OnPropertyChanged(nameof(Presenter));
-        if (!zc._isZooming) zc.Presenter?.InvalidateVisual();
+        zc.InvalidatePresenterTransform(!zc._isZooming);
         zc.ScheduleViewportUpdate();
     }
 
@@ -330,7 +361,7 @@ public sealed class ZoomControl : ContentControl, IZoomControl, INotifyPropertyC
         zc._translateTransform.Y = (double)e.NewValue!;
         if (!zc._isZooming) zc.Mode = ZoomControlModes.Custom;
         zc.OnPropertyChanged(nameof(Presenter));
-        if (!zc._isZooming) zc.Presenter?.InvalidateVisual();
+        zc.InvalidatePresenterTransform(!zc._isZooming);
         zc.ScheduleViewportUpdate();
     }
 
@@ -371,7 +402,7 @@ public sealed class ZoomControl : ContentControl, IZoomControl, INotifyPropertyC
         }
 
         zc.OnPropertyChanged(nameof(Presenter));
-        zc.Presenter?.InvalidateVisual();
+        zc.InvalidatePresenterTransform();
         zc.OnPropertyChanged(nameof(Zoom));
         zc.HookAfterZoomChanging();
     }
