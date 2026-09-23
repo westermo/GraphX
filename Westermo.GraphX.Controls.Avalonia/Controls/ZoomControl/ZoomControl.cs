@@ -94,7 +94,6 @@ public sealed class ZoomControl : ContentControl, IZoomControl, INotifyPropertyC
 
         var adornerLayer = AdornerLayer.GetAdornerLayer(presenter);
         if (adornerLayer == null || adornerLayer.Children.Count == 0) return;
-        adornerLayer.InvalidateMeasure();
         adornerLayer.InvalidateArrange();
     }
 
