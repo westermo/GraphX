@@ -245,11 +245,7 @@ public sealed class Wayfinder : Control
 
     private void SourceVisualPropertyChanged(object? sender, AvaloniaPropertyChangedEventArgs e)
     {
-        // Visual controls do not expose a general render-invalidated event in
-        // Avalonia 12. Observe their rendering-affecting property changes
-        // instead, including child controls such as edge and vertex labels.
-        // ZoomControl's translate/zoom properties are on its parent and never
-        // reach this subscription, so viewport-only changes keep the cache.
+        if (_contentCacheDirty) return;
         InvalidateContentCache();
         InvalidateVisual();
     }
@@ -783,14 +779,16 @@ public sealed class Wayfinder : Control
             context,
             graphArea,
             graphArea.Children,
-            rect => new Rect(
-                (rect.X - _contentRect.X) * Scale,
-                (rect.Y - _contentRect.Y) * Scale,
-                rect.Width * Scale,
-                rect.Height * Scale),
+            _contentToCacheRectMapper ??= MapContentRectToCacheRect,
             renderCachedRasterLayerAsBitmap: true,
             renderBatchedEdgeLayerDirectly: false);
     }
+    private Func<Rect, Rect>? _contentToCacheRectMapper;
+    private Rect MapContentRectToCacheRect(Rect rect) => new(
+        (rect.X - _contentRect.X) * Scale,
+        (rect.Y - _contentRect.Y) * Scale,
+        rect.Width * Scale,
+        rect.Height * Scale);
 
     private void InvalidateContentCache()
     {

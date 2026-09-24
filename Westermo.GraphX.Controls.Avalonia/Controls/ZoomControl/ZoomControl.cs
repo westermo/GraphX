@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.ComponentModel;
 using Avalonia;
 using Avalonia.Controls;
@@ -40,11 +40,8 @@ public sealed class ZoomControl : ContentControl, IZoomControl, INotifyPropertyC
     /// </summary>
     private bool _viewportUpdatePending;
 
-    // Hook placeholders
-    private void HookBeforeZoomChanging()
-    {
-    }
-
+    // Hook placeholder: fires after Zoom_PropertyChanged commits, to schedule
+    // the coalesced viewport update.
     private void HookAfterZoomChanging()
     {
         ScheduleViewportUpdate();
@@ -59,12 +56,17 @@ public sealed class ZoomControl : ContentControl, IZoomControl, INotifyPropertyC
     {
         if (_viewportUpdatePending) return;
         _viewportUpdatePending = true;
-        Dispatcher.UIThread.Post(() =>
-        {
-            _viewportUpdatePending = false;
-            NotifyGraphAreaViewportChanged();
-            NotifyGraphAreaZoomChanged();
-        }, DispatcherPriority.Render);
+        Dispatcher.UIThread.Post(_viewportUpdateTick ??= OnViewportUpdateTick, DispatcherPriority.Render);
+    }
+
+    private Action? _viewportUpdateTick;
+
+    private void OnViewportUpdateTick()
+    {
+        _viewportUpdatePending = false;
+        NotifyGraphAreaViewportChanged();
+        NotifyGraphAreaZoomChanged();
+        _cachedVisibleContentRect = null;
     }
 
     /// <summary>
@@ -122,7 +124,11 @@ public sealed class ZoomControl : ContentControl, IZoomControl, INotifyPropertyC
     /// <summary>
     /// Gets the currently visible content rectangle in content coordinates.
     /// </summary>
-    public Rect GetVisibleContentRect()
+    public Rect GetVisibleContentRect() => _cachedVisibleContentRect ??= ComputeVisibleContentRect();
+
+    private Rect? _cachedVisibleContentRect;
+
+    private Rect ComputeVisibleContentRect()
     {
         if (_presenter == null || ContentVisual == null)
             return default;
@@ -191,7 +197,7 @@ public sealed class ZoomControl : ContentControl, IZoomControl, INotifyPropertyC
     {
         if (_presenter == null) return;
         var initialTranslate = GetTrackableTranslate();
-        DoZoomAnimation(Zoom, initialTranslate.X * Zoom, initialTranslate.Y * Zoom, false);
+        SetZoomTransformImmediate(Zoom, initialTranslate.X * Zoom, initialTranslate.Y * Zoom, false);
     }
 
     /// <summary>
@@ -252,14 +258,6 @@ public sealed class ZoomControl : ContentControl, IZoomControl, INotifyPropertyC
     public static RoutedEvent Refocus =
         RoutedEvent.Register<ZoomControl, RoutedEventArgs>("Refocus", RoutingStrategies.Bubble);
 
-    private void CanRefocusView(object sender, RoutedEventArgs e)
-    {
-    }
-
-    private void RefocusView(object sender, RoutedEventArgs e)
-    {
-    }
-
     #endregion
 
 
@@ -271,6 +269,11 @@ public sealed class ZoomControl : ContentControl, IZoomControl, INotifyPropertyC
     /// <summary>
     /// Gets or sets whether zoom and pan animations are enabled. Default is true.
     /// </summary>
+    /// <remarks>
+    /// Reserved for a future real (interpolated) zoom/pan animation. Currently
+    /// unused: all zoom/pan actions apply their target transform immediately
+    /// (see <see cref="SetZoomTransformImmediate"/>) regardless of this flag.
+    /// </remarks>
     public bool IsAnimationEnabled
     {
         get => GetValue(IsAnimationEnabledProperty);
@@ -346,20 +349,24 @@ public sealed class ZoomControl : ContentControl, IZoomControl, INotifyPropertyC
 
     private static void TranslateX_PropertyChanged(ZoomControl zc, AvaloniaPropertyChangedEventArgs e)
     {
+        zc._cachedVisibleContentRect = null;
         if (zc._translateTransform == null) return;
         zc._translateTransform.X = (double)e.NewValue!;
         if (!zc._isZooming) zc.Mode = ZoomControlModes.Custom;
         zc.OnPropertyChanged(nameof(Presenter));
+        if (zc._isBatchingPresenterInvalidation) return;
         zc.InvalidatePresenterTransform(!zc._isZooming);
         zc.ScheduleViewportUpdate();
     }
 
     private static void TranslateY_PropertyChanged(ZoomControl zc, AvaloniaPropertyChangedEventArgs e)
     {
+        zc._cachedVisibleContentRect = null;
         if (zc._translateTransform == null) return;
         zc._translateTransform.Y = (double)e.NewValue!;
         if (!zc._isZooming) zc.Mode = ZoomControlModes.Custom;
         zc.OnPropertyChanged(nameof(Presenter));
+        if (zc._isBatchingPresenterInvalidation) return;
         zc.InvalidatePresenterTransform(!zc._isZooming);
         zc.ScheduleViewportUpdate();
     }
@@ -385,9 +392,11 @@ public sealed class ZoomControl : ContentControl, IZoomControl, INotifyPropertyC
     public static readonly StyledProperty<double> ZoomProperty =
         AvaloniaProperty.Register<ZoomControl, double>(nameof(Zoom), 1.0);
 
+    private bool _isBatchingPresenterInvalidation;
+
     private static void Zoom_PropertyChanged(ZoomControl zc, AvaloniaPropertyChangedEventArgs e)
     {
-        zc.HookBeforeZoomChanging();
+        zc._cachedVisibleContentRect = null;
         if (zc._scaleTransform == null) return;
         var zoom = (double)e.NewValue!;
         zc._scaleTransform.ScaleX = zoom;
@@ -395,13 +404,23 @@ public sealed class ZoomControl : ContentControl, IZoomControl, INotifyPropertyC
         if (!zc._isZooming)
         {
             var delta = (double)e.NewValue / (double)e.OldValue!;
-            zc.TranslateX *= delta;
-            zc.TranslateY *= delta;
+            var wasBatching = zc._isBatchingPresenterInvalidation;
+            zc._isBatchingPresenterInvalidation = true;
+            try
+            {
+                zc.TranslateX *= delta;
+                zc.TranslateY *= delta;
+            }
+            finally
+            {
+                zc._isBatchingPresenterInvalidation = wasBatching;
+            }
+
             zc.Mode = ZoomControlModes.Custom;
         }
 
         zc.OnPropertyChanged(nameof(Presenter));
-        zc.InvalidatePresenterTransform();
+        zc.InvalidatePresenterTransform(!zc._isZooming);
         zc.OnPropertyChanged(nameof(Zoom));
         zc.HookAfterZoomChanging();
     }
@@ -607,6 +626,7 @@ public sealed class ZoomControl : ContentControl, IZoomControl, INotifyPropertyC
     private void HandleContentChanged(object? oldContent, object? newContent)
     {
         if (Design.IsDesignMode) return;
+        _cachedVisibleContentRect = null;
 
         if (oldContent is ITrackableContent oldTrackable)
             oldTrackable.ContentSizeChanged -= Content_ContentSizeChanged;
@@ -645,6 +665,7 @@ public sealed class ZoomControl : ContentControl, IZoomControl, INotifyPropertyC
 
     private void ZoomControl_SizeChanged(object? sender, SizeChangedEventArgs e)
     {
+        _cachedVisibleContentRect = null;
         if (Mode == ZoomControlModes.Fill || _pendingFillOnBoundsAvailable) DoZoomToFill();
     }
 
@@ -828,8 +849,7 @@ public sealed class ZoomControl : ContentControl, IZoomControl, INotifyPropertyC
         remove => RemoveHandler(ClickEvent, value);
     }
 
-    // Simplified animation: direct property set
-    private void DoZoomAnimation(double targetZoom, double transformX, double transformY, bool isZooming = true)
+    private void SetZoomTransformImmediate(double targetZoom, double transformX, double transformY, bool isZooming = true)
     {
         _isZooming = isZooming;
         SetCurrentValue(TranslateXProperty, transformX);
@@ -867,7 +887,7 @@ public sealed class ZoomControl : ContentControl, IZoomControl, INotifyPropertyC
             new Point((ActualWidth / 2 - center.X) * newRelativeScale,
                 (ActualHeight / 2 - center.Y) * newRelativeScale);
 
-        DoZoomAnimation(newRelativeScale, newRelativePosition.X, newRelativePosition.Y);
+        SetZoomTransformImmediate(newRelativeScale, newRelativePosition.X, newRelativePosition.Y);
     }
 
     public event EventHandler? ZoomAnimationCompleted;
@@ -877,7 +897,7 @@ public sealed class ZoomControl : ContentControl, IZoomControl, INotifyPropertyC
     {
         if (_presenter == null) return;
         var initialTranslate = GetTrackableTranslate();
-        DoZoomAnimation(1.0, initialTranslate.X, initialTranslate.Y);
+        SetZoomTransformImmediate(1.0, initialTranslate.X, initialTranslate.Y);
     }
 
     private void DoZoomToFill()
@@ -917,7 +937,7 @@ public sealed class ZoomControl : ContentControl, IZoomControl, INotifyPropertyC
         var deltaZoom = Math.Clamp(Math.Min(ActualWidth / c.Width, ActualHeight / c.Height), MinZoom, MaxZoom);
         var initialTranslate =
             IsContentTrackable ? GetTrackableTranslate() : GetInitialTranslate(c.Width, c.Height);
-        DoZoomAnimation(deltaZoom, initialTranslate.X * deltaZoom, initialTranslate.Y * deltaZoom);
+        SetZoomTransformImmediate(deltaZoom, initialTranslate.X * deltaZoom, initialTranslate.Y * deltaZoom);
     }
 
     private void ZoomToInternal(Rect rect, bool setDelta = false)
@@ -965,7 +985,7 @@ public sealed class ZoomControl : ContentControl, IZoomControl, INotifyPropertyC
             transformY = GetCoercedTranslateY(TranslateY + endTranslate.Y, currentZoom);
         }
 
-        DoZoomAnimation(currentZoom, transformX, transformY);
+        SetZoomTransformImmediate(currentZoom, transformX, transformY);
         Mode = ZoomControlModes.Custom;
     }
 
@@ -992,49 +1012,16 @@ public sealed class ZoomControl : ContentControl, IZoomControl, INotifyPropertyC
 
     private void Presenter_ContentSizeChanged(object sender, Size newSize)
     {
+        _cachedVisibleContentRect = null;
         if (Mode == ZoomControlModes.Fill || _pendingFillOnBoundsAvailable) DoZoomToFill();
     }
 
     private void Presenter_SizeChanged(object? sender, SizeChangedEventArgs e)
     {
+        _cachedVisibleContentRect = null;
         if (Mode == ZoomControlModes.Fill || _pendingFillOnBoundsAvailable) DoZoomToFill();
     }
 
     public new event PropertyChangedEventHandler? PropertyChanged;
     public void OnPropertyChanged(string name) => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
 }
-
-#region ResizeEdge Nested Type
-
-public enum ResizeEdge
-{
-    None,
-    TopLeft,
-    TopRight,
-    BottomLeft,
-    BottomRight,
-    Left,
-    Top,
-    Right,
-    Bottom
-}
-
-#endregion
-
-#region CacheBits Nested Type
-
-public enum CacheBits
-{
-    IsUpdatingView = 0x1,
-    IsUpdatingViewport = 0x2,
-    IsDraggingViewport = 0x4,
-    IsResizingViewport = 0x8,
-    IsMonitoringInput = 0x10,
-    IsContentWrapped = 0x20,
-    HasArrangedContentPresenter = 0x40,
-    HasRenderedFirstView = 0x80,
-    RefocusViewOnFirstRender = 0x100,
-    HasUiPermission = 0x200
-}
-
-#endregion
