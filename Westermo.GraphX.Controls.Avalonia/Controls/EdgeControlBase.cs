@@ -1354,6 +1354,12 @@ public abstract class EdgeControlBase : TemplatedControl, IGraphControl, IDispos
         private Size _lastSelfLoopIndicatorDesiredSize;
         private bool _lastIsParallel;
         private int _lastParallelEdgeOffset;
+        private Point? _lastOverrideEndpoint;
+        private int? _lastSourceConnectionPointId;
+        private int? _lastTargetConnectionPointId;
+        private bool _lastReversePath;
+        private bool _lastIsEdgeRoutingEnabled;
+        private double _lastEdgeCurvingTolerance;
 
         internal bool CheckGeometryReusability(Rect sourceRect, Rect targetRect, Measure.Point[] routeInformation)
         {
@@ -1372,7 +1378,30 @@ public abstract class EdgeControlBase : TemplatedControl, IGraphControl, IDispos
                    && edge.SelfLoopIndicatorOffset == _lastSelfLoopIndicatorOffset
                    && SelfLoopIndicatorDesiredSize(edge.SelfLoopIndicator) == _lastSelfLoopIndicatorDesiredSize
                    && edge.IsParallel == _lastIsParallel
-                   && edge.ParallelEdgeOffset == _lastParallelEdgeOffset;
+                   && edge.ParallelEdgeOffset == _lastParallelEdgeOffset
+                   // Belt-and-suspenders: OverrideEndpoint is already folded into targetRect by
+                   // TryGetTargetPoints, but comparing it directly documents the dependency explicitly.
+                   && edge.OverrideEndpoint == _lastOverrideEndpoint
+                   && SourceConnectionPointId(edge) == _lastSourceConnectionPointId
+                   && TargetConnectionPointId(edge) == _lastTargetConnectionPointId
+                   && ReversePath(edge) == _lastReversePath
+                   && (edge.RootArea?.IsEdgeRoutingEnabled ?? false) == _lastIsEdgeRoutingEnabled
+                   && (edge.RootArea?.EdgeCurvingTolerance ?? 0) == _lastEdgeCurvingTolerance;
+        }
+
+        private static int? SourceConnectionPointId(EdgeControlBase edge)
+        {
+            return (edge.Edge as IGraphXCommonEdge)?.SourceConnectionPointId;
+        }
+
+        private static int? TargetConnectionPointId(EdgeControlBase edge)
+        {
+            return (edge.Edge as IGraphXCommonEdge)?.TargetConnectionPointId;
+        }
+
+        private static bool ReversePath(EdgeControlBase edge)
+        {
+            return (edge.Edge as IGraphXCommonEdge)?.ReversePath ?? false;
         }
 
         private static Size PointerDesiredSize(IEdgePointer? edgeEdgePointerForSource)
@@ -1416,7 +1445,11 @@ public abstract class EdgeControlBase : TemplatedControl, IGraphControl, IDispos
                                                 || edge.SelfLoopIndicatorOffset != _lastSelfLoopIndicatorOffset
                                                 || SelfLoopIndicatorDesiredSize(edge.SelfLoopIndicator) !=
                                                 _lastSelfLoopIndicatorDesiredSize));
-            edge._isGeometryDirty = edge.LineGeometry is null || changed || selfLoopVisualChanged;
+            // ReversePath only flips the point traversal order when the final StreamGeometry is built
+            // (CreateEdgeGeometry); it never changes the _points values themselves, so the point-signature
+            // comparison above can't detect it. Track it explicitly so toggling it still rebuilds LineGeometry.
+            var reversePathChanged = ReversePath(edge) != _lastReversePath;
+            edge._isGeometryDirty = edge.LineGeometry is null || changed || selfLoopVisualChanged || reversePathChanged;
             if (changed)
             {
                 _lastPointsForSignature.Clear();
@@ -1439,6 +1472,12 @@ public abstract class EdgeControlBase : TemplatedControl, IGraphControl, IDispos
             _lastSelfLoopIndicatorDesiredSize = SelfLoopIndicatorDesiredSize(edge.SelfLoopIndicator);
             _lastIsParallel = edge.IsParallel;
             _lastParallelEdgeOffset = edge.ParallelEdgeOffset;
+            _lastOverrideEndpoint = edge.OverrideEndpoint;
+            _lastSourceConnectionPointId = SourceConnectionPointId(edge);
+            _lastTargetConnectionPointId = TargetConnectionPointId(edge);
+            _lastReversePath = ReversePath(edge);
+            _lastIsEdgeRoutingEnabled = edge.RootArea?.IsEdgeRoutingEnabled ?? false;
+            _lastEdgeCurvingTolerance = edge.RootArea?.EdgeCurvingTolerance ?? 0;
             _hasMeasuredGeometryOnce = true;
         }
 

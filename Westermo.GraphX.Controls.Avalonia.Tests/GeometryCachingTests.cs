@@ -281,6 +281,25 @@ public class GeometryCachingTests
     }
 
     [Test]
+    public async Task Geometry_IsRebuilt_WhenReversePathChanges()
+    {
+        var (_, _, _, edge) = CreateSimpleGraph();
+        edge.Measure(new Size(double.PositiveInfinity, double.PositiveInfinity));
+        edge.Arrange(new Rect(0, 0, edge.DesiredSize.Width, edge.DesiredSize.Height));
+        var initialGeometry = edge.GetLineGeometry();
+
+        // ReversePath only affects the traversal order used when the final StreamGeometry is built
+        // (it doesn't change the underlying point values), so the cache must treat it as an explicit
+        // input rather than relying on the point-signature comparison to notice the change.
+        ((TEdge)edge.Edge!).ReversePath = true;
+        edge.InvalidateMeasure();
+        edge.Measure(new Size(double.PositiveInfinity, double.PositiveInfinity));
+        edge.Arrange(new Rect(0, 0, edge.DesiredSize.Width, edge.DesiredSize.Height));
+
+        await Assert.That(edge.GetLineGeometry()).IsNotSameReferenceAs(initialGeometry);
+    }
+
+    [Test]
     public async Task Geometry_IsCleared_WhenShowSelfLoopIndicatorChanges()
     {
         var (_, _, edge) = CreateSelfLoopGraph();
