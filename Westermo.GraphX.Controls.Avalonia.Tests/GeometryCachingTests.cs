@@ -7,6 +7,7 @@ using QuikGraph;
 using Westermo.GraphX.Common.Enums;
 using Westermo.GraphX.Common.Models;
 using Westermo.GraphX.Controls.Controls;
+using Westermo.GraphX.Controls.Controls.EdgePointers;
 using Westermo.GraphX.Logic.Models;
 
 namespace Westermo.GraphX.Controls.Avalonia.Tests;
@@ -68,6 +69,41 @@ public class GeometryCachingTests
                 Content = functor
             };
         }
+
+        ec.ApplyTemplate();
+    }
+
+    private static void EnsureEdgeTemplateWithTargetPointer(EdgeControl ec, double pointerWidth = 10, double pointerHeight = 10)
+    {
+        var content = new Grid();
+        var path = new global::Avalonia.Controls.Shapes.Path
+        {
+            Name = "PART_edgePath",
+            Stroke = Brushes.Black,
+            StrokeThickness = 1
+        };
+        var pointer = new DefaultEdgePointer
+        {
+            Name = "PART_EdgePointerForTarget",
+            Width = pointerWidth,
+            Height = pointerHeight,
+            Content = new global::Avalonia.Controls.Shapes.Polygon
+            {
+                Points = [new Point(0, 0), new Point(pointerWidth, pointerHeight / 2), new Point(0, pointerHeight)],
+                Fill = Brushes.Black
+            }
+        };
+        content.Children.Add(path);
+        content.Children.Add(pointer);
+        var ns = new NameScope();
+        ns.Register("PART_edgePath", path);
+        ns.Register("PART_EdgePointerForTarget", pointer);
+        var functor = new Func<IServiceProvider?, object?>(_ => new TemplateResult<Control>(content, ns));
+        ec.Template = new ControlTemplate
+        {
+            TargetType = typeof(EdgeControl),
+            Content = functor
+        };
 
         ec.ApplyTemplate();
     }
@@ -175,5 +211,32 @@ public class GeometryCachingTests
         edge.Arrange(new Rect(0, 0, edge.DesiredSize.Width, edge.DesiredSize.Height));
 
         await Assert.That(edge.GetLineGeometry()).IsSameReferenceAs(initialGeometry);
+    }
+
+    [Test]
+    public async Task Geometry_IsRebuilt_WhenPointerDesiredSizeChangesBeforeEdgeMeasure()
+    {
+        var (_, _, _, edge) = CreateSimpleGraph();
+        EnsureEdgeTemplateWithTargetPointer(edge);
+        edge.Measure(new Size(double.PositiveInfinity, double.PositiveInfinity));
+        edge.Arrange(new Rect(0, 0, edge.DesiredSize.Width, edge.DesiredSize.Height));
+
+        var initialGeometry = edge.GetLineGeometry();
+        var targetPointer = edge.GetEdgePointerForTarget() as Control;
+        await Assert.That(targetPointer).IsNotNull();
+        await Assert.That(targetPointer!.DesiredSize.Width).IsEqualTo(10);
+
+        // Changing the pointer size invalidates its own measure first. The edge cache check must
+        // observe the fresh DesiredSize during the same pass so the endpoint offsets are rebuilt immediately.
+        targetPointer.Width = 20;
+        edge.InvalidateMeasure();
+
+        await Assert.That(targetPointer.DesiredSize.Width).IsEqualTo(10);
+
+        edge.Measure(new Size(double.PositiveInfinity, double.PositiveInfinity));
+        edge.Arrange(new Rect(0, 0, edge.DesiredSize.Width, edge.DesiredSize.Height));
+
+        await Assert.That(targetPointer.DesiredSize.Width).IsEqualTo(20);
+        await Assert.That(edge.GetLineGeometry()).IsNotSameReferenceAs(initialGeometry);
     }
 }

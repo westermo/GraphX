@@ -738,13 +738,6 @@ public abstract class EdgeControlBase : TemplatedControl, IGraphControl, IDispos
 
         //get the route informations
         var routeInformation = routedEdge.RoutingPoints;
-        var canReuseGeometry = _cache.CheckGeometryReusability(sourceRect, targetRect, routeInformation);
-
-        var selfLoopSize = IsSelfLooped
-            ? new Size(SelfLoopIndicatorRadius * 2 + SelfLoopIndicatorOffset.X,
-                SelfLoopIndicatorRadius * 2 + SelfLoopIndicatorOffset.Y)
-            : new Size();
-        var spanningRect = sourceRect.Union(targetRect);
 
         if (EdgePointerForSource is Control pointerForSource)
         {
@@ -757,6 +750,14 @@ public abstract class EdgeControlBase : TemplatedControl, IGraphControl, IDispos
             if (ShowArrows) EdgePointerForTarget.Show();
             pointerForTarget.Measure(infiniteSize);
         }
+
+        var canReuseGeometry = _cache.CheckGeometryReusability(sourceRect, targetRect, routeInformation);
+
+        var selfLoopSize = IsSelfLooped
+            ? new Size(SelfLoopIndicatorRadius * 2 + SelfLoopIndicatorOffset.X,
+                SelfLoopIndicatorRadius * 2 + SelfLoopIndicatorOffset.Y)
+            : new Size();
+        var spanningRect = sourceRect.Union(targetRect);
 
         if (!canReuseGeometry)
         {
