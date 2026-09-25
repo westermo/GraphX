@@ -281,6 +281,12 @@ public class GraphArea<TVertex, TEdge, TGraph> : GraphAreaBase, IDisposable
     private readonly Dictionary<TEdge, EdgeControl> _edgesList = [];
     private readonly Dictionary<TVertex, VertexControl> _vertexList = [];
 
+    // Tracked label controls added via GenerateVertexLabel()/GenerateEdgeLabel(), so that
+    // GenerateVertexLabels()/GenerateEdgeLabels() don't need to scan the whole Children
+    // collection (vertices + edges + labels) just to find previously generated labels to remove.
+    private readonly HashSet<Control> _generatedVertexLabelControls = [];
+    private readonly HashSet<Control> _generatedEdgeLabelControls = [];
+
     /// <summary>
     /// Gets edge controls read only collection. To modify collection use AddEdge() RemoveEdge() methods.
     /// </summary>
@@ -348,12 +354,15 @@ public class GraphArea<TVertex, TEdge, TGraph> : GraphAreaBase, IDisposable
     {
         Measure(new Size(double.PositiveInfinity, double.PositiveInfinity));
 
-        return VertexList.Values.FirstOrDefault(a =>
+        foreach (var a in _vertexList.Values)
         {
             var pos = a.GetPosition();
             var rect = new Rect(pos.X, pos.Y, a.Bounds.Width, a.Bounds.Height);
-            return rect.Contains(position);
-        });
+            if (rect.Contains(position))
+                return a;
+        }
+
+        return null;
     }
 
 
@@ -459,7 +468,9 @@ public class GraphArea<TVertex, TEdge, TGraph> : GraphAreaBase, IDisposable
 
         if (ctrl.VertexLabelControl != null)
         {
-            Children.Remove((Control)ctrl.VertexLabelControl);
+            var label = (Control)ctrl.VertexLabelControl;
+            Children.Remove(label);
+            _generatedVertexLabelControls.Remove(label);
             ctrl.DetachLabel();
         }
 
@@ -493,6 +504,11 @@ public class GraphArea<TVertex, TEdge, TGraph> : GraphAreaBase, IDisposable
 
     private void RemoveEdgeInternal(EdgeControlBase ctrl, bool removeEdgeFromDataGraph = false)
     {
+        foreach (var label in ctrl.EdgeLabelControls)
+        {
+            if (label is Control control)
+                _generatedEdgeLabelControls.Remove(control);
+        }
         ctrl.DetachLabels();
 
         UnregisterBatchedEdge(ctrl);
@@ -700,25 +716,12 @@ public class GraphArea<TVertex, TEdge, TGraph> : GraphAreaBase, IDisposable
     protected virtual void GenerateVertexLabels()
     {
         if (VertexLabelFactory == null) return;
-        // OPTIMIZATION: Collect items to remove first to avoid modifying collection during iteration
-        var toRemove = ListPool<Control>.Rent();
-        try
+        foreach (var item in _generatedVertexLabelControls)
         {
-            foreach (var child in Children)
-            {
-                if (child is IVertexLabelControl)
-                    toRemove.Add(child);
-            }
+            Children.Remove(item);
+        }
 
-            foreach (var item in toRemove)
-            {
-                Children.Remove(item);
-            }
-        }
-        finally
-        {
-            ListPool<Control>.Return(toRemove);
-        }
+        _generatedVertexLabelControls.Clear();
 
         foreach (var kvp in VertexList)
         {
@@ -743,33 +746,21 @@ public class GraphArea<TVertex, TEdge, TGraph> : GraphAreaBase, IDisposable
             if (_svVertexLabelShow == false || !IsVisible)
                 l.IsVisible = false;
             AddCustomChildControl(l);
+            _generatedVertexLabelControls.Add(l);
             l.Measure(new Size(double.MaxValue, double.MaxValue));
             ((IVertexLabelControl)l).UpdatePosition();
         }
     }
 
-    protected virtual void GenerateEdgeLabels()
+    protected virtual  void GenerateEdgeLabels()
     {
         if (EdgeLabelFactory == null) return;
-        // OPTIMIZATION: Collect items to remove first to avoid modifying collection during iteration
-        var toRemove = ListPool<Control>.Rent();
-        try
+        foreach (var item in _generatedEdgeLabelControls)
         {
-            foreach (var child in Children)
-            {
-                if (child is IEdgeLabelControl)
-                    toRemove.Add(child);
-            }
+            Children.Remove(item);
+        }
 
-            foreach (var item in toRemove)
-            {
-                Children.Remove(item);
-            }
-        }
-        finally
-        {
-            ListPool<Control>.Return(toRemove);
-        }
+        _generatedEdgeLabelControls.Clear();
 
         foreach (var kvp in EdgesList)
         {
@@ -781,12 +772,12 @@ public class GraphArea<TVertex, TEdge, TGraph> : GraphAreaBase, IDisposable
     {
         var labels = EdgeLabelFactory!.CreateLabel(edgeControl);
         var uiElements = labels as Control[] ?? [.. labels];
-        // OPTIMIZATION: Check interface implementation without LINQ
         foreach (var a in uiElements)
         {
             if (a is not IEdgeLabelControl)
                 throw new GX_InvalidDataException("Generated edge label should implement IEdgeLabelControl interface");
             AddCustomChildControl(a);
+            _generatedEdgeLabelControls.Add(a);
         }
     }
 
@@ -801,12 +792,11 @@ public class GraphArea<TVertex, TEdge, TGraph> : GraphAreaBase, IDisposable
     {
         //measure if needed and get all vertex sizes
         Measure(new Size(double.PositiveInfinity, double.PositiveInfinity));
-        var vertexSizes = new Dictionary<TVertex, Size>(_vertexList.Count(a =>
-            ((IGraphXVertex)a.Value.Vertex!).SkipProcessing != ProcessingOptionEnum.Exclude));
-        //go through the vertex presenters and get the actual layoutpositions
-        foreach (var vc in VertexList.Where(vc =>
-                     ((IGraphXVertex)vc.Value.Vertex!).SkipProcessing != ProcessingOptionEnum.Exclude))
+        //single pass: capacity is an upper bound (excluded vertices are simply not added)
+        var vertexSizes = new Dictionary<TVertex, Size>(_vertexList.Count);
+        foreach (var vc in _vertexList)
         {
+            if (((IGraphXVertex)vc.Value.Vertex!).SkipProcessing == ProcessingOptionEnum.Exclude) continue;
             vertexSizes[vc.Key] = new Size(vc.Value.DesiredSize.Width, vc.Value.DesiredSize.Height);
         }
 
@@ -817,19 +807,17 @@ public class GraphArea<TVertex, TEdge, TGraph> : GraphAreaBase, IDisposable
     public Dictionary<TVertex, Size> GetVertexSizesAndPositions(
         out IDictionary<TVertex, Point> vertexPositions)
     {
-        //measure if needed and get all vertex sizes
-        var count = _vertexList.Count(a =>
-            ((IGraphXVertex)a.Value.Vertex!).SkipProcessing != ProcessingOptionEnum.Exclude);
-        var vertexSizes = new Dictionary<TVertex, Size>(count);
-        vertexPositions = new Dictionary<TVertex, Point>(count);
-        //go through the vertex presenters and get the actual layoutpositions
-        foreach (var vc in VertexList.Where(vc =>
-                     ((IGraphXVertex)vc.Value.Vertex!).SkipProcessing != ProcessingOptionEnum.Exclude))
+        //single pass over vertices (capacity is an upper bound; excluded vertices are simply not added)
+        var vertexSizes = new Dictionary<TVertex, Size>(_vertexList.Count);
+        var positions = new Dictionary<TVertex, Point>(_vertexList.Count);
+        foreach (var vc in _vertexList)
         {
+            if (((IGraphXVertex)vc.Value.Vertex!).SkipProcessing == ProcessingOptionEnum.Exclude) continue;
             vertexSizes[vc.Key] = new Size(vc.Value.DesiredSize.Width, vc.Value.DesiredSize.Height);
-            vertexPositions[vc.Key] = vc.Value.GetPosition();
+            positions[vc.Key] = vc.Value.GetPosition();
         }
 
+        vertexPositions = positions;
         return vertexSizes;
     }
 
@@ -838,9 +826,14 @@ public class GraphArea<TVertex, TEdge, TGraph> : GraphAreaBase, IDisposable
     /// </summary>
     public Dictionary<TVertex, Point> GetVertexPositions()
     {
-        return VertexList
-            .Where(a => ((IGraphXVertex)a.Value.Vertex!).SkipProcessing != ProcessingOptionEnum.Exclude)
-            .ToDictionary(vertex => vertex.Key, vertex => vertex.Value.GetPosition());
+        var positions = new Dictionary<TVertex, Point>(_vertexList.Count);
+        foreach (var vc in _vertexList)
+        {
+            if (((IGraphXVertex)vc.Value.Vertex!).SkipProcessing == ProcessingOptionEnum.Exclude) continue;
+            positions[vc.Key] = vc.Value.GetPosition();
+        }
+
+        return positions;
     }
 
     #endregion
@@ -982,31 +975,35 @@ public class GraphArea<TVertex, TEdge, TGraph> : GraphAreaBase, IDisposable
             //add missing visuals and remove old ones if graph is filtered to reflect filtering
             if (EnableVisualsRenewOnFiltering && (LogicCore.IsFiltered || LogicCore.IsFilterRemoved))
             {
-                //remove edge if it has been removed from data graph
-                _edgesList.Keys.ToList()
-                    .ForEach(a =>
-                    {
-                        if (!LogicCore.Graph.Edges.Contains(a)) RemoveEdge(a);
-                    });
-                //remove vertex if it has been removed from data graph
-                _vertexList.Keys.ToList()
-                    .ForEach(a =>
-                    {
-                        if (!LogicCore.Graph.Vertices.Contains(a)) RemoveVertex(a);
-                    });
+                // Build membership sets once so removal/addition checks below are O(1)
+                // instead of repeatedly scanning LogicCore.Graph.Edges/Vertices (which may not be index-backed).
+                var dataEdges = new HashSet<TEdge>(LogicCore.Graph.Edges);
+                var dataVertices = new HashSet<TVertex>(LogicCore.Graph.Vertices);
 
-                LogicCore.Graph.Vertices.ForEach(v =>
+                //remove edge if it has been removed from data graph
+                foreach (var a in _edgesList.Keys.ToList())
+                {
+                    if (!dataEdges.Contains(a)) RemoveEdge(a);
+                }
+
+                //remove vertex if it has been removed from data graph
+                foreach (var a in _vertexList.Keys.ToList())
+                {
+                    if (!dataVertices.Contains(a)) RemoveVertex(a);
+                }
+
+                foreach (var v in dataVertices)
                 {
                     if (!_vertexList.ContainsKey(v)) AddVertex(v, ControlFactory.CreateVertexControl(v));
-                });
+                }
 
-                LogicCore.Graph.Edges.ForEach(e =>
+                foreach (var e in dataEdges)
                 {
-                    if (_edgesList.ContainsKey(e)) return;
+                    if (_edgesList.ContainsKey(e)) continue;
                     var source = _vertexList[e.Source];
                     var target = _vertexList[e.Target];
                     AddEdge(e, ControlFactory.CreateEdgeControl(source, target, e));
-                });
+                }
             }
 
             Measure(new Size(double.PositiveInfinity, double.PositiveInfinity));
@@ -1587,7 +1584,6 @@ public class GraphArea<TVertex, TEdge, TGraph> : GraphAreaBase, IDisposable
                     _svShowEdgeArrows ?? true,
                     isVisibleByDefault);
                 InsertEdge(item, ctrl);
-                ctrl.InvalidateMeasure();
                 if (item.Source == item.Target) gotSelfLoop = true;
             }
 
@@ -1599,9 +1595,11 @@ public class GraphArea<TVertex, TEdge, TGraph> : GraphAreaBase, IDisposable
                     _svShowEdgeArrows ?? true,
                     isVisibleByDefault);
                 InsertEdge(item, ctrl);
-                ctrl.InvalidateMeasure();
                 if (item.Source == item.Target) gotSelfLoop = true;
             }
+
+        // Invalidate measure once for the whole GraphArea instead of per-created edge control.
+        InvalidateMeasure();
 
         if (LogicCore.EnableParallelEdges)
             UpdateParallelEdgesData();
@@ -1710,7 +1708,13 @@ public class GraphArea<TVertex, TEdge, TGraph> : GraphAreaBase, IDisposable
                     break;
             }
 
-            list.AddRange(VertexList.Where(a => vList.Contains(a.Key)).Select(a => a.Value));
+            // Iterate the (typically small) neighbour list directly and look each up,
+            // instead of scanning the whole VertexList for membership in vList.
+            foreach (var neighbour in vList)
+            {
+                if (_vertexList.TryGetValue(neighbour, out var neighbourCtrl))
+                    list.Add(neighbourCtrl);
+            }
         }
 
         if (ctrl is not EdgeControl ec) return list;
@@ -1762,7 +1766,14 @@ public class GraphArea<TVertex, TEdge, TGraph> : GraphAreaBase, IDisposable
                         break;
                 }
 
-                list.AddRange(EdgesList.Where(a => eList.Contains(a.Key)).Select(a => a.Value));
+                // Iterate the (typically small) edge list directly and look each up,
+                // instead of scanning the whole EdgesList for membership in eList.
+                foreach (var e in eList)
+                {
+                    if (_edgesList.TryGetValue(e, out var edgeCtrl))
+                        list.Add(edgeCtrl);
+                }
+
                 break;
             }
         }
@@ -1809,25 +1820,25 @@ public class GraphArea<TVertex, TEdge, TGraph> : GraphAreaBase, IDisposable
             if (resultType is GraphControlType.Edge or GraphControlType.VertexAndEdge)
             {
                 if (edgesInList != null)
-                    list.AddRange(from item in edgesInList
-                        where _edgesList.ContainsKey(item)
-                        select _edgesList[item]);
+                    foreach (var item in edgesInList)
+                        if (_edgesList.TryGetValue(item, out var inEdgeCtrl))
+                            list.Add(inEdgeCtrl);
                 if (edgesOutList != null)
-                    list.AddRange(from item in edgesOutList
-                        where _edgesList.ContainsKey(item)
-                        select _edgesList[item]);
+                    foreach (var item in edgesOutList)
+                        if (_edgesList.TryGetValue(item, out var outEdgeCtrl))
+                            list.Add(outEdgeCtrl);
             }
 
             if (resultType != GraphControlType.Vertex && resultType != GraphControlType.VertexAndEdge) return list;
 
             if (edgesInList != null)
-                list.AddRange(from item in edgesInList
-                    where _vertexList.ContainsKey(item.Source)
-                    select _vertexList[item.Source]);
+                foreach (var item in edgesInList)
+                    if (_vertexList.TryGetValue(item.Source, out var sourceCtrl))
+                        list.Add(sourceCtrl);
             if (edgesOutList != null)
-                list.AddRange(from item in edgesOutList
-                    where _vertexList.ContainsKey(item.Target)
-                    select _vertexList[item.Target]);
+                foreach (var item in edgesOutList)
+                    if (_vertexList.TryGetValue(item.Target, out var targetCtrl))
+                        list.Add(targetCtrl);
             return list;
         }
 
@@ -1921,14 +1932,19 @@ public class GraphArea<TVertex, TEdge, TGraph> : GraphAreaBase, IDisposable
 
         var edgeList = graphSerializationDatas.Where(a => a.Data is TEdge);
 
+        // Build an ID -> vertex lookup once, instead of a per-edge O(vertices) FirstOrDefault scan.
+        var vertexById = new Dictionary<long, TVertex>(_vertexList.Count);
+        foreach (var v in _vertexList.Keys)
+            vertexById[v.ID] = v;
+
         foreach (var item in edgeList)
         {
             var edgeData = (TEdge)item.Data;
             if (edgeData == null) continue;
             var sourceId = edgeData.Source.ID;
             var targetId = edgeData.Target.ID;
-            var dataSource = _vertexList.Keys.FirstOrDefault(a => a.ID == sourceId);
-            var dataTarget = _vertexList.Keys.FirstOrDefault(a => a.ID == targetId);
+            vertexById.TryGetValue(sourceId, out var dataSource);
+            vertexById.TryGetValue(targetId, out var dataTarget);
 
             edgeData.Source = dataSource!;
             edgeData.Target = dataTarget!;
@@ -2058,8 +2074,9 @@ public class GraphArea<TVertex, TEdge, TGraph> : GraphAreaBase, IDisposable
     protected virtual void MoveTo<T>(bool toFront, T control, bool moveLabels = true)
         where T : class
     {
-        var result = (Control?)(object?)Children.OfType<T>().FirstOrDefault(a => a == control);
-        if (result == null) return;
+        // Avoid enumerating Children via OfType<T>().FirstOrDefault(closure) -
+        // the control reference itself is what we need to check/move.
+        if (control is not Control result) return;
         if (!Children.Contains(result)) return;
         Children.Remove(result);
         if (toFront) Children.Add(result);
@@ -2101,11 +2118,7 @@ public class GraphArea<TVertex, TEdge, TGraph> : GraphAreaBase, IDisposable
         if (SelectedVertices is null)
         {
             // No selection tracking - clear all selection states
-            foreach (var kvp in _vertexList)
-            {
-                kvp.Value.IsSelected = false;
-            }
-
+            ClearSelectionState();
             return;
         }
 
