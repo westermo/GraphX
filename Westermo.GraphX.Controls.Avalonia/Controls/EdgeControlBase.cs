@@ -1347,9 +1347,11 @@ public abstract class EdgeControlBase : TemplatedControl, IGraphControl, IDispos
         private Size _lastSourcePointerDesiredSize;
         private Size _lastTargetPointerDesiredSize;
         private bool _lastShowArrows;
+        private bool _lastShowSelfLoopIndicator;
         private bool _lastIsSelfLooped;
         private double _lastSelfLoopIndicatorRadius;
         private Point _lastSelfLoopIndicatorOffset;
+        private Size _lastSelfLoopIndicatorDesiredSize;
         private bool _lastIsParallel;
         private int _lastParallelEdgeOffset;
 
@@ -1365,8 +1367,10 @@ public abstract class EdgeControlBase : TemplatedControl, IGraphControl, IDispos
                    && ReferenceEquals(edge.EdgePointerForTarget, _lastEdgePointerForTarget)
                    && PointerDesiredSize(edge.EdgePointerForTarget) == _lastTargetPointerDesiredSize
                    && edge.ShowArrows == _lastShowArrows
+                   && edge.ShowSelfLoopIndicator == _lastShowSelfLoopIndicator
                    && edge.SelfLoopIndicatorRadius.Equals(_lastSelfLoopIndicatorRadius)
                    && edge.SelfLoopIndicatorOffset == _lastSelfLoopIndicatorOffset
+                   && SelfLoopIndicatorDesiredSize(edge.SelfLoopIndicator) == _lastSelfLoopIndicatorDesiredSize
                    && edge.IsParallel == _lastIsParallel
                    && edge.ParallelEdgeOffset == _lastParallelEdgeOffset;
         }
@@ -1379,6 +1383,11 @@ public abstract class EdgeControlBase : TemplatedControl, IGraphControl, IDispos
             }
 
             return default;
+        }
+
+        private static Size SelfLoopIndicatorDesiredSize(Control? indicator)
+        {
+            return indicator?.DesiredSize ?? default;
         }
 
 
@@ -1400,7 +1409,14 @@ public abstract class EdgeControlBase : TemplatedControl, IGraphControl, IDispos
         internal void UpdateCacheInfo(Rect sourceRect, Rect targetRect, Measure.Point[]? routeInformation)
         {
             var changed = PointsChangedSincePreviousGeometry(edge._points);
-            edge._isGeometryDirty = edge.LineGeometry is null || changed;
+            var selfLoopVisualChanged = edge.IsSelfLooped != _lastIsSelfLooped
+                                        || (edge.IsSelfLooped
+                                            && (edge.ShowSelfLoopIndicator != _lastShowSelfLoopIndicator
+                                                || edge.SelfLoopIndicatorRadius != _lastSelfLoopIndicatorRadius
+                                                || edge.SelfLoopIndicatorOffset != _lastSelfLoopIndicatorOffset
+                                                || SelfLoopIndicatorDesiredSize(edge.SelfLoopIndicator) !=
+                                                _lastSelfLoopIndicatorDesiredSize));
+            edge._isGeometryDirty = edge.LineGeometry is null || changed || selfLoopVisualChanged;
             if (changed)
             {
                 _lastPointsForSignature.Clear();
@@ -1417,8 +1433,10 @@ public abstract class EdgeControlBase : TemplatedControl, IGraphControl, IDispos
             _lastEdgePointerForTarget = edge.EdgePointerForTarget;
             _lastTargetPointerDesiredSize = PointerDesiredSize(edge.EdgePointerForTarget);
             _lastShowArrows = edge.ShowArrows;
+            _lastShowSelfLoopIndicator = edge.ShowSelfLoopIndicator;
             _lastSelfLoopIndicatorRadius = edge.SelfLoopIndicatorRadius;
             _lastSelfLoopIndicatorOffset = edge.SelfLoopIndicatorOffset;
+            _lastSelfLoopIndicatorDesiredSize = SelfLoopIndicatorDesiredSize(edge.SelfLoopIndicator);
             _lastIsParallel = edge.IsParallel;
             _lastParallelEdgeOffset = edge.ParallelEdgeOffset;
             _hasMeasuredGeometryOnce = true;

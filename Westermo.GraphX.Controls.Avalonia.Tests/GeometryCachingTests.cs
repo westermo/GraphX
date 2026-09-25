@@ -156,6 +156,46 @@ public class GeometryCachingTests
         return (area, sourceVc, targetVc, edge);
     }
 
+    private (GraphArea<TVertex, TEdge, BidirectionalGraph<TVertex, TEdge>> area,
+        VertexControl sourceVc, EdgeControl edge) CreateSelfLoopGraph()
+    {
+        var graph = new BidirectionalGraph<TVertex, TEdge>();
+        var v1 = new TVertex("A") { ID = 1 };
+        graph.AddVertex(v1);
+        var e = new TEdge(v1, v1);
+        graph.AddEdge(e);
+
+        var lc = new GXLogicCore<TVertex, TEdge, BidirectionalGraph<TVertex, TEdge>>
+        {
+            Graph = graph,
+            EnableParallelEdges = false
+        };
+
+        var area = new GraphArea<TVertex, TEdge, BidirectionalGraph<TVertex, TEdge>>
+        {
+            LogicCore = lc,
+            Width = 500,
+            Height = 400
+        };
+
+        var positions = new Dictionary<TVertex, Point>
+        {
+            [v1] = new Point(50, 100)
+        };
+
+        area.PreloadGraph(positions, showObjectsIfPosSpecified: true);
+
+        var sourceVc = area.VertexList[v1];
+        sourceVc.Width = 40;
+        sourceVc.Height = 30;
+        EnsureVertexTemplate(sourceVc);
+
+        var edge = (EdgeControl)area.EdgesList[e];
+        EnsureEdgeTemplate(edge);
+
+        return (area, sourceVc, edge);
+    }
+
     [Test]
     public async Task GeometryBounds_ReturnsNullBeforeFirstUpdate()
     {
@@ -238,5 +278,21 @@ public class GeometryCachingTests
 
         await Assert.That(targetPointer.DesiredSize.Width).IsEqualTo(20);
         await Assert.That(edge.GetLineGeometry()).IsNotSameReferenceAs(initialGeometry);
+    }
+
+    [Test]
+    public async Task Geometry_IsCleared_WhenShowSelfLoopIndicatorChanges()
+    {
+        var (_, _, edge) = CreateSelfLoopGraph();
+        edge.Measure(new Size(double.PositiveInfinity, double.PositiveInfinity));
+        edge.Arrange(new Rect(0, 0, edge.DesiredSize.Width, edge.DesiredSize.Height));
+
+        await Assert.That(edge.GetLineGeometry()).IsNotNull();
+
+        edge.ShowSelfLoopIndicator = false;
+        edge.Measure(new Size(double.PositiveInfinity, double.PositiveInfinity));
+        edge.Arrange(new Rect(0, 0, edge.DesiredSize.Width, edge.DesiredSize.Height));
+
+        await Assert.That(edge.GetLineGeometry()).IsNull();
     }
 }
