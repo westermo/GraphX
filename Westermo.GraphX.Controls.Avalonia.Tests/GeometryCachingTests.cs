@@ -7,7 +7,10 @@ using QuikGraph;
 using Westermo.GraphX.Common.Enums;
 using Westermo.GraphX.Common.Models;
 using Westermo.GraphX.Controls.Controls;
+using Westermo.GraphX.Controls.Controls.EdgeLabels;
 using Westermo.GraphX.Controls.Controls.EdgePointers;
+using Westermo.GraphX.Controls.Controls.VertexLabels;
+using Westermo.GraphX.Controls.Models.Interfaces;
 using Westermo.GraphX.Logic.Models;
 
 namespace Westermo.GraphX.Controls.Avalonia.Tests;
@@ -26,6 +29,21 @@ public class GeometryCachingTests
     private class TEdge(TVertex s, TVertex t) : EdgeBase<TVertex>(s, t)
     {
         public override Westermo.GraphX.Measure.Point[]? RoutingPoints { get; set; } = null;
+    }
+
+    private sealed class PlainEdgeLabel : EdgeLabelControl { }
+
+    private sealed class PlainLabelFactory<TLabel> : ILabelFactory<Control>
+        where TLabel : Control, new()
+    {
+        public IEnumerable<Control> CreateLabel<TCtrl>(TCtrl control) => [new TLabel()];
+    }
+
+    private static void MeasureAndArrange(EdgeControl edge)
+    {
+        edge.InvalidateMeasure();
+        edge.Measure(new Size(double.PositiveInfinity, double.PositiveInfinity));
+        edge.Arrange(new Rect(0, 0, edge.DesiredSize.Width, edge.DesiredSize.Height));
     }
 
     private static void EnsureVertexTemplate(VertexControl vc)
@@ -254,6 +272,34 @@ public class GeometryCachingTests
     }
 
     [Test]
+    public async Task GeometryCacheBenchmarkSwitch_RebuildsWithoutCacheAndResumesReuseWhenEnabled()
+    {
+        var (_, _, _, edge) = CreateSimpleGraph();
+        edge.Measure(new Size(double.PositiveInfinity, double.PositiveInfinity));
+        edge.Arrange(new Rect(0, 0, edge.DesiredSize.Width, edge.DesiredSize.Height));
+
+        edge.UseGeometryCache = false;
+        edge.Measure(new Size(double.PositiveInfinity, double.PositiveInfinity));
+        edge.Arrange(new Rect(0, 0, edge.DesiredSize.Width, edge.DesiredSize.Height));
+        var firstUncachedGeometry = edge.GetLineGeometry();
+
+        edge.InvalidateMeasure();
+        edge.Measure(new Size(double.PositiveInfinity, double.PositiveInfinity));
+        edge.Arrange(new Rect(0, 0, edge.DesiredSize.Width, edge.DesiredSize.Height));
+        await Assert.That(edge.GetLineGeometry()).IsNotSameReferenceAs(firstUncachedGeometry);
+
+        edge.UseGeometryCache = true;
+        edge.Measure(new Size(double.PositiveInfinity, double.PositiveInfinity));
+        edge.Arrange(new Rect(0, 0, edge.DesiredSize.Width, edge.DesiredSize.Height));
+        var firstCachedGeometry = edge.GetLineGeometry();
+
+        edge.InvalidateMeasure();
+        edge.Measure(new Size(double.PositiveInfinity, double.PositiveInfinity));
+        edge.Arrange(new Rect(0, 0, edge.DesiredSize.Width, edge.DesiredSize.Height));
+        await Assert.That(edge.GetLineGeometry()).IsSameReferenceAs(firstCachedGeometry);
+    }
+
+    [Test]
     public async Task Geometry_IsRebuilt_WhenPointerDesiredSizeChangesBeforeEdgeMeasure()
     {
         var (_, _, _, edge) = CreateSimpleGraph();
@@ -313,5 +359,99 @@ public class GeometryCachingTests
         edge.Arrange(new Rect(0, 0, edge.DesiredSize.Width, edge.DesiredSize.Height));
 
         await Assert.That(edge.GetLineGeometry()).IsNull();
+    }
+
+    [Test]
+    public async Task Geometry_UpdatesEndpoint_WhenVertexShapeChanges()
+    {
+        var (_, source, target, edge) = CreateSimpleGraph();
+        target.SetPosition(250, 180);
+        GraphAreaBase.SetFinalY(target, 180);
+        source.Measure(new Size(double.PositiveInfinity, double.PositiveInfinity));
+        target.Measure(new Size(double.PositiveInfinity, double.PositiveInfinity));
+        source.VertexShape = VertexShape.Circle;
+        MeasureAndArrange(edge);
+        var oldEndpoint = edge.SourceEndpoint;
+
+        source.VertexShape = VertexShape.Rectangle;
+        MeasureAndArrange(edge);
+
+        await Assert.That(edge.SourceEndpoint).IsNotEqualTo(oldEndpoint);
+    }
+
+    [Test]
+    public async Task Geometry_UpdatesEndpoints_WhenParallelEdgesAreEnabled()
+    {
+        var (area, source, target, edge) = CreateSimpleGraph();
+        source.Measure(new Size(double.PositiveInfinity, double.PositiveInfinity));
+        target.Measure(new Size(double.PositiveInfinity, double.PositiveInfinity));
+        edge.IsParallel = true;
+        edge.ParallelEdgeOffset = 25;
+        MeasureAndArrange(edge);
+        var oldEndpoint = edge.SourceEndpoint;
+
+        area.LogicCore!.EnableParallelEdges = true;
+        MeasureAndArrange(edge);
+
+        await Assert.That(edge.SourceEndpoint).IsNotEqualTo(oldEndpoint);
+    }
+
+    [Test]
+    public async Task PointerOrientation_IsCalculatedOnlyForPointersThatNeedIt()
+    {
+        var (_, _, _, edge) = CreateSimpleGraph();
+        MeasureAndArrange(edge);
+        await Assert.That(edge.TargetPointerComputedAngle).IsEqualTo(0);
+
+        EnsureEdgeTemplateWithTargetPointer(edge);
+        var pointer = (DefaultEdgePointer)edge.GetEdgePointerForTarget()!;
+        pointer.NeedRotation = false;
+        MeasureAndArrange(edge);
+        await Assert.That(edge.TargetPointerComputedAngle).IsEqualTo(0);
+
+        pointer.NeedRotation = true;
+        edge.Arrange(new Rect(0, 0, edge.DesiredSize.Width + 1, edge.DesiredSize.Height));
+        await Assert.That(Math.Abs(edge.TargetPointerComputedAngle)).IsGreaterThan(0);
+    }
+
+    [Test]
+    public async Task GetRelatedEdgeControls_ReturnsSelfLoopOnlyOnce()
+    {
+        var (area, source, edge) = CreateSelfLoopGraph();
+        var vertex = (TVertex)source.Vertex!;
+        var secondLoop = new TEdge(vertex, vertex);
+        area.LogicCore!.Graph.AddEdge(secondLoop);
+        var secondControl = area.ControlFactory.CreateEdgeControl(source, source, secondLoop);
+        area.AddEdge(secondLoop, secondControl);
+
+        var related = area.GetRelatedEdgeControls(source, EdgesType.All);
+
+        await Assert.That(related.Count).IsEqualTo(2);
+        await Assert.That(related.Count(control => ReferenceEquals(control, edge))).IsEqualTo(1);
+        await Assert.That(related.Count(control => ReferenceEquals(control, secondControl))).IsEqualTo(1);
+    }
+
+    [Test]
+    public async Task ClearLayout_ReleasesGeneratedLabelsThatAreNotAttached()
+    {
+        var (area, _, _, _) = CreateSimpleGraph();
+        area.VertexLabelFactory = new PlainLabelFactory<VertexLabelControl>();
+        area.EdgeLabelFactory = new PlainLabelFactory<PlainEdgeLabel>();
+        area.PreloadGraph(new Dictionary<TVertex, Point>
+        {
+            [area.LogicCore!.Graph.Vertices.First()] = new Point(50, 100),
+            [area.LogicCore.Graph.Vertices.Last()] = new Point(250, 100)
+        });
+        await Assert.That(area.GeneratedVertexLabelCount).IsEqualTo(2);
+        await Assert.That(area.GeneratedEdgeLabelCount).IsEqualTo(1);
+
+        area.ClearLayout(removeCustomObjects: false);
+        await Assert.That(area.GeneratedVertexLabelCount).IsEqualTo(2);
+        await Assert.That(area.GeneratedEdgeLabelCount).IsEqualTo(1);
+
+        area.ClearLayout();
+
+        await Assert.That(area.GeneratedVertexLabelCount).IsEqualTo(0);
+        await Assert.That(area.GeneratedEdgeLabelCount).IsEqualTo(0);
     }
 }

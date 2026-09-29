@@ -211,4 +211,40 @@ public class VcpEdgeGeometryTests
         await Assert.That(actualTarget.X).IsBetween(targetCenter.X - eps, targetCenter.X + eps);
         await Assert.That(actualTarget.Y).IsBetween(targetCenter.Y - eps, targetCenter.Y + eps);
     }
+
+    [Test]
+    public async Task EdgeGeometry_UpdatesEndpoint_WhenConnectionPointShapeChanges()
+    {
+        var (_, _, _, cp, _, _, edge) =
+            CreateAreaWithVcp(VertexShape.Circle, VertexShape.Circle, bothEndpoints: true);
+        edge.Measure(new Size(double.PositiveInfinity, double.PositiveInfinity));
+        edge.Arrange(new Rect(0, 0, edge.DesiredSize.Width, edge.DesiredSize.Height));
+        var oldEndpoint = edge.SourceEndpoint;
+
+        cp.Shape = VertexShape.None;
+        edge.InvalidateMeasure();
+        edge.Measure(new Size(double.PositiveInfinity, double.PositiveInfinity));
+        edge.Arrange(new Rect(0, 0, edge.DesiredSize.Width, edge.DesiredSize.Height));
+
+        await Assert.That(edge.SourceEndpoint).IsNotEqualTo(oldEndpoint);
+        await Assert.That(edge.SourceEndpoint).IsEqualTo(cp.RectangularSize.Center());
+    }
+
+    [Test]
+    public async Task EdgeGeometry_UpdatesEndpoint_WhenConnectionPointSizeChanges()
+    {
+        var (_, _, _, cp, _, _, edge) =
+            CreateAreaWithVcp(VertexShape.Circle, VertexShape.Circle, bothEndpoints: true);
+        edge.Measure(new Size(double.PositiveInfinity, double.PositiveInfinity));
+        edge.Arrange(new Rect(0, 0, edge.DesiredSize.Width, edge.DesiredSize.Height));
+        var oldEndpoint = edge.SourceEndpoint;
+
+        cp.Width = 30;
+        cp.Update();
+        edge.InvalidateMeasure();
+        edge.Measure(new Size(double.PositiveInfinity, double.PositiveInfinity));
+        edge.Arrange(new Rect(0, 0, edge.DesiredSize.Width, edge.DesiredSize.Height));
+
+        await Assert.That(edge.SourceEndpoint).IsNotEqualTo(oldEndpoint);
+    }
 }

@@ -287,6 +287,9 @@ public class GraphArea<TVertex, TEdge, TGraph> : GraphAreaBase, IDisposable
     private readonly HashSet<Control> _generatedVertexLabelControls = [];
     private readonly HashSet<Control> _generatedEdgeLabelControls = [];
 
+    internal int GeneratedVertexLabelCount => _generatedVertexLabelControls.Count;
+    internal int GeneratedEdgeLabelCount => _generatedEdgeLabelControls.Count;
+
     /// <summary>
     /// Gets edge controls read only collection. To modify collection use AddEdge() RemoveEdge() methods.
     /// </summary>
@@ -1768,10 +1771,15 @@ public class GraphArea<TVertex, TEdge, TGraph> : GraphAreaBase, IDisposable
 
                 // Iterate the (typically small) edge list directly and look each up,
                 // instead of scanning the whole EdgesList for membership in eList.
+                HashSet<TEdge>? seenSelfLoops = null;
                 foreach (var e in eList)
                 {
-                    if (_edgesList.TryGetValue(e, out var edgeCtrl))
-                        list.Add(edgeCtrl);
+                    if (!_edgesList.TryGetValue(e, out var edgeCtrl)) continue;
+                    // GetAllEdges includes a self-loop in both its incoming and outgoing lists.
+                    if (edgesType == EdgesType.All && EqualityComparer<TVertex>.Default.Equals(e.Source, e.Target)
+                                                   && !(seenSelfLoops ??= []).Add(e))
+                        continue;
+                    list.Add(edgeCtrl);
                 }
 
                 break;
@@ -2019,6 +2027,8 @@ public class GraphArea<TVertex, TEdge, TGraph> : GraphAreaBase, IDisposable
         if (removeCustomObjects)
         {
             Children.Clear();
+            _generatedVertexLabelControls.Clear();
+            _generatedEdgeLabelControls.Clear();
             RecreateBatchedEdgeLayerAfterChildrenClear();
         }
 

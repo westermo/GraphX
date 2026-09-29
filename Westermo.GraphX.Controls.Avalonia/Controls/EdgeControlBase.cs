@@ -13,6 +13,7 @@ using Avalonia.Interactivity;
 using Avalonia.Layout;
 using Avalonia.Media;
 using Westermo.GraphX.Common;
+using Westermo.GraphX.Common.Enums;
 using Westermo.GraphX.Common.Exceptions;
 using Westermo.GraphX.Common.Interfaces;
 using Westermo.GraphX.Controls.Controls.Misc;
@@ -108,6 +109,9 @@ public abstract class EdgeControlBase : TemplatedControl, IGraphControl, IDispos
 
         /// <summary>Precomputed rotation angle (degrees) for a pointer that requires rotation.</summary>
         public double Angle;
+
+        /// <summary>Tracks whether the angle has been computed for this pointer layout.</summary>
+        public bool AngleComputed;
     }
 
     /// <summary>Cached source pointer layout info, set during geometry rebuild.</summary>
@@ -115,6 +119,8 @@ public abstract class EdgeControlBase : TemplatedControl, IGraphControl, IDispos
 
     /// <summary>Cached target pointer layout info, set during geometry rebuild.</summary>
     private EdgePointerLayoutInfo _targetPointerLayout;
+
+    internal double TargetPointerComputedAngle => _targetPointerLayout.Angle;
 
     /// <summary>
     /// Calculates the padding needed to prevent edge pointers from being clipped.
@@ -176,7 +182,7 @@ public abstract class EdgeControlBase : TemplatedControl, IGraphControl, IDispos
     /// Computes direction, rotation angle, and arranges the pointer within the edge's local space.
     /// Always runs after <c>base.ArrangeOverride()</c>, whether geometry was rebuilt or not.
     /// </summary>
-    private static Measure.Point ArrangeEdgePointer(EdgePointerLayoutInfo data, IEdgePointer pointer,
+    private static Measure.Point ArrangeEdgePointer(ref EdgePointerLayoutInfo data, IEdgePointer pointer,
         bool hideEdgePointerOnVertexOverlap)
     {
         var from = data.Position;
@@ -201,7 +207,17 @@ public abstract class EdgeControlBase : TemplatedControl, IGraphControl, IDispos
 
         // Convert to local coordinates using the now-known offset
         var position = new Measure.Point(from.X, from.Y);
-        var angle = pointer.NeedRotation ? data.Angle : 0;
+        var angle = 0.0;
+        if (pointer.NeedRotation)
+        {
+            if (!data.AngleComputed)
+            {
+                data.Angle = -MathHelper.GetAngleBetweenPoints(from.ToGraphX(),
+                    data.DirectionTarget.ToGraphX()).ToDegrees();
+                data.AngleComputed = true;
+            }
+            angle = data.Angle;
+        }
 
         var vecMove = new Measure.Vector((.5 + dir.X * .5) * width, (.5 + dir.Y * .5) * height);
         position = new Measure.Point(position.X - vecMove.X, position.Y - vecMove.Y);
@@ -218,13 +234,19 @@ public abstract class EdgeControlBase : TemplatedControl, IGraphControl, IDispos
     /// layout data. Called once per <c>MeasureOverride</c> so <see cref="ArrangeEdgePointer"/>
     /// doesn't repeat this trigonometry on every arrange pass.
     /// </summary>
-    private static void ComputePointerDirectionAndAngle(ref EdgePointerLayoutInfo data)
+    private static void ComputePointerDirectionAndAngle(ref EdgePointerLayoutInfo data, IEdgePointer? pointer)
     {
+        if (!data.HasData || pointer is null) return;
         var from = data.Position;
         var to = data.DirectionTarget;
         data.IsCoincident = from == to;
-        data.Direction = from.DirectionTo(to);
-        data.Angle = -MathHelper.GetAngleBetweenPoints(from.ToGraphX(), to.ToGraphX()).ToDegrees();
+        if (!data.IsCoincident)
+            data.Direction = from.DirectionTo(to);
+        if (pointer.NeedRotation)
+        {
+            data.Angle = -MathHelper.GetAngleBetweenPoints(from.ToGraphX(), to.ToGraphX()).ToDegrees();
+            data.AngleComputed = true;
+        }
     }
 
     private static (double, double) GetWidthAndHeight(Size size, Control ctrl)
@@ -377,7 +399,6 @@ public abstract class EdgeControlBase : TemplatedControl, IGraphControl, IDispos
 
     protected EdgeControlBase()
     {
-        _cache = new EdgeControlCache(this);
         Loaded += EdgeControlBase_Loaded;
     }
 
@@ -716,7 +737,24 @@ public abstract class EdgeControlBase : TemplatedControl, IGraphControl, IDispos
         return new Size(width, height);
     }
 
-    private readonly EdgeControlCache _cache;
+    private EdgeControlCache? _cache;
+    private bool _useGeometryCache = true;
+
+    // Benchmark-only comparison against Avalonia's own measure invalidation.
+    internal bool UseGeometryCache
+    {
+        get => _useGeometryCache;
+        set
+        {
+            if (_useGeometryCache == value) return;
+            _useGeometryCache = value;
+            _cache = null;
+            InvalidateMeasure();
+        }
+    }
+
+    // Null during timed benchmarks and normal use; probes observe actual MeasureOverride calls.
+    internal static Action<bool>? GeometryReuseObserver { get; set; }
 
     // Provide a desired size for layout based on current geometry bounds so edge is not collapsed to 0x0.
     protected override Size MeasureOverride(Size availableSize)
@@ -751,7 +789,10 @@ public abstract class EdgeControlBase : TemplatedControl, IGraphControl, IDispos
             pointerForTarget.Measure(infiniteSize);
         }
 
-        var canReuseGeometry = _cache.CheckGeometryReusability(sourceRect, targetRect, routeInformation);
+        var canReuseGeometry = _useGeometryCache
+                               && (_cache ??= new EdgeControlCache(this))
+                                   .CheckGeometryReusability(sourceRect, targetRect, routeInformation);
+        GeometryReuseObserver?.Invoke(canReuseGeometry);
 
         var selfLoopSize = IsSelfLooped
             ? new Size(SelfLoopIndicatorRadius * 2 + SelfLoopIndicatorOffset.X,
@@ -836,10 +877,13 @@ public abstract class EdgeControlBase : TemplatedControl, IGraphControl, IDispos
             // Precompute direction/angle once here (translation-invariant) instead of recomputing
             // them on every ArrangeEdgePointer call, which happens on every arrange pass even
             // when the geometry hasn't changed since the last measure.
-            ComputePointerDirectionAndAngle(ref _sourcePointerLayout);
-            ComputePointerDirectionAndAngle(ref _targetPointerLayout);
+            ComputePointerDirectionAndAngle(ref _sourcePointerLayout, EdgePointerForSource);
+            ComputePointerDirectionAndAngle(ref _targetPointerLayout, EdgePointerForTarget);
 
-            _cache.UpdateCacheInfo(sourceRect, targetRect, routeInformation);
+            if (_useGeometryCache)
+                _cache!.UpdateCacheInfo(sourceRect, targetRect, routeInformation);
+            else
+                _isGeometryDirty = true;
         }
 
         // Labels can change content independently of the edge's own geometry (e.g. text update),
@@ -883,10 +927,10 @@ public abstract class EdgeControlBase : TemplatedControl, IGraphControl, IDispos
         // Position edge pointers
         if (_sourcePointerLayout.HasData && EdgePointerForSource != null)
             SourcePointerPosition =
-                ArrangeEdgePointer(_sourcePointerLayout, EdgePointerForSource, HideEdgePointerOnVertexOverlap);
+                ArrangeEdgePointer(ref _sourcePointerLayout, EdgePointerForSource, HideEdgePointerOnVertexOverlap);
         if (_targetPointerLayout.HasData && EdgePointerForTarget != null)
             TargetPointerPosition =
-                ArrangeEdgePointer(_targetPointerLayout, EdgePointerForTarget, HideEdgePointerOnVertexOverlap);
+                ArrangeEdgePointer(ref _targetPointerLayout, EdgePointerForTarget, HideEdgePointerOnVertexOverlap);
 
         // Position labels at edge midpoint
         var midPoint = GetMidpoint(out var angle, out var flipAxis, out var vector);
@@ -1293,13 +1337,13 @@ public abstract class EdgeControlBase : TemplatedControl, IGraphControl, IDispos
 
     private IVertexConnectionPoint GetTargetCpOrThrow(int id)
     {
-        return Target?.GetConnectionPointById(id, true) ?? throw new GX_ObjectNotFoundException(string.Format(
+        return Target?.GetConnectionPointById(id) ?? throw new GX_ObjectNotFoundException(string.Format(
             "Can't find target vertex VCP by edge target connection point Id({1}) : {0}", Target, id));
     }
 
     private IVertexConnectionPoint GetSourceCpOrThrow(int id)
     {
-        return Source!.GetConnectionPointById(id, true) ?? throw new GX_ObjectNotFoundException(string.Format(
+        return Source!.GetConnectionPointById(id) ?? throw new GX_ObjectNotFoundException(string.Format(
             "Can't find source vertex VCP by edge source connection point Id({1}) : {0}", Source, id));
     }
 
@@ -1359,10 +1403,31 @@ public abstract class EdgeControlBase : TemplatedControl, IGraphControl, IDispos
         private int? _lastTargetConnectionPointId;
         private bool _lastReversePath;
         private bool _lastIsEdgeRoutingEnabled;
+        private bool _lastEnableParallelEdges;
         private double _lastEdgeCurvingTolerance;
+        private VertexShape _lastSourceVertexShape;
+        private VertexShape _lastTargetVertexShape;
+        private ConnectionPointState _lastSourceConnectionPoint;
+        private ConnectionPointState _lastTargetConnectionPoint;
+        private ConnectionPointState _currentSourceConnectionPoint;
+        private ConnectionPointState _currentTargetConnectionPoint;
 
-        internal bool CheckGeometryReusability(Rect sourceRect, Rect targetRect, Measure.Point[] routeInformation)
+        private readonly record struct ConnectionPointState(IVertexConnectionPoint? Control, Rect Bounds,
+            VertexShape Shape);
+
+        private static ConnectionPointState GetConnectionPointState(VertexControl? vertex, int? id)
         {
+            if (vertex is null || id is null) return default;
+            // Connection-point geometry can change without the vertex bounds changing.
+            // Refresh only edges with a selected connection point before checking reuse.
+            var point = vertex.GetConnectionPointById(id.Value, true);
+            return point is null ? default : new ConnectionPointState(point, point.RectangularSize, point.Shape);
+        }
+
+        internal bool CheckGeometryReusability(Rect sourceRect, Rect targetRect, Measure.Point[]? routeInformation)
+        {
+            _currentSourceConnectionPoint = GetConnectionPointState(edge.Source, SourceConnectionPointId(edge));
+            _currentTargetConnectionPoint = GetConnectionPointState(edge.Target, TargetConnectionPointId(edge));
             return _hasMeasuredGeometryOnce
                    && sourceRect == _lastSourceRect
                    && targetRect == _lastTargetRect
@@ -1384,8 +1449,13 @@ public abstract class EdgeControlBase : TemplatedControl, IGraphControl, IDispos
                    && edge.OverrideEndpoint == _lastOverrideEndpoint
                    && SourceConnectionPointId(edge) == _lastSourceConnectionPointId
                    && TargetConnectionPointId(edge) == _lastTargetConnectionPointId
+                   && edge.Source?.VertexShape == _lastSourceVertexShape
+                   && edge.Target?.VertexShape == _lastTargetVertexShape
+                   && _currentSourceConnectionPoint == _lastSourceConnectionPoint
+                   && _currentTargetConnectionPoint == _lastTargetConnectionPoint
                    && ReversePath(edge) == _lastReversePath
                    && (edge.RootArea?.IsEdgeRoutingEnabled ?? false) == _lastIsEdgeRoutingEnabled
+                   && (edge.RootArea?.EnableParallelEdges ?? false) == _lastEnableParallelEdges
                    && (edge.RootArea?.EdgeCurvingTolerance ?? 0) == _lastEdgeCurvingTolerance;
         }
 
@@ -1475,8 +1545,13 @@ public abstract class EdgeControlBase : TemplatedControl, IGraphControl, IDispos
             _lastOverrideEndpoint = edge.OverrideEndpoint;
             _lastSourceConnectionPointId = SourceConnectionPointId(edge);
             _lastTargetConnectionPointId = TargetConnectionPointId(edge);
+            _lastSourceVertexShape = edge.Source?.VertexShape ?? default;
+            _lastTargetVertexShape = edge.Target?.VertexShape ?? default;
+            _lastSourceConnectionPoint = _currentSourceConnectionPoint;
+            _lastTargetConnectionPoint = _currentTargetConnectionPoint;
             _lastReversePath = ReversePath(edge);
             _lastIsEdgeRoutingEnabled = edge.RootArea?.IsEdgeRoutingEnabled ?? false;
+            _lastEnableParallelEdges = edge.RootArea?.EnableParallelEdges ?? false;
             _lastEdgeCurvingTolerance = edge.RootArea?.EdgeCurvingTolerance ?? 0;
             _hasMeasuredGeometryOnce = true;
         }
