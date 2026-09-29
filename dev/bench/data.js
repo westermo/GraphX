@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1790154767520,
+  "lastUpdate": 1790693146004,
   "repoUrl": "https://github.com/westermo/GraphX",
   "entries": {
     "Benchmark.Net Benchmark": [
@@ -2886,6 +2886,120 @@ window.BENCHMARK_DATA = {
             "value": 55326.4,
             "unit": "ns",
             "range": "± 6902.513329698588"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "142813963+carl-andersson-at-westermo@users.noreply.github.com",
+            "name": "Caran",
+            "username": "carl-andersson-at-westermo"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "7eacdc763e8e53b684528a13fa7467486da48962",
+          "message": "Some more perfomance hammering (#35)\n\n* Some more perfomance hammering\n\n* Fix stale edge pointer cache reuse\n\nMeasure edge pointers before the geometry reuse check so DesiredSize changes invalidate the cached geometry on the first pass. Add a regression test that changes pointer size between measures and verifies the edge geometry is rebuilt immediately.\n\nCo-authored-by: Copilot App <223556219+Copilot@users.noreply.github.com>\n\n* Fix self-loop cache invalidation\n\nCo-authored-by: Copilot App <223556219+Copilot@users.noreply.github.com>\n\n* Fix incomplete edge geometry reuse cache key\n\nCheckGeometryReusability was missing several inputs consumed by the geometry recompute path it gates: OverrideEndpoint, source/target connection-point IDs, ReversePath, and the graph's edge-routing settings (IsEdgeRoutingEnabled/EdgeCurvingTolerance). Changing any of these without also changing vertex rects or the route could leave the reuse path returning true and skip recomputing points/geometry.\n\nAlso add an explicit reversePathChanged dirty-flag check in UpdateCacheInfo: ReversePath only reverses traversal order when the final StreamGeometry is built and never mutates the cached point values, so the existing point-value comparison alone cannot detect a ReversePath-only change.\n\nAdd a regression test covering the ReversePath case.\n\nCo-authored-by: Copilot App <223556219+Copilot@users.noreply.github.com>\n\n* Cache correction\n\n---------\n\nCo-authored-by: Copilot App <223556219+Copilot@users.noreply.github.com>",
+          "timestamp": "2026-09-29T15:58:43+02:00",
+          "tree_id": "ac843a8806d72c0647fbd97b7cc6214edc1606b6",
+          "url": "https://github.com/westermo/GraphX/commit/7eacdc763e8e53b684528a13fa7467486da48962"
+        },
+        "date": 1790693144342,
+        "tool": "benchmarkdotnet",
+        "benches": [
+          {
+            "name": "GraphXBenchmarks.GraphRenderingBenchmarks.SmallGraph_PreloadVertexes",
+            "value": 417413.1,
+            "unit": "ns",
+            "range": "± 103536.36117642708"
+          },
+          {
+            "name": "GraphXBenchmarks.GraphRenderingBenchmarks.MediumGraph_PreloadVertexes",
+            "value": 2311700.9,
+            "unit": "ns",
+            "range": "± 573841.4722163547"
+          },
+          {
+            "name": "GraphXBenchmarks.GraphRenderingBenchmarks.LargeGraph_PreloadVertexes",
+            "value": 9323880,
+            "unit": "ns",
+            "range": "± 2195396.6029306767"
+          },
+          {
+            "name": "GraphXBenchmarks.GraphRenderingBenchmarks.SmallGraph_PreloadAndGenerateEdges",
+            "value": 776599.6,
+            "unit": "ns",
+            "range": "± 236924.95861263754"
+          },
+          {
+            "name": "GraphXBenchmarks.GraphRenderingBenchmarks.MediumGraph_PreloadAndGenerateEdges",
+            "value": 5366171.5,
+            "unit": "ns",
+            "range": "± 1095914.6269039644"
+          },
+          {
+            "name": "GraphXBenchmarks.GraphRenderingBenchmarks.LargeGraph_PreloadAndGenerateEdges",
+            "value": 52244279.7,
+            "unit": "ns",
+            "range": "± 3970810.172996299"
+          },
+          {
+            "name": "GraphXBenchmarks.GraphRenderingBenchmarks.SmallGraph_UpdateAllEdges",
+            "value": 28673.8,
+            "unit": "ns",
+            "range": "± 7144.827916441065"
+          },
+          {
+            "name": "GraphXBenchmarks.GraphRenderingBenchmarks.MediumGraph_UpdateAllEdges",
+            "value": 82169.7,
+            "unit": "ns",
+            "range": "± 15435.165219214352"
+          },
+          {
+            "name": "GraphXBenchmarks.GraphRenderingBenchmarks.LargeGraph_UpdateAllEdges",
+            "value": 357238.2,
+            "unit": "ns",
+            "range": "± 43213.22113993458"
+          },
+          {
+            "name": "GraphXBenchmarks.GraphRenderingBenchmarks.LargeGraph_EdgeGenerationOnly",
+            "value": 24600348.1,
+            "unit": "ns",
+            "range": "± 3423162.216997496"
+          },
+          {
+            "name": "GraphXBenchmarks.GraphRenderingBenchmarks.LargeGraph_UpdateEdgesRenderingOnly",
+            "value": 355298.6,
+            "unit": "ns",
+            "range": "± 59953.02144401621"
+          },
+          {
+            "name": "GraphXBenchmarks.GraphRenderingBenchmarks.LargeGraph_UpdateEdges_WithParallelEdges",
+            "value": 924152.3,
+            "unit": "ns",
+            "range": "± 117176.60738678936"
+          },
+          {
+            "name": "GraphXBenchmarks.GraphRenderingBenchmarks.LargeGraph_UpdateEdges_WithCurving",
+            "value": 354991.7,
+            "unit": "ns",
+            "range": "± 66846.28034536485"
+          },
+          {
+            "name": "GraphXBenchmarks.GraphRenderingBenchmarks.LargeGraph_PositionUpdatesCost",
+            "value": 1435701.3,
+            "unit": "ns",
+            "range": "± 169865.31741748942"
+          },
+          {
+            "name": "GraphXBenchmarks.GraphRenderingBenchmarks.MediumGraph_WithSelfLoops_UpdateAllEdges",
+            "value": 58757,
+            "unit": "ns",
+            "range": "± 9619.347991302622"
           }
         ]
       }
