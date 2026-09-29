@@ -261,6 +261,9 @@ public abstract class VertexControlBase : TemplatedControl, IGraphControl
 
     public IVertexConnectionPoint? GetConnectionPointAt(Point position)
     {
+        // No extra "is layout dirty" guard needed here: Avalonia's own Layoutable.Measure
+        // already short-circuits when IsMeasureValid is true and the requested constraint
+        // matches the last one used, so this call is cheap on the (common) already-measured path.
         Measure(new Size(double.PositiveInfinity, double.PositiveInfinity));
 
         return VertexConnectionPointsList.Values.FirstOrDefault(a =>

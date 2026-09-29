@@ -10,8 +10,10 @@ using Avalonia.Controls.Metadata;
 using Avalonia.Controls.Primitives;
 using Avalonia.Controls.Shapes;
 using Avalonia.Interactivity;
+using Avalonia.Layout;
 using Avalonia.Media;
 using Westermo.GraphX.Common;
+using Westermo.GraphX.Common.Enums;
 using Westermo.GraphX.Common.Exceptions;
 using Westermo.GraphX.Common.Interfaces;
 using Westermo.GraphX.Controls.Controls.Misc;
@@ -94,6 +96,22 @@ public abstract class EdgeControlBase : TemplatedControl, IGraphControl, IDispos
 
         /// <summary>Indicates that valid data has been stored.</summary>
         public bool HasData;
+
+        /// <summary>
+        /// Whether <see cref="Position"/> and <see cref="DirectionTarget"/> coincide.
+        /// Precomputed alongside <see cref="Direction"/>/<see cref="Angle"/> in <c>MeasureOverride</c>
+        /// so <c>ArrangeEdgePointer</c> doesn't repeat the point-direction/angle math on every arrange pass.
+        /// </summary>
+        public bool IsCoincident;
+
+        /// <summary>Precomputed direction vector from <see cref="Position"/> towards <see cref="DirectionTarget"/> (zero when coincident).</summary>
+        public Vector Direction;
+
+        /// <summary>Precomputed rotation angle (degrees) for a pointer that requires rotation.</summary>
+        public double Angle;
+
+        /// <summary>Tracks whether the angle has been computed for this pointer layout.</summary>
+        public bool AngleComputed;
     }
 
     /// <summary>Cached source pointer layout info, set during geometry rebuild.</summary>
@@ -101,6 +119,8 @@ public abstract class EdgeControlBase : TemplatedControl, IGraphControl, IDispos
 
     /// <summary>Cached target pointer layout info, set during geometry rebuild.</summary>
     private EdgePointerLayoutInfo _targetPointerLayout;
+
+    internal double TargetPointerComputedAngle => _targetPointerLayout.Angle;
 
     /// <summary>
     /// Calculates the padding needed to prevent edge pointers from being clipped.
@@ -162,15 +182,16 @@ public abstract class EdgeControlBase : TemplatedControl, IGraphControl, IDispos
     /// Computes direction, rotation angle, and arranges the pointer within the edge's local space.
     /// Always runs after <c>base.ArrangeOverride()</c>, whether geometry was rebuilt or not.
     /// </summary>
-    private static Measure.Point ArrangeEdgePointer(EdgePointerLayoutInfo data, IEdgePointer pointer,
+    private static Measure.Point ArrangeEdgePointer(ref EdgePointerLayoutInfo data, IEdgePointer pointer,
         bool hideEdgePointerOnVertexOverlap)
     {
         var from = data.Position;
-        var to = data.DirectionTarget;
         var allowUnsuppress = data.AllowUnsuppress;
 
-        var dir = from.DirectionTo(to);
-        if (from == to)
+        // Direction/angle are precomputed once in MeasureOverride; only the
+        // suppress/unsuppress decision (which depends on the live toggle) is done here.
+        var dir = data.Direction;
+        if (data.IsCoincident)
         {
             if (hideEdgePointerOnVertexOverlap) pointer.Suppress();
             else dir = new Vector(0, 0);
@@ -186,9 +207,17 @@ public abstract class EdgeControlBase : TemplatedControl, IGraphControl, IDispos
 
         // Convert to local coordinates using the now-known offset
         var position = new Measure.Point(from.X, from.Y);
-        var angle = pointer.NeedRotation
-            ? -MathHelper.GetAngleBetweenPoints(from.ToGraphX(), to.ToGraphX()).ToDegrees()
-            : 0;
+        var angle = 0.0;
+        if (pointer.NeedRotation)
+        {
+            if (!data.AngleComputed)
+            {
+                data.Angle = -MathHelper.GetAngleBetweenPoints(from.ToGraphX(),
+                    data.DirectionTarget.ToGraphX()).ToDegrees();
+                data.AngleComputed = true;
+            }
+            angle = data.Angle;
+        }
 
         var vecMove = new Measure.Vector((.5 + dir.X * .5) * width, (.5 + dir.Y * .5) * height);
         position = new Measure.Point(position.X - vecMove.X, position.Y - vecMove.Y);
@@ -198,6 +227,26 @@ public abstract class EdgeControlBase : TemplatedControl, IGraphControl, IDispos
         SetRotation(ctrl, angle);
 
         return position;
+    }
+
+    /// <summary>
+    /// Precomputes the direction vector, coincidence flag, and rotation angle for a pointer's
+    /// layout data. Called once per <c>MeasureOverride</c> so <see cref="ArrangeEdgePointer"/>
+    /// doesn't repeat this trigonometry on every arrange pass.
+    /// </summary>
+    private static void ComputePointerDirectionAndAngle(ref EdgePointerLayoutInfo data, IEdgePointer? pointer)
+    {
+        if (!data.HasData || pointer is null) return;
+        var from = data.Position;
+        var to = data.DirectionTarget;
+        data.IsCoincident = from == to;
+        if (!data.IsCoincident)
+            data.Direction = from.DirectionTo(to);
+        if (pointer.NeedRotation)
+        {
+            data.Angle = -MathHelper.GetAngleBetweenPoints(from.ToGraphX(), to.ToGraphX()).ToDegrees();
+            data.AngleComputed = true;
+        }
     }
 
     private static (double, double) GetWidthAndHeight(Size size, Control ctrl)
@@ -520,12 +569,13 @@ public abstract class EdgeControlBase : TemplatedControl, IGraphControl, IDispos
     /// </summary>
     public void DetachLabels(IEdgeLabelControl? ctrl = null)
     {
-        EdgeLabelControls.OfType<IAttachableControl<EdgeControl>>()
-            .ForEach(label =>
-            {
-                label.Detach();
-                RootArea?.Children.Remove((Control)label);
-            });
+        foreach (var label in EdgeLabelControls)
+        {
+            if (label is not IAttachableControl<EdgeControl> attachable) continue;
+            attachable.Detach();
+            RootArea?.Children.Remove((Control)label);
+        }
+
         EdgeLabelControls.Clear();
         RootArea?.NotifyBatchedEdgeChanged(this);
     }
@@ -535,7 +585,10 @@ public abstract class EdgeControlBase : TemplatedControl, IGraphControl, IDispos
     /// </summary>
     public void UpdateLabel()
     {
-        _edgeLabelControls.Where(l => l.ShowLabel).ForEach(l => { l.Show(); });
+        foreach (var l in _edgeLabelControls)
+        {
+            if (l.ShowLabel) l.Show();
+        }
     }
 
 
@@ -656,15 +709,16 @@ public abstract class EdgeControlBase : TemplatedControl, IGraphControl, IDispos
 
     internal bool IsBatchedPathSuppressed => _batchedPathOpacity.HasValue;
 
-    // Re-added after edit: measure template child once with unlimited size so DesiredSize is initialized
-    protected void MeasureChild(Control? child)
+    protected static void MeasureChild(Control? child)
     {
-        if (child == null) return;
-
-        // Ensure the child's template is applied so content is available for measuring
-        if (child is TemplatedControl templated)
+        switch (child)
         {
-            templated.ApplyTemplate();
+            case null:
+                return;
+            case TemplatedControl templated:
+                // Ensure the child's template is applied so content is available for measuring
+                templated.ApplyTemplate();
+                break;
         }
 
         child.Measure(new Size(double.PositiveInfinity, double.PositiveInfinity));
@@ -683,7 +737,24 @@ public abstract class EdgeControlBase : TemplatedControl, IGraphControl, IDispos
         return new Size(width, height);
     }
 
-    private int _oldSignature;
+    private EdgeControlCache? _cache;
+    private bool _useGeometryCache = true;
+
+    // Benchmark-only comparison against Avalonia's own measure invalidation.
+    internal bool UseGeometryCache
+    {
+        get => _useGeometryCache;
+        set
+        {
+            if (_useGeometryCache == value) return;
+            _useGeometryCache = value;
+            _cache = null;
+            InvalidateMeasure();
+        }
+    }
+
+    // Null during timed benchmarks and normal use; probes observe actual MeasureOverride calls.
+    internal static Action<bool>? GeometryReuseObserver { get; set; }
 
     // Provide a desired size for layout based on current geometry bounds so edge is not collapsed to 0x0.
     protected override Size MeasureOverride(Size availableSize)
@@ -697,12 +768,6 @@ public abstract class EdgeControlBase : TemplatedControl, IGraphControl, IDispos
             return default;
         }
 
-
-        var selfLoopSize = IsSelfLooped
-            ? new Size(SelfLoopIndicatorRadius * 2 + SelfLoopIndicatorOffset.X,
-                SelfLoopIndicatorRadius * 2 + SelfLoopIndicatorOffset.Y)
-            : new Size();
-        var spanningRect = sourceRect.Union(targetRect);
         var infiniteSize = new Size(double.PositiveInfinity, double.PositiveInfinity);
 
         if (SelfLoopIndicator is { } selfLoopIndicator) selfLoopIndicator.Measure(infiniteSize);
@@ -711,82 +776,118 @@ public abstract class EdgeControlBase : TemplatedControl, IGraphControl, IDispos
 
         //get the route informations
         var routeInformation = routedEdge.RoutingPoints;
-        var gEdge = Edge as IGraphXCommonEdge;
-        UpdateConnectionPoints(gEdge, routeInformation, sourceRect, targetRect);
 
-        // If the logic above is working correctly, both the source and target connection points will exist.
-        if (!SourceConnectionPoint.HasValue || !TargetConnectionPoint.HasValue)
-            throw new GX_GeneralException("One or both connection points was not found due to an internal error.");
-
-        var p1 = SourceConnectionPoint.Value;
-        var p2 = TargetConnectionPoint.Value;
-        UpdatePoints(p1, p2, routedEdge.RoutingPoints);
-
-        // Cache layout info for pointer arrangement after base.ArrangeOverride
-        _sourcePointerLayout = new EdgePointerLayoutInfo
-        {
-            Position = _points[0],
-            DirectionTarget = _points[1],
-            HasData = EdgePointerForSource != null,
-            AllowUnsuppress = true
-        };
-        _targetPointerLayout = new EdgePointerLayoutInfo
-        {
-            Position = _points[^1],
-            DirectionTarget = _points[^2],
-            HasData = EdgePointerForTarget != null,
-            AllowUnsuppress = true
-        };
         if (EdgePointerForSource is Control pointerForSource)
         {
             if (ShowArrows) EdgePointerForSource.Show();
             pointerForSource.Measure(infiniteSize);
-            var sourceOffset = ComputeEdgePointerOffset(EdgePointerForSource, _points[0], _points[1]);
-            _points[0] = _points[0].Subtract(sourceOffset);
         }
 
         if (EdgePointerForTarget is Control pointerForTarget)
         {
             if (ShowArrows) EdgePointerForTarget.Show();
             pointerForTarget.Measure(infiniteSize);
-            var targetOffset = ComputeEdgePointerOffset(EdgePointerForTarget, _points[^1], _points[^2]);
-            _points[^1] = _points[^1].Subtract(targetOffset);
         }
 
-        //Measure bounds after edge pointers have been measured.
+        var canReuseGeometry = _useGeometryCache
+                               && (_cache ??= new EdgeControlCache(this))
+                                   .CheckGeometryReusability(sourceRect, targetRect, routeInformation);
+        GeometryReuseObserver?.Invoke(canReuseGeometry);
 
-        // Calculate padding needed for edge pointers to prevent clipping
-        var pointerPadding = GetEdgePointerPadding();
-        _pathBounds = CollectionsMarshal.AsSpan(_points).GetBounds(pointerPadding);
+        var selfLoopSize = IsSelfLooped
+            ? new Size(SelfLoopIndicatorRadius * 2 + SelfLoopIndicatorOffset.X,
+                SelfLoopIndicatorRadius * 2 + SelfLoopIndicatorOffset.Y)
+            : new Size();
+        var spanningRect = sourceRect.Union(targetRect);
 
-        // For self-looped edges the source and target connection points collapse onto the same
-        // location, so the raw _pathBounds is degenerate (zero size). Replace it with the rectangle
-        // that will house the self-loop indicator (or the built-in ellipse) anchored relative to the
-        // source vertex's top-left, matching the WPF positioning in PrepareSelfLoopedEdge.
-        if (IsSelfLooped)
+        if (!canReuseGeometry)
         {
-            var hasTemplate = SelfLoopIndicator is not null;
-            var indicatorSize = hasTemplate
-                ? SelfLoopIndicator!.DesiredSize
-                : new Size(SelfLoopIndicatorRadius * 2, SelfLoopIndicatorRadius * 2);
-            // Match PrepareSelfLoopedEdge's anchor offset: subtract DesiredSize for a template,
-            // or one radius for the built-in ellipse.
-            var anchorOffsetX = hasTemplate ? SelfLoopIndicator!.DesiredSize.Width : SelfLoopIndicatorRadius;
-            var anchorOffsetY = hasTemplate ? SelfLoopIndicator!.DesiredSize.Height : SelfLoopIndicatorRadius;
-            var indicatorTopLeft = new Point(
-                sourceRect.X + SelfLoopIndicatorOffset.X - anchorOffsetX,
-                sourceRect.Y + SelfLoopIndicatorOffset.Y - anchorOffsetY);
-            _pathBounds = new Rect(indicatorTopLeft, indicatorSize);
+            var gEdge = Edge as IGraphXCommonEdge;
+            UpdateConnectionPoints(gEdge, routeInformation, sourceRect, targetRect);
+
+            // If the logic above is working correctly, both the source and target connection points will exist.
+            if (!SourceConnectionPoint.HasValue || !TargetConnectionPoint.HasValue)
+                throw new GX_GeneralException("One or both connection points was not found due to an internal error.");
+
+            var p1 = SourceConnectionPoint.Value;
+            var p2 = TargetConnectionPoint.Value;
+            UpdatePoints(p1, p2, routedEdge.RoutingPoints);
+
+            // Cache layout info for pointer arrangement after base.ArrangeOverride
+            _sourcePointerLayout = new EdgePointerLayoutInfo
+            {
+                Position = _points[0],
+                DirectionTarget = _points[1],
+                HasData = EdgePointerForSource != null,
+                AllowUnsuppress = true
+            };
+            _targetPointerLayout = new EdgePointerLayoutInfo
+            {
+                Position = _points[^1],
+                DirectionTarget = _points[^2],
+                HasData = EdgePointerForTarget != null,
+                AllowUnsuppress = true
+            };
+            if (EdgePointerForSource is not null)
+            {
+                var sourceOffset = ComputeEdgePointerOffset(EdgePointerForSource, _points[0], _points[1]);
+                _points[0] = _points[0].Subtract(sourceOffset);
+            }
+
+            if (EdgePointerForTarget is not null)
+            {
+                var targetOffset = ComputeEdgePointerOffset(EdgePointerForTarget, _points[^1], _points[^2]);
+                _points[^1] = _points[^1].Subtract(targetOffset);
+            }
+
+            //Measure bounds after edge pointers have been measured.
+
+            // Calculate padding needed for edge pointers to prevent clipping
+            var pointerPadding = GetEdgePointerPadding();
+            _pathBounds = CollectionsMarshal.AsSpan(_points).GetBounds(pointerPadding);
+
+            // For self-looped edges the source and target connection points collapse onto the same
+            // location, so the raw _pathBounds is degenerate (zero size). Replace it with the rectangle
+            // that will house the self-loop indicator (or the built-in ellipse) anchored relative to the
+            // source vertex's top-left, matching the WPF positioning in PrepareSelfLoopedEdge.
+            if (IsSelfLooped)
+            {
+                var hasTemplate = SelfLoopIndicator is not null;
+                var indicatorSize = hasTemplate
+                    ? SelfLoopIndicator!.DesiredSize
+                    : new Size(SelfLoopIndicatorRadius * 2, SelfLoopIndicatorRadius * 2);
+                // Match PrepareSelfLoopedEdge's anchor offset: subtract DesiredSize for a template,
+                // or one radius for the built-in ellipse.
+                var anchorOffsetX = hasTemplate ? SelfLoopIndicator!.DesiredSize.Width : SelfLoopIndicatorRadius;
+                var anchorOffsetY = hasTemplate ? SelfLoopIndicator!.DesiredSize.Height : SelfLoopIndicatorRadius;
+                var indicatorTopLeft = new Point(
+                    sourceRect.X + SelfLoopIndicatorOffset.X - anchorOffsetX,
+                    sourceRect.Y + SelfLoopIndicatorOffset.Y - anchorOffsetY);
+                _pathBounds = new Rect(indicatorTopLeft, indicatorSize);
+            }
+
+            // Shift points into local space
+            for (var i = 0; i < _points.Count; i++)
+                _points[i] = _points[i].Subtract(_pathBounds.TopLeft);
+            _sourcePointerLayout.Position = _sourcePointerLayout.Position.Subtract(_pathBounds.TopLeft);
+            _sourcePointerLayout.DirectionTarget = _sourcePointerLayout.DirectionTarget.Subtract(_pathBounds.TopLeft);
+            _targetPointerLayout.Position = _targetPointerLayout.Position.Subtract(_pathBounds.TopLeft);
+            _targetPointerLayout.DirectionTarget = _targetPointerLayout.DirectionTarget.Subtract(_pathBounds.TopLeft);
+
+            // Precompute direction/angle once here (translation-invariant) instead of recomputing
+            // them on every ArrangeEdgePointer call, which happens on every arrange pass even
+            // when the geometry hasn't changed since the last measure.
+            ComputePointerDirectionAndAngle(ref _sourcePointerLayout, EdgePointerForSource);
+            ComputePointerDirectionAndAngle(ref _targetPointerLayout, EdgePointerForTarget);
+
+            if (_useGeometryCache)
+                _cache!.UpdateCacheInfo(sourceRect, targetRect, routeInformation);
+            else
+                _isGeometryDirty = true;
         }
 
-        // Shift points into local space
-        for (var i = 0; i < _points.Count; i++)
-            _points[i] = _points[i].Subtract(_pathBounds.TopLeft);
-        _sourcePointerLayout.Position = _sourcePointerLayout.Position.Subtract(_pathBounds.TopLeft);
-        _sourcePointerLayout.DirectionTarget = _sourcePointerLayout.DirectionTarget.Subtract(_pathBounds.TopLeft);
-        _targetPointerLayout.Position = _targetPointerLayout.Position.Subtract(_pathBounds.TopLeft);
-        _targetPointerLayout.DirectionTarget = _targetPointerLayout.DirectionTarget.Subtract(_pathBounds.TopLeft);
-
+        // Labels can change content independently of the edge's own geometry (e.g. text update),
+        // so they're always re-measured and folded into the final size even on the reuse path.
         foreach (var label in EdgeLabelControls)
         {
             if (IsSelfLooped && !label.DisplayForSelfLoopedEdges) continue;
@@ -795,10 +896,6 @@ public abstract class EdgeControlBase : TemplatedControl, IGraphControl, IDispos
             selfLoopSize = Union(selfLoopSize, ctrl.DesiredSize);
         }
 
-        var pointSignature = GetSignature(_points);
-        var changed = _oldSignature != pointSignature;
-        _isGeometryDirty = LineGeometry is null || changed;
-        _oldSignature = pointSignature;
         return IsSelfLooped
             ? _pathBounds.Size
             : Union(spanningRect.Size, selfLoopSize, _pathBounds.Size);
@@ -830,10 +927,10 @@ public abstract class EdgeControlBase : TemplatedControl, IGraphControl, IDispos
         // Position edge pointers
         if (_sourcePointerLayout.HasData && EdgePointerForSource != null)
             SourcePointerPosition =
-                ArrangeEdgePointer(_sourcePointerLayout, EdgePointerForSource, HideEdgePointerOnVertexOverlap);
+                ArrangeEdgePointer(ref _sourcePointerLayout, EdgePointerForSource, HideEdgePointerOnVertexOverlap);
         if (_targetPointerLayout.HasData && EdgePointerForTarget != null)
             TargetPointerPosition =
-                ArrangeEdgePointer(_targetPointerLayout, EdgePointerForTarget, HideEdgePointerOnVertexOverlap);
+                ArrangeEdgePointer(ref _targetPointerLayout, EdgePointerForTarget, HideEdgePointerOnVertexOverlap);
 
         // Position labels at edge midpoint
         var midPoint = GetMidpoint(out var angle, out var flipAxis, out var vector);
@@ -919,7 +1016,7 @@ public abstract class EdgeControlBase : TemplatedControl, IGraphControl, IDispos
 
     private readonly List<Point> _points = [];
 
-    private Rect _pathBounds; 
+    private Rect _pathBounds;
     private bool _isGeometryDirty = true;
 
     internal bool CanRenderInBatchedLayer =>
@@ -994,10 +1091,12 @@ public abstract class EdgeControlBase : TemplatedControl, IGraphControl, IDispos
             //return if we don't need to show edge loops
             if (!ShowSelfLoopIndicator) return;
 
-            //pregenerate built-in indicator geometry if template PART is absent
-            if (!HasSelfLoopedEdgeTemplate)
-                LineGeometry = new EllipseGeometry();
-            else SelfLoopIndicator?.IsVisible = true;
+            // Note: no geometry needs to be pregenerated here even when the built-in indicator
+            // (no template) is used - PrepareEdgeLayout() calls UpdateSelfLoopedEdgeData() and then
+            // immediately overwrites LineGeometry with PrepareSelfLoopedEdge()'s actual ellipse, so
+            // allocating one here would be immediately discarded.
+            if (HasSelfLoopedEdgeTemplate)
+                SelfLoopIndicator?.IsVisible = true;
         }
         else
         {
@@ -1090,18 +1189,6 @@ public abstract class EdgeControlBase : TemplatedControl, IGraphControl, IDispos
             _points.Add(p1);
             _points.Add(p2);
         }
-    }
-
-    private static int GetSignature(List<Point> points)
-    {
-        var hash = new HashCode();
-        foreach (var p in points)
-        {
-            hash.Add(p.X);
-            hash.Add(p.Y);
-        }
-
-        return hash.ToHashCode();
     }
 
     /// <summary>
@@ -1250,13 +1337,13 @@ public abstract class EdgeControlBase : TemplatedControl, IGraphControl, IDispos
 
     private IVertexConnectionPoint GetTargetCpOrThrow(int id)
     {
-        return Target?.GetConnectionPointById(id, true) ?? throw new GX_ObjectNotFoundException(string.Format(
+        return Target?.GetConnectionPointById(id) ?? throw new GX_ObjectNotFoundException(string.Format(
             "Can't find target vertex VCP by edge target connection point Id({1}) : {0}", Target, id));
     }
 
     private IVertexConnectionPoint GetSourceCpOrThrow(int id)
     {
-        return Source!.GetConnectionPointById(id, true) ?? throw new GX_ObjectNotFoundException(string.Format(
+        return Source!.GetConnectionPointById(id) ?? throw new GX_ObjectNotFoundException(string.Format(
             "Can't find source vertex VCP by edge source connection point Id({1}) : {0}", Source, id));
     }
 
@@ -1286,4 +1373,205 @@ public abstract class EdgeControlBase : TemplatedControl, IGraphControl, IDispos
     {
         return [.. EdgeLabelControls];
     }
+
+    #region Caching
+
+    private class EdgeControlCache(EdgeControlBase edge)
+    {
+        // Cached inputs from the last full geometry computation, used by the change-detection guard
+        // in MeasureOverride to skip UpdateConnectionPoints/UpdatePoints/signature recomputation when
+        // nothing relevant changed (Canvas panels re-measure every child on every parent measure pass,
+        // regardless of whether that specific child's own layout inputs changed).
+        private bool _hasMeasuredGeometryOnce;
+        private Rect _lastSourceRect;
+        private Rect _lastTargetRect;
+        private Measure.Point[]? _lastRouteInformation;
+        private IEdgePointer? _lastEdgePointerForSource;
+        private IEdgePointer? _lastEdgePointerForTarget;
+        private Size _lastSourcePointerDesiredSize;
+        private Size _lastTargetPointerDesiredSize;
+        private bool _lastShowArrows;
+        private bool _lastShowSelfLoopIndicator;
+        private bool _lastIsSelfLooped;
+        private double _lastSelfLoopIndicatorRadius;
+        private Point _lastSelfLoopIndicatorOffset;
+        private Size _lastSelfLoopIndicatorDesiredSize;
+        private bool _lastIsParallel;
+        private int _lastParallelEdgeOffset;
+        private Point? _lastOverrideEndpoint;
+        private int? _lastSourceConnectionPointId;
+        private int? _lastTargetConnectionPointId;
+        private bool _lastReversePath;
+        private bool _lastIsEdgeRoutingEnabled;
+        private bool _lastEnableParallelEdges;
+        private double _lastEdgeCurvingTolerance;
+        private VertexShape _lastSourceVertexShape;
+        private VertexShape _lastTargetVertexShape;
+        private ConnectionPointState _lastSourceConnectionPoint;
+        private ConnectionPointState _lastTargetConnectionPoint;
+        private ConnectionPointState _currentSourceConnectionPoint;
+        private ConnectionPointState _currentTargetConnectionPoint;
+
+        private readonly record struct ConnectionPointState(IVertexConnectionPoint? Control, Rect Bounds,
+            VertexShape Shape);
+
+        private static ConnectionPointState GetConnectionPointState(VertexControl? vertex, int? id)
+        {
+            if (vertex is null || id is null) return default;
+            // Connection-point geometry can change without the vertex bounds changing.
+            // Refresh only edges with a selected connection point before checking reuse.
+            var point = vertex.GetConnectionPointById(id.Value, true);
+            return point is null ? default : new ConnectionPointState(point, point.RectangularSize, point.Shape);
+        }
+
+        internal bool CheckGeometryReusability(Rect sourceRect, Rect targetRect, Measure.Point[]? routeInformation)
+        {
+            _currentSourceConnectionPoint = GetConnectionPointState(edge.Source, SourceConnectionPointId(edge));
+            _currentTargetConnectionPoint = GetConnectionPointState(edge.Target, TargetConnectionPointId(edge));
+            return _hasMeasuredGeometryOnce
+                   && sourceRect == _lastSourceRect
+                   && targetRect == _lastTargetRect
+                   && RoutePointsUnchanged(routeInformation, _lastRouteInformation)
+                   && edge.IsSelfLooped == _lastIsSelfLooped
+                   && ReferenceEquals(edge.EdgePointerForSource, _lastEdgePointerForSource)
+                   && PointerDesiredSize(edge.EdgePointerForSource) == _lastSourcePointerDesiredSize
+                   && ReferenceEquals(edge.EdgePointerForTarget, _lastEdgePointerForTarget)
+                   && PointerDesiredSize(edge.EdgePointerForTarget) == _lastTargetPointerDesiredSize
+                   && edge.ShowArrows == _lastShowArrows
+                   && edge.ShowSelfLoopIndicator == _lastShowSelfLoopIndicator
+                   && edge.SelfLoopIndicatorRadius.Equals(_lastSelfLoopIndicatorRadius)
+                   && edge.SelfLoopIndicatorOffset == _lastSelfLoopIndicatorOffset
+                   && SelfLoopIndicatorDesiredSize(edge.SelfLoopIndicator) == _lastSelfLoopIndicatorDesiredSize
+                   && edge.IsParallel == _lastIsParallel
+                   && edge.ParallelEdgeOffset == _lastParallelEdgeOffset
+                   // Belt-and-suspenders: OverrideEndpoint is already folded into targetRect by
+                   // TryGetTargetPoints, but comparing it directly documents the dependency explicitly.
+                   && edge.OverrideEndpoint == _lastOverrideEndpoint
+                   && SourceConnectionPointId(edge) == _lastSourceConnectionPointId
+                   && TargetConnectionPointId(edge) == _lastTargetConnectionPointId
+                   && edge.Source?.VertexShape == _lastSourceVertexShape
+                   && edge.Target?.VertexShape == _lastTargetVertexShape
+                   && _currentSourceConnectionPoint == _lastSourceConnectionPoint
+                   && _currentTargetConnectionPoint == _lastTargetConnectionPoint
+                   && ReversePath(edge) == _lastReversePath
+                   && (edge.RootArea?.IsEdgeRoutingEnabled ?? false) == _lastIsEdgeRoutingEnabled
+                   && (edge.RootArea?.EnableParallelEdges ?? false) == _lastEnableParallelEdges
+                   && (edge.RootArea?.EdgeCurvingTolerance ?? 0) == _lastEdgeCurvingTolerance;
+        }
+
+        private static int? SourceConnectionPointId(EdgeControlBase edge)
+        {
+            return (edge.Edge as IGraphXCommonEdge)?.SourceConnectionPointId;
+        }
+
+        private static int? TargetConnectionPointId(EdgeControlBase edge)
+        {
+            return (edge.Edge as IGraphXCommonEdge)?.TargetConnectionPointId;
+        }
+
+        private static bool ReversePath(EdgeControlBase edge)
+        {
+            return (edge.Edge as IGraphXCommonEdge)?.ReversePath ?? false;
+        }
+
+        private static Size PointerDesiredSize(IEdgePointer? edgeEdgePointerForSource)
+        {
+            if (edgeEdgePointerForSource is Layoutable ctrl)
+            {
+                return ctrl.DesiredSize;
+            }
+
+            return default;
+        }
+
+        private static Size SelfLoopIndicatorDesiredSize(Control? indicator)
+        {
+            return indicator?.DesiredSize ?? default;
+        }
+
+
+        /// <summary>
+        /// Value-based comparison for routing point arrays.
+        /// </summary>
+        private static bool RoutePointsUnchanged(Measure.Point[]? current, Measure.Point[]? cached)
+        {
+            if (current is null || cached is null)
+                return current is null && cached is null;
+            if (current.Length != cached.Length)
+                return false;
+            for (var i = 0; i < current.Length; i++)
+                if (current[i] != cached[i])
+                    return false;
+            return true;
+        }
+
+        internal void UpdateCacheInfo(Rect sourceRect, Rect targetRect, Measure.Point[]? routeInformation)
+        {
+            var changed = PointsChangedSincePreviousGeometry(edge._points);
+            var selfLoopVisualChanged = edge.IsSelfLooped != _lastIsSelfLooped
+                                        || (edge.IsSelfLooped
+                                            && (edge.ShowSelfLoopIndicator != _lastShowSelfLoopIndicator
+                                                || edge.SelfLoopIndicatorRadius != _lastSelfLoopIndicatorRadius
+                                                || edge.SelfLoopIndicatorOffset != _lastSelfLoopIndicatorOffset
+                                                || SelfLoopIndicatorDesiredSize(edge.SelfLoopIndicator) !=
+                                                _lastSelfLoopIndicatorDesiredSize));
+            // ReversePath only flips the point traversal order when the final StreamGeometry is built
+            // (CreateEdgeGeometry); it never changes the _points values themselves, so the point-signature
+            // comparison above can't detect it. Track it explicitly so toggling it still rebuilds LineGeometry.
+            var reversePathChanged = ReversePath(edge) != _lastReversePath;
+            edge._isGeometryDirty = edge.LineGeometry is null || changed || selfLoopVisualChanged || reversePathChanged;
+            if (changed)
+            {
+                _lastPointsForSignature.Clear();
+                _lastPointsForSignature.AddRange(edge._points);
+            }
+
+            _lastSourceRect = sourceRect;
+            _lastTargetRect = targetRect;
+            // Clone rather than store the live reference
+            _lastRouteInformation = routeInformation?.ToArray();
+            _lastIsSelfLooped = edge.IsSelfLooped;
+            _lastEdgePointerForSource = edge.EdgePointerForSource;
+            _lastSourcePointerDesiredSize = PointerDesiredSize(edge.EdgePointerForSource);
+            _lastEdgePointerForTarget = edge.EdgePointerForTarget;
+            _lastTargetPointerDesiredSize = PointerDesiredSize(edge.EdgePointerForTarget);
+            _lastShowArrows = edge.ShowArrows;
+            _lastShowSelfLoopIndicator = edge.ShowSelfLoopIndicator;
+            _lastSelfLoopIndicatorRadius = edge.SelfLoopIndicatorRadius;
+            _lastSelfLoopIndicatorOffset = edge.SelfLoopIndicatorOffset;
+            _lastSelfLoopIndicatorDesiredSize = SelfLoopIndicatorDesiredSize(edge.SelfLoopIndicator);
+            _lastIsParallel = edge.IsParallel;
+            _lastParallelEdgeOffset = edge.ParallelEdgeOffset;
+            _lastOverrideEndpoint = edge.OverrideEndpoint;
+            _lastSourceConnectionPointId = SourceConnectionPointId(edge);
+            _lastTargetConnectionPointId = TargetConnectionPointId(edge);
+            _lastSourceVertexShape = edge.Source?.VertexShape ?? default;
+            _lastTargetVertexShape = edge.Target?.VertexShape ?? default;
+            _lastSourceConnectionPoint = _currentSourceConnectionPoint;
+            _lastTargetConnectionPoint = _currentTargetConnectionPoint;
+            _lastReversePath = ReversePath(edge);
+            _lastIsEdgeRoutingEnabled = edge.RootArea?.IsEdgeRoutingEnabled ?? false;
+            _lastEnableParallelEdges = edge.RootArea?.EnableParallelEdges ?? false;
+            _lastEdgeCurvingTolerance = edge.RootArea?.EdgeCurvingTolerance ?? 0;
+            _hasMeasuredGeometryOnce = true;
+        }
+
+        // Cached point list from the last geometry computation, compared directly (element-wise)
+        // instead of via full-point HashCode hashing to detect whether the path actually moved and
+        // LineGeometry needs to be rebuilt. Direct comparison is cheaper than hashing (it short-circuits
+        // on the first mismatch) and avoids HashCode.Combine overhead on every recompute.
+        private readonly List<Point> _lastPointsForSignature = [];
+
+        private bool PointsChangedSincePreviousGeometry(List<Point> points)
+        {
+            if (points.Count != _lastPointsForSignature.Count)
+                return true;
+            for (var i = 0; i < points.Count; i++)
+                if (points[i] != _lastPointsForSignature[i])
+                    return true;
+            return false;
+        }
+    }
+
+    #endregion
 }

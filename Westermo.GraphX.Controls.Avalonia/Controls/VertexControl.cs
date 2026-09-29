@@ -209,6 +209,7 @@ public class VertexControl : VertexControlBase, IXYReactive, IDraggable
     /// and processing on the second (which has both X and Y updated).
     /// </summary>
     private bool _positionUpdatePending;
+    private Action? _positionUpdateTick;
 
     public void XYChanged(AvaloniaPropertyChangedEventArgs args)
     {
@@ -224,16 +225,20 @@ public class VertexControl : VertexControlBase, IXYReactive, IDraggable
 
         // First property change — defer to coalesce with a potential second change.
         _positionUpdatePending = true;
-        Dispatcher.UIThread.Post(() =>
-        {
-            // Only fires if no second property change occurred synchronously
-            // (e.g., when only X or only Y was changed individually).
-            if (!_positionUpdatePending) return;
-            _positionUpdatePending = false;
-            if (ShowLabel)
-                VertexLabelControl?.UpdatePosition();
-            OnPositionChanged(new Point(), GetPosition());
-        }, DispatcherPriority.Render);
+        // Cache the tick delegate as a field (assigned once, lazily) instead of allocating a
+        // fresh closure on every un-coalesced X/Y change - this fires per vertex per drag frame.
+        Dispatcher.UIThread.Post(_positionUpdateTick ??= OnPositionUpdateTick, DispatcherPriority.Render);
+    }
+
+    private void OnPositionUpdateTick()
+    {
+        // Only fires if no second property change occurred synchronously
+        // (e.g., when only X or only Y was changed individually).
+        if (!_positionUpdatePending) return;
+        _positionUpdatePending = false;
+        if (ShowLabel)
+            VertexLabelControl?.UpdatePosition();
+        OnPositionChanged(new Point(), GetPosition());
     }
 
     private Point? m_dragOrigin;
