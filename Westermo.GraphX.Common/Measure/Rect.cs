@@ -320,10 +320,11 @@ public struct Rect
     {
         if (IsEmpty)
         {
-            _x = 0;
-            _y = 0;
-            _width = 0;
-            _height = 0;
+            // An empty receiver adopts the other rect (matches WPF semantics).
+            _x = rect._x;
+            _y = rect._y;
+            _width = rect._width;
+            _height = rect._height;
         }
         else if (!rect.IsEmpty)
         {

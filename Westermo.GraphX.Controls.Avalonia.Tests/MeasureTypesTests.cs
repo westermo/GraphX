@@ -403,7 +403,6 @@ public class MeasureTypesTests
     }
 
     [Test]
-    [Skip("Known bug: Rect.Union on an Empty receiver yields (0,0,0,0) instead of the other rect, so accumulating bounds from Rect.Empty always loses the first rect.")]
     public async Task Rect_Union_EmptyReceiver_BecomesOtherRect()
     {
         var u = MRect.Union(MRect.Empty, new MRect(1, 2, 3, 4));
