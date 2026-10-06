@@ -292,15 +292,17 @@ internal class GraphHideHelper<TVertex, TEdge>(IMutableBidirectionalGraph<TVerte
 
 	public bool UnhideAll()
 	{
-		while ( _hiddenVertices.Count > 0 )
+		// Iterate over snapshots: an element that fails to unhide stays in the hidden list,
+		// so looping until the list is empty could spin forever.
+		foreach ( var v in _hiddenVertices.ToArray() )
 		{
-			UnhideVertex( _hiddenVertices[0] );
+			UnhideVertex( v );
 		}
-		while ( _hiddenEdges.Count > 0 )
+		foreach ( var e in _hiddenEdges.ToArray() )
 		{
-			UnhideEdge( _hiddenEdges[0] );
+			UnhideEdge( e );
 		}
-		return true;
+		return _hiddenVertices.Count == 0 && _hiddenEdges.Count == 0;
 	}
 
 	public int HiddenVertexCount => _hiddenVertices.Count;

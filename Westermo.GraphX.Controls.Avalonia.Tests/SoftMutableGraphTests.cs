@@ -335,5 +335,33 @@ public class SoftMutableGraphTests
         await Assert.That(f.Graph.EdgeCount).IsEqualTo(4);
     }
 
+    [Test]
+    public async Task UnhideAll_ReturnsFalse_WhenAnEdgeCannotBeUnhidden()
+    {
+        var f = CreateGraph();
+        f.Graph.HideEdge(f.AB);
+        f.Graph.HideEdge(f.CD);
+        // Re-adding the hidden edge directly makes UnhideEdge fail for it (it is no longer "hidden").
+        f.Graph.AddEdge(f.AB);
+
+        // Must terminate rather than retrying the failing edge forever.
+        await Assert.That(f.Graph.UnhideAll()).IsFalse();
+
+        // The other hidden edge is still restored.
+        await Assert.That(f.Graph.ContainsEdge(f.CD)).IsTrue();
+        await Assert.That(f.Graph.IsHiddenEdge(f.CD)).IsFalse();
+    }
+
+    [Test]
+    public async Task UnhideAll_ReturnsFalse_WhenAVertexCannotBeUnhidden()
+    {
+        var f = CreateGraph();
+        f.Graph.HideVertex("D");
+        // Re-adding the hidden vertex directly makes UnhideVertex fail for it.
+        f.Graph.AddVertex("D");
+
+        await Assert.That(f.Graph.UnhideAll()).IsFalse();
+    }
+
     #endregion
 }
