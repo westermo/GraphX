@@ -295,12 +295,11 @@ public class SoftMutableGraphTests
     }
 
     [Test]
-    public async Task Unhide_UnknownTag_ReturnsTrue_AndChangesNothing()
+    public async Task Unhide_UnknownTag_ReturnsFalse_AndChangesNothing()
     {
-        // GetHiddenCollection lazily creates the collection, so removing it always succeeds.
         var f = CreateGraph();
         f.Graph.HideEdge(f.AB);
-        await Assert.That(f.Graph.Unhide("does-not-exist")).IsTrue();
+        await Assert.That(f.Graph.Unhide("does-not-exist")).IsFalse();
         await Assert.That(f.Graph.IsHiddenEdge(f.AB)).IsTrue();
     }
 

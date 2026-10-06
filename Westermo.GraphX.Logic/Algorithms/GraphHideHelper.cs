@@ -278,7 +278,9 @@ internal class GraphHideHelper<TVertex, TEdge>(IMutableBidirectionalGraph<TVerte
 
 	public bool Unhide( string tag )
 	{
-		var h = GetHiddenCollection( tag );
+		// Look up without creating, so an unknown tag reports false instead of succeeding.
+		if ( !_hiddenCollections.TryGetValue( tag, out var h ) )
+			return false;
 		foreach ( var v in h.hiddenVertices )
 		{
 			UnhideVertex( v );
