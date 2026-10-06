@@ -131,7 +131,9 @@ public partial class GXLogicCore<TVertex, TEdge, TGraph>: IGXLogicCore<TVertex, 
     public void Clear(bool clearStorages = true)
     {
         _graph?.Clear();
-        OriginalGraph?.Clear();
+        // The unfiltered copy only exists while filtered; skip it if it is the same instance as Graph.
+        if (_originalGraph != null && !ReferenceEquals(_originalGraph, _graph))
+            _originalGraph.Clear();
         if (clearStorages)
             CreateNewAlgorithmStorage(null, null, null);
     }
@@ -145,14 +147,14 @@ public partial class GXLogicCore<TVertex, TEdge, TGraph>: IGXLogicCore<TVertex, 
         IsFilterRemoved = false;
         //remember original graph if we're about to start filtering
         if (Filters.Count > 0 && !IsFiltered)
-            OriginalGraph = Graph.CopyToGraph<TGraph, TVertex, TEdge>();
+            _originalGraph = Graph.CopyToGraph<TGraph, TVertex, TEdge>();
         //reset graph if we remove filtering
         else if(Filters.Count == 0 && IsFiltered)
             PopFilters();
         while (Filters.Count > 0)
         {
             //start applying filter on original graph copy on the 1st pass and then on Graph property each other pass
-            Graph = Filters.Dequeue().ProcessFilter( i==0 ? OriginalGraph.CopyToGraph<TGraph, TVertex, TEdge>() : Graph);
+            Graph = Filters.Dequeue().ProcessFilter( i==0 ? _originalGraph.CopyToGraph<TGraph, TVertex, TEdge>() : Graph);
             i++;
             IsFiltered = true;
         }
@@ -164,7 +166,8 @@ public partial class GXLogicCore<TVertex, TEdge, TGraph>: IGXLogicCore<TVertex, 
     public void ApplyFilters()
     {
         if (!IsFiltered) return;
-        OriginalGraph = Graph;
+        // The filtered graph becomes the new original; release the unfiltered copy.
+        _originalGraph = null;
         Filters.Clear();
         IsFilterRemoved = true;
         IsFiltered = false;
@@ -177,7 +180,8 @@ public partial class GXLogicCore<TVertex, TEdge, TGraph>: IGXLogicCore<TVertex, 
     {
         if (!IsFiltered) return;
         Filters.Clear();
-        Graph = OriginalGraph;
+        Graph = _originalGraph;
+        _originalGraph = null;
         IsFilterRemoved = true;
         IsFiltered = false;        
     }
@@ -234,7 +238,7 @@ public partial class GXLogicCore<TVertex, TEdge, TGraph>: IGXLogicCore<TVertex, 
 
     private TGraph _graph;
     /// <summary>
-    /// Gets or sets main graph object. Updating this property also updates OriginalGraph property.
+    /// Gets or sets main graph object. While filters are active this is the filtered graph.
     /// </summary>
     public TGraph Graph
     {
@@ -243,9 +247,19 @@ public partial class GXLogicCore<TVertex, TEdge, TGraph>: IGXLogicCore<TVertex, 
     }
 
     /// <summary>
-    /// Gets unmodified graph before any filters has been applied
+    /// Unfiltered copy of the graph, only held while <see cref="IsFiltered"/> is true.
     /// </summary>
-    public TGraph OriginalGraph { get; protected set; }
+    private TGraph _originalGraph;
+
+    /// <summary>
+    /// Gets unmodified graph before any filters has been applied. When no filters are active this is
+    /// the same instance as <see cref="Graph"/>.
+    /// </summary>
+    public TGraph OriginalGraph
+    {
+        get => _originalGraph ?? _graph;
+        protected set => _originalGraph = value;
+    }
 
     /// <summary>
     /// Gets or sets if parallel edges are enabled. All edges between the same nodes will be separated by ParallelEdgeDistance value.
@@ -285,6 +299,7 @@ public partial class GXLogicCore<TVertex, TEdge, TGraph>: IGXLogicCore<TVertex, 
     public void Dispose()
     {
         Graph = null;
+        _originalGraph = null;
         ExternalEdgeRoutingAlgorithm = null;
         ExternalLayoutAlgorithm = null;
         ExternalOverlapRemovalAlgorithm = null;

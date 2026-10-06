@@ -420,8 +420,42 @@ public class GXLogicCoreTests
         core.PopFilters();
 
         await Assert.That(ReferenceEquals(core.Graph, g)).IsTrue();
-        await Assert.That(core.OriginalGraph).IsNull();
+        await Assert.That(ReferenceEquals(core.OriginalGraph, g)).IsTrue();
         await Assert.That(core.IsFilterRemoved).IsFalse();
+    }
+
+    /// <summary>
+    /// Before any filter is pushed, OriginalGraph is the current graph (not null) and follows reassignment.
+    /// </summary>
+    [Test]
+    public async Task OriginalGraph_BeforeAnyFilter_ReturnsCurrentGraph()
+    {
+        var (g, _) = CreateChain();
+        using var core = new TLogic(g);
+
+        await Assert.That(ReferenceEquals(core.OriginalGraph, g)).IsTrue();
+
+        var (other, _) = CreateChain();
+        core.Graph = other;
+        await Assert.That(ReferenceEquals(core.OriginalGraph, other)).IsTrue();
+    }
+
+    /// <summary>
+    /// After PopFilters, OriginalGraph is the restored graph rather than a stale copy.
+    /// </summary>
+    [Test]
+    public async Task OriginalGraph_AfterPop_IsRestoredGraph()
+    {
+        var (g, _) = CreateChain();
+        using var core = new TLogic(g);
+        core.Filters.Enqueue(new RemoveVertexFilter(v => v.Name == "B"));
+        core.PushFilters();
+        var copy = core.OriginalGraph;
+
+        core.PopFilters();
+
+        await Assert.That(ReferenceEquals(core.Graph, copy)).IsTrue();
+        await Assert.That(ReferenceEquals(core.OriginalGraph, core.Graph)).IsTrue();
     }
 
     [Test]
