@@ -253,9 +253,9 @@ public class AlgorithmFactoryTests
             [a] = new(10, 10), [b] = new(10, 10), [c] = new(10, 10),
         };
         var alg = Factory.CreateLayoutAlgorithm(LayoutAlgorithmTypeEnum.SimpleRandom, g, sizes: sizes)!;
-        // The factory does not forward sizes to the random algorithm; GXLogicCore assigns them via NeedVertexSizes.
+        // The factory must forward the supplied sizes so the algorithm can be computed directly.
         await Assert.That(alg.NeedVertexSizes).IsTrue();
-        alg.VertexSizes = sizes;
+        await Assert.That(alg.VertexSizes).IsSameReferenceAs(sizes);
 
         alg.Compute(CancellationToken.None);
 
@@ -265,6 +265,17 @@ public class AlgorithmFactoryTests
             var p = alg.VertexPositions[v];
             await Assert.That(double.IsNaN(p.X) || double.IsNaN(p.Y)).IsFalse();
         }
+    }
+
+    [Test]
+    public async Task CreateLayoutAlgorithm_SimpleRandom_WithoutSizes_ComputesWithoutThrowing()
+    {
+        var g = BuildTriangle(out _, out _, out _);
+        var alg = Factory.CreateLayoutAlgorithm(LayoutAlgorithmTypeEnum.SimpleRandom, g)!;
+
+        alg.Compute(CancellationToken.None);
+
+        await Assert.That(alg.VertexPositions.Count).IsEqualTo(3);
     }
 
     #endregion

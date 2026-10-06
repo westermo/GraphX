@@ -37,7 +37,7 @@ public sealed class AlgorithmFactory<TVertex, TEdge, TGraph> : IAlgorithmFactory
         return newAlgorithmType switch
         {
             LayoutAlgorithmTypeEnum.Tree => new SimpleTreeLayoutAlgorithm<TVertex, TEdge, TGraph>(graph, positions, sizes, parameters as SimpleTreeLayoutParameters),
-            LayoutAlgorithmTypeEnum.SimpleRandom => new RandomLayoutAlgorithm<TVertex, TEdge, TGraph>(graph, positions, parameters as RandomLayoutAlgorithmParams),
+            LayoutAlgorithmTypeEnum.SimpleRandom => new RandomLayoutAlgorithm<TVertex, TEdge, TGraph>(graph, positions, parameters as RandomLayoutAlgorithmParams) { VertexSizes = sizes },
             LayoutAlgorithmTypeEnum.Circular => new CircularLayoutAlgorithm<TVertex, TEdge, TGraph>(graph, positions, sizes, parameters as CircularLayoutParameters),
             LayoutAlgorithmTypeEnum.FR => new FRLayoutAlgorithm<TVertex, TEdge, TGraph>(graph, positions, parameters as FRLayoutParametersBase),
             LayoutAlgorithmTypeEnum.BoundedFR => new FRLayoutAlgorithm<TVertex, TEdge, TGraph>(graph, positions, parameters as BoundedFRLayoutParameters),
