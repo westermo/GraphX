@@ -190,7 +190,6 @@ public class AlgorithmFactoryTests
     public async Task CreateLayoutAlgorithm_AllBuiltIns_AreCreatedOnACopyOfTheGraph(LayoutAlgorithmTypeEnum type)
     {
         var g = BuildTriangle(out var a, out var b, out var c);
-        // Sugiyama dereferences sizes in its constructor, so a sizes dictionary is always supplied.
         var sizes = new Dictionary<TVertex, MSize> { [a] = new(10, 10), [b] = new(10, 10), [c] = new(10, 10) };
         var alg = Factory.CreateLayoutAlgorithm(type, g, sizes: sizes);
 
@@ -272,6 +271,17 @@ public class AlgorithmFactoryTests
     {
         var g = BuildTriangle(out _, out _, out _);
         var alg = Factory.CreateLayoutAlgorithm(LayoutAlgorithmTypeEnum.SimpleRandom, g)!;
+
+        alg.Compute(CancellationToken.None);
+
+        await Assert.That(alg.VertexPositions.Count).IsEqualTo(3);
+    }
+
+    [Test]
+    public async Task CreateLayoutAlgorithm_Sugiyama_WithoutSizes_ComputesWithoutThrowing()
+    {
+        var g = BuildTriangle(out _, out _, out _);
+        var alg = Factory.CreateLayoutAlgorithm(LayoutAlgorithmTypeEnum.Sugiyama, g)!;
 
         alg.Compute(CancellationToken.None);
 
