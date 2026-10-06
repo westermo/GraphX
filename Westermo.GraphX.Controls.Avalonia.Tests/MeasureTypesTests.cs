@@ -199,9 +199,9 @@ public class MeasureTypesTests
     {
         var s = new MSize(2, 3);
         await Assert.That((MVector)s == new MVector(2, 3)).IsTrue();
-        // NOTE (anti-pattern): Size declares `explicit operator Point(Size)` while Point declares
-        // `implicit operator Point(Size)`, so `(Point)size` is ambiguous (CS0457) and cannot be written.
-        // Only the Vector conversion is usable from C#.
+        await Assert.That((MPoint)s == new MPoint(2, 3)).IsTrue();
+        MPoint implicitPoint = s;
+        await Assert.That(implicitPoint == new MPoint(2, 3)).IsTrue();
         await Assert.That(s == new MSize(2, 3)).IsTrue();
         await Assert.That(s != new MSize(3, 2)).IsTrue();
         await Assert.That(s.Equals((object)new MSize(2, 3))).IsTrue();

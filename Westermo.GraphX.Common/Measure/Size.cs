@@ -67,10 +67,8 @@ public struct Size : IEquatable<Size>
         return new Vector(size._width, size._height);
     }
 
-    public static explicit operator Point(Size size)
-    {
-        return new Point(size._width, size._height);
-    }
+    // Size -> Point is provided by the implicit operator declared on Point; declaring a second
+    // (explicit) one here made `(Point)size` ambiguous (CS0457).
 
     #endregion
 
