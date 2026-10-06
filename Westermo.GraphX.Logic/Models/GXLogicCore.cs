@@ -6,6 +6,7 @@ using Westermo.GraphX.Common;
 using Westermo.GraphX.Common.Enums;
 using Westermo.GraphX.Common.Exceptions;
 using Westermo.GraphX.Common.Interfaces;
+using Westermo.GraphX.Logic.Algorithms.OverlapRemoval;
 using QuikGraph;
 
 namespace Westermo.GraphX.Logic.Models;
@@ -188,7 +189,8 @@ public partial class GXLogicCore<TVertex, TEdge, TGraph>: IGXLogicCore<TVertex, 
         new();
 
     /// <summary>
-    /// Create default params if algorithm was changed and default params property is null
+    /// Create default params if algorithm was changed and default params property is null. Overlap removal params
+    /// of the wrong type for OneWayFSA are converted (keeping their gaps).
     /// </summary>
     /// <param name="type">Algorithm type (inner)</param>
     private void SetDefaultParams(int type)
@@ -202,8 +204,13 @@ public partial class GXLogicCore<TVertex, TEdge, TGraph>: IGXLogicCore<TVertex, 
                 return;
             //overlap
             case 1:
-                if(DefaultOverlapRemovalAlgorithmParams!=null) return;
-                DefaultOverlapRemovalAlgorithmParams = AlgorithmFactory.CreateOverlapRemovalParameters(DefaultOverlapRemovalAlgorithm);
+                if (DefaultOverlapRemovalAlgorithmParams == null)
+                    DefaultOverlapRemovalAlgorithmParams = AlgorithmFactory.CreateOverlapRemovalParameters(DefaultOverlapRemovalAlgorithm);
+                // Switching FSA -> OneWayFSA would otherwise keep plain OverlapRemovalParameters, which the
+                // OneWayFSA algorithm can't use. Replace them with OneWayFSAParameters that keep the gaps, so the
+                // stored params are the ones actually used and the caller can configure OneWayFSA-specific settings.
+                else if (DefaultOverlapRemovalAlgorithm == OverlapRemovalAlgorithmTypeEnum.OneWayFSA)
+                    DefaultOverlapRemovalAlgorithmParams = OneWayFSAParameters.From(DefaultOverlapRemovalAlgorithmParams);
                 return;
             //edge
             case 2:

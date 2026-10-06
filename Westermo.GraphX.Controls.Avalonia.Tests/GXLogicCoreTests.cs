@@ -174,6 +174,36 @@ public class GXLogicCoreTests
     }
 
     [Test]
+    public async Task SwitchingOverlapRemovalFromFSAToOneWayFSA_ConvertsParametersKeepingGaps()
+    {
+        using var core = new TLogic();
+        core.DefaultOverlapRemovalAlgorithm = OverlapRemovalAlgorithmTypeEnum.FSA;
+        core.DefaultOverlapRemovalAlgorithmParams!.HorizontalGap = 33f;
+        core.DefaultOverlapRemovalAlgorithmParams.VerticalGap = 44f;
+
+        core.DefaultOverlapRemovalAlgorithm = OverlapRemovalAlgorithmTypeEnum.OneWayFSA;
+
+        // The stored params must now be usable by OneWayFSA (so Way is configurable) and keep the gaps.
+        var p = core.DefaultOverlapRemovalAlgorithmParams;
+        await Assert.That(p.GetType().Name).IsEqualTo("OneWayFSAParameters");
+        await Assert.That(p.HorizontalGap).IsEqualTo(33f);
+        await Assert.That(p.VerticalGap).IsEqualTo(44f);
+    }
+
+    [Test]
+    public async Task SwitchingOverlapRemovalFromOneWayFSAToFSA_KeepsSameParameters()
+    {
+        using var core = new TLogic();
+        core.DefaultOverlapRemovalAlgorithm = OverlapRemovalAlgorithmTypeEnum.OneWayFSA;
+        var p = core.DefaultOverlapRemovalAlgorithmParams;
+
+        core.DefaultOverlapRemovalAlgorithm = OverlapRemovalAlgorithmTypeEnum.FSA;
+
+        // OneWayFSAParameters is a valid FSA parameter set, so nothing needs replacing.
+        await Assert.That(core.DefaultOverlapRemovalAlgorithmParams).IsSameReferenceAs(p);
+    }
+
+    [Test]
     public async Task IsEdgeRoutingEnabled_ReflectsDefaultAlgorithm()
     {
         using var core = new TLogic();

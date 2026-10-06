@@ -4,6 +4,7 @@ using System.Threading;
 using QuikGraph;
 using Westermo.GraphX.Common.Enums;
 using Westermo.GraphX.Common.Models;
+using Westermo.GraphX.Logic.Algorithms.OverlapRemoval;
 using Westermo.GraphX.Logic.Models;
 using MPoint = Westermo.GraphX.Measure.Point;
 using MRect = Westermo.GraphX.Measure.Rect;
@@ -309,13 +310,43 @@ public class AlgorithmFactoryTests
     }
 
     [Test]
-    public async Task CreateOverlapRemovalAlgorithm_OneWayFSA_WithWrongParameterType_FallsBackToDefaults()
+    public async Task CreateOverlapRemovalAlgorithm_OneWayFSA_WithWrongParameterType_PreservesGaps()
     {
-        // A plain OverlapRemovalParameters is not OneWayFSAParameters, so the factory must substitute
-        // a correctly-typed default rather than passing null into the algorithm.
-        var wrong = Factory.CreateOverlapRemovalParameters(OverlapRemovalAlgorithmTypeEnum.FSA);
+        // A plain OverlapRemovalParameters is not OneWayFSAParameters, so the factory must convert it to the
+        // correct type - but without silently discarding the caller's gap settings.
+        var wrong = new OverlapRemovalParameters { HorizontalGap = 42f, VerticalGap = 17f };
         var alg = Factory.CreateOverlapRemovalAlgorithm(OverlapRemovalAlgorithmTypeEnum.OneWayFSA, null!, wrong);
-        await Assert.That(alg!.GetParameters().GetType().Name).IsEqualTo("OneWayFSAParameters");
+
+        var used = alg!.GetParameters();
+        await Assert.That(used.GetType().Name).IsEqualTo("OneWayFSAParameters");
+        await Assert.That(used.HorizontalGap).IsEqualTo(42f);
+        await Assert.That(used.VerticalGap).IsEqualTo(17f);
+    }
+
+    [Test]
+    public async Task CreateOverlapRemovalAlgorithm_OneWayFSA_WithCorrectParameterType_UsesSameInstance()
+    {
+        var parameters = new OneWayFSAParameters { Way = OneWayFSAWayEnum.Vertical };
+        var alg = Factory.CreateOverlapRemovalAlgorithm(OverlapRemovalAlgorithmTypeEnum.OneWayFSA, null!, parameters);
+        await Assert.That(alg!.GetParameters()).IsSameReferenceAs(parameters);
+    }
+
+    [Test]
+    public async Task CreateOverlapRemovalAlgorithm_FSA_PassesAnyParametersThrough()
+    {
+        // FSA accepts any IOverlapRemovalParameters, so even a OneWayFSAParameters instance is used as-is.
+        var parameters = new OneWayFSAParameters { HorizontalGap = 5f, VerticalGap = 6f };
+        var alg = Factory.CreateOverlapRemovalAlgorithm(OverlapRemovalAlgorithmTypeEnum.FSA, null!, parameters);
+        await Assert.That(alg!.GetParameters()).IsSameReferenceAs(parameters);
+    }
+
+    [Test]
+    public async Task OneWayFSAParameters_From_Null_ReturnsDefaults()
+    {
+        var p = OneWayFSAParameters.From(null!);
+        await Assert.That(p).IsNotNull();
+        await Assert.That(p.HorizontalGap).IsEqualTo(10f);
+        await Assert.That(p.VerticalGap).IsEqualTo(10f);
     }
 
     [Test]
