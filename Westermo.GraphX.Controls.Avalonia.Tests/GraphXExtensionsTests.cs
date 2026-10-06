@@ -143,16 +143,50 @@ public class GraphXExtensionsTests
     }
 
     [Test]
-    public async Task GetEdgesBetween_Undirected_OverlappingSets_ReturnsDuplicates()
+    public async Task GetEdgesBetween_Undirected_OverlappingSets_ReturnsEachEdgeOnce()
     {
-        // Quirk: when the sets overlap, an edge whose endpoints are both in each set is found once
-        // through the out-edge scan and once through the reverse scan. Callers needing unique
-        // edges must apply Distinct() themselves.
-        var (g, v) = Build("AB", "AB");
-        List<TVertex> both = [v["A"], v["B"]];
+        // An edge whose endpoints are in both sets matches in both directions but must be reported once.
+        var (g, v) = Build("ABC", "AB", "BA", "CC", "AC");
+        List<TVertex> both = [v["A"], v["B"], v["C"]];
         var result = g.GetEdgesBetween(both, both, undirected: true).ToList();
+        await Assert.That(result.Count).IsEqualTo(4);
+        await Assert.That(Names(result)).IsEqualTo("AB,AC,BA,CC");
+    }
+
+    [Test]
+    public async Task GetEdgesBetween_Undirected_PartialOverlap_ReturnsEachEdgeOnce()
+    {
+        // B is in both sets: A→B (set1→set2) and B→A (set2→set1) are distinct edges; B→C appears once.
+        var (g, v) = Build("ABC", "AB", "BA", "BC", "CB");
+        var result = g.GetEdgesBetween([v["A"], v["B"]], [v["B"], v["C"]], undirected: true).ToList();
+        await Assert.That(Names(result)).IsEqualTo("AB,BA,BC,CB");
+        await Assert.That(result.Distinct().Count()).IsEqualTo(result.Count);
+    }
+
+    [Test]
+    public async Task GetEdgesBetween_DuplicateInputVertices_DoNotDuplicateEdges()
+    {
+        var (g, v) = Build("AB", "AB");
+        var result = g.GetEdgesBetween([v["A"], v["A"]], [v["B"], v["B"]]).ToList();
+        await Assert.That(result.Count).IsEqualTo(1);
+    }
+
+    [Test]
+    public async Task GetEdgesBetween_ParallelEdges_AreAllReturned()
+    {
+        // Distinct edge instances between the same vertices are separate results.
+        var (g, v) = Build("AB", "AB", "AB");
+        var result = g.GetEdgesBetween([v["A"]], [v["B"]], undirected: true).ToList();
         await Assert.That(result.Count).IsEqualTo(2);
-        await Assert.That(result.Distinct().Count()).IsEqualTo(1);
+    }
+
+    [Test]
+    public async Task GetEdgesBetween_VerticesNotInGraph_AreIgnored()
+    {
+        var (g, v) = Build("AB", "AB");
+        var stranger = new TVertex("X");
+        var result = g.GetEdgesBetween([v["A"], stranger], [v["B"], stranger], undirected: true).ToList();
+        await Assert.That(Names(result)).IsEqualTo("AB");
     }
 
     #endregion

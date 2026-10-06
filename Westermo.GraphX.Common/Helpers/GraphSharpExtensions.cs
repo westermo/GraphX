@@ -98,18 +98,40 @@ public static class GraphXExtensions
         /// </summary>
         /// <param name="set1"></param>
         /// <param name="set2"></param>
-        /// <param name="undirected">Assume undirected graph - get both in and out edges</param>
-        /// <returns>Return the list of the selected edges.</returns>
+        /// <param name="undirected">Assume undirected graph - also include edges from <code>set2</code> to <code>set1</code>.</param>
+        /// <returns>Return the list of the selected edges. Each edge appears at most once, even when the sets overlap.
+        /// Vertices that are not part of the graph are ignored.</returns>
         public IEnumerable<TEdge> GetEdgesBetween(List<TVertex> set1, List<TVertex> set2, bool undirected = false)
         {
             var edgesBetween = new List<TEdge>();
+            if (set1.Count == 0 || set2.Count == 0) return edgesBetween;
 
-            //vegig kell menni az osszes vertex minden elen, es megnezni, hogy a target hol van
-            foreach (var v in set1)
+            // Hash lookups keep this O(sum of out-degrees) instead of O(|set1| * |E|).
+            var lookup1 = new HashSet<TVertex>(set1);
+            var lookup2 = new HashSet<TVertex>(set2);
+
+            foreach (var v in lookup1)
             {
-                edgesBetween.AddRange(g.OutEdges(v).Where(edge => set2.Contains(edge.Target)));
-                if (undirected)
-                    edgesBetween.AddRange(g.Edges.Where(a => a.Target == v).Where(edge => set2.Contains(edge.Source)));
+                if (!g.ContainsVertex(v)) continue;
+                foreach (var edge in g.OutEdges(v))
+                    if (lookup2.Contains(edge.Target))
+                        edgesBetween.Add(edge);
+            }
+
+            if (!undirected) return edgesBetween;
+
+            // Reverse direction: set2 -> set1. Skip edges already collected by the first pass
+            // (source in set1 and target in set2), which happens when the sets overlap.
+            foreach (var v in lookup2)
+            {
+                if (!g.ContainsVertex(v)) continue;
+                var sourceInSet1 = lookup1.Contains(v);
+                foreach (var edge in g.OutEdges(v))
+                {
+                    if (!lookup1.Contains(edge.Target)) continue;
+                    if (sourceInSet1 && lookup2.Contains(edge.Target)) continue;
+                    edgesBetween.Add(edge);
+                }
             }
 
             return edgesBetween;
