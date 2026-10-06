@@ -1,4 +1,6 @@
-﻿namespace Westermo.GraphX.Logic.Algorithms.OverlapRemoval;
+﻿using Westermo.GraphX.Common.Interfaces;
+
+namespace Westermo.GraphX.Logic.Algorithms.OverlapRemoval;
 
 public enum OneWayFSAWayEnum {
 	Horizontal,
@@ -19,5 +21,19 @@ public class OneWayFSAParameters : OverlapRemovalParameters
 				NotifyChanged( "Way" );
 			}
 		}
+	}
+
+	/// <summary>
+	/// Returns <paramref name="parameters"/> as <see cref="OneWayFSAParameters"/>. Parameters of another type are
+	/// converted to a new instance that keeps their gap settings rather than silently discarding them.
+	/// </summary>
+	public static OneWayFSAParameters From( IOverlapRemovalParameters parameters )
+	{
+		return parameters switch
+		{
+			OneWayFSAParameters oneWay => oneWay,
+			null => new OneWayFSAParameters(),
+			_ => new OneWayFSAParameters { HorizontalGap = parameters.HorizontalGap, VerticalGap = parameters.VerticalGap },
+		};
 	}
 }
