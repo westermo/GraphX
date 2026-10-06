@@ -215,6 +215,45 @@ public class SoftMutableGraphTests
     }
 
     [Test]
+    public async Task HideSelfLoop_IsCountedOnceForItsVertex_AndUnhidesCleanly()
+    {
+        // A self-loop has the same source and target; it must not be indexed twice.
+        var f = CreateGraph();
+        var loop = new Edge<string>("A", "A");
+        f.Graph.AddEdge(loop);
+
+        await Assert.That(f.Graph.HideEdge(loop)).IsTrue();
+        await Assert.That(f.Graph.HiddenEdgeCountOf("A")).IsEqualTo(1);
+        await Assert.That(f.Graph.HiddenEdgesOf("A").Single()).IsSameReferenceAs(loop);
+
+        await Assert.That(f.Graph.UnhideEdge(loop)).IsTrue();
+        await Assert.That(f.Graph.HiddenEdgeCountOf("A")).IsEqualTo(0);
+        await Assert.That(f.Graph.ContainsEdge(loop)).IsTrue();
+    }
+
+    [Test]
+    public async Task HideAndUnhide_ManyEdges_RoundTripsAllElements()
+    {
+        // Exercises the set-backed bookkeeping at a size where list scans would be quadratic.
+        var g = new SoftMutableBidirectionalGraph<int, Edge<int>>();
+        const int n = 2000;
+        for (var i = 0; i < n; i++) g.AddVertex(i);
+        var edges = new List<Edge<int>>(n - 1);
+        for (var i = 1; i < n; i++) edges.Add(new Edge<int>(i - 1, i));
+        g.AddEdgeRange(edges);
+
+        g.HideEdges(edges);
+        await Assert.That(g.HiddenEdgeCount).IsEqualTo(n - 1);
+        await Assert.That(g.EdgeCount).IsEqualTo(0);
+        await Assert.That(g.HiddenEdgeCountOf(n / 2)).IsEqualTo(2);
+
+        g.UnhideEdges(edges);
+        await Assert.That(g.HiddenEdgeCount).IsEqualTo(0);
+        await Assert.That(g.EdgeCount).IsEqualTo(n - 1);
+        await Assert.That(g.HiddenEdgeCountOf(n / 2)).IsEqualTo(0);
+    }
+
+    [Test]
     public async Task UnhideEdge_RestoresEdgeAndRaisesEvent()
     {
         var f = CreateGraph();
