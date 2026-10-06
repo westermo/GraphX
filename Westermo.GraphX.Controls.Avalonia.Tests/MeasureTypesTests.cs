@@ -186,7 +186,6 @@ public class MeasureTypesTests
     }
 
     [Test]
-    [Skip("Known bug: Size.Height setter also overwrites the width.")]
     public async Task Size_HeightSetter_DoesNotChangeWidth()
     {
         var s = new MSize(10, 1);

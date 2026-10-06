@@ -31,7 +31,6 @@ public struct Size : IEquatable<Size>
                 throw new InvalidOperationException("Size_CannotModifyEmptySize");
             if (value < 0.0)
                 throw new ArgumentException("Size_HeightCannotBeNegative");
-            _width = value;
             _height = value;
         }
     }
