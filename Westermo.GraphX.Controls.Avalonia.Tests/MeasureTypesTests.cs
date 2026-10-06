@@ -40,7 +40,6 @@ public class MeasureTypesTests
     }
 
     [Test]
-    [Skip("Known bug: Point.operator /(Point, double) multiplies instead of dividing.")]
     public async Task Point_Division_DividesComponents()
     {
         var p = new MPoint(8, 4);
