@@ -196,14 +196,15 @@ internal class GraphHideHelper<TVertex, TEdge>(IMutableBidirectionalGraph<TVerte
 		return hiddenEdgeList;
 	}
 
+	// Read-only queries must not insert empty lists for unknown vertices.
 	public IEnumerable<TEdge> HiddenEdgesOf( TVertex v )
 	{
-		return GetHiddenEdgeListOf( v );
+		return _hiddenEdgesOf.TryGetValue( v, out var list ) ? list : Enumerable.Empty<TEdge>();
 	}
 
 	public int HiddenEdgeCountOf( TVertex v )
 	{
-		return GetHiddenEdgeListOf( v ).Count;
+		return _hiddenEdgesOf.TryGetValue( v, out var list ) ? list.Count : 0;
 	}
 
 	public bool HideEdge( TEdge e, string tag )
@@ -254,8 +255,10 @@ internal class GraphHideHelper<TVertex, TEdge>(IMutableBidirectionalGraph<TVerte
 		managedGraph.AddEdge( e );
 		_hiddenEdges.Remove( e );
 
-		GetHiddenEdgeListOf( e.Source ).Remove( e );
-		GetHiddenEdgeListOf( e.Target ).Remove( e );
+		if ( _hiddenEdgesOf.TryGetValue( e.Source, out var sourceList ) )
+			sourceList.Remove( e );
+		if ( _hiddenEdgesOf.TryGetValue( e.Target, out var targetList ) )
+			targetList.Remove( e );
 
 		OnEdgeUnhidden( e );
 		return true;

@@ -201,6 +201,20 @@ public class SoftMutableGraphTests
     }
 
     [Test]
+    public async Task HiddenEdgesOf_UnknownVertex_IsEmpty_AndDoesNotAffectLaterHides()
+    {
+        // Querying an unknown vertex must be a pure read.
+        var f = CreateGraph();
+        await Assert.That(f.Graph.HiddenEdgesOf("Z")).IsEmpty();
+        await Assert.That(f.Graph.HiddenEdgeCountOf("Z")).IsEqualTo(0);
+        await Assert.That(f.Graph.HiddenEdgesOf("A")).IsEmpty();
+
+        f.Graph.HideEdge(f.AB);
+        await Assert.That(f.Graph.HiddenEdgeCountOf("A")).IsEqualTo(1);
+        await Assert.That(f.Graph.HiddenEdgeCountOf("Z")).IsEqualTo(0);
+    }
+
+    [Test]
     public async Task UnhideEdge_RestoresEdgeAndRaisesEvent()
     {
         var f = CreateGraph();
