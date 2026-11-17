@@ -11,6 +11,7 @@ using Avalonia.Threading;
 using TUnit.Core.Executors;
 using TUnit.Core.Interfaces;
 using Westermo.GraphX.Controls.Avalonia.Tests;
+using Westermo.GraphX.Controls.Controls;
 
 // Limit parallel test execution to 1 for Avalonia UI tests - they share UI state
 [assembly: TestExecutor<AvaloniaThreadTestExecutor>]
@@ -82,9 +83,11 @@ public class GlobalHooks
                     .SetupWithoutStarting();
                 
                 // Load GraphX control themes so edge pointers and other template parts work
-                var graphXStyles = new StyleInclude(new Uri("avares://Westermo.GraphX.Controls.Avalonia/"))
+                // Load the controls assembly before Avalonia's prefix lookup can select the test assembly.
+                var graphXBaseUri = new Uri($"avares://{typeof(GraphAreaBase).Assembly.GetName().Name}/");
+                var graphXStyles = new StyleInclude(graphXBaseUri)
                 {
-                    Source = new Uri("avares://Westermo.GraphX.Controls.Avalonia/Themes/DefaultStyles.axaml")
+                    Source = new Uri(graphXBaseUri, "Themes/DefaultStyles.axaml")
                 };
                 Application.Current!.Styles.Add(graphXStyles);
                 
