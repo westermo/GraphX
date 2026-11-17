@@ -31,7 +31,6 @@ public struct Size : IEquatable<Size>
                 throw new InvalidOperationException("Size_CannotModifyEmptySize");
             if (value < 0.0)
                 throw new ArgumentException("Size_HeightCannotBeNegative");
-            _width = value;
             _height = value;
         }
     }
@@ -68,10 +67,8 @@ public struct Size : IEquatable<Size>
         return new Vector(size._width, size._height);
     }
 
-    public static explicit operator Point(Size size)
-    {
-        return new Point(size._width, size._height);
-    }
+    // Size -> Point is provided by the implicit operator declared on Point; declaring a second
+    // (explicit) one here made `(Point)size` ambiguous (CS0457).
 
     #endregion
 

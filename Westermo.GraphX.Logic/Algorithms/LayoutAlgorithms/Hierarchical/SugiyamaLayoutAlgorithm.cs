@@ -78,7 +78,9 @@ public partial class SugiyamaLayoutAlgorithm<TVertex, TEdge, TGraph> : DefaultPa
         //wrapping the vertices
         foreach ( var v in VisitedGraph.Vertices )
         {
-            var size = vertexSizes[v];
+            // Vertices without a known size (or no sizes at all) are treated as zero-sized.
+            Size size = default;
+            vertexSizes?.TryGetValue( v, out size );
             size.Height += Parameters.VerticalGap;
             size.Width += Parameters.HorizontalGap;
             var wrapped = new SugiVertex( v, size );
