@@ -37,7 +37,7 @@ public sealed class AlgorithmFactory<TVertex, TEdge, TGraph> : IAlgorithmFactory
         return newAlgorithmType switch
         {
             LayoutAlgorithmTypeEnum.Tree => new SimpleTreeLayoutAlgorithm<TVertex, TEdge, TGraph>(graph, positions, sizes, parameters as SimpleTreeLayoutParameters),
-            LayoutAlgorithmTypeEnum.SimpleRandom => new RandomLayoutAlgorithm<TVertex, TEdge, TGraph>(graph, positions, parameters as RandomLayoutAlgorithmParams),
+            LayoutAlgorithmTypeEnum.SimpleRandom => new RandomLayoutAlgorithm<TVertex, TEdge, TGraph>(graph, positions, parameters as RandomLayoutAlgorithmParams) { VertexSizes = sizes },
             LayoutAlgorithmTypeEnum.Circular => new CircularLayoutAlgorithm<TVertex, TEdge, TGraph>(graph, positions, sizes, parameters as CircularLayoutParameters),
             LayoutAlgorithmTypeEnum.FR => new FRLayoutAlgorithm<TVertex, TEdge, TGraph>(graph, positions, parameters as FRLayoutParametersBase),
             LayoutAlgorithmTypeEnum.BoundedFR => new FRLayoutAlgorithm<TVertex, TEdge, TGraph>(graph, positions, parameters as BoundedFRLayoutParameters),
@@ -142,11 +142,12 @@ return new BalloonTreeLayoutAlgorithm<TVertex, TEdge, TGraph>(Graph, Positions, 
 
         return newAlgorithmType switch
         {
-            OverlapRemovalAlgorithmTypeEnum.FSA => new FSAAlgorithm<TVertex>(rectangles, parameters is OverlapRemovalParameters ? parameters : new OverlapRemovalParameters()),
-            OverlapRemovalAlgorithmTypeEnum.OneWayFSA => new OneWayFSAAlgorithm<TVertex>(rectangles, parameters is OneWayFSAParameters ? parameters as OneWayFSAParameters : new OneWayFSAParameters()),
-            _ => null,
-        };
-    }
+            // FSA works with any IOverlapRemovalParameters implementation, so pass it through untouched.
+            OverlapRemovalAlgorithmTypeEnum.FSA => new FSAAlgorithm<TVertex>(rectangles, parameters),
+            OverlapRemovalAlgorithmTypeEnum.OneWayFSA => new OneWayFSAAlgorithm<TVertex>(rectangles,             OneWayFSAParameters.From(parameters)),
+                        _ => null,
+                    };
+                }
 
     public IOverlapRemovalAlgorithm<T> CreateFSAA<T>(IDictionary<T, Rect> rectangles, float horGap, float vertGap) where T : class
     {

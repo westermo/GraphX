@@ -186,7 +186,7 @@ public struct Point(double x, double y)
 
     public static Point operator /(Point value1, double value2)
     {
-        return new Point(value1.X * value2, value1.Y * value2);
+        return new Point(value1.X / value2, value1.Y / value2);
     }
 
     public void Offset(double offsetX, double offsetY)

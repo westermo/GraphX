@@ -44,7 +44,9 @@ public class RandomLayoutAlgorithm<TVertex, TEdge, TGraph> : LayoutAlgorithmBase
             {
                 var x = (int)bounds.X;
                 var y = (int)bounds.Y;
-                var size = VertexSizes.FirstOrDefault(a => a.Key == item).Value;
+                // O(1) lookup; vertices without a known size (or no sizes at all) are treated as zero-sized.
+                Size size = default;
+                VertexSizes?.TryGetValue(item, out size);
                 VertexPositions.Add(item,
                     new Point(rnd.Next(x, x + boundsWidth - (int)size.Width),
                         rnd.Next(y, y + boundsHeight - (int)size.Height)));

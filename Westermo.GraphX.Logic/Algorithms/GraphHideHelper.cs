@@ -18,10 +18,12 @@ internal class GraphHideHelper<TVertex, TEdge>(IMutableBidirectionalGraph<TVerte
 	#endregion
 
 	#region Properties, fields, events
-	private readonly List<TVertex> _hiddenVertices = [];
-	private readonly List<TEdge> _hiddenEdges = [];
-	private readonly IDictionary<string, HiddenCollection> _hiddenCollections = new Dictionary<string, HiddenCollection>();
-	private readonly IDictionary<TVertex, List<TEdge>> _hiddenEdgesOf = new Dictionary<TVertex, List<TEdge>>();
+	// Sets give O(1) Contains/Remove; lists made hiding n elements O(n^2), which hurt
+	// layouts such as Sugiyama that hide every parallel/long edge during computation.
+	private readonly HashSet<TVertex> _hiddenVertices = [];
+	private readonly HashSet<TEdge> _hiddenEdges = [];
+	private readonly Dictionary<string, HiddenCollection> _hiddenCollections = new();
+	private readonly Dictionary<TVertex, HashSet<TEdge>> _hiddenEdgesOf = new();
 
 	public event EdgeAction<TVertex, TEdge> EdgeHidden;
 	public event EdgeAction<TVertex, TEdge> EdgeUnhidden;
@@ -161,21 +163,20 @@ internal class GraphHideHelper<TVertex, TEdge>(IMutableBidirectionalGraph<TVerte
 	public void UnhideVertexAndEdges( TVertex v )
 	{
 		UnhideVertex( v );
-		List<TEdge> hiddenEdgesList;
-		_hiddenEdgesOf.TryGetValue( v, out hiddenEdgesList );
-		if ( hiddenEdgesList != null )
-			UnhideEdges( hiddenEdgesList );
+		// UnhideEdges snapshots its input, so passing the live set is safe.
+		if ( _hiddenEdgesOf.TryGetValue( v, out var hiddenEdgesOfV ) )
+			UnhideEdges( hiddenEdgesOfV );
 	}
 
 	public bool HideEdge( TEdge e )
 	{
-		if ( managedGraph.ContainsEdge( e ) && !_hiddenEdges.Contains( e ) )
+		if ( managedGraph.ContainsEdge( e ) && _hiddenEdges.Add( e ) )
 		{
 			managedGraph.RemoveEdge( e );
-			_hiddenEdges.Add( e );
 
-			GetHiddenEdgeListOf( e.Source ).Add( e );
-			GetHiddenEdgeListOf( e.Target ).Add( e );
+			// A self-loop maps to the same set twice; the set keeps it once.
+			GetHiddenEdgeSetOf( e.Source ).Add( e );
+			GetHiddenEdgeSetOf( e.Target ).Add( e );
 
 			OnEdgeHidden( e );
 			return true;
@@ -184,26 +185,35 @@ internal class GraphHideHelper<TVertex, TEdge>(IMutableBidirectionalGraph<TVerte
 		return false;
 	}
 
-	private List<TEdge> GetHiddenEdgeListOf( TVertex v )
+	private HashSet<TEdge> GetHiddenEdgeSetOf( TVertex v )
 	{
-		List<TEdge> hiddenEdgeList;
-		_hiddenEdgesOf.TryGetValue( v, out hiddenEdgeList );
-		if ( hiddenEdgeList == null )
+		if ( !_hiddenEdgesOf.TryGetValue( v, out var hiddenEdgeSet ) )
 		{
-			hiddenEdgeList = [];
-			_hiddenEdgesOf[v] = hiddenEdgeList;
+			hiddenEdgeSet = [];
+			_hiddenEdgesOf[v] = hiddenEdgeSet;
 		}
-		return hiddenEdgeList;
+		return hiddenEdgeSet;
 	}
 
+	/// <summary>
+	/// Removes <paramref name="e"/> from the per-vertex index of <paramref name="v"/>,
+	/// dropping the entry once empty so the dictionary doesn't grow with stale keys.
+	/// </summary>
+	private void RemoveFromHiddenEdgesOf( TVertex v, TEdge e )
+	{
+		if ( _hiddenEdgesOf.TryGetValue( v, out var set ) && set.Remove( e ) && set.Count == 0 )
+			_hiddenEdgesOf.Remove( v );
+	}
+
+	// Read-only queries must not insert empty lists for unknown vertices.
 	public IEnumerable<TEdge> HiddenEdgesOf( TVertex v )
 	{
-		return GetHiddenEdgeListOf( v );
+		return _hiddenEdgesOf.TryGetValue( v, out var set ) ? set : Enumerable.Empty<TEdge>();
 	}
 
 	public int HiddenEdgeCountOf( TVertex v )
 	{
-		return GetHiddenEdgeListOf( v ).Count;
+		return _hiddenEdgesOf.TryGetValue( v, out var set ) ? set.Count : 0;
 	}
 
 	public bool HideEdge( TEdge e, string tag )
@@ -254,8 +264,8 @@ internal class GraphHideHelper<TVertex, TEdge>(IMutableBidirectionalGraph<TVerte
 		managedGraph.AddEdge( e );
 		_hiddenEdges.Remove( e );
 
-		GetHiddenEdgeListOf( e.Source ).Remove( e );
-		GetHiddenEdgeListOf( e.Target ).Remove( e );
+		RemoveFromHiddenEdgesOf( e.Source, e );
+		RemoveFromHiddenEdgesOf( e.Target, e );
 
 		OnEdgeUnhidden( e );
 		return true;
@@ -278,7 +288,9 @@ internal class GraphHideHelper<TVertex, TEdge>(IMutableBidirectionalGraph<TVerte
 
 	public bool Unhide( string tag )
 	{
-		var h = GetHiddenCollection( tag );
+		// Look up without creating, so an unknown tag reports false instead of succeeding.
+		if ( !_hiddenCollections.TryGetValue( tag, out var h ) )
+			return false;
 		foreach ( var v in h.hiddenVertices )
 		{
 			UnhideVertex( v );
@@ -292,15 +304,17 @@ internal class GraphHideHelper<TVertex, TEdge>(IMutableBidirectionalGraph<TVerte
 
 	public bool UnhideAll()
 	{
-		while ( _hiddenVertices.Count > 0 )
+		// Iterate over snapshots: an element that fails to unhide stays in the hidden list,
+		// so looping until the list is empty could spin forever.
+		foreach ( var v in _hiddenVertices.ToArray() )
 		{
-			UnhideVertex( _hiddenVertices[0] );
+			UnhideVertex( v );
 		}
-		while ( _hiddenEdges.Count > 0 )
+		foreach ( var e in _hiddenEdges.ToArray() )
 		{
-			UnhideEdge( _hiddenEdges[0] );
+			UnhideEdge( e );
 		}
-		return true;
+		return _hiddenVertices.Count == 0 && _hiddenEdges.Count == 0;
 	}
 
 	public int HiddenVertexCount => _hiddenVertices.Count;
